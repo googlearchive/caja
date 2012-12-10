@@ -5443,7 +5443,7 @@ var Domado = (function() {
       domicile.fetchUri = cajaVM.def(function (uri, mime, callback) {
         uriFetch(naiveUriPolicy, uri, mime, callback);
       });
-      domicile.rewriteUri = cajaVM.def(function (uri, mimeType) {
+      domicile.rewriteUri = cajaVM.def(function (uri, mimeType, opt_hints) {
         // (SAME_DOCUMENT, SANDBOXED) is chosen as the "reasonable" set of
         // defaults for this function, which is only used by TCB components
         // to rewrite URIs for sources of data. We assume these sources of
@@ -5455,7 +5455,7 @@ var Domado = (function() {
             String(uri),
             html4.ueffects.SAME_DOCUMENT,
             html4.ltypes.SANDBOXED,
-            {});
+            opt_hints || {});
       });
       domicile.suffix = cajaVM.def(function (nmtokens) {
         var p = String(nmtokens).replace(/^\s+|\s+$/g, '').split(/\s+/g);

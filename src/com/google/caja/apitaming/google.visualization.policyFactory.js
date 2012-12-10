@@ -44,7 +44,7 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
       spec.containerId = utils.opaqueNodeById(spec.containerId);
     }
     if (spec.dataSourceUrl) {
-      spec.dataSourceUrl = frame.rewriteUri(spec.dataSourceUrl);
+      spec.dataSourceUrl = rewriteDataSourceUrl(spec.dataSourceUrl);
     }
     self.tameContainerId___ = tameContainerId;
     return [spec];
@@ -73,9 +73,19 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
       spec.containerId= utils.opaqueNodeById(spec.containerId);
     }
     if (spec.dataSourceUrl) {
-      spec.dataSourceUrl = frame.rewriteUri(spec.dataSourceUrl);
+      spec.dataSourceUrl = rewriteDataSourceUrl(spec.dataSourceUrl);
     }
     return [spec];
+  }
+
+  ////////////////////////////////////////////////////////////////////////
+  // Data Source URL rewriting
+
+  function rewriteDataSourceUrl(url) {
+    return frame.rewriteUri(
+      url,
+      'application/javascript',
+      { 'TYPE': 'GVIZ_DATA_SOURCE_URL' });
   }
 
 
@@ -205,7 +215,9 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
   v.ChartWrapper.prototype.getOption = function(key, opt_default) {};
   v.ChartWrapper.prototype.getOptions = function() {};
   v.ChartWrapper.prototype.setDataSourceUrl = function(dataSourceUrl) {};
-  v.ChartWrapper.prototype.setDataSourceUrl.__before__ = [ utils.mapArgs(frame.rewriteUri) ];
+  v.ChartWrapper.prototype.setDataSourceUrl.__before__ = [
+      utils.mapArgs(rewriteDataSourceUrl)
+  ];
   v.ChartWrapper.prototype.setDataTable = function(dataTable) {};
   v.ChartWrapper.prototype.setChartName = function(chartName) {};
   v.ChartWrapper.prototype.setChartType = function(chartType) {};
@@ -307,7 +319,7 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
 
   v.Query = function(dataSourceUrl, opt_options) {};
   v.Query.__super__ = Object;
-  v.Query.__before__ = [ utils.mapArgs(frame.rewriteUri, utils.copyJson) ];
+  v.Query.__before__ = [ utils.mapArgs(rewriteDataSourceUrl, utils.copyJson) ];
   v.Query.prototype.abort = function() {};
   v.Query.prototype.setRefreshInterval = function(seconds) {};
   v.Query.prototype.setTimeout = function(seconds) {};

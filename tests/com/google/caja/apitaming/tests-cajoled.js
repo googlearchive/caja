@@ -29,7 +29,8 @@
     var testUrl = base('' + document.location) + '/' + test
 
     var uriPolicy = {
-      rewrite: function(uri) {
+      rewrite: function(uri, a, b, hints) {
+        console.log('Rewrite URI: ', uri, ' with hints: ', hints);
         return /.*evil.*/.test(uri) ? undefined : uri;
       },
       fetch: function(url, mime, callback) {
