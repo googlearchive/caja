@@ -2550,6 +2550,19 @@ Test row cell
     var elems = ifr.contentDocument.getElementsByClassName('testcontainer');
     assertEquals(1, elems.length);
     
+    // document.write (will reopen the document)
+    ifr.contentDocument.write('');
+    assertEquals(0, ifr.contentDocument.childNodes.length);
+    ifr.contentDocument.write('replacement');
+    assertEquals(1, ifr.contentDocument.childNodes.length);
+    assertEquals('<head></head><body>replacement</body>',
+        ifr.contentDocument.documentElement.innerHTML);
+
+    // regression test: lack of editability due to a policy bug w/
+    // container-node-is-document vdocs
+    ifr.contentDocument.body.appendChild(
+        ifr.contentDocument.createElement('p'));
+
     pass('testIframeDocument');
   });
 </script>

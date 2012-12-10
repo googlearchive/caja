@@ -56,7 +56,10 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
   }
   base = makeDOMAccessible(base);
   var insertionPoint = base;
-  var bridal = bridalMaker(makeDOMAccessible, base.ownerDocument);
+  var bridal = bridalMaker(makeDOMAccessible,
+      base.nodeType === 9  // Document node
+          ? base
+          : base.ownerDocument);
 
   // TODO: Take into account <base> elements.
 
@@ -114,7 +117,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
    * if the gadget host page's usage pattern requires it.
    */
   function emitStatic(htmlString) {
-    if (!base) {
+    if (!insertionPoint) {
       throw new Error('Host page error: HtmlEmitter.emitStatic called after' +
           ' document finish()ed');
     }
@@ -285,6 +288,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
   }
   /**
    * Reattach any remaining detached bits, free resources.
+   * See also reopen() below.
    */
   function finish() {
     insertionPoint = null;
@@ -294,7 +298,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       }
     }
     // Release references so nodes can be garbage collected.
-    idMap = detached = base = null;
+    idMap = detached = null;
     return this;
   }
 
@@ -893,6 +897,22 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       }
     };
 
+    /**
+     * This corresponds to document.open() and is an extremely incomplete
+     * implementation thereof.
+     * http://www.whatwg.org/specs/web-apps/current-work/multipage/elements.html#dom-document-open
+     */
+    function reopen() {
+      while (base.firstChild) {
+        base.removeChild(base.firstChild);
+      }
+      insertionPoint = base;
+      insertionMode = insertionModes.initial;
+      originalInsertionMode = null;
+      // no need to reinitialize idMap and detached, because this is only for
+      // guest-driven writing.
+    }
+
     var documentWriter = {
       startDoc: function() {
         // TODO(jasvir): Fix recursive document.write
@@ -1007,12 +1027,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
     // (1) all HTML written is sanitized per the opt_domicile's HTML
     //     sanitizer
     // (2) HTML written cannot change where subsequent static HTML is emitted.
-    // (3) if the document has been closed (insertion point is undefined) then
-    //     the window will not be reopened.  Instead, execution will proceed at
-    //     the end of the virtual document.  This is allowed by the spec but
-    //     only if the onunload refuses to allow an unload, so we treat the
-    //     virtual document as un-unloadable by document.write.
-    // (4) document.write cannot be used to inject scripts, so the
+    // (3) document.write cannot be used to inject scripts, so the
     //     "if there is a pending external script" does not apply.
     //     TODO(kpreid): This is going to change in the SES/client-side case.
     /**
@@ -1020,12 +1035,11 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
      * @param html_varargs according to HTML5, the input to document.write is
      *     varargs, and the HTML is the concatenation of all the arguments.
      */
-    var tameDocWrite = function write(html_varargs) {
+    var tameDocWrite = function write(htmlPieces) {
       // TODO: Do we need to fail early if documentLoaded is undefined.
       var htmlText = concat(arguments);
       if (!insertionPoint) {
-        // Handles case 3 where the document has been closed.
-        insertionPoint = base;
+        reopen();
       }
       if (cdataContentType) {
         // A <script> or <style> element started in one document.write and
@@ -1039,7 +1053,11 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       htmlParser(htmlText);
       return documentLoaded.promise;
     };
-    domicile.writeHook = cajaVM.def(tameDocWrite);
+    domicile.writeHook = cajaVM.def({
+      open: reopen,
+      close: finish,
+      write: tameDocWrite
+    });
     domicile.evaluateUntrustedExternalScript =
       cajaVM.def(evaluateUntrustedExternalScript);
   })(opt_domicile);

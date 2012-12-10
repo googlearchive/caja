@@ -185,6 +185,22 @@
           '}</script>');
     })();
 
+    /**
+     * Test document.write on finished document.
+     */
+    (function () {
+      // TODO(kpreid): Make this sensitive to Issue 1596 once that is fixed.
+      registerGuestTest('testDocumentWriteAfterward',
+          'hello world' +
+          '<script>' +
+          'window.globalGuestTest = function globalGuestTest() {' +
+          '  document.write(\'goodbye world\');' +
+          '  document.close();' +
+          '  assertEquals("goodbye world", ' +
+          '      document.documentElement.textContent);' +
+          '}</script>');
+    })();
+
     readyToTest();
     jsunitRun();
   });

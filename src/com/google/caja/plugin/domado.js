@@ -47,6 +47,7 @@
  * @requires html, html4, htmlSchema
  * @requires WeakMap, Proxy
  * @requires CSS_PROP_BIT_HISTORY_INSENSITIVE
+ * @requires HtmlEmitter
  * @provides Domado
  * @overrides window
  */
@@ -1478,6 +1479,16 @@ var Domado = (function() {
       nodePolicyForeign
     ]);
 
+    // Used for debugging policy decisions; see calls in TameBackedNode.
+    //function TracedNodePolicy(policy, note, source) {
+    //  var wrap = Object.create(policy);
+    //  wrap.trace = [note, source].concat(source && source.trace || []);
+    //  setOwn(wrap, 'toString', function() {
+    //    return policy.toString() + "<<" + wrap.trace + ">>";
+    //  });
+    //  return wrap;
+    //}
+
     /**
      * Add a tamed document implementation to a Gadget's global scope.
      *
@@ -2417,9 +2428,7 @@ var Domado = (function() {
           for (var ancestor = node;
               ancestor;
               ancestor = makeDOMAccessible(ancestor.parentNode)) {
-            if (ancestor === containerNode ||
-                (ancestor.nodeType === 1 &&
-                 idClassPattern.test(ancestor.className))) {
+            if (isContainerNode(ancestor)) {
               // is within the virtual document
               return tameNodeCtor(node);
             } else if (ancestor === doc) {
@@ -3016,9 +3025,7 @@ var Domado = (function() {
         // Determine access policy
         var parent = makeDOMAccessible(node.parentNode);
         var parentPolicy;
-        if (!parent ||
-            idClassPattern.test(parent.className) ||
-            idClassPattern.test(node.className)) {
+        if (!parent || isContainerNode(parent) || isContainerNode(node)) {
           parentPolicy = null;
         } else {
           // Parent is inside the vdoc.
@@ -3030,23 +3037,20 @@ var Domado = (function() {
             parentPolicy.childPolicy.assertRestrictedBy(opt_policy);
           }
           policy = opt_policy;
-          //console.log("", parent, "->", node, "policy explicit",
-          //    policy.toString());
-        } else if (idClassPattern.test(node.className)) {
+          //policy = new TracedNodePolicy(policy, "explicit", null);
+        } else if (isContainerNode(parent)) {
           // Virtual document root -- stop implicit recursion and define the
           // root policy. If we wanted to be able to define a "entire DOM
           // read-only" policy, this is where to hook it in.
           policy = nodePolicyEditable;
-          //console.log("", parent, "->", node, "root policy",
-          //    policy.toString());
+          //policy = new TracedNodePolicy(policy, "child-of-root", null);
         } else if (parentPolicy) {
           policy = parentPolicy.childPolicy;
-          //console.log("", parent, "->", node, "policy via parent",
-          //    parentPolicy.toString(), policy.toString());
+          //policy = new TracedNodePolicy(policy,
+          //    "childPolicy of " + parent.nodeName, parentPolicy);
         } else {
           policy = nodePolicyEditable;
-          //console.log("", parent, "->", node, "policy isolated",
-          //    policy.toString());
+          //policy = new TracedNodePolicy(policy, "isolated", null);
         }
 
         TameNode.call(this, policy);
@@ -4663,7 +4667,7 @@ var Domado = (function() {
             return {document: null, window: null};
           }
 
-          var domicile = privates.contentDomicile = attachDocument(
+          var subDomicile = privates.contentDomicile = attachDocument(
               '-caja-iframe___', naiveUriPolicy, frameFeralDoc,
               optTargetAttributePresets, taming);
           privates.seenContentDocument = frameFeralDoc;
@@ -4676,12 +4680,17 @@ var Domado = (function() {
           while ((child = makeDOMAccessible(frameFeralDoc.lastChild))) {
             frameFeralDoc.removeChild(child);
           }
-          var tdoc = domicile.document;
+          var tdoc = subDomicile.document;
           var thtml = tdoc.createElement('html');
           thtml.appendChild(tdoc.createElement('head'));
           thtml.appendChild(tdoc.createElement('body'));
-          frameFeralDoc.appendChild(domicile.feralNode(thtml));
+          frameFeralDoc.appendChild(subDomicile.feralNode(thtml));
               // cannot do this via pseudo-node
+
+          void HtmlEmitter; // placeholder
+          var emitter = new HtmlEmitter(
+              makeDOMAccessible, subDomicile.htmlEmitterTarget, subDomicile);
+          emitter.finish();
         }
         return privates.contentDomicile;
       }
@@ -5366,21 +5375,33 @@ var Domado = (function() {
         taming.tamesTo(rawEvent, tamedEvent);
         return tamedEvent;
       });
-      TameHTMLDocument.prototype.write = nodeMethod(function () {
-        if (typeof domicile.writeHook !== 'function') {
+      TameHTMLDocument.prototype.write = nodeMethod(function() {
+        if (!domicile.writeHook) {
           throw new Error('document.write not provided for this document');
         }
-        return domicile.writeHook.apply(undefined, arguments);
+        return domicile.writeHook.write.apply(undefined, arguments);
       });
-      TameHTMLDocument.prototype.writeln = nodeMethod(function () {
-        if (typeof domicile.writeHook !== 'function') {
+      TameHTMLDocument.prototype.writeln = nodeMethod(function() {
+        if (!domicile.writeHook) {
           throw new Error('document.writeln not provided for this document');
         }
         // We don't write the \n separately rather than copying args, because
         // the HTML parser would rather get fewer larger chunks.
         var args = Array.prototype.slice.call(arguments);
         args.push("\n");
-        domicile.writeHook.apply(undefined, args);
+        domicile.writeHook.write.apply(undefined, args);
+      });
+      TameHTMLDocument.prototype.open = nodeMethod(function() {
+        if (!domicile.writeHook) {
+          throw new Error('document.open not provided for this document');
+        }
+        return domicile.writeHook.open();
+      });
+      TameHTMLDocument.prototype.close = nodeMethod(function() {
+        if (!domicile.writeHook) {
+          throw new Error('document.close not provided for this document');
+        }
+        return domicile.writeHook.close();
       });
       cajaVM.def(TameHTMLDocument);  // and its prototype
       domicile.setBaseUri = cajaVM.def(function(base) {
@@ -5768,6 +5789,16 @@ var Domado = (function() {
       var idClass = idSuffix.substring(1);
       var idClassPattern = new RegExp(
           '(?:^|\\s)' + idClass.replace(/[\.$]/g, '\\$&') + '(?:\\s|$)');
+      /**
+       * Is this the node whose children are the children of the virtual
+       * document?
+       */
+      function isContainerNode(node) {
+        return node === containerNode ||
+            (node &&
+             node.nodeType === 1 &&
+             idClassPattern.test(node.className));
+      }
       /** A per-gadget class used to separate style rules. */
       domicile.getIdClass = cajaVM.def(function () {
         return idClass;
@@ -6036,7 +6067,7 @@ var Domado = (function() {
         // and only if the window was created by a window.open specifying that,
         // whether or not the relevant toolbar actually is hidden).
         TameWindow.prototype[name] = cajaVM.def({visible: false});
-      })
+      });
 
       cajaVM.def(TameWindow);  // and its prototype
 

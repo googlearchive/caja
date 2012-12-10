@@ -22,7 +22,7 @@ package com.google.caja.plugin;
 public class JQueryTest extends QUnitTestCase {
 
   public final void testCore() throws Exception {
-    runQUnitTestCase("core", 1286);
+    runQUnitTestCase("core", 1285);
     // Current modifications made to test suite:
     //   * Removed unnecessary octal literal.
     // Current failure categories:
@@ -32,6 +32,7 @@ public class JQueryTest extends QUnitTestCase {
     //   * We don't implement XML yet.
     //   * We don't implement document.styleSheets.
     //   * We don't implement document.getElementsByName.
+    //   * (isPlainObject) iframes don't have JS globals.
   }
 
   public final void testCallbacks() throws Exception {
@@ -123,12 +124,11 @@ public class JQueryTest extends QUnitTestCase {
   }
 
   public final void testCSS() throws Exception {
-    runQUnitTestCase("css", 196);
+    runQUnitTestCase("css", 199 /* in Firefox; 202 in Chrome; of 203 */);
     // Current failure categories:
     //   * We don't implement SVG (fill-opacity CSS property).
-    //   * Something doesn't work such that defaultDisplay() in jquery falls
-    //     back to a strategy creating an iframe, which we don't implement.
-    //     This means that .show() and presumably .hide() doesn't work.
+    //   * defaultDisplay() doesn't get the intended answer on Firefox, but
+    //     works on Chrome.
   }
 
   // Currently doesn't work because jQuery needs a PHP sever for ajax tests.
