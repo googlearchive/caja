@@ -44,6 +44,10 @@ import org.openqa.selenium.remote.RemoteWebDriver;
  * Test case class with tools for controlling a web browser running pages from
  * a local web server.
  * <p>
+ * Browser testing is described in more detail at the
+ * <a href="http://code.google.com/p/google-caja/wiki/CajaTesting"
+ *   >CajaTesting wiki page</a>
+ * <p>
  * Useful system properties:
  * <dl>
  *   <dt>caja.test.browser</dt>

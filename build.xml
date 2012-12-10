@@ -21,29 +21,20 @@
   -    ant <rulename>
   - and look for the output in ./ant-* directories.
   -
-  - Valid values for <rulename> are:
-  -   default    :  builds the plugin compiler (pluginc), tests, and docs
-  -   benchmarks :  runs the benchmarks
-  -   brserve    :  starts the server for debugging browser tests
-  -   clean      :  wipes generated files
-  -   demos      :  demo files
-  -   docs       :  javadocs and rule docs
-  -   jars       :  build the binary distribution
-  -   pluginc    :  the plugin compiler
-  -   runtests   :  runs the tests
-  -   runjquery  :  runs the jQuery tests in ES5 mode
-  -   runjqueryui:  runs the jQuery UI tests in ES5 mode
-  
-  -
   - To run with assertions enabled, set the environment variable ANT_FLAGS="-ea"
  -->
 
-<project name="caja" default="default" basedir="."
+<project name="caja" default="jars" basedir="."
          xmlns:artifact="urn:maven-artifact-ant">
+
   <description>
-  A subset of javascript that allow an application to securely embed plugins via
-  a capability based security model.
+Caja allows webapps to safely render untrusted HTML and
+Javascript via a capability based security model.
+For help on building and testing Caja, see:
+    http://code.google.com/p/google-caja/wiki/RunningCaja
+    http://code.google.com/p/google-caja/wiki/CajaTesting
   </description>
+
   <property name="build.sysclasspath" value="ignore" />
 
   <!-- Make the build reproducible/warning-free on newer versions of ant -->
@@ -154,14 +145,11 @@
 
   <!--== rules.  Lowercase are public.  Uppercase are used internally. ==-->
 
-  <target name="default" depends="jars"
-   description="Builds the plugin compiler."/>
-
   <target name="all" depends="docs,jars,demos,runtests"
-   description="Builds the plugin compiler, and documentation."/>
+   description="Builds the plugin compiler and documentation."/>
 
   <target name="clean"
-   description="deletes all generated files leaving only sources">
+   description="Deletes all generated files, leaving only sources.">
     <delete dir="${reports}"/>
     <delete dir="${docs}"/>
     <delete dir="${instr}"/>
@@ -194,13 +182,15 @@
     <mkdir dir="${third_party}/java/htmlparser/lib"/>
   </target>
 
-  <target name="brtest" description="Run just browser tests.">
+  <target name="brtest"
+   description="Runs just browser tests.">
     <antcall target="runtests">
       <param name="test.filter" value="*BrowserTest"/>
     </antcall>
   </target>
 
-  <target name="brserve" description="Run just browser test server.">
+  <target name="brserve"
+   description="Runs just the local HTTP server used by browser tests.">
     <antcall target="runtests">
       <param name="caja.test.serverOnly" value="true"/>
       <!-- Run an arbitrary test to trigger the serverOnly logic -->
@@ -208,7 +198,8 @@
     </antcall>
   </target>
 
-  <target name="brserve+" description="... and a test browser.">
+  <target name="brserve+"
+   description="... and start a test browser.">
     <antcall target="runtests">
       <param name="caja.test.startAndWait" value="true"/>
       <!-- Run an arbitrary test to trigger the startAndWait logic -->
@@ -655,8 +646,7 @@
   </target>
 
   <target name="jars-no-src"
-      depends="pluginc, MinifiedJs, CajolingServlet"
-      description="Place all jars needed to run the cajoler under ${jars}">
+      depends="pluginc, MinifiedJs, CajolingServlet">
     <copy todir="${jars}">
       <fileset dir="${third_party}/java/jakarta_commons">
         <include name="commons-cli.jar"/>
@@ -708,7 +698,8 @@
     </jar>
   </target>
 
-  <target name="jars" depends="jars-no-src">
+  <target name="jars" depends="jars-no-src"
+   description="Builds Caja jars.">
     <jar destfile="${jars}/pluginc-src.jar" basedir="${src}"/>
   </target>
 
