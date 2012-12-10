@@ -330,6 +330,27 @@ document.write(
   });
 </script>
 
+<!-- Test that relatively obscure entities (not in the &lt;&gt;&amp; short list)
+     work. The acutes in particular test case-sensitivity. &plonk; is unknown.
+-->
+<div id="testEntities" class="testcontainer"
+    >&larr;&AMP;&eacute;&Eacute;&plonk;</div>
+<script type="text/javascript">
+  jsunitRegister('testEntities',
+                 function testEntities() {
+    var el = document.getElementById('testEntities');
+    var decoded = '\u2190&\u00E9\u00C9&plonk;';
+
+    assertEquals(decoded, el.textContent);
+
+    // dynamic case -- uses html-sanitizer
+    el.innerHTML += '&larr;&AMP;&eacute;&Eacute;&plonk;';
+    assertEquals(decoded + decoded, el.textContent);
+
+    pass('testEntities');
+  });
+</script>
+
 <p id="testWindowMutable" class="testcontainer">
 <script type="text/javascript">window.myProp = 1234;</script>
 </p>

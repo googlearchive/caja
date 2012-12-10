@@ -50,17 +50,34 @@ var html = (function(html4) {
   }
 
   // The keys of this object must be 'quoted' or JSCompiler will mangle them!
+  // This is a partial list -- lookupEntity() uses the host browser's parser
+  // (when available) to implement full entity lookup.
+  // Note that entities are in general case-sensitive; the uppercase ones are
+  // explicitly defined by HTML5 (presumably as compatibility).
   var ENTITIES = {
     'lt': '<',
+    'LT': '<',
     'gt': '>',
+    'GT': '>',
     'amp': '&',
-    'nbsp': '\240',
+    'AMP': '&',
     'quot': '"',
-    'apos': '\''
+    'apos': '\'',
+    'nbsp': '\240'
   };
 
+  // Patterns for types of entity/character reference names.
   var decimalEscapeRe = /^#(\d+)$/;
   var hexEscapeRe = /^#x([0-9A-Fa-f]+)$/;
+  // contains every entity per http://www.w3.org/TR/2011/WD-html5-20110113/named-character-references.html
+  var safeEntityNameRe = /^[A-Za-z][A-za-z0-9]+$/;
+  // Used as a hook to invoke the browser's entity parsing. <textarea> is used
+  // because its content is parsed for entities but not tags.
+  // TODO(kpreid): This retrieval is a kludge and leads to silent loss of
+  // functionality if the document isn't available.
+  var entityLookupElement =
+      ('undefined' !== typeof window && window['document'])
+          ? window['document'].createElement('textarea') : null;
   /**
    * Decodes an HTML entity.
    *
@@ -97,15 +114,22 @@ var html = (function(html4) {
    * @return {string} a single unicode code-point as a string.
    */
   function lookupEntity(name) {
-    name = name.toLowerCase();  // TODO: &pi; is different from &Pi;
+    // TODO: entity lookup as specified by HTML5 actually depends on the
+    // presence of the ";".
     if (ENTITIES.hasOwnProperty(name)) { return ENTITIES[name]; }
     var m = name.match(decimalEscapeRe);
     if (m) {
       return String.fromCharCode(parseInt(m[1], 10));
     } else if (!!(m = name.match(hexEscapeRe))) {
       return String.fromCharCode(parseInt(m[1], 16));
+    } else if (entityLookupElement && safeEntityNameRe.test(name)) {
+      entityLookupElement.innerHTML = '&' + name + ';';
+      var text = entityLookupElement.textContent;
+      ENTITIES[name] = text;
+      return text;
+    } else {
+      return '&' + name + ';';
     }
-    return '';
   }
 
   function decodeOneEntity(_, name) {
