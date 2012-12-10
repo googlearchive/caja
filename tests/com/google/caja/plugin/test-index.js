@@ -58,7 +58,7 @@
   var bare_tests = [
     'modules-test.html',
   ];
-  
+
   var headless_rhino_tests = [
     'csslexer-test.html',
     'cssparser_test.html',
@@ -72,7 +72,45 @@
     'sanitizecss_test.html',
     'uri_test.html',
   ];
-  
+
+  var jquery = [
+    'core',
+    'callbacks',
+    'deferred',
+    'support',
+    'data',
+    'queue',
+    'attributes',
+    'event',
+    'selector',
+    'traversing',
+    'manipulation',
+    'css',
+    'ajax',
+    'effects',
+    'offset',
+    'dimensions',
+    'exports'
+  ];
+
+  var jqueryui = [
+    'accordion',
+    'autocomplete',
+    'button',
+    'core',
+    'datepicker',
+    'dialog',
+    'effects',
+    'menu',
+    'position',
+    'progressbar',
+    'slider',
+    'spinner',
+    'tabs',
+    'tooltip',
+    'widget'
+  ];
+
   var tests_ul = document.getElementById('tests');
 
   function addSeparator() {
@@ -107,34 +145,50 @@
     addItem(html);
   }
 
-  var i, item;
-
-  for (i = 0; i < headless_rhino_tests.length; i++) {
-    addBare(headless_rhino_tests[i]);
+  function addQUnit(text, rawUrl) {
+    addModed('browser-test-case.html?jQuery=true&test-case=' + rawUrl, text,
+        'es5');
   }
+
+  function forEach(array, callback) {
+    for (var i = 0; i < array.length; i++) {
+      callback(array[i]);
+    }
+  }
+
+  forEach(headless_rhino_tests, addBare);
 
   addSeparator();
 
-  for (i = 0; i < bare_tests.length; i++) {
-    addBare(bare_tests[i]);
-  }
+  forEach(bare_tests, addBare);
 
   addSeparator();
 
-  for (i = 0; i < test_cases.length; i++) {
-    item = test_cases[i];
+  forEach(test_cases, function(item) {
     addModed('browser-test-case.html?test-case=' + item[0], item[0], item[1]);
-  }
+  });
 
   addSeparator();
 
-  for (i = 0; i < test_drivers.length; i++) {
-    item = test_drivers[i];
+  forEach(test_drivers, function(item) {
     addModed('browser-test-case.html?test-driver=' + item[0], item[0], item[1]);
-  }
+  });
 
   addSeparator()
 
   addModed('cajajs-bare-test.html?', 'cajajs-bare-test.html', null);
+
+  addSeparator();
+
+  forEach(jquery, function(test) {
+    addQUnit('jQuery ' + test,
+             '/ant-lib/js/jqueryjs/test/' + test + '-uncajoled.html');
+  })
+
+  forEach(jqueryui, function(test) {
+    addQUnit('jQuery UI ' + test,
+             '/third_party/js/jquery-ui/tests/unit/' + test + '/' + test +
+                 '.html');
+  })
 
 })();
