@@ -981,18 +981,6 @@ var Domado = (function() {
     var setOwn = domitaModules.setOwn;
     var canHaveEnumerableAccessors = domitaModules.canHaveEnumerableAccessors;
 
-    function traceStartup(var_args) {
-      //// In some versions, Firebug console's methods have no .apply. In other
-      //// versions, Function.prototype.apply cannot be used on them!
-      //if (typeof console !== 'undefined') {
-      //  if (console.debug.apply) {
-      //    console.debug.apply(console, arguments);
-      //  } else {
-      //    Function.prototype.apply.call(console.debug, console, arguments);
-      //  }
-      //}
-    }
-
     function inherit(sub, souper) {
       sub.prototype = Object.create(souper.prototype);
       Object.defineProperty(sub.prototype, "constructor", {
@@ -2926,7 +2914,8 @@ var Domado = (function() {
         return inert;
       }
 
-      traceStartup("DT: about to make TameNode");
+      // We have now set up most of the 'support' facilities and are starting to
+      // define node taming classes.
 
       /**
        * Base class for a Node wrapper.  Do not create directly -- use the
@@ -2948,7 +2937,6 @@ var Domado = (function() {
         return this;
       }
       inertCtor(TameNode, Object, 'Node');
-      traceStartup("DT: about to DPA TameNode");
       definePropertiesAwesomely(TameNode.prototype, {
         baseURI: {
           enumerable: canHaveEnumerableAccessors,
@@ -2962,7 +2950,6 @@ var Domado = (function() {
           get: nodeMethod(function() { return tameDocument; })
         }
       });
-      traceStartup("DT: about to set toString for TameNode");
       /**
        * Print this object according to its tamed class name; also note for
        * debugging purposes if it is actually the prototype instance.
@@ -3007,10 +2994,7 @@ var Domado = (function() {
       // abstract TameNode.prototype.getElementsByClassName
       // abstract TameNode.prototype.childNodes
       // abstract TameNode.prototype.attributes
-      traceStartup("DT: about to defend TameNode");
       cajaVM.def(TameNode);  // and its prototype
-
-      traceStartup("DT: about to make TameBackedNode");
 
       /**
        * A tame node that is backed by a real node.
@@ -3243,8 +3227,6 @@ var Domado = (function() {
       }
       cajaVM.def(TameBackedNode);  // and its prototype
 
-      traceStartup("DT: about to make TamePseudoNode");
-
       /**
        * A fake node that is not backed by a real DOM node.
        * @constructor
@@ -3304,9 +3286,7 @@ var Domado = (function() {
       });
       cajaVM.def(TamePseudoNode);  // and its prototype
 
-      traceStartup("DT: done fundamental nodes");
-
-      traceStartup("DT: about to make TameOpaqueNode");
+      // Restricted node types:
 
       // An opaque node is traversible but not manipulable by guest code. This
       // is the default taming for unrecognized nodes or nodes not explicitly
@@ -3334,7 +3314,7 @@ var Domado = (function() {
       };
       cajaVM.def(TameForeignNode);
 
-      traceStartup("DT: about to make TameTextNode");
+      // Non-element node types:
 
       function TameTextNode(node) {
         assert(node.nodeType === 3);
@@ -3366,7 +3346,6 @@ var Domado = (function() {
       inertCtor(TameCommentNode, TameBackedNode, 'Comment');
       cajaVM.def(TameCommentNode);  // and its prototype
 
-      traceStartup("DT: about to make TameBackedAttributeNode");
       /**
        * Plays the role of an Attr node for TameElement objects.
        */
@@ -3442,7 +3421,6 @@ var Domado = (function() {
           TameBackedAttributeNode.prototype, m, notImplementedNodeMethod);
       });
       cajaVM.def(TameBackedAttributeNode);  // and its prototype
-      traceStartup("DT: after TameBackedAttributeNode");
 
       // Register set handlers for onclick, onmouseover, etc.
       function registerElementScriptAttributeHandlers(tameElementPrototype) {
@@ -3480,7 +3458,8 @@ var Domado = (function() {
         }
       }
 
-      traceStartup("DT: about to make TameElement");
+      // Elements in general and specific elements:
+
       /**
        * See comments on TameBackedNode regarding return value.
        * @constructor
@@ -3814,8 +3793,6 @@ var Domado = (function() {
         tabIndex: NP.rw
       });
       cajaVM.def(TameElement);  // and its prototype
-
-      traceStartup("DT: starting defineElement");
 
       /**
        * Define a taming class for a subclass of HTMLElement.
@@ -4530,8 +4507,6 @@ var Domado = (function() {
         });
       })();
 
-      traceStartup("DT: done with canvas");
-
       defineTrivialElement('HTMLDListElement');
       defineTrivialElement('HTMLDivElement');
 
@@ -5026,11 +5001,14 @@ var Domado = (function() {
         domClass: 'HTMLUnknownElement'
       });
       
-      traceStartup('DT: done with specific elements');
+      // We are now done with all of the specialized element taming classes.
 
       // Oddball constructors. There are only two of these and we implement
       // both. (Caveat: In actual browsers, new Image().constructor == Image
       // != HTMLImageElement. We don't implement that.)
+      // TODO(kpreid): There are more oddball constructors in HTML5, e.g. Audio,
+      // and a notation for it in HTML5's WebIDL. Generalize this to support
+      // that.
       
       // Per https://developer.mozilla.org/en-US/docs/DOM/Image as of 2012-09-24
       function TameImageFun(width, height) {
@@ -5055,7 +5033,7 @@ var Domado = (function() {
       }
       cajaVM.def(TameOptionFun);
 
-      traceStartup('DT: starting event taming');
+      // Taming of Events:
 
       // coerce null and false to 0
       function fromInt(x) { return '' + (x | 0); }
@@ -5210,15 +5188,12 @@ var Domado = (function() {
       cajaVM.def(TameCustomHTMLEvent);  // and its prototype
 
       function TameHTMLDocument(doc, container, domain) {
-        traceStartup("DT: TameHTMLDocument begin");
         TamePseudoNode.call(this);
 
         np(this).feralDoc = doc;
         np(this).feralContainerNode = container;
         np(this).onLoadListeners = [];
         np(this).onDCLListeners = [];
-
-        traceStartup("DT: TameHTMLDocument done private");
 
         var tameContainer = defaultTameNode(container);
         np(this).tameContainerNode = tameContainer;
@@ -5542,7 +5517,7 @@ var Domado = (function() {
         return null;
       });
 
-      traceStartup("DT: preparing Style");
+      // Taming of Styles:
 
       // defer construction
       var TameStyle = null;
@@ -5669,8 +5644,6 @@ var Domado = (function() {
           return false;
         }
 
-        traceStartup("DT: about to TameComputedStyle");
-
         TameComputedStyle = function (rawElement, pseudoElement) {
           rawElement = rawElement || document.createElement('div');
           TameStyle.call(
@@ -5709,7 +5682,6 @@ var Domado = (function() {
         cajaVM.def(TameComputedStyle);  // and its prototype
       }
 
-      traceStartup("DT: about to make XMLHttpRequest");
       // Note: nodeClasses.XMLHttpRequest is a ctor that *can* be directly
       // called by cajoled code, so we do not use inertCtor().
       nodeClasses.XMLHttpRequest = domitaModules.TameXMLHttpRequest(
@@ -5723,7 +5695,6 @@ var Domado = (function() {
           naiveUriPolicy,
           function () { return domicile.pseudoLocation.href; });
       cajaVM.def(nodeClasses.XMLHttpRequest);
-      traceStartup("DT: done for XMLHttpRequest");
 
       /**
        * given a number, outputs the equivalent css text.
@@ -5893,8 +5864,6 @@ var Domado = (function() {
         // Custom attribute indicating Caja is active.
         cajaVersion: '1.0'
         });
-
-      traceStartup("DT: done tameNavigator");
 
       /**
        * Set of allowed pseudo elements as described at
@@ -6080,7 +6049,6 @@ var Domado = (function() {
       Object.freeze(nodeClasses);
           // fail hard if late-added item wouldn't be frozen
 
-      traceStartup("DT: about to do TameHTMLDocument");
       var tameDocument = new TameHTMLDocument(
           document,
           containerNode,
@@ -6088,7 +6056,6 @@ var Domado = (function() {
           // by untangling the cyclic dependence between
           // TameWindow and TameDocument
           String(undefined || 'nosuchhost.invalid'));
-      traceStartup("DT: finished TameHTMLDocument");
       domicile.htmlEmitterTarget = containerNode;
 
       var tameWindow = new TameWindow();
@@ -6191,8 +6158,6 @@ var Domado = (function() {
         );
         domicile.getCssContainer().appendChild(element);
       })();
-
-      traceStartup("DT: all done");
 
       return domicile;
     }
