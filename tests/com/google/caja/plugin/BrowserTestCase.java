@@ -27,6 +27,7 @@ import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Joiner;
 import org.mortbay.jetty.servlet.Context;
@@ -156,6 +157,18 @@ public abstract class BrowserTestCase extends CajaTestCase {
     testBuildVersion = version;
   }
 
+  static protected PrintStream errStream = null;
+
+  // The ant junit runner captures System.err.  This returns a handle
+  // to fd 2 for messages we want to go to the real stderr.
+  static protected PrintStream getErr() {
+    if (errStream == null) {
+      errStream = new PrintStream(
+          new FileOutputStream(FileDescriptor.err), true);
+    }
+    return errStream;
+  }
+
   /**
    * Start the web server and browser, go to pageName, call driveBrowser(driver,
    * pageName), and then clean up.
@@ -180,18 +193,14 @@ public abstract class BrowserTestCase extends CajaTestCase {
     if (params != null && params.length > 0) {
       page += "?" + Joiner.on("&").join(params);
     }
-    // The test runner may catch output so go directly to file descriptor 2.
-    @SuppressWarnings("resource")
-    PrintStream err = new PrintStream(
-        new FileOutputStream(FileDescriptor.err), false, "UTF-8");
-    err.println("- Try " + page);
+    getErr().println("- Try " + page);
     String result = "";
     boolean passed = false;
     try {
       try {
         localServer.start();
       } catch (Exception e) {
-        err.println(e);
+        getErr().println(e);
         throw e;
       }
 
@@ -201,6 +210,8 @@ public abstract class BrowserTestCase extends CajaTestCase {
 
       if (driver == null) {
         driver = makeDriver();
+        driver.manage().timeouts().pageLoadTimeout(15, TimeUnit.SECONDS);
+        driver.manage().timeouts().setScriptTimeout(5, TimeUnit.SECONDS);
       }
       driver.get(page);
       if (flag(START_AND_WAIT)) {
@@ -210,11 +221,11 @@ public abstract class BrowserTestCase extends CajaTestCase {
       result = driveBrowser(driver, data, pageName);
       passed = true;
     } finally {
+      localServer.stop();
       if (!passed && driver != null) {
         // It's helpful for debugging to keep failed windows open.
         switchToNewWindow(driver);
       }
-      localServer.stop();
     }
     return result;
   }
@@ -224,8 +235,11 @@ public abstract class BrowserTestCase extends CajaTestCase {
   protected void switchToNewWindow(WebDriver driver) {
     JavascriptExecutor jsexec = (JavascriptExecutor) driver;
     String name = "btcwin" + (windowSeq++);
-    jsexec.executeScript("window.open('', '" + name + "')");
-    driver.switchTo().window(name);
+    Boolean result = (Boolean) jsexec.executeScript(
+        "return !!window.open('', '" + name + "')");
+    if (result) {
+      driver.switchTo().window(name);
+    }
   }
 
   static protected boolean flag(String name) {
@@ -271,41 +285,44 @@ public abstract class BrowserTestCase extends CajaTestCase {
    */
   protected String driveBrowser(
       final WebDriver driver, Object data, final String pageName) {
-    poll(20000, 200, new Check() {
+    // 10s because test-domado-dom startup is very slow in es53 mode
+    countdown(10000, 200, new Countdown() {
       @Override public String toString() { return "startup"; }
-      public boolean run() {
+      public int run() {
         List<WebElement> readyElements = driver.findElements(
             By.className("readytotest"));
-        return readyElements.size() != 0;
+        return readyElements.size() == 0 ? 1 : 0;
       }
     });
 
-    poll(20000, 1000, new Check() {
+    countdown(2000, 500, new Countdown() {
       private List<WebElement> clickingList = null;
       @Override public String toString() {
         return "clicking done (Remaining elements = " +
             renderElements(clickingList) + ")";
       }
-      public boolean run() {
+      public int run() {
         clickingList = driver.findElements(By.xpath(
             "//*[contains(@class,'clickme')]/*"));
         for (WebElement e : clickingList) {
           e.click();
         }
-        return clickingList.isEmpty();
+        return clickingList.size();
       }
     });
 
-    poll(80000, 1000, new Check() {
+    // TODO(felix8a): reduce this timeout.  the problem is that progress
+    // is very slow on test pages that do a lot of caja.load() calls.
+    countdown(15000, 200, new Countdown() {
       private List<WebElement> waitingList = null;
       @Override public String toString() {
         return "completion (Remaining elements = " +
             renderElements(waitingList) + ")";
       }
-      public boolean run() {
+      public int run() {
         waitingList =
             driver.findElements(By.xpath("//*[contains(@class,'waiting')]"));
-        return waitingList.isEmpty();
+        return waitingList.size();
       }
     });
 
@@ -316,16 +333,22 @@ public abstract class BrowserTestCase extends CajaTestCase {
   }
 
   /**
-   * Run 'c' every 'intervalMillis' milliseconds until it returns true or
-   * 'timeoutSecs' seconds have passed (in which case, fail).
+   * Run 'c' every 'intervalMillis' until it returns 0,
+   * or 'timeoutMillis' have passed since the value has changed.
    */
-  protected static void poll(
-      int timeoutMillis, int intervalMillis, Check c) {
-    int rounds = 0;
-    int limit = timeoutMillis / intervalMillis;
-    for (; rounds < limit; rounds++) {
-      if (c.run()) {
-        break;
+  protected static void countdown(
+      int timeoutMillis, int intervalMillis, Countdown c) {
+    int lastValue = -1;
+    long endTime = System.currentTimeMillis() + timeoutMillis;
+    int value;
+    while ((value = c.run()) != 0) {
+      long now = System.currentTimeMillis();
+      if (value != lastValue) {
+        endTime = now + timeoutMillis;
+        lastValue = value;
+      }
+      if (endTime < now) {
+        fail(timeoutMillis + " ms passed while waiting for: " + c);
       }
       try {
         Thread.sleep(intervalMillis);
@@ -333,9 +356,6 @@ public abstract class BrowserTestCase extends CajaTestCase {
         // keep going
       }
     }
-    assertTrue(
-        timeoutMillis + " ms passed while waiting for: " + c + ".",
-        rounds < limit);
   }
 
   protected static String renderElements(List<WebElement> elements) {
@@ -372,8 +392,8 @@ public abstract class BrowserTestCase extends CajaTestCase {
     // Adds none but may be overridden.
   }
 
-  public interface Check {
-    boolean run();
+  public interface Countdown {
+    int run();
   }
 
   private WebDriver makeDriver() throws MalformedURLException {

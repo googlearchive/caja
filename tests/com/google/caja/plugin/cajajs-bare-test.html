@@ -31,7 +31,7 @@
   but here we're using classes on scripts, to avoid creating a <body> node
   -->
 <script class="readytotest"></script>
-<script id="signal" class="waiting"></script>
+<script id="testNoBody" class="waiting"></script>
 
 <script>
 (function () {
@@ -47,7 +47,6 @@
     assertTrue(!document.body);
     caja.load(null, uriPolicy, function (frame) {
       jsunitPass('testNoBody');
-      document.getElementById('signal').className = '';
     });
   });
 

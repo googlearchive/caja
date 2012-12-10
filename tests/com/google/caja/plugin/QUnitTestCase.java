@@ -22,20 +22,20 @@ public abstract class QUnitTestCase extends BrowserTestCase {
   protected String driveBrowser(final WebDriver driver, Object passCount, final String pageName) {
     final String testResultId = "qunit-testresult-caja-guest-0___";
     // Find the reporting div
-    poll(20000, 200, new Check() {
+    countdown(20000, 200, new Countdown() {
       @Override public String toString() { return "startup"; }
-      public boolean run() {
+      public int run() {
         List<WebElement> readyElements = driver.findElements(
             By.id(testResultId));
-        return readyElements.size() != 0;
+        return readyElements.size() == 0 ? 1 : 0;
       }
     });
-  
+
     // Let it run as long as the report div's text is changing
     WebElement statusElement = driver.findElement(By.id(testResultId));
     String currentStatus = statusElement.getText();
     String lastStatus = null;
-  
+
     // Check every second.
     // If the text starts with "Tests completed" then
     //    exit the loop and check that the right number passed
@@ -55,7 +55,7 @@ public abstract class QUnitTestCase extends BrowserTestCase {
         chances = limit;
       }
     }
-  
+
     String result = passCount != null
         ? "\n" + passCount + " tests"
         : "passed, 0 failed";
@@ -79,7 +79,7 @@ public abstract class QUnitTestCase extends BrowserTestCase {
                 getTestURL(testCase)),
             "jQuery=true"));
   }
-  
+
   /**
    * Generate a full URL from a test case name.
    * @param testCase The parameter to runQUnitTestCase.

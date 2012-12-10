@@ -44,7 +44,7 @@ var testConsole = {
 
 var clientSideLoaded = false;
 
-registerTest('testVersionSkew', function testVersionSkew() {
+registerTest('testMinorVersionSkew', function testMinorVersionSkew() {
   caja.initialize({
     cajaServer: '/caja',
     console: testConsole,
@@ -56,9 +56,10 @@ registerTest('testVersionSkew', function testVersionSkew() {
     frame.code('es53-test-guest.js', 'text/javascript')
          .api(extraImports)
          .run(function(result) {
-           // If we succeed in running, we fail the test!
-           fail('testVersionSkew');
-           clearInterval(checkErrorsInterval);
+           // Minor version skew should succeed
+           assertEquals(12, result);
+           assertContains('Build version error', consoleMessages);
+           jsunitPass('testMinorVersionSkew');
          });
   });
 });
@@ -67,18 +68,3 @@ registerTest('testVersionSkew', function testVersionSkew() {
 
 readyToTest();
 jsunitRun();
-
-// Check for error strings in the console and pass if the expected error
-// is seen.
-
-function checkErrors() {
-  // TODO(ihab.awad): If we can pass the expected error message on the URL
-  // to the test, we can look for custom errors for each individual case. We
-  // would have to URL-encode/decode the expected message.
-  if (clientSideLoaded && /Build version error/.test(consoleMessages)) {
-    jsunitPass('testVersionSkew');
-    clearInterval(checkErrorsInterval);
-  }
-}
-
-checkErrorsInterval = setInterval(checkErrors, 125);

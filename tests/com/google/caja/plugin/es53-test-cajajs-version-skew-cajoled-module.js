@@ -38,9 +38,9 @@ registerTest('testVersionSkew', function testVersionSkew() {
       try {
         frame.cajoled('/', script, undefined)
              .run(function(result) {
+               clearInterval(checkErrorsInterval);
                // If we succeed in running, we fail the test!
                fail('testVersionSkew');
-               clearInterval(checkErrorsInterval);
              });
       } catch (e) {
         if (/Version error/.test(e)) {

@@ -77,90 +77,12 @@ public abstract class UniversalBrowserTests extends BrowserTestCase {
     getCajaStatic().rewrite(path, bv, newVersion);
   }
 
-  public void testVersionSkewCajaJs() throws Exception {
-    // Changing the version baked into caja.js will cause it to load the
-    // wrongly-named files for the host and guest frames, which should cause
-    // it to never make progress in load() or whenReady() calls.
-    addVersionRewrite("/caja.js", "0000");
-    addVersionRewrite("/caja-minified.js", "0000");
-    runTestDriver("es53-test-cajajs-never-starts.js", es5Mode);
-  }
-
-  public void testWrongSupportingResources() throws Exception {
-    // Placing the wrong resources files where caja.js is expecting them should
-    // cause it to never make progress in load() or whenReady() calls.
-    getCajaStatic().link(
-        "/" + bv + "/non-existent.js",
-        "/" + bv + "/es53-guest-frame.opt.js");
-    getCajaStatic().link(
-        "/" + bv + "/non-existent.js",
-        "/" + bv + "/es53-taming-frame.opt.js");
-    runTestDriver("es53-test-cajajs-never-starts.js", es5Mode);
-  }
-
-  public void testAlternateLocationSupportingResources()
-      throws Exception {
-    // Placing the wrong resources files where caja.js is expecting them should
-    // cause it to never make progress in load() or whenReady() calls.
-    getCajaStatic().link(
-        "/" + bv + "/es53-guest-frame.opt.js",
-        "/" + bv + "/alternative/es53-guest-frame.opt.js");
-    getCajaStatic().link(
-        "/" + bv + "/es53-taming-frame.opt.js",
-        "/" + bv + "/alternative/es53-taming-frame.opt.js");
-    getCajaStatic().link(
-        "/" + bv + "/non-existent.js",
-        "/" + bv + "/es53-guest-frame.opt.js");
-    getCajaStatic().link(
-        "/" + bv + "/non-existent.js",
-        "/" + bv + "/es53-taming-frame.opt.js");
-    runTestDriver("es53-test-cajajs-never-starts.js", es5Mode);
-  }
-
   public void testVersionSkewTamingFrame() throws Exception {
     // Changing the version baked into the taming frame JS will cause a
     // version mismatch error in caja.js.
     addVersionRewrite("/" + bv + "/es53-taming-frame.opt.js", "0000");
     runTestDriver("es53-test-cajajs-version-skew-js-files.js", es5Mode);
-  }
-
-  public void testVersionSkewCajolerResponse() throws Exception {
-    // Changing the version baked into *all* the JS will cause an incorrect
-    // version number to be sent to the cajoler, which should then refuse
-    // to compile the given content and return an error instead.
-    addVersionRewrite("/caja.js", "0000");
-    addVersionRewrite("/caja-minified.js", "0000");
-    getCajaStatic().link(
-        "/" + bv + "/es53-guest-frame.opt.js",
-        "/0000/es53-guest-frame.opt.js");
-    getCajaStatic().link(
-        "/" + bv + "/es53-taming-frame.opt.js",
-        "/0000/es53-taming-frame.opt.js");
-    addVersionRewrite("/0000/es53-guest-frame.opt.js", "0000");
-    addVersionRewrite("/0000/es53-taming-frame.opt.js", "0000");
-    runTestDriver("es53-test-cajajs-version-skew-cajoler-response.js",
-        es5Mode);
-  }
-
-  public void testVersionMinorSkewCajolerResponse() throws Exception {
-    // Changing the version baked into *all* the JS will cause a different
-    // minor version number to be sent to the cajoler, which should emit a
-    // LINT warning when compiling the given content
-    String minorVariant = bv + "M3";
-    addVersionRewrite("/caja.js", minorVariant);
-    addVersionRewrite("/caja-minified.js", minorVariant);
-    getCajaStatic().link(
-        "/" + bv + "/es53-guest-frame.opt.js",
-        "/" + minorVariant + "/es53-guest-frame.opt.js");
-    getCajaStatic().link(
-        "/" + bv + "/es53-taming-frame.opt.js",
-        "/" + minorVariant + "/es53-taming-frame.opt.js");
-    addVersionRewrite(
-        "/" + minorVariant + "/es53-guest-frame.opt.js", minorVariant);
-    addVersionRewrite(
-        "/" + minorVariant + "/es53-taming-frame.opt.js", minorVariant);
-    runTestDriver("es53-test-cajajs-minor-version-skew-cajoler-response.js",
-        es5Mode);
+    // TODO(felix8a): es5Mode is not used by this test?
   }
 
   public void testClientUriRewriting() throws Exception {

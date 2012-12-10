@@ -55,9 +55,9 @@ registerTest('testVersionSkew', function testVersionSkew() {
     frame.code('es53-test-guest.js', 'text/javascript')
          .api(extraImports)
          .run(function(result) {
+           clearInterval(checkErrorsInterval);
            // If we succeed in running, we fail the test!
            fail('testVersionSkew');
-           clearInterval(checkErrorsInterval);
          });
   });
 });
@@ -75,8 +75,8 @@ function checkErrors() {
   // to the test, we can look for custom errors for each individual case. We
   // would have to URL-encode/decode the expected message.
   if (clientSideLoaded && /Build version error/.test(consoleMessages)) {
-    jsunitPass('testVersionSkew');
     clearInterval(checkErrorsInterval);
+    jsunitPass('testVersionSkew');
   }
 }
 

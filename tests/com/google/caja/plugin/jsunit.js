@@ -136,7 +136,7 @@ function jsunitFilter(filter) {
 var jsunitTestsRun = false;
 
 /** Run tests. */
-function jsunitRun(opt_testNames) {
+function jsunitRun(opt_testNames, opt_idClass) {
   if (jsunitTestsRun) { return; }
   jsunitTestsRun = true;
 
@@ -178,6 +178,7 @@ function jsunitRun(opt_testNames) {
       firstFailure = firstFailure || e;
       jsunit.failCount++;
       jsunit.updateStatus();
+      jsunitFinished(testName, 'failed', opt_idClass);
       if (typeof console !== 'undefined') {
         console.log('FAIL: ' + testName);
         logToConsole(e);
@@ -224,23 +225,27 @@ function jsunitCallback(aFunction, opt_id, opt_frame) {
            : callback;
 }
 
-function jsunitPass(id) {
-  jsunit.pass(id);
-  var node = document.getElementById(id) || makeResultDiv(id);
-  node.appendChild(document.createTextNode('Passed ' + id));
+function jsunitFinished(id, result, opt_idClass) {
+  var node = document.getElementById(id);
+  if (!node && opt_idClass) {
+    node = document.getElementById(id + '-' + opt_idClass);
+  }
+  if (!node) {
+    node = makeResultDiv(id);
+  }
+  node.appendChild(document.createTextNode(' ' + result + ' ' + id));
   var cl = node.className || '';
   cl = cl.replace(/\b(clickme|waiting)\b\s*/g, '');
-  cl += ' passed';
-  node.className = cl;
+  node.className = cl + ' ' + result;
+}
+
+function jsunitPass(id) {
+  jsunitFinished(id, 'passed');
+  jsunit.pass(id);
 }
 
 function jsunitFail(id) {
-  var node = document.getElementById(id) || makeResultDiv(id);
-  node.appendChild(document.createTextNode('Failed ' + id));
-  var cl = node.className || '';
-  cl = cl.replace(/\b(clickme|waiting)\b\s*/g, '');
-  cl += ' failed';
-  node.className = cl;
+  jsunitFinished(id, 'failed');
   fail(id);
 }
 

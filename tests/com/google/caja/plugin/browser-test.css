@@ -40,6 +40,12 @@
   border: 2px solid #c0ffc0;
 }
 
+/* test container - test failed */
+.failed {
+  background: #f99;
+  border: 2px solid #f99;
+}
+
 /* test container - test not run in this environment */
 .skipped {
   background: #777;

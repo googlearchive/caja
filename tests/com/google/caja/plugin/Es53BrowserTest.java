@@ -28,6 +28,45 @@ public class Es53BrowserTest extends UniversalBrowserTests {
     runTestCase("es53-test-precajole-guest.html", false);
   }
 
+  public void testVersionSkewCajolerResponse() throws Exception {
+    // Changing the version baked into *all* the JS will cause an incorrect
+    // version number to be sent to the cajoler, which should then refuse
+    // to compile the given content and return an error instead.
+    addVersionRewrite("/caja.js", "0000");
+    addVersionRewrite("/caja-minified.js", "0000");
+    getCajaStatic().link(
+        "/" + bv + "/es53-guest-frame.opt.js",
+        "/0000/es53-guest-frame.opt.js");
+    getCajaStatic().link(
+        "/" + bv + "/es53-taming-frame.opt.js",
+        "/0000/es53-taming-frame.opt.js");
+    addVersionRewrite("/0000/es53-guest-frame.opt.js", "0000");
+    addVersionRewrite("/0000/es53-taming-frame.opt.js", "0000");
+    runTestDriver("es53-test-cajajs-version-skew-cajoler-response.js",
+        false);
+  }
+
+  public void testVersionMinorSkewCajolerResponse() throws Exception {
+    // Changing the version baked into *all* the JS will cause a different
+    // minor version number to be sent to the cajoler, which should emit a
+    // LINT warning when compiling the given content
+    String minorVariant = bv + "M3";
+    addVersionRewrite("/caja.js", minorVariant);
+    addVersionRewrite("/caja-minified.js", minorVariant);
+    getCajaStatic().link(
+        "/" + bv + "/es53-guest-frame.opt.js",
+        "/" + minorVariant + "/es53-guest-frame.opt.js");
+    getCajaStatic().link(
+        "/" + bv + "/es53-taming-frame.opt.js",
+        "/" + minorVariant + "/es53-taming-frame.opt.js");
+    addVersionRewrite(
+        "/" + minorVariant + "/es53-guest-frame.opt.js", minorVariant);
+    addVersionRewrite(
+        "/" + minorVariant + "/es53-taming-frame.opt.js", minorVariant);
+    runTestDriver("es53-test-cajajs-minor-version-skew-cajoler-response.js",
+        false);
+  }
+
   public void testVersionSkewGuestFrame() throws Exception {
     // Changing the version baked into the guest frame JS will cause a
     // version mismatch error in caja.js.
