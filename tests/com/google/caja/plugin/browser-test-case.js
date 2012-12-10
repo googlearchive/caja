@@ -402,7 +402,12 @@ function createExtraImportsForTesting(frameGroup, frame) {
   }
   
   standardImports.inES5Mode = inES5Mode;
-  
+  standardImports.proxiesAvailableToTamingCode = inES5Mode
+      // In ES5, Domado runs in the taming frame's real global env
+      ? typeof Proxy !== 'undefined'
+      // ES5/3 provides proxies.
+      : true;
+
   var ___ = frame.iframe.contentWindow.___;
 
   // Give unfiltered DOM access so we can check the results of actions.

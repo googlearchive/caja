@@ -65,7 +65,7 @@
 </form>
 <script type="text/javascript">
   // <form> element's namespaceness is implemented via Proxy
-  jsunitRegisterIf(typeof Proxy !== 'undefined',
+  jsunitRegisterIf(proxiesAvailableToTamingCode,
                    'testFormElements',
                    function testFormElements() {
     var f = document.getElementById('testFormElements');
