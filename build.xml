@@ -1493,12 +1493,7 @@ For help on building and testing Caja, see:
   <!-- Compile the GWT backend and copies to the WAR -->
   <target name="PlaygroundBE" depends="pluginc,PlaygroundJars">
     <copy todir="${war}/WEB-INF" file="web.xml" />
-    <copy todir="${war}/WEB-INF/lib">
-      <fileset dir="${jars}">
-        <include name="htmlparser.jar"/>
-        <include name="precajole.jar"/>
-      </fileset>
-    </copy>
+    <copy todir="${war}/WEB-INF/lib" file="${jars}/htmlparser.jar" />
     <mkdir dir="${war}/WEB-INF/classes" />
     <copy todir="${war}/WEB-INF/classes">
       <fileset dir="${lib}">
@@ -1553,6 +1548,7 @@ For help on building and testing Caja, see:
         <include name="css/*.css" />
       </fileset>
     </copy>
+    <copy todir="${war}/WEB-INF/lib" file="${jars}/precajole.jar" />
   </target>
 
   <target name="alt-playground">
