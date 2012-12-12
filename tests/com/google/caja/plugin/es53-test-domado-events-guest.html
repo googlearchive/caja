@@ -206,6 +206,58 @@
   });
 </script>
 
+<p class="clickme testcontainer" id="testRepeatedHandlers">
+  <b id="testRepeatedHandlers-label">testRepeatedHandlers - click me
+      <span id="testRepeatedHandlers-count"></span> times</b>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testRepeatedHandlers',
+                 function testRepeatedHandlers() {
+    // an element containing the one being clicked on
+    var container = document.getElementById('testRepeatedHandlers');
+
+    // result gathering/scheduling
+    var counter = document.getElementById('testRepeatedHandlers-count');
+    var hits = [];
+    var registeredToProceed = false;
+    var listener = jsunitCallback(function listener(event) {
+      hits.push([event.type, event.eventPhase]);
+      if (!registeredToProceed && event.type === 'mouseup') {
+        registeredToProceed = true;
+        setTimeout(jsunitCallback(function() {
+          registeredToProceed = false;
+          fns.shift()();
+          counter.textContent = fns.length;
+        }), 0);
+      }
+    });
+
+    container.addEventListener('mousedown', function distraction() {}, true);
+    container.addEventListener('mousedown', listener, true);
+    container.addEventListener('mousedown', listener, true);  // duplicate noop
+    container.addEventListener('mousedown', listener, false);
+    container.addEventListener('mousedown', listener, false);  // duplicate noop
+    container.addEventListener('mouseup', listener, true);
+    container.addEventListener('mouseup', listener, false);
+
+    var fns = [function() {
+      // correct ordering, and no duplicates
+      assertEquals('first',
+          'mousedown,1,mousedown,3,mouseup,1,mouseup,3', String(hits));
+      hits = [];
+      // This removeEventListener should remove only one of the four listeners,
+      // which matches the parameters exactly.
+      container.removeEventListener('mousedown', listener, false);
+    }, function() {
+      assertEquals('second',
+          'mousedown,1,mouseup,1,mouseup,3', String(hits));
+      hits = [];
+      pass('testRepeatedHandlers');
+    }];
+    counter.textContent = fns.length;
+  });
+</script>
+
 <p class="waiting testcontainer" id="testTimeoutAndInterval">
   Timeouts and Intervals<br>
 </p>
@@ -288,7 +340,7 @@
 <script type="text/javascript">
   window.passTestOnclickHandler = function passTestOnclickHandler() {
     pass('testOnclickHandler');
-  }
+  };
   jsunitRegister('testOnclickHandler',
                  function testOnclickHandler() {
     // Nothing to do here.  pass call in testOnclickHandler HTML.
@@ -511,28 +563,29 @@ TODO(felix8a): fix javascript url handling
 <script type="text/javascript">
   jsunitRegister('testCustomEvents',
                  function testCustomEvents() {
-    assertTrue('createEvent exists', !!document.createEvent);
+    withFailureOnLeakedEvent('howdy', function() {
+      assertTrue('createEvent exists', !!document.createEvent);
 
-    // Event dispatch for custom events is synchronous
-    var fired = false;
-    var eventToSend = undefined;
-    var myHandler = jsunitCallback(function (event) {
-      // assertEquals("received correct event", eventToSend, event);
-      assertEquals("received correct details", 'hiya', event.details);
-      fired = true;
+      // Event dispatch for custom events is synchronous
+      var fired = false;
+      var eventToSend = undefined;
+      var myHandler = jsunitCallback(function (event) {
+        // assertEquals("received correct event", eventToSend, event);
+        assertEquals("received correct details", 'hiya', event.details);
+        fired = true;
+      });
+
+      var eventTarget = document.getElementById('testCustomEvents');
+      eventTarget.addEventListener('howdy', myHandler, true);
+
+      eventToSend = document.createEvent('HTMLEvents');
+      eventToSend.details = 'hiya';
+      eventToSend.initEvent('howdy', true, true);
+      assertEquals('initEvent correct', 'hiya', eventToSend.details);
+
+      eventTarget.dispatchEvent(eventToSend);
+      assertTrue("event did fire", fired);
     });
-
-    var eventTarget = document.getElementById('testCustomEvents');
-    eventTarget.addEventListener('howdy', myHandler, true);
-
-    eventToSend = document.createEvent('HTMLEvents');
-    eventToSend.details = 'hiya';
-    eventToSend.initEvent('howdy', true, true);
-    assertEquals('initEvent correct', 'hiya', eventToSend.details);
-
-    eventTarget.dispatchEvent(eventToSend);
-    assertTrue("event did fire", fired);
-
     pass('testCustomEvents');
   });
 </script>

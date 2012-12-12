@@ -2858,34 +2858,56 @@ var Domado = (function() {
 
       // Implementation of EventTarget::addEventListener
       function tameAddEventListener(name, listener, useCapture) {
-        var feral = np(this).feral;
-        np(this).policy.requireEditable();
-        if (!np(this).wrappedListeners) { np(this).wrappedListeners = []; }
+        name = String(name);
         useCapture = Boolean(useCapture);
-        var wrappedListener = makeEventHandlerWrapper(np(this).feral, listener);
-        wrappedListener = bridal.addEventListener(
-            np(this).feral, name, wrappedListener, useCapture);
-        wrappedListener._d_originalListener = listener;
-        np(this).wrappedListeners.push(wrappedListener);
+        var privates = np(this);
+        var feral = privates.feral;
+        privates.policy.requireEditable();
+        var list = privates.wrappedListeners;
+        if (!list) {
+          list = privates.wrappedListeners = [];
+        }
+        if (searchForListener(list, name, listener, useCapture) === null) {
+          var wrappedListener = makeEventHandlerWrapper(
+              privates.feral, listener);
+          wrappedListener = bridal.addEventListener(
+              privates.feral, name, wrappedListener, useCapture);
+          list.push({
+            n: name,
+            l: listener,
+            c: useCapture,
+            wrapper: wrappedListener
+          });
+        }
       }
 
       // Implementation of EventTarget::removeEventListener
       function tameRemoveEventListener(name, listener, useCapture) {
-        var self = TameNodeT.coerce(this);
-        var feral = np(self).feral;
-        np(this).policy.requireEditable();
-        if (!np(this).wrappedListeners) { return; }
-        var wrappedListener = null;
-        for (var i = np(this).wrappedListeners.length; --i >= 0;) {
-          if (np(this).wrappedListeners[+i]._d_originalListener === listener) {
-            wrappedListener = np(this).wrappedListeners[+i];
-            arrayRemove(np(this).wrappedListeners, i, i);
-            break;
+        name = String(name);
+        useCapture = Boolean(useCapture);
+        var privates = np(this);
+        var feral = privates.feral;
+        privates.policy.requireEditable();
+        var list = privates.wrappedListeners;
+        if (!list) { return; }
+        var match = searchForListener(list, name, listener, useCapture);
+        if (match !== null) {
+          bridal.removeEventListener(
+              privates.feral, name, list[match].wrapper, useCapture);
+          arrayRemove(list, match, match);
+        }
+      }
+
+      function searchForListener(list, name, listener, useCapture) {
+        for (var i = list.length; --i >= 0;) {
+          var record = list[+i];
+          if (record.n === name &&
+              record.l === listener &&
+              record.c === useCapture) {
+            return i;
           }
         }
-        if (!wrappedListener) { return; }
-        bridal.removeEventListener(
-            np(this).feral, name, wrappedListener, useCapture);
+        return null;
       }
 
       // A map of tamed node classes, keyed by DOM Level 2 standard name, which
@@ -5090,6 +5112,7 @@ var Domado = (function() {
             return bridal.untameEventType(String(ep(this).feral.type));
           })
         },
+        eventPhase: P_e_view(Number),
         target: {
           enumerable: true,
           get: eventMethod(function () {

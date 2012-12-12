@@ -12,22 +12,49 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-caja.initialize({
-  cajaServer: '/caja',
-  debug: true,
-  forceES5Mode: inES5Mode
-});
-caja.load(
-    createDiv(),
-    {
-      rewrite: function (uri, uriEffect, loaderType, hints) { return uri; }
-    },
-    function(frame) {
-      frame.code('es53-test-domado-events-guest.html')
-           .api(createExtraImportsForTesting(caja, frame))
-           .run(function(result) {
-                 readyToTest();
-                 jsunitRun();
-                 asyncRequirements.evaluate();
-               });
-});
+(function() {
+  caja.initialize({
+    cajaServer: '/caja',
+    debug: true,
+    forceES5Mode: inES5Mode
+  });
+  var container = createDiv();
+  caja.load(
+      container,
+      {
+        rewrite: function (uri, uriEffect, loaderType, hints) { return uri; }
+      },
+      function(frame) {
+        var extraImports = createExtraImportsForTesting(caja, frame);
+
+        extraImports.withFailureOnLeakedEvent =
+            frame.tame(frame.markFunction(function(name, body) {
+          var oops = false;
+          function listener() {
+            // exception deferred to avoid catch in event handler
+            oops = true;
+          }
+          // useCapture=true to be less (accidentally-) interceptible
+          container.addEventListener(name, listener, true);
+          container.addEventListener(name, listener, false);
+          try {
+            var res = body();
+            if (oops) {
+              fail(name + ' event leaked to host');
+            }
+            return res;
+          } finally {
+            container.removeEventListener(name, listener, true);
+            container.removeEventListener(name, listener, false);
+          }
+        }));
+
+        frame.code('es53-test-domado-events-guest.html')
+             .api(extraImports)
+             .run(function(result) {
+                   readyToTest();
+                   jsunitRun();
+                   asyncRequirements.evaluate();
+                 });
+  });
+}());
