@@ -69,6 +69,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     ie8nodes = true;
   }
 
+  var readPropertyAsHostFrame = cajaInt.readPropertyAsHostFrame;
   var domado = Domado(makeDomadoRuleBreaker());
 
   var unsafe = false;
@@ -490,7 +491,11 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
         o = { node___: node };
       }
       o.v___ = function (p) {
-        return node[p];
+        // In Chrome 22.0.1229.94, node.childNodes gets a different
+        // prototype depending on the context of the calling function;
+        // once we no longer care about that, we can return node[p]
+        // instead.
+        return readPropertyAsHostFrame(node, p);
       };
       o.w___ = function (p, v) {
         node[p] = v;

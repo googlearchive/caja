@@ -156,7 +156,8 @@ var caja = (function () {
     'joinUrl': joinUrl,
     'loadCajaFrame': loadCajaFrame,
     'prepareContainerDiv': prepareContainerDiv,
-    'unregister': unregister
+    'unregister': unregister,
+    'readPropertyAsHostFrame': readPropertyAsHostFrame
   };
 
   //----------------
@@ -632,6 +633,15 @@ var caja = (function () {
           typeof specimen + ': ' + (opt_name || specimen));
     }
     return specimen;
+  }
+
+  /**
+   * Read the given property of the given object. Exists only to work
+   * around browser bugs where the answer depends on who's asking the
+   * question.
+   */
+  function readPropertyAsHostFrame(object, property) {
+    return object[property];
   }
 
   /**
