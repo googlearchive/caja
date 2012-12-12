@@ -1062,6 +1062,11 @@ For help on building and testing Caja, see:
       <input file="${src}/com/google/caja/apitaming/cajaTamingGoogleLoader.js"/>
     </transform>
     <transform>
+      <output file="${lib}/com/google/caja/apitaming/google.load.loaderFactory.jslint.tstamp" language="jslint"/>
+      <output file="${lib}/com/google/caja/apitaming/google.load.loaderFactory.opt.js" language="javascript" renderer="minify"/>
+      <input file="${src}/com/google/caja/apitaming/google.load.loaderFactory.js"/>
+    </transform>
+    <transform>
       <output file="${lib}/com/google/caja/apitaming/google.maps.policyFactory.jslint.tstamp" language="jslint"/>
       <output file="${lib}/com/google/caja/apitaming/google.maps.policyFactory.opt.js" language="javascript" renderer="minify"/>
       <input file="${src}/com/google/caja/apitaming/google.maps.policyFactory.js"/>
@@ -1075,6 +1080,16 @@ For help on building and testing Caja, see:
       <output file="${lib}/com/google/caja/apitaming/google.visualization.policyFactory.jslint.tstamp" language="jslint"/>
       <output file="${lib}/com/google/caja/apitaming/google.visualization.policyFactory.opt.js" language="javascript" renderer="minify"/>
       <input file="${src}/com/google/caja/apitaming/google.visualization.policyFactory.js"/>
+    </transform>
+    <transform>
+      <output file="${lib}/com/google/caja/apitaming/gapi.client.load.loaderFactory.jslint.tstamp" language="jslint"/>
+      <output file="${lib}/com/google/caja/apitaming/gapi.client.load.loaderFactory.opt.js" language="javascript" renderer="minify"/>
+      <input file="${src}/com/google/caja/apitaming/gapi.client.load.loaderFactory.js"/>
+    </transform>
+    <transform>
+      <output file="${lib}/com/google/caja/apitaming/gapi.client.urlshortener.policyFactory.jslint.tstamp" language="jslint"/>
+      <output file="${lib}/com/google/caja/apitaming/gapi.client.urlshortener.policyFactory.opt.js" language="javascript" renderer="minify"/>
+      <input file="${src}/com/google/caja/apitaming/gapi.client.urlshortener.policyFactory.js"/>
     </transform>
     <replace dir="${lib.caja}/plugin" propertyFile="${lib.caja}/reporting/buildInfo.properties" >
       <replacefilter token="%VERSION%" property="svnVersion" />

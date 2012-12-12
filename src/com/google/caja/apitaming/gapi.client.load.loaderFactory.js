@@ -17,7 +17,7 @@
  * Loader factory for Google APIs loader
  *
  * @author ihab.awad@gmail.com
- * @overrides caja, google, console
+ * @overrides caja, google, gapi, console
  */
 
 caja.tamingGoogleLoader.addLoaderFactory(function(utils) {
@@ -32,7 +32,7 @@ caja.tamingGoogleLoader.addLoaderFactory(function(utils) {
     function maybeCall() {
       if (callback && isLoadClient && isOnload) {
         try { callback.call({}); } catch (e) { /* ignore */ }
-        callback = {}
+        callback = {};
       }
     }
 
@@ -51,7 +51,7 @@ caja.tamingGoogleLoader.addLoaderFactory(function(utils) {
         isOnload = true;
         maybeCall();
       }
-    }
+    };
   })();
 
   function addToSafeWindow(safeWindow) {
@@ -74,7 +74,7 @@ caja.tamingGoogleLoader.addLoaderFactory(function(utils) {
       topLevelCallback.setCallback(callback);
       gapi.load('client', function() {
         topLevelCallback.signalLoadClient();
-      })
+      });
     });
 
     safeWindow.gapi.client.load = mf(function(name, version, callback) {
