@@ -28,17 +28,18 @@ public class JQueryUITest extends QUnitTestCase {
   }
 
   public final void testAccordion() throws Exception {
-    runQUnitTestCase("accordion", 283);
+    runQUnitTestCase("accordion", 285);
     // Current failure categories:
-    //   * various
+    //   * unexamined
   }
 
   public final void testAutocomplete() throws Exception {
-    runQUnitTestCase("autocomplete", 112);
+    runQUnitTestCase("autocomplete", 120);
     // Current modifications made to test suite:
     //   * Work around lost-signal problems due to lack of event simulation
     // Current failure categories:
-    //   * event simulation not available
+    //   * keystroke response discrepancies
+    //   * unexamined
   }
 
   public final void testButton() throws Exception {
@@ -52,18 +53,17 @@ public class JQueryUITest extends QUnitTestCase {
   }
 
   public final void testDatepicker() throws Exception {
-    runQUnitTestCase("datepicker", 369);
+    runQUnitTestCase("datepicker", 398);
     // Current failure categories:
-    //   * "Unrecognized event type Events"
-    //   * "Unrecognized event type MouseEvents"
+    //   * keystroke response discrepancies
+    //   * parseDate
   }
 
   public final void testDialog() throws Exception {
-    runQUnitTestCase("dialog", 200 /* 207 on Chrome */);
+    runQUnitTestCase("dialog", 217 /* Firefox; ??? on Chrome */);
     // Current failure categories:
-    //   * "Unrecognized event type Events"
-    //   * "Unrecognized event type MouseEvents"
-    //   * Some numeric discrepancies (more on Firefox than Chrome)
+    //   * "event.initMouseEvent is not a function"
+    //   * Some numeric discrepancies
   }
 
   public final void testEffects() throws Exception {
@@ -73,9 +73,9 @@ public class JQueryUITest extends QUnitTestCase {
   }
 
   public final void testMenu() throws Exception {
-    runQUnitTestCase("menu", 146);
+    runQUnitTestCase("menu", 164);
     // Current failure categories:
-    //   * "Unrecognized event type Events"
+    //   * unexamined
   }
 
   public final void testPosition() throws Exception {
@@ -93,14 +93,13 @@ public class JQueryUITest extends QUnitTestCase {
   }
 
   public final void testSpinner() throws Exception {
-    runQUnitTestCase("spinner", 106);
+    runQUnitTestCase("spinner", 139);
     // Current failure categories:
-    //   * "Unrecognized event type Events"
-    //   * various
+    //   * unexamined
   }
 
   public final void testTabs() throws Exception {
-    runQUnitTestCase("tabs", 379);
+    runQUnitTestCase("tabs", 488);
     // Current modifications made to test suite:
     //   * Work around lost-signal problems due to lack of event simulation
     // Current failure categories:

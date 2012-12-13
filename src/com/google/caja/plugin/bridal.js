@@ -313,61 +313,53 @@ var bridalMaker = function (makeDOMAccessible, document) {
    *
    * <p>Replaces
    * W3C <code>Element::addEventListener</code> and
-   * IE <code>Element::attachEvent</code>.
+   * IE <code>Element::attachEvent</code>, as well as the corresponding remove
+   * operations (see return value).
    *
    * @param {HTMLElement} element a native DOM element.
    * @param {string} type a string identifying the event type.
    * @param {boolean Element::function (event)} handler an event handler.
    * @param {boolean} useCapture whether the user wishes to initiate capture.
-   * @return {boolean Element::function (event)} the handler added.  May be
-   *     a wrapper around the input.
+   * @return {function} A function which performs the corresponding
+   *         removeEventListener. Due to wrappers, removeEventListener cannot
+   *         be used directly.
    */
   function addEventListener(element, type, handler, useCapture) {
     element = makeDOMAccessible(element);
     type = String(type);
     var tameType = tameEventType(type, false, element.tagName);
+    var isNowCustom = type !== tameType;
+    var r1 = subAddEventListener(element, isNowCustom, tameType, handler,
+        useCapture);
+    var r2 = null;
+    if (!isNowCustom) {
+      r2 = subAddEventListener(element, true,
+          tameEventType(type, true, element.tagName), handler, useCapture);
+    }
+    return r2 ? function removeBoth() { r1(); r2(); } : r1;
+  }
+  function subAddEventListener(
+      element, isCustom, tameType, handler, useCapture) {
     if (featureAttachEvent) {
       // TODO(ihab.awad): How do we emulate 'useCapture' here?
-      if (type !== tameType) {
+      if (isCustom) {
         var wrapper = eventHandlerTypeFilter(handler, tameType);
         element.attachEvent('ondataavailable', wrapper);
-        return wrapper;
+        return function() {
+          element.detachEvent('ondataavailable', wrapper);
+        };
       } else {
-        element.attachEvent('on' + type, handler);
-        return handler;
+        element.attachEvent('on' + tameType, handler);
+        return function() {
+          element.detachEvent('on' + tameType, handler);
+        };
       }
     } else {
       // FF2 fails if useCapture not passed or is not a boolean.
       element.addEventListener(tameType, handler, useCapture);
-      return handler;
-    }
-  }
-
-  /**
-   * Remove an event listener function from an element.
-   *
-   * <p>Replaces
-   * W3C <code>Element::removeEventListener</code> and
-   * IE <code>Element::detachEvent</code>.
-   *
-   * @param element a native DOM element.
-   * @param type a string identifying the event type.
-   * @param handler a function acting as an event handler.
-   * @param useCapture whether the user wishes to initiate capture.
-   */
-  function removeEventListener(element, type, handler, useCapture) {
-    element = makeDOMAccessible(element);
-    type = String(type);
-    var tameType = tameEventType(type, false, element.tagName);
-    if (featureAttachEvent) {
-      // TODO(ihab.awad): How do we emulate 'useCapture' here?
-      if (tameType !== type) {
-        element.detachEvent('ondataavailable', handler);
-      } else {
-        element.detachEvent('on' + type, handler);
-      }
-    } else {
-      element.removeEventListener(tameType, handler, useCapture);
+      return function() {
+        element.removeEventListener(tameType, handler, useCapture);
+      };
     }
   }
 
@@ -744,7 +736,6 @@ var bridalMaker = function (makeDOMAccessible, document) {
 
   return {
     addEventListener: addEventListener,
-    removeEventListener: removeEventListener,
     initEvent: initEvent,
     dispatchEvent: dispatchEvent,
     cloneNode: cloneNode,

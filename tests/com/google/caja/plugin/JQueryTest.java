@@ -69,7 +69,6 @@ public class JQueryTest extends QUnitTestCase {
     //   * URI rewriting is visible to the guest.
     //   * Simple event handler rewriting is visible to the guest.
     //   * We don't implement XML yet.
-    //   * Unknown - "Second radio was checked when clicked" - .click() problem?
     //   * Rejection of HTML5 autofocus attribute assignment is visible.
     //   * Removing style= attributes is misbehaving according to jQuery.
     //   * We don't support tabindex on non-form-elements yet (HTML5).
@@ -79,13 +78,12 @@ public class JQueryTest extends QUnitTestCase {
   }
 
   public final void testEvent() throws Exception {
-    runQUnitTestCase("event", 381);
+    runQUnitTestCase("event", 383 /* Firefox; 390? Chrome */);
     // Current failure categories:
     //   * Various lost-signal failures:
     //        in 'bind(),live(),delegate() with non-null,defined data'
     //        live() and delegate() tests
     //        trigger() tests
-    //   * We don't implement document.createEvent of other than 'HTMLEvents'
     //   * We don't implement src= iframes yet.
     //   * jQuery reports leak in 'bind(name, false), unbind(name, false)'
     //   * submit listeners not firing in 'trigger(type, [data], [fn])'

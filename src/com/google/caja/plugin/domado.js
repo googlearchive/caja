@@ -2870,13 +2870,13 @@ var Domado = (function() {
         if (searchForListener(list, name, listener, useCapture) === null) {
           var wrappedListener = makeEventHandlerWrapper(
               privates.feral, listener);
-          wrappedListener = bridal.addEventListener(
+          var remove = bridal.addEventListener(
               privates.feral, name, wrappedListener, useCapture);
           list.push({
             n: name,
             l: listener,
             c: useCapture,
-            wrapper: wrappedListener
+            remove: remove
           });
         }
       }
@@ -2892,8 +2892,7 @@ var Domado = (function() {
         if (!list) { return; }
         var match = searchForListener(list, name, listener, useCapture);
         if (match !== null) {
-          bridal.removeEventListener(
-              privates.feral, name, list[match].wrapper, useCapture);
+          list[match].remove();
           arrayRemove(list, match, match);
         }
       }
@@ -5374,23 +5373,37 @@ var Domado = (function() {
         var node = np(this).feralDoc.getElementById(id);
         return defaultTameNode(node);
       });
-      // http://www.w3.org/TR/DOM-Level-2-Events/events.html
-      // #Events-DocumentEvent-createEvent
-      TameHTMLDocument.prototype.createEvent = nodeMethod(function (type) {
+
+      // As far as we know, creating any particular event type is harmless; but
+      // this whitelist exists to protect against novel extensions which may
+      // have unwanted behavior and/or interactions we are not aware of.
+      // Note also that our initEvent taming rewrites the event .type, so that
+      // e.g. a "click" event is "click_custom___" and will not trigger host
+      // event handlers and so on.
+      var eventTypeWhitelist = {
+        // Info sources:
+        // https://developer.mozilla.org/en-US/docs/DOM/document.createEvent#Notes
+        // http://www.w3.org/TR/DOM-Level-2-Events/events.html
+        'Events': 0, 'Event': 0,
+        'UIEvents': 0, 'UIEvent': 0,
+        'MouseEvents': 0, 'MouseEvent': 0,
+        // omitted MutationEvent, not particularly likely to be desirable
+        'HTMLEvents': 0,
+        'KeyEvents': 0, 'KeyboardEvent': 0
+      };
+      // http://www.w3.org/TR/DOM-Level-2-Events/events.html#Events-DocumentEvent-createEvent
+      TameHTMLDocument.prototype.createEvent = nodeMethod(function(type) {
         type = String(type);
-        if (type !== 'HTMLEvents') {
-          // See https://developer.mozilla.org/en/DOM/document.createEvent#Notes
-          // for a long list of event ypes.
-          // See http://www.w3.org/TR/DOM-Level-2-Events/events.html
-          // #Events-eventgroupings
-          // for the DOM2 list.
-          throw new Error('Unrecognized event type ' + type);
+        if (!eventTypeWhitelist.hasOwnProperty(type)) {
+          throw new Error('Domado: Non-whitelisted event type "' + type + '"');
         }
         var document = np(this).feralDoc;
         var rawEvent;
         if (document.createEvent) {
           rawEvent = document.createEvent(type);
         } else {
+          // For IE; ondataavailable is a placeholder. See bridal.js for related
+          // code.
           rawEvent = document.createEventObject();
           rawEvent.eventType = 'ondataavailable';
         }
@@ -5398,6 +5411,7 @@ var Domado = (function() {
         taming.tamesTo(rawEvent, tamedEvent);
         return tamedEvent;
       });
+
       TameHTMLDocument.prototype.write = nodeMethod(function() {
         if (!domicile.writeHook) {
           throw new Error('document.write not provided for this document');

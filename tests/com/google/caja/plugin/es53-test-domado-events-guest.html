@@ -569,14 +569,13 @@ TODO(felix8a): fix javascript url handling
       // Event dispatch for custom events is synchronous
       var fired = false;
       var eventToSend = undefined;
-      var myHandler = jsunitCallback(function (event) {
+
+      var eventTarget = document.getElementById('testCustomEvents');
+      eventTarget.addEventListener('howdy', jsunitCallback(function (event) {
         // assertEquals("received correct event", eventToSend, event);
         assertEquals("received correct details", 'hiya', event.details);
         fired = true;
-      });
-
-      var eventTarget = document.getElementById('testCustomEvents');
-      eventTarget.addEventListener('howdy', myHandler, true);
+      }), true);
 
       eventToSend = document.createEvent('HTMLEvents');
       eventToSend.details = 'hiya';
@@ -584,7 +583,7 @@ TODO(felix8a): fix javascript url handling
       assertEquals('initEvent correct', 'hiya', eventToSend.details);
 
       eventTarget.dispatchEvent(eventToSend);
-      assertTrue("event did fire", fired);
+      assertTrue('event did fire', fired);
     });
     pass('testCustomEvents');
   });
@@ -621,6 +620,42 @@ TODO(felix8a): fix javascript url handling
 </script>
 
 -->
+
+<p id="testDispatchedNoncustom" class="testcontainer">
+  Programmatically dispatched mouse by
+  <input id="testDispatchedNoncustom-c" type="checkbox">.dispatchEvent()
+</p>
+<script type="text/javascript">
+  jsunitRegister('testDispatchedNoncustom',
+                 function testDispatchedNoncustom() {
+    withFailureOnLeakedEvent('click', function() {
+       // Event dispatch for custom events is synchronous
+      var fired = false;
+      var eventToSend = undefined;
+
+      var eventTarget = document.getElementById('testDispatchedNoncustom-c');
+      eventTarget.addEventListener('click', jsunitCallback(function (event) {
+        // assertEquals("received correct event", eventToSend, event);
+        assertEquals("received correct details", 'hiya', event.details);
+        fired = true;
+      }), true);
+
+      eventToSend = document.createEvent('MouseEvents');
+      eventToSend.details = 'hiya';
+      eventToSend.initEvent('click', true, true);
+      // Should be initMouseEvent, but we don't implement that yet.
+      //eventToSend.initMouseEvent('click', true, true, window, 1, 100, 0, 0, 0,
+      //    false, false, false, false, 0, null);
+      //assertEquals('initEvent correct', 100, eventToSend.screenX);
+
+      assertEquals('check initial state', false, eventTarget.checked);
+      eventTarget.dispatchEvent(eventToSend);
+      assertTrue('event did fire', fired);
+      assertEquals('check final state not changed', false, eventTarget.checked);
+    });
+    pass('testDispatchedNoncustom');
+  });
+</script>
 
 <script type="text/javascript">
   jsunitRun();
