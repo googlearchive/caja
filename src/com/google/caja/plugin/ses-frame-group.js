@@ -387,7 +387,9 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
         // TODO(kpreid): needs to return completion value unless we
         // deprecate that feature.
         return Q.ref(guestWin.cajaVM.compileExpr(
-          '(function () {' + theContent + '})()'));
+          // End of line required to ensure linecomments in theContent
+          // do not escape away the closing curlies in the expression
+          '(function () {' + theContent + '\n})()'));
 
       } else if (contentType === 'text/html') {
         // importsAgain always === imports, so ignored

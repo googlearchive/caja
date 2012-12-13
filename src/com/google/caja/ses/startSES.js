@@ -700,7 +700,9 @@ ses.startSES = function(global,
      * from the text to be compiled.
      */
     function compileModule(modSrc, opt_sourcePosition) {
-      var exprSrc = '(function() {' + modSrc + '}).call(this)';
+      // Note the EOL after modSrc to prevent trailing line comment in modSrc
+      // eliding the rest of the wrapper.
+      var exprSrc = '(function() {' + modSrc + '\n}).call(this)';
 
       // Follow the pattern in compileExpr
       var wrapperSrc = securableWrapperSrc(exprSrc, opt_sourcePosition);
@@ -725,7 +727,9 @@ ses.startSES = function(global,
       var body = params.pop();
       body = String(body || '');
       params = params.join(',');
-      var exprSrc = '(function(' + params + '\n){' + body + '})';
+      // Note the EOL after modSrc to prevent trailing line comment in body
+      // eliding the rest of the wrapper.
+      var exprSrc = '(function(' + params + '\n){' + body + '\n})';
       return compileExpr(exprSrc)(sharedImports);
     }
     FakeFunction.prototype = UnsafeFunction.prototype;

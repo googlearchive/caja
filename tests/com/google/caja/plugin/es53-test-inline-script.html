@@ -24,17 +24,29 @@
   // This test uses dynamic scripts, and so cannot work in ES5/3 mode.
   jsunitRegisterIf(inES5Mode,
                    'testDocumentWriteRecursive',
-                   function testDocumentWriteRecursive () {
+                   function testDocumentWriteRecursive() {
     var testContainer = document.getElementById("testDocumentWriteRecursive");
   
-    assertEquals("Full text", "Hello, World!", testContainer.innerText);
+    assertEquals('Full text', 'Hello, World!', testContainer.innerText);
 
     var bElements = testContainer.getElementsByTagName("B");
-    assertEquals("Number of B elements", 1, bElements.length);
+    assertEquals('Number of B elements', 1, bElements.length);
 
-    assertEquals("B element content", "Hello,", bElements[0].innerText);
+    assertEquals('B element content', 'Hello,', bElements[0].innerText);
 
     pass('testDocumentWriteRecursive');
+  });
+</script>
+
+<div class="testcontainer" id="testTrailingLineComment">
+<script>
+    window.result = 'trailing line comment';// delibrate comment</script>
+</div>
+<script>
+  jsunitRegister('testTrailingLineComment',
+                 function testTrailingLineComment() {
+    assertEquals('Full text', 'trailing line comment', window.result);
+    pass('testTrailingLineComment');
   });
 
   // jsunit complains if there are zero tests
