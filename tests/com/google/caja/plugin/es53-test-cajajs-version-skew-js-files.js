@@ -39,7 +39,9 @@ var testConsole = {
 
 registerTest('testVersionSkew', function testVersionSkew() {
   caja.initialize({
-    cajaServer: '/caja',
+    server: '/caja',
+    resources: '/caja/testing/skew-0000',
+    forceES5Mode: inES5Mode,
     console: testConsole
   });
   caja.load(undefined, undefined, function (frame) {

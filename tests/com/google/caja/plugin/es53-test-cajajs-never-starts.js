@@ -22,9 +22,14 @@
 
 var testFailed = true;
 
+var match = /resources=([^&=]+)/.exec(location.search);
+var resources = match ? match[1] : '/caja';
+
 registerTest('testNeverStarts', function testNeverStarts() {
   caja.initialize({
-    cajaServer: '/caja'
+    server: '/caja',
+    resources: resources,
+    forceES5Mode: inES5Mode,
   });
   testFailed = false;
   caja.whenReady(function() {

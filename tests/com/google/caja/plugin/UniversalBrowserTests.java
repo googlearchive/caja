@@ -60,29 +60,33 @@ public abstract class UniversalBrowserTests extends BrowserTestCase {
     runTestCase("es53-test-basic-functions-guest.html", es5Mode);
   }
 
-  // Several tests below will start a test server with modified versions
-  // of js files.  This has potential to interact badly with the browser
-  // cache since we're re-using the same browser.  But we're ok because:
-  //   1. The test server always says Pragma: no-cache, which either
-  //      prevents the resource from entering the cache, or forces the
-  //      browser to revalidate with If-Modified-Since.
-  //   2. When the test server serves a modified resource, we declare it
-  //      has modification time = 0, which makes jetty's ResourceHandler
-  //      ignore If-Modified-Since from the browser.  Subsequent browser
-  //      requests for the same resource will have If-Modified-Since: 0,
-  //      which is always superseded by the current state of the resource.
-
-  protected void addVersionRewrite(String path, String newVersion)
-      throws Exception {
-    getCajaStatic().rewrite(path, bv, newVersion);
-  }
-
-  public void testVersionSkewTamingFrame() throws Exception {
+  public void testVersionSkewJsFiles() throws Exception {
     // Changing the version baked into the taming frame JS will cause a
     // version mismatch error in caja.js.
-    addVersionRewrite("/" + bv + "/es53-taming-frame.opt.js", "0000");
     runTestDriver("es53-test-cajajs-version-skew-js-files.js", es5Mode);
-    // TODO(felix8a): es5Mode is not used by this test?
+    // TODO(felix8a): test taming.js right but guest.js wrong
+  }
+
+  public void testVersionSkewCajaJs() throws Exception {
+    // Changing the version baked into caja.js will cause it to load the
+    // wrongly-named files for the host and guest frames, which should cause
+    // it to never make progress in load() or whenReady() calls.
+    runTestDriver("es53-test-cajajs-never-starts.js", es5Mode,
+        "cajajs=/caja/testing/skew-0000/caja.js");
+  }
+
+  public void testVersionSkewNonexistentResources() throws Exception {
+    // Placing the wrong resources files where caja.js is expecting them should
+    // cause it to never make progress in load() or whenReady() calls.
+    runTestDriver("es53-test-cajajs-never-starts.js", es5Mode,
+        "resources=/caja/testing/nonexistent");
+  }
+
+  public void testVersionSkewWrongResources() throws Exception {
+    // Placing the wrong resources files where caja.js is expecting them should
+    // cause it to never make progress in load() or whenReady() calls.
+    runTestDriver("es53-test-cajajs-never-starts.js", es5Mode,
+        "resources=/caja/testing/skew-0000");
   }
 
   public void testClientUriRewriting() throws Exception {

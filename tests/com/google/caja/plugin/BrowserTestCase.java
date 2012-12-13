@@ -19,7 +19,6 @@ import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.LocalServer;
-import com.google.caja.util.RewritingResourceHandler;
 
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
@@ -33,6 +32,7 @@ import com.google.common.base.Joiner;
 import org.mortbay.jetty.servlet.Context;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.UnsupportedCommandException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -141,13 +141,8 @@ public abstract class BrowserTestCase extends CajaTestCase {
 
   @Override
   public void tearDown() throws Exception {
-    localServer.getCajaStatic().clear();
     setTestBuildVersion(null);
     super.tearDown();
-  }
-
-  protected RewritingResourceHandler getCajaStatic() {
-    return localServer.getCajaStatic();
   }
 
   /**
@@ -214,8 +209,12 @@ public abstract class BrowserTestCase extends CajaTestCase {
 
       if (driver == null) {
         driver = makeDriver();
-        driver.manage().timeouts().pageLoadTimeout(15, TimeUnit.SECONDS);
-        driver.manage().timeouts().setScriptTimeout(5, TimeUnit.SECONDS);
+        try {
+          driver.manage().timeouts().pageLoadTimeout(15, TimeUnit.SECONDS);
+          driver.manage().timeouts().setScriptTimeout(5, TimeUnit.SECONDS);
+        } catch (UnsupportedCommandException e) {
+          // ignore
+        }
       }
       driver.get(page);
       if (flag(START_AND_WAIT)) {
@@ -317,7 +316,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
 
     // TODO(felix8a): reduce this timeout.  the problem is that progress
     // is very slow on test pages that do a lot of caja.load() calls.
-    countdown(15000, 200, new Countdown() {
+    countdown(25000, 200, new Countdown() {
       private List<WebElement> waitingList = null;
       @Override public String toString() {
         return "completion (Remaining elements = " +

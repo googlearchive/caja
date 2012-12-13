@@ -36,7 +36,11 @@
               + path + '"><\/script>');
         }
 
-        if (/minified=false/i.test(location.search)) {
+        var match = /cajajs=([^=&]+)/.exec(location.search);
+        if (match) {
+          load(match[1]);
+          load('/caja/html-sanitizer-bundle.js');
+        } else if (/minified=false/i.test(location.search)) {
           load('/caja/caja.js');
           load('/caja/html-sanitizer-bundle.js');
         } else {

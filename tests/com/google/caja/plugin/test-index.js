@@ -31,13 +31,23 @@
 
   var test_drivers = [
     ['es53-test-apitaming.js'],
-    ['es53-test-cajajs-invocation.js'],
-    ['es53-test-cajajs-invocation.js'],
     ['es53-test-automode-1.js'],
     ['es53-test-automode-2.js'],
     ['es53-test-automode-3.js'],
     ['es53-test-automode-4.js'],
+    ['es53-test-cajajs-invocation.js'],
+    ['es53-test-cajajs-minor-version-skew-cajoler-response.js'
+     + '&cajajs=/caja/testing/skew-mmm/caja.js', 'es53'],
+    ['es53-test-cajajs-never-starts.js'
+     + '&cajajs=/caja/testing/skew-0000/caja.js'],
+    ['es53-test-cajajs-never-starts.js'
+     + '&resources=/caja/testing/nonexistent'],
+    ['es53-test-cajajs-never-starts.js'
+     + '&resources=/caja/testing/skew-0000'],
     ['es53-test-cajajs-version-skew-cajoled-module.js', 'es53'],
+    ['es53-test-cajajs-version-skew-cajoler-response.js'
+     + '&cajajs=/caja/testing/skew-0000/caja.js', 'es53'],
+    ['es53-test-cajajs-version-skew-js-files.js'],
     ['es53-test-client-uri-rewriting.js'],
     ['es53-test-container-overflow.js'],
     ['es53-test-defensible-objects.js'],

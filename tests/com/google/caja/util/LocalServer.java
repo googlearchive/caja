@@ -41,10 +41,6 @@ public class LocalServer {
     void configureContext(Context ctx);
   }
 
-  protected final RewritingResourceHandler cajaStatic =
-      new RewritingResourceHandler();
-  { cajaStatic.setResourceBase("./ant-war/"); }
-
   public LocalServer(int portNumber, ConfigureContextCallback contextCallback) {
     this.portNumber = portNumber;
     this.contextCallback = contextCallback;
@@ -59,6 +55,9 @@ public class LocalServer {
    */
   public void start() throws Exception {
     server = new Server(portNumber);
+
+    final ResourceHandler cajaStatic = new ResourceHandler();
+    cajaStatic.setResourceBase("./ant-war/");
 
     // static file serving for tests
     final ResourceHandler resource_handler = new ResourceHandler();
@@ -102,10 +101,6 @@ public class LocalServer {
     server.setHandler(handlers);
 
     server.start();
-  }
-
-  public RewritingResourceHandler getCajaStatic() {
-    return cajaStatic;
   }
 
   /**

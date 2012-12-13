@@ -46,7 +46,8 @@ var clientSideLoaded = false;
 
 registerTest('testMinorVersionSkew', function testMinorVersionSkew() {
   caja.initialize({
-    cajaServer: '/caja',
+    server: '/caja',
+    resources: '/caja/testing/skew-mmm',
     console: testConsole,
     es5Mode: false
   });

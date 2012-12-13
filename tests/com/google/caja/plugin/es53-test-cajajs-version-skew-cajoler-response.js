@@ -45,7 +45,8 @@ var clientSideLoaded = false;
 
 registerTest('testVersionSkew', function testVersionSkew() {
   caja.initialize({
-    cajaServer: '/caja',
+    server: '/caja',
+    resources: '/caja/testing/skew-0000',
     console: testConsole,
     es5Mode: false
   });

@@ -1469,6 +1469,30 @@ For help on building and testing Caja, see:
         <include name="*.html" />
       </fileset>
     </copy>
+
+    <!-- Install Caja files with wrong version numbers, for
+         running version-skew tests. -->
+    <mkdir dir="${war}/testing/skew-0000/0000"/>
+    <mkdir dir="${war}/testing/skew-0000/${build.svnVersion}"/>
+    <copy todir="${war}/testing/skew-0000" file="${war}/caja.js"/>
+    <copy todir="${war}/testing/skew-0000/0000">
+      <fileset dir="${war}/${build.svnVersion}" includes="*.js"/>
+    </copy>
+    <copy todir="${war}/testing/skew-0000/${build.svnVersion}">
+      <fileset dir="${war}/${build.svnVersion}" includes="*.js"/>
+    </copy>
+    <replace dir="${war}/testing/skew-0000"
+        token="${build.svnVersion}" value="0000"/>
+
+    <property name="ver.mmm" value="${build.svnVersion}mmm"/>
+    <mkdir dir="${war}/testing/skew-mmm/${ver.mmm}"/>
+    <copy todir="${war}/testing/skew-mmm" overwrite="true"
+        file="${war}/caja.js"/>
+    <copy todir="${war}/testing/skew-mmm/${ver.mmm}" overwrite="true">
+      <fileset dir="${war}/${build.svnVersion}" includes="*.js"/>
+    </copy>
+    <replace dir="${war}/testing/skew-mmm"
+        token="${build.svnVersion}" value="${ver.mmm}"/>
   </target>
 
   <!-- Copy third-party JARs to the WAR directory -->
