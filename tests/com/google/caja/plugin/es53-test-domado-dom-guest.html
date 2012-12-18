@@ -787,9 +787,10 @@ document.write(
     function assertNodeListTextContent(classes, textContent) {
       var nodeList = document.getElementsByClassName(classes);
       var len = nodeList.length;
-      assertEquals(textContent.length, len);
+      assertEquals('expected length for ' + classes, textContent.length, len);
       for (var i = 0; i < len; ++i) {
-        assertEquals(textContent[i], canonInnerHtml(nodeList[i].innerHTML));
+        assertEquals(classes + ' (result ' + i + ')',
+            textContent[i], canonInnerHtml(nodeList[i].innerHTML));
       }
     }
 
@@ -800,6 +801,56 @@ document.write(
     assertNodeListTextContent('aaa,bbb', []);
 
     pass('testGetElementsByClassName');
+  });
+</script>
+
+<div id="testQuerySelector" class="testcontainer">
+  <p class="testQuerySelector-ac" id="testQuerySelector-ai">a</p>
+  <p class="testQuerySelector-bc" id="testQuerySelector-bi">b</p>
+</div>
+<script type="text/javascript">
+  // TODO(kpreid): Disable this test if host browser does not provide
+  // querySelector.
+  jsunitRegister('testQuerySelector',
+                 function testQuerySelector() {
+    var container = document.getElementById('testQuerySelector');
+    function assertQueryResult(selectors, textContent) {
+      var nodeList = document.querySelectorAll(selectors);
+      var nodeList2 = container.querySelectorAll(selectors);
+      var single = document.querySelector(selectors);
+      var single2 = container.querySelector(selectors);
+      var len = nodeList.length;
+      assertEquals('expected length for ' + selectors, textContent.length, len);
+      assertEquals('expected same length for ' + selectors, len,
+          nodeList2.length);
+      for (var i = 0; i < len; ++i) {
+        assertEquals(selectors + ' (result ' + i + ' on document)',
+            textContent[i], canonInnerHtml(nodeList[i].innerHTML));
+        assertEquals(selectors + ' (result ' + i + ' on element)',
+            textContent[i], canonInnerHtml(nodeList2[i].innerHTML));
+      }
+      assertEquals(selectors + ' (querySelector)',
+          len === 0 ? null : nodeList[0], single);
+    }
+
+    assertQueryResult('.testQuerySelector-ac', ['a']);
+    assertQueryResult('.testQuerySelector-bc', ['b']);
+    assertQueryResult('#testQuerySelector-ai', ['a']);
+    assertQueryResult('#testQuerySelector-ai, #testQuerySelector-bi',
+        ['a', 'b']);
+    assertQueryResult('#testQuerySelector p', ['a', 'b']);
+    assertEquals('scoped query', 2, container.querySelectorAll('p').length);
+    expectFailure(function() {
+      document.querySelector(',');
+    }, 'syntax error');
+
+    // test non-liveness
+    var list = container.querySelectorAll('p');
+    assertEquals('length before change', 2, list.length);
+    container.appendChild(document.createElement('p')).textContent = 'added';
+    assertEquals('length after change', 2, list.length);
+
+    pass('testQuerySelector');
   });
 </script>
 

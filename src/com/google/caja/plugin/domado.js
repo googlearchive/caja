@@ -42,8 +42,8 @@
  * @author mikesamuel@gmail.com (original Domita)
  * @author kpreid@switchb.org (port to ES5)
  * @requires console
- * @requires bridalMaker, cajaVM, cssSchema, lexCss, URI
- * @requires parseCssDeclarations, sanitizeCssProperty, unicode
+ * @requires bridalMaker, cajaVM, cssSchema, lexCss, URI, unicode
+ * @requires parseCssDeclarations, sanitizeCssProperty, sanitizeCssSelectors
  * @requires html, html4, htmlSchema
  * @requires WeakMap, Proxy
  * @requires CSS_PROP_BIT_HISTORY_INSENSITIVE
@@ -2847,6 +2847,29 @@ var Domado = (function() {
         }
       }
 
+      function tameQuerySelector(rootFeralNode, guestSelector, returnAll) {
+        var virtualizedSelectors = sanitizeCssSelectors(
+          lexCss(guestSelector),
+          idClass,
+          tagPolicy);
+        var historyInsensitiveVirtualizedSelectors =
+          virtualizedSelectors[0].join(',');
+        if (returnAll) {
+          // TODO(kpreid): Review whether significant performance improvements
+          // could be obtained by *not* using our live NodeList emulation, since
+          // querySelectorAll is explicitly not live.
+          return new TameNodeList(
+              rootFeralNode.querySelectorAll(
+                  historyInsensitiveVirtualizedSelectors),
+              defaultTameNode);
+        } else {
+          // May return null; defaultTameNode is OK with that.
+          return defaultTameNode(
+              rootFeralNode.querySelector(
+                  historyInsensitiveVirtualizedSelectors));
+        }
+      }
+
       function makeEventHandlerWrapper(thisNode, listener) {
         domitaModules.ensureValidCallback(listener);
         function wrapper(event) {
@@ -3612,6 +3635,16 @@ var Domado = (function() {
           function(className) {
         return tameGetElementsByClassName(np(this).feral, className);
       });
+      if (docEl.querySelector) {
+        TameElement.prototype.querySelector = nodeMethod(function(selector) {
+          return tameQuerySelector(np(this).feral, selector, false);
+        });
+      }
+      if (docEl.querySelectorAll) {
+        TameElement.prototype.querySelectorAll = nodeMethod(function(selector) {
+          return tameQuerySelector(np(this).feral, selector, true);
+        });
+      }
       TameElement.prototype.getBoundingClientRect = nodeMethod(function () {
         var feral = np(this).feral;
         var elRect = bridal.getBoundingClientRect(feral);
@@ -5323,6 +5356,19 @@ var Domado = (function() {
         return tameGetElementsByClassName(
             np(this).feralContainerNode, className);
       });
+      if (docEl.querySelector) {
+        TameHTMLDocument.prototype.querySelector =
+            nodeMethod(function(selector) {
+          return tameQuerySelector(np(this).feralContainerNode, selector,
+              false);
+        });
+      }
+      if (docEl.querySelectorAll) {
+        TameHTMLDocument.prototype.querySelectorAll =
+            nodeMethod(function(selector) {
+          return tameQuerySelector(np(this).feralContainerNode, selector, true);
+        });
+      }
       TameHTMLDocument.prototype.addEventListener =
           nodeMethod(function (name, listener, useCapture) {
             if (name === 'DOMContentLoaded') {
