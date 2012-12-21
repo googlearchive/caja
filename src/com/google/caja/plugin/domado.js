@@ -2874,7 +2874,13 @@ var Domado = (function() {
         domitaModules.ensureValidCallback(listener);
         function wrapper(event) {
           return plugin_dispatchEvent(
-              thisNode, event, rulebreaker.getId(tameWindow), listener);
+              thisNode, event, rulebreaker.getId(tameWindow),
+              // plugin_dispatchEvent says
+              // handler.call(thisNode, event, thisNode)
+              // The second use of thisNode is for ES5/3 string on*
+              // handlers that we parse via regex; here we need to throw that
+              // second use away.
+              function (evt, node) { listener.call(this, evt); });
         }
         return wrapper;
       }

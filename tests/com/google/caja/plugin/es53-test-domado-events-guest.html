@@ -124,6 +124,40 @@
   });
 </script>
 
+<p class="clickme testcontainer" id="testListenerArguments">
+  <b id="testListenerArguments-label">click me: testListenerArguments</b>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testListenerArguments',
+                 function testListenerArguments() {
+    var container = document.getElementById('testListenerArguments-label');
+    container.addEventListener(
+        'click',
+        jsunitCallback(
+            function eventListener(event) {
+              assertEquals(1, arguments.length);
+              assertEquals('click', event.type);
+              pass('testListenerArguments');
+            }));
+  });
+</script>
+
+<p class="clickme testcontainer" id="testHandlerArguments">
+  <b id="testHandlerArguments-label">click me: testHandlerArguments</b>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testHandlerArguments',
+                 function testHandlerArguments() {
+    var container = document.getElementById('testHandlerArguments-label');
+    container.onclick = jsunitCallback(
+        function eventListener(event) {
+          assertEquals(1, arguments.length);
+          assertEquals('click', event.type);
+          pass('testHandlerArguments');
+        });
+  });
+</script>
+
 <p class="clickme testcontainer" id="testAddEventListener">
   <b id="testAddEventListener-label">click me</b>
 </p>
