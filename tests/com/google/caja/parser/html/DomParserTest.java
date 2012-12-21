@@ -106,7 +106,7 @@ public class DomParserTest extends CajaTestCase {
       + "  </head>\n"
       + "  <body onload=foo()>\n"
       + "    <!-- a comment -->\n"
-      + "    <p>Foo &lt; Bar</p>\n"
+      + "    <p foo>Foo &lt; Bar</p>\n"
       + "    <script>function foo() { alert('Hello, World!'); }</script>\n"
       + "    <ul><li>One</li><li>Two</li></ul>\n"
       + "  </body>\n"
@@ -120,7 +120,7 @@ public class DomParserTest extends CajaTestCase {
       + "  </head>\n"
       + "  <body onload=\"foo()\">\n"
       + "    \n"
-      + "    <p>Foo &lt; Bar</p>\n"
+      + "    <p foo=\"\">Foo &lt; Bar</p>\n"
       + "    <script>function foo() { alert('Hello, World!'); }</script>\n"
       + "    <ul><li>One</li><li>Two</li></ul>\n"
       + "  \n"
@@ -2166,14 +2166,14 @@ public class DomParserTest extends CajaTestCase {
             "Fragment 1+1-1+30",
             "  Element : input 1+1-1+30",
             "    Attrib : checked 1+22-1+29",
-            "      Value : checked 1+22-1+29",
+            "      Value :  1+22-1+29",
             "    Attrib : type 1+8-1+12",
             "      Value : checkbox 1+13-1+21"
             ),
         Arrays.<String>asList(
             ),
         Arrays.asList(
-            "<input checked=\"checked\" type=\"checkbox\" />"
+            "<input checked=\"\" type=\"checkbox\" />"
             )
         );
   }
@@ -2485,7 +2485,7 @@ public class DomParserTest extends CajaTestCase {
             "Fragment 1+1-2+25",
             "  Element : span 1+1-2+25",
             "    Attrib : checked 1+48-1+55",
-            "      Value : checked 1+48-1+55",
+            "      Value :  1+48-1+55",
             "    Attrib : do 1+32-1+34",
             "      Value : don't 1+35-1+40",
             "    Attrib : id 1+41-1+43",
@@ -2498,7 +2498,7 @@ public class DomParserTest extends CajaTestCase {
             ),
         Arrays.<String>asList(),
         Arrays.asList(
-            "<span checked=\"checked\" do=\"don&#39;t\" id=\"foo\""
+            "<span checked=\"\" do=\"don&#39;t\" id=\"foo\""
             + " onclick=\"a&lt;b\" title=\"malformed attribs\">Bar</span>"
             )
         );

@@ -600,10 +600,10 @@ public class NodesTest extends CajaTestCase {
     DocumentFragment f = htmlFragment(fromString(
         "<input checked name=foo type=checkbox>"));
     assertEquals(
-        "<input checked=\"checked\" name=\"foo\" type=\"checkbox\" />",
+        "<input checked=\"\" name=\"foo\" type=\"checkbox\" />",
         Nodes.render(f, MarkupRenderMode.XML));
     assertEquals(
-        "<input checked=\"checked\" name=\"foo\" type=\"checkbox\" />",
+        "<input checked=\"\" name=\"foo\" type=\"checkbox\" />",
         Nodes.render(f, MarkupRenderMode.HTML));
     assertEquals(
         "<input checked name=\"foo\" type=\"checkbox\" />",

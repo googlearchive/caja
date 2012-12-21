@@ -647,7 +647,7 @@ public class DomParser {
           new Message(MessageType.MISSING_ATTRIBUTE_VALUE,
                       value.pos, MessagePart.Factory.valueOf(value.text)));
     } else {
-      value = Token.instance(name.text, HtmlTokenType.ATTRVALUE, name.pos);
+      value = Token.instance("", HtmlTokenType.ATTRVALUE, name.pos);
     }
     String rawValue = value.text;
     if (!asXml) {

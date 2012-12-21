@@ -119,13 +119,9 @@ public class HtmlEmbeddedContentFinder {
       if (SCRIPT.equals(key)) {
         expected = ContentType.JS;
         extRef = externalReferenceFromAttr(el, SCRIPT_SRC);
-        if (Strings.eqIgnoreCase(
-            "defer",
-            el.getAttributeNS(SCRIPT_DEFER.ns.uri, SCRIPT_DEFER.localName))) {
+        if (el.hasAttributeNS(SCRIPT_DEFER.ns.uri, SCRIPT_DEFER.localName)) {
           scheduling = EmbeddedContent.Scheduling.DEFERRED;
-        } else if (Strings.eqIgnoreCase(
-            "async",
-            el.getAttributeNS(SCRIPT_ASYNC.ns.uri, SCRIPT_ASYNC.localName))) {
+        } else if (el.hasAttributeNS(SCRIPT_ASYNC.ns.uri, SCRIPT_ASYNC.localName)) {
           scheduling = EmbeddedContent.Scheduling.ASYNC;
         }
       } else if (STYLE.equals(key)) {

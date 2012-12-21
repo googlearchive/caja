@@ -201,12 +201,12 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
         // This bogus HTML structure is OK because it will only be seen by our
         // runtime, and be cleaned up by the time guest code sees it.
         job("<html><head></head><body>"
-            + "<span __phid__=\"$1\"></span>"   // a()
-            + "<span __phid__=\"$4\"></span><br />"  // d()
+            + "<span __phid__=\"$1\"></span><br />"   // a()
             + "</body></html>"
             + "<span __phid__=\"finish\"></span>"  // document.close() here.
             + "<span __phid__=\"$2\"></span>"  // b()
-            + "<span __phid__=\"$3\"></span>",  // c()
+            + "<span __phid__=\"$3\"></span>"  // c()
+            + "<span __phid__=\"$4\"></span>",  // d()
             ContentType.HTML),
         job("{ a(); }", ContentType.JS),
         job("{ b(); }", ContentType.JS),

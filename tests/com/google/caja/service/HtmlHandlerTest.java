@@ -186,7 +186,7 @@ public class HtmlHandlerTest extends ServiceTestCase {
     // Check html generation is correct
     assertEquals(
         "<caja-v-html><caja-v-head></caja-v-head><caja-v-body>" +
-        "<p align=\"center\" data-caja-foo=\"foo\">" +
+        "<p align=\"center\" data-caja-foo=\"\">" +
         "hi<span id=\"id_2___\"></span></p><p>bye</p>" +
         "</caja-v-body></caja-v-html>",
         (String) json.get("html"));

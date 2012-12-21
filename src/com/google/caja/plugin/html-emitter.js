@@ -941,9 +941,9 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
               cdataContentType = CDATA_SCRIPT;
               pendingExternal = scriptSrc;
             }
-            pendingDelayed = !!(lookupAttr(attribs, 'defer')
-                                || lookupAttr(attribs, 'async'));
-            return; // TODO(kpreid): Remove, allow virtualized element
+            pendingDelayed = (lookupAttr(attribs, 'defer') !== undefined
+                || lookupAttr(attribs, 'async') !== undefined);
+            return; // TODO(kpreid): Remove, allo virtualized element
           } else if (tagName === 'style') {
             cdataContentType = CDATA_STYLE;
             pendingExternal = undefined;

@@ -207,11 +207,11 @@ jsunitRegister('testFoldingOfHtmlAndBodyTags',
 jsunitRegister('testEmptyAndValuelessAttributes',
                function testEmptyAndValuelessAttributes() {
   check1('<input checked type=checkbox id="" class=>',
-         '<input checked="checked" type="checkbox" id="" class="">');
+         '<input checked="" type="checkbox" id="" class="">');
   check1('<input checked type=checkbox id= class="">',
-         '<input checked="checked" type="checkbox" id="" class="">');
+         '<input checked="" type="checkbox" id="" class="">');
   check1('<input checked type=checkbox id= class = "">',
-         '<input checked="checked" type="checkbox" id="" class="">');
+         '<input checked="" type="checkbox" id="" class="">');
   jsunit.pass();
 });
 
@@ -481,7 +481,7 @@ if (!html.isLegacy) {
         'startDoc', '', '$P',
         'startTag', 'div[]', '$P',
         'startTag', 'unknown1[]', '$P',
-        'startTag', 'unknown2[bar;bar]', '$P',
+        'startTag', 'unknown2[bar;]', '$P',
         'endTag', 'unknown1', '$P',
         'endDoc', '', '$P'
     );

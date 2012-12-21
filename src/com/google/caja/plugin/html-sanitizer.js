@@ -629,7 +629,7 @@ var html = (function(html4) {
       } else {
         // We have an attribute
         var aName = m[1].toLowerCase();
-        var aValue = m[2] ? decodeValue(m[3]) : aName;
+        var aValue = m[2] ? decodeValue(m[3]) : '';
         attrs.push(aName, aValue);
         buf = buf.substr(m[0].length);
       }

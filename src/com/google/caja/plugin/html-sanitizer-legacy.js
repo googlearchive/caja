@@ -304,10 +304,8 @@ var html = (function(html4) {
               }
               decodedValue = unescapeEntities(stripNULs(encodedValue));
             } else {
-              // Use name as value for valueless attribs, so
-              //   <input type=checkbox checked>
-              // gets attributes ['type', 'checkbox', 'checked', 'checked']
-              decodedValue = attribName;
+              // Use empty string as value for valueless attribs
+              decodedValue = "";
             }
             attribs.push(attribName, decodedValue);
           } else if (m[4]) {
