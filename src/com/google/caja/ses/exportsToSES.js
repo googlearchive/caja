@@ -15,7 +15,7 @@
 /**
  * @fileoverview
  * Moves exported properties from "export" to "ses" to keep the global
- * environment clean.  The methods are added to ses.rewriter since
+ * environment clean.  The methods are added to ses.rewriter_ since
  * these are not part of the public ses interface.
  *
  * @author jasvir@gmail.com
