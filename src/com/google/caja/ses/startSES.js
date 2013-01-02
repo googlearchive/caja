@@ -184,6 +184,13 @@ var cajaVM;
  *        (currently only Firefox 4 and after), use {@code
  *        with(aProxy) {...}} to intercept free variables rather than
  *        atLeastFreeVarNames.
+ * @param opt_mitigateGotchas ::F([string], Record(any)) | undefined
+ *        Given the sourceText for a strict Program, if provided,
+ *        opt_mitigateGotchas(sourceText, options) returns rewritten
+ *        program with the same semantics as the original but with as
+ *        many of the gotchas removed as possible.  {@code options} is
+ *        a record of which gotcha-rewriting-stages to use or omit.
+ *        Passing no option performs the default.
  * @param extensions ::F([], Record(any)]) A function returning a
  *        record whose own properties will be copied onto cajaVM. This
  *        is used for the optional components which bring SES to
@@ -201,6 +208,7 @@ var cajaVM;
 ses.startSES = function(global,
                         whitelist,
                         atLeastFreeVarNames,
+                        opt_mitigateGotchas,
                         extensions) {
   "use strict";
 
@@ -249,6 +257,7 @@ ses.startSES = function(global,
   var keys = Object.keys;
   var freeze = Object.freeze;
   var create = Object.create;
+  var mitigateGotchas = opt_mitigateGotchas || function (s) { return '' + s; };
 
   /**
    * Use to tamper proof a function which is not intended to ever be
@@ -532,7 +541,7 @@ ses.startSES = function(global,
             set: function scopedSet(newValue) {
               if (name in imports) {
                 imports[name] = newValue;
-                return newValue;
+                return;
               }
               throw new TypeError('Cannot set "' + name + '"');
             },
@@ -627,12 +636,21 @@ ses.startSES = function(global,
      * Program's completion value. Unfortunately, this is not
      * practical as a library without some non-standard support from
      * the platform such as a parser API that provides an AST.
+     * TODO(jasvir): Now that we're parsing, we can provide compileProgram.
      *
      * <p>Thanks to Mike Samuel and Ankur Taly for this trick of using
      * {@code with} together with RegExp matching to intercept free
      * variable access without parsing.
      */
-    function compileExpr(exprSrc, opt_sourcePosition) {
+    function compileExpr(src, opt_sourcePosition) {
+      // Force src to be parsed as an expr
+      var exprSrc = '(' + src + '\n)';
+      exprSrc = mitigateGotchas(exprSrc);
+      // This is a workaround for a bug in the escodegen renderer that
+      // renders expressions as expression statements
+      if (exprSrc[exprSrc.length - 1] === ';') {
+        exprSrc = exprSrc.substr(0, exprSrc.length - 1);
+      }
       var wrapperSrc = securableWrapperSrc(exprSrc, opt_sourcePosition);
       var wrapper = unsafeEval(wrapperSrc);
       var freeNames = atLeastFreeVarNames(exprSrc);
@@ -702,7 +720,8 @@ ses.startSES = function(global,
     function compileModule(modSrc, opt_sourcePosition) {
       // Note the EOL after modSrc to prevent trailing line comment in modSrc
       // eliding the rest of the wrapper.
-      var exprSrc = '(function() {' + modSrc + '\n}).call(this)';
+      var exprSrc =
+          '(function() {' + mitigateGotchas(modSrc) + '\n}).call(this)';
 
       // Follow the pattern in compileExpr
       var wrapperSrc = securableWrapperSrc(exprSrc, opt_sourcePosition);

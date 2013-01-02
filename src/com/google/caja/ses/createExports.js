@@ -12,22 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.plugin;
-
-public class Es5BrowserTest extends UniversalBrowserTests {
-  public Es5BrowserTest() {
-    super(true /* es5Mode */);
-  }
-
-  public void testCajaJsBare() throws Exception {
-    runBrowserTest("cajajs-bare-test.html", "es5=true");
-  }
-
-  public void testExternalScript() throws Exception {
-    runTestCase("es53-test-external-script-guest.html", true);
-  }
-
-  public final void testES5Gotchas() throws Exception {
-    runTestCase("es53-test-gotchas-guest.html", true);
-  }
-}
+/**
+ * @fileoverview
+ * Creates an export object so that subsequent loads do not pollute
+ * the global namespace
+ *
+ * @author jasvir@gmail.com
+ * \@provides exports
+ */
+var exports = {};

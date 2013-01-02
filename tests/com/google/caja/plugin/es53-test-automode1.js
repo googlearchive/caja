@@ -25,6 +25,7 @@
   document.title += ' {closured=' + !caja.closureCanary + '}';
 
   var uriPolicy = caja.policy.net.ALL;
+  var inES5Mode = false;
 
   caja.initialize({
     cajaServer: '/caja',
@@ -33,13 +34,18 @@
     // Unachievable level of security - should cause es5 => es53 failover
     maxAcceptableSeverity: 'MAGICAL_UNICORN'
   }, 
-  function(details) { assertFalse("Ran wrong mode", details['es5Mode']); },
+  function(details) {
+    inES5Mode = details['es5Mode'];
+    assertFalse("Ran wrong mode", inES5Mode);
+  },
   function() { fail('Unexpectedly failed to switch to es53'); });
 
   registerTest('testES5FailsoverToES53', function testES5FailsoverToES53() {
     caja.load(undefined, uriPolicy, function (frame) {
+      var extraImports = createExtraImportsForTesting(caja, frame);
+      extraImports.inES5Mode = inES5Mode;
       frame.code('es53-test-assert-es53mode.js', 'text/javascript')
-           .api(createExtraImportsForTesting(caja, frame))
+           .api(extraImports)
            .run(function(result) {
              jsunitPass('testES5FailsoverToES53');
            });

@@ -2264,10 +2264,7 @@ After
 <script type="text/javascript">
   var testWindowObjectVariable;
 
-  // Disabled in ES5 mode because we currently cannot implement globals
-  // properly.
-  jsunitRegisterIf(!inES5Mode,
-                   'testWindowObject',
+  jsunitRegister('testWindowObject',
                    function testWindowObject() {
     // Check to see that globals are properties of window
     testWindowObjectVariable = 3;

@@ -25,6 +25,7 @@
   document.title += ' {closured=' + !caja.closureCanary + '}';
 
   var uriPolicy = caja.policy.net.ALL;
+  var inES5Mode = false;
 
   caja.initialize({
     cajaServer: '/caja',
@@ -34,12 +35,16 @@
     // Guaranteed achievable level of insecurity - should cause es5 to run
     maxAcceptableSeverity: 'NEW_SYMPTOM'
   }, 
-  function(details) { assertTrue("Ran wrong mode", details['es5Mode']); },
+  function(details) {
+    inES5Mode = details['es5Mode'];
+    assertTrue("Ran wrong mode", inES5Mode);
+  },
   function() { fail('Unexpectedly failed to switch to run es5'); });
 
   registerTest('testES5Autodetected', function testES5Autodetected() {
     caja.load(undefined, uriPolicy, function (frame) {
       var extraImports = createExtraImportsForTesting(caja, frame);
+      extraImports.inES5Mode = inES5Mode;
       frame.code('es53-test-assert-es5mode.js', 'text/javascript')
            .api(extraImports)
            .run(function(result) {

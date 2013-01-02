@@ -188,11 +188,6 @@ public enum RewriterMessageType implements MessageTypeInt {
       "%s: Dynamically computed names should use require.async()",
       MessageLevel.FATAL_ERROR),
 
-  TOP_LEVEL_VAR_INCOMPATIBLE_WITH_CAJA(
-      "%s: Caja makes top-level vars local to a script tag."
-      + " If you need a global, use: %s",
-      MessageLevel.LINT),
-
   TOP_LEVEL_FUNC_INCOMPATIBLE_WITH_CAJA(
       "%s: Caja makes top-level functions local to a script tag."
       + " If you need a global function, use: %s",

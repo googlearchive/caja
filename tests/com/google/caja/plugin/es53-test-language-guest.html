@@ -224,3 +224,52 @@
   jsunitRegister('testGlobalReference',
                  function testGlobalReference() { });
 </script>
+
+<div class="testcontainer" id="testTopLevel"
+  ><script
+  >var topVar1 = '1', topVar2 = '2';
+   var topVar3;
+   topVar3 = '3';
+   function foo() {
+     var notTopVar1 = 'fail', notTopVar2 = 'fail';
+     var notTopVar3;
+     notTopVar3 = 'fail';
+   }
+   foo();
+  </script>
+</div>
+<script type="text/javascript">
+  jsunitRegister('testTopLevel',
+                 function testTopLevel () {
+    assertEquals("Top level var", "1", topVar1);
+    assertEquals("Top level var", "2", topVar2);
+    assertEquals("Top level var", "3", topVar3);
+
+    assertEquals("Top level var", "1", window.topVar1);
+    assertEquals("Top level var", "2", window.topVar2);
+    assertEquals("Top level var", "3", window.topVar3);
+
+    assertEquals("Non-top level var", "undefined", typeof window.notTopVar1);
+    assertEquals("Non-top level var", "undefined", typeof window.notTopVar2);
+    // check that we didn't accidentally rewrite inside foo()
+    assertNotEquals("Non-top level var", "fail", window.notTopVar3);
+
+    pass('testTopLevel');
+  });
+</script>
+<div class="testcontainer" id="testTypeOf"></div>
+<script>
+  jsunitRegister('testTypeOf',
+                 function testTypeOf () {
+    try {
+      assertEquals("undefined", typeof anDeclaredVariable);
+    } catch (e) {
+      fail();
+    }
+
+    pass('testTypeOf');
+  });
+
+  // jsunit complains if there are zero tests
+  jsunitRegister('testNop', function testNop() { pass('testNop'); });
+</script>

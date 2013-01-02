@@ -12,22 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.plugin;
+/**
+ * @fileoverview
+ * Moves exported properties from "export" to "ses" to keep the global
+ * environment clean.  The methods are added to ses.rewriter since
+ * these are not part of the public ses interface.
+ *
+ * @author jasvir@gmail.com
+ * \@overrides this
+ * \@overrides ses
+ * \@overrides exports
+ */
 
-public class Es5BrowserTest extends UniversalBrowserTests {
-  public Es5BrowserTest() {
-    super(true /* es5Mode */);
-  }
+(function(ses, global) {
+  ses.rewriter_ = {};
+  ses.rewriter_.traverse = exports.traverse;
+  ses.rewriter_.parse = exports.parse;
+  ses.rewriter_.generate = exports.generate;
 
-  public void testCajaJsBare() throws Exception {
-    runBrowserTest("cajajs-bare-test.html", "es5=true");
-  }
-
-  public void testExternalScript() throws Exception {
-    runTestCase("es53-test-external-script-guest.html", true);
-  }
-
-  public final void testES5Gotchas() throws Exception {
-    runTestCase("es53-test-gotchas-guest.html", true);
-  }
-}
+  // No longer need exports
+  delete global.exports;
+})(ses, this);

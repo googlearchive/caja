@@ -946,12 +946,6 @@ public class ES53Rewriter extends Rewriter {
           String vname = v.getName();
           if (scope.isOuter(vname)) {
             ParseTreeNode r = bindings.get("r");
-            mq.addMessage(
-                RewriterMessageType.TOP_LEVEL_VAR_INCOMPATIBLE_WITH_CAJA,
-                node.getFilePosition(),
-                MessagePart.Factory.valueOf(
-                    render(QuasiBuilder.substV("window['@v']", "v", v))
-                    + " = ..."));
             return newExprStmt((Expression) substV(
                 "v", v,
                 "r", expand(nymize(r, vname, "var"), scope)));
@@ -1027,12 +1021,6 @@ public class ES53Rewriter extends Rewriter {
         if (bindings != null &&
             bindings.get("v") instanceof Identifier &&
             scope.isOuter(((Identifier) bindings.get("v")).getName())) {
-          mq.addMessage(
-              RewriterMessageType.TOP_LEVEL_VAR_INCOMPATIBLE_WITH_CAJA,
-              node.getFilePosition(),
-              MessagePart.Factory.valueOf(
-                  render(QuasiBuilder.substV("window['@v'] = undefined",
-                      "v", bindings.get("v")))));
           ExpressionStmt es = newExprStmt(
               (Expression) substV("v", bindings.get("v")));
           markTreeForSideEffect(es);

@@ -786,12 +786,6 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
 
   public final void testSESCompatibilityWarnings() throws Exception {
     checkAddsMessage(js(fromString(
-        "var xxx = (1 + 2) /3;")),
-        RewriterMessageType.TOP_LEVEL_VAR_INCOMPATIBLE_WITH_CAJA);
-    checkAddsMessage(js(fromString(
-        "var xxx;")),
-        RewriterMessageType.TOP_LEVEL_VAR_INCOMPATIBLE_WITH_CAJA);
-    checkAddsMessage(js(fromString(
         "function yyy() {};")),
         RewriterMessageType.TOP_LEVEL_FUNC_INCOMPATIBLE_WITH_CAJA);
   }
