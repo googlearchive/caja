@@ -96,11 +96,11 @@
     // http://webreflection.blogspot.com/2009/06/javascript-arguments-weridness.html
     var i;
     function f(a, b, c) {}
-    (function () {
+    (function() {
       for (i = -1; i > -10; --i) {
         assertEquals(f[i], void 0);
         assertEquals(void 0, (new RegExp('.'))[i]);
-        assertEquals(void 0, "abc"[i]);
+        assertEquals(void 0, 'abc'[i]);
         assertEquals(void 0, (new String('abc'))[i]);
         assertEquals(void 0, RegExp[i]);
         assertEquals(void 0, arguments[i]);
@@ -119,7 +119,7 @@
     // Test potential weakness of the ES53 workaround for the negative index bug
     var i;
     function f(a, b, c) {}
-    (function () {
+    (function() {
       for (i = -1; i > -10; --i) {
         assertFailsSafe(
             function() { delete f[i]; },
@@ -128,8 +128,8 @@
             function() { delete (new RegExp('.'))[i]; },
             function() { assertEquals(void 0, (new RegExp('.'))[i]); });
         assertFailsSafe(
-            function() { delete "abc"[i]; },
-            function() { assertEquals(void 0, "abc"[i]); });
+            function() { delete 'abc'[i]; },
+            function() { assertEquals(void 0, 'abc'[i]); });
         assertFailsSafe(
             function() { delete RegExp[i]; },
             function() { assertEquals(void 0, RegExp[i]); });
@@ -161,7 +161,6 @@
     pass('testRegExec');
   });
 </script>
-                 
 
 <p id="testParseInt" class="testcontainer">
   Test parseInt
@@ -169,44 +168,44 @@
 <script type="text/javascript">
   jsunitRegister('testParseInt',
                  function testParseInt() {
-    assertEquals(0, parseInt("0"));
-    assertEquals(1, parseInt("1"));
-    assertEquals(-1, parseInt("-1"));
-    assertEquals(10, parseInt("10"));
-    assertEquals(1, parseInt("0x01"));
-    assertEquals(-1, parseInt("-0x01"));
-    assertEquals(16, parseInt("0x10"));
-    assertEquals(-16, parseInt("-0x10"));
-    assertEquals(0, parseInt("00"));
-    assertEquals(1, parseInt("01"));
-    assertEquals(-1, parseInt("-01"));
-    assertEquals(10, parseInt("010"));
+    assertEquals(0, parseInt('0'));
+    assertEquals(1, parseInt('1'));
+    assertEquals(-1, parseInt('-1'));
+    assertEquals(10, parseInt('10'));
+    assertEquals(1, parseInt('0x01'));
+    assertEquals(-1, parseInt('-0x01'));
+    assertEquals(16, parseInt('0x10'));
+    assertEquals(-16, parseInt('-0x10'));
+    assertEquals(0, parseInt('00'));
+    assertEquals(1, parseInt('01'));
+    assertEquals(-1, parseInt('-01'));
+    assertEquals(10, parseInt('010'));
 
-    assertEquals(0, parseInt("0"));
-    assertEquals(1, parseInt("1", 8));
-    assertEquals(-1, parseInt("-1", 8));
-    assertEquals(8, parseInt("10", 8));
-    assertEquals(0, parseInt("0x01", 8));
-    assertEquals(0, parseInt("-0x01", 8));
-    assertEquals(0, parseInt("0x10", 8));
-    assertEquals(0, parseInt("-0x10", 8));
-    assertEquals(0, parseInt("00", 8));
-    assertEquals(1, parseInt("01", 8));
-    assertEquals(-1, parseInt("-01", 8));
-    assertEquals(8, parseInt("010", 8));
+    assertEquals(0, parseInt('0'));
+    assertEquals(1, parseInt('1', 8));
+    assertEquals(-1, parseInt('-1', 8));
+    assertEquals(8, parseInt('10', 8));
+    assertEquals(0, parseInt('0x01', 8));
+    assertEquals(0, parseInt('-0x01', 8));
+    assertEquals(0, parseInt('0x10', 8));
+    assertEquals(0, parseInt('-0x10', 8));
+    assertEquals(0, parseInt('00', 8));
+    assertEquals(1, parseInt('01', 8));
+    assertEquals(-1, parseInt('-01', 8));
+    assertEquals(8, parseInt('010', 8));
 
-    assertEquals(0, parseInt("0", 16));
-    assertEquals(1, parseInt("1", 16));
-    assertEquals(-1, parseInt("-1", 16));
-    assertEquals(16, parseInt("10", 16));
-    assertEquals(1, parseInt("0x01", 16));
-    assertEquals(-1, parseInt("-0x01", 16));
-    assertEquals(16, parseInt("0x10", 16));
-    assertEquals(-16, parseInt("-0x10", 16));
-    assertEquals(0, parseInt("00", 16));
-    assertEquals(1, parseInt("01", 16));
-    assertEquals(-1, parseInt("-01", 16));
-    assertEquals(16, parseInt("010", 16));
+    assertEquals(0, parseInt('0', 16));
+    assertEquals(1, parseInt('1', 16));
+    assertEquals(-1, parseInt('-1', 16));
+    assertEquals(16, parseInt('10', 16));
+    assertEquals(1, parseInt('0x01', 16));
+    assertEquals(-1, parseInt('-0x01', 16));
+    assertEquals(16, parseInt('0x10', 16));
+    assertEquals(-16, parseInt('-0x10', 16));
+    assertEquals(0, parseInt('00', 16));
+    assertEquals(1, parseInt('01', 16));
+    assertEquals(-1, parseInt('-01', 16));
+    assertEquals(16, parseInt('010', 16));
 
     pass('testParseInt');
   });
@@ -214,7 +213,6 @@
 
 <script>
   var c = 0;
-  window.c = c;  // SES scope workaround. TODO(kpreid): Defeating the test?
 </script>
 <p id="testGlobalReference" class="clickme testcontainer">
   <span onclick="assertEquals(1, ++c); pass('testGlobalReference');">Test
@@ -240,53 +238,50 @@
 </div>
 <script type="text/javascript">
   jsunitRegister('testTopLevel',
-                 function testTopLevel () {
-    assertEquals("Top level var", "1", topVar1);
-    assertEquals("Top level var", "2", topVar2);
-    assertEquals("Top level var", "3", topVar3);
+                 function testTopLevel() {
+    assertEquals('Top level var', '1', topVar1);
+    assertEquals('Top level var', '2', topVar2);
+    assertEquals('Top level var', '3', topVar3);
 
-    assertEquals("Top level var", "1", window.topVar1);
-    assertEquals("Top level var", "2", window.topVar2);
-    assertEquals("Top level var", "3", window.topVar3);
+    assertEquals('Top level var', '1', window.topVar1);
+    assertEquals('Top level var', '2', window.topVar2);
+    assertEquals('Top level var', '3', window.topVar3);
 
-    assertEquals("Non-top level var", "undefined", typeof window.notTopVar1);
-    assertEquals("Non-top level var", "undefined", typeof window.notTopVar2);
+    assertEquals('Non-top level var', 'undefined', typeof window.notTopVar1);
+    assertEquals('Non-top level var', 'undefined', typeof window.notTopVar2);
     // check that we didn't accidentally rewrite inside foo()
-    assertNotEquals("Non-top level var", "fail", window.notTopVar3);
+    assertNotEquals('Non-top level var', 'fail', window.notTopVar3);
 
     pass('testTopLevel');
   });
 </script>
+
 <div class="testcontainer" id="testTypeOf"></div>
 <script>
   jsunitRegister('testTypeOf',
-                 function testTypeOf () {
+                 function testTypeOf() {
     try {
-      assertEquals("undefined", typeof anDeclaredVariable);
+      assertEquals('undefined', typeof anDeclaredVariable);
     } catch (e) {
       fail();
     }
 
     pass('testTypeOf');
   });
-
-  // jsunit complains if there are zero tests
-  jsunitRegister('testNop', function testNop() { pass('testNop'); });
 </script>
 
-<div id="testFunctionPrototype" class="testcontainer waiting">
+<div id="testFunctionPrototype" class="testcontainer">
   testFunctionPrototype
 </div>
 <script type="text/javascript">
-  jsunitRegisterIf(inES5Mode,
-      'testFunctionPrototype',
+  jsunitRegisterIf(inES5Mode, 'testFunctionPrototype',
       function testFunctionPrototype() {
-        function f () {};
-        // Test that Function.prototype is made tamper proof, not frozen.
-        // If frozen, toString would be not writable and thus we'd be
-        // unable to change it by assignment on an object deriving from it.
-        f.toString = function () { return 'foo'; };
-        assertEquals('foo', '' + f);
-        pass('testFunctionPrototype');
-      });
+    function f() {}
+    // Test that Function.prototype is made tamper-proof, not frozen.
+    // If frozen, toString would be a non-writable data property and thus we'd
+    // be unable to change it by assignment on an object deriving from it.
+    f.toString = function() { return 'foo'; };
+    assertEquals('foo', '' + f);
+    pass('testFunctionPrototype');
+  });
 </script>
