@@ -45,6 +45,33 @@
     return (node.type === 'VariableDeclaration');
   }
 
+  function isFunctionDecl(node) {
+    return (node.type === 'FunctionDeclaration');
+  }
+
+  /**
+   * Rewrite func decls in place by appending assignments on the global object
+   * turning expression "function x() {}" to
+   * function x(){}; global.x = x;
+   */
+  function rewriteFuncDecl(node, path) {
+    var exprNode = {
+      'type': 'ExpressionStatement',
+      'expression': {
+        'type': 'AssignmentExpression',
+        'operator': '=',
+        'left': globalVarAst(node.id),
+        'right': node.id
+      }
+    };
+    var parent = path[path.length - 2].body;
+    var currentIdx = parent.indexOf(node);
+    var nextIdx = currentIdx + 1;
+
+    // Insert assignment immediately after FunctionDecl
+    parent.splice(nextIdx, 0, exprNode);
+  }
+
   /**
    * Rewrite var decls in place into assignments on the global object
    * turning expression "var x, y = 2, z" to
@@ -54,28 +81,28 @@
     var assignments = [];
     node.declarations.forEach(function(decl) {
       assignments.push({
-        "type": "AssignmentExpression",
-        "operator": "=",
-        "left": globalVarAst(decl.id),
-        "right": decl.init || globalVarAst(decl.id)
+        'type': 'AssignmentExpression',
+        'operator': '=',
+        'left': globalVarAst(decl.id),
+        'right': decl.init || globalVarAst(decl.id)
       });
   
     });
-    node.type = "ExpressionStatement";
+    node.type = 'ExpressionStatement';
     node.expression = {
-      "type": "SequenceExpression",
-      "expressions": assignments
+      'type': 'SequenceExpression',
+      'expressions': assignments
     };
   }
   
   function globalVarAst(varName) {
     return {
-      "type": "MemberExpression",
-      "object": {
-        "type": "Identifier",
-        "name": "window"
+      'type': 'MemberExpression',
+      'object': {
+        'type': 'Identifier',
+        'name': 'window'
       },
-      "property": varName
+      'property': varName
     };
   }
   
@@ -85,51 +112,51 @@
    */
   function rewriteTypeOf(node) {
     var arg = node.argument;
-    node.type = "CallExpression";
+    node.type = 'CallExpression';
     node.arguments = [];
     node.callee = {
-        "type": "FunctionExpression",
-        "id": null,
-        "params": [],
-        "body": {
-          "type": "BlockStatement",
-          "body": [{
-              "type": "TryStatement",
-              "block": {
-                "type": "BlockStatement",
-                "body": [{
-                    "type": "ReturnStatement",
-                    "argument": {
-                      "synthetic": true,
-                      "type": "UnaryExpression",
-                      "operator": "typeof",
-                      "prefix": true,
-                        "argument": arg
+        'type': 'FunctionExpression',
+        'id': null,
+        'params': [],
+        'body': {
+          'type': 'BlockStatement',
+          'body': [{
+              'type': 'TryStatement',
+              'block': {
+                'type': 'BlockStatement',
+                'body': [{
+                    'type': 'ReturnStatement',
+                    'argument': {
+                      'synthetic': true,
+                      'type': 'UnaryExpression',
+                      'operator': 'typeof',
+                      'prefix': true,
+                        'argument': arg
                     }
                   }
                 ]
               },
-              "handlers": [{
-                  "type": "CatchClause",
-                  "param": {
-                    "type": "Identifier",
-                    "name": "e"
+              'handlers': [{
+                  'type': 'CatchClause',
+                  'param': {
+                    'type': 'Identifier',
+                    'name': 'e'
                   },
-                  "guard": null,
-                  "body": {
-                    "type": "BlockStatement",
-                    "body": [{
-                      "type": "ReturnStatement",
-                      "argument": {
-                        "type": "Literal",
-                        "value": "undefined",
-                        "raw": "'undefined'"
+                  'guard': null,
+                  'body': {
+                    'type': 'BlockStatement',
+                    'body': [{
+                      'type': 'ReturnStatement',
+                      'argument': {
+                        'type': 'Literal',
+                        'value': 'undefined',
+                        'raw': '\'undefined\''
                       }
                     }]
                   }
                 }
               ],
-              "finalizer": null
+              'finalizer': null
             }
           ]
         }
@@ -142,6 +169,7 @@
     }
     var resolved = {};
     resolved.rewriteTopLevelVars = resolve('rewriteTopLevelVars', true);
+    resolved.rewriteTopLevelFuncs = resolve('rewriteTopLevelFuncs', true);
     resolved.rewriteTypeOf = resolve('rewriteTypeOf', true);
     return resolved;
   }
@@ -149,20 +177,32 @@
   ses.mitigateGotchas = function(programSrc, options) {
     try {
       options = resolveOptions(options);
+      var path = [];
       var scopeLevel = 0;
       var ast = ses.rewriter_.parse(programSrc);
       ses.rewriter_.traverse(ast, {
         enter: function enter(node) {
-            if (introducesScope(node)) {
-              scopeLevel++;
+            path.push(node);
+
+            if (options.rewriteTopLevelFuncs &&
+                isFunctionDecl(node) && scopeLevel === 0) {
+              rewriteFuncDecl(node, path);
             } else if (options.rewriteTypeOf && isTypeOf(node)) {
               rewriteTypeOf(node);
             } else if (options.rewriteTopLevelVars &&
                        isVariableDecl(node) && scopeLevel === 0) {
               rewriteVars(node);
             }
+
+            if (introducesScope(node)) {
+              scopeLevel++;
+            }
         },
         leave: function leave(node) {
+            var last = path.pop();
+            if (node !== last) {
+              throw new Error('Internal error traversing the AST');
+            }
             if (introducesScope(node)) {
               scopeLevel--;
             }
@@ -170,7 +210,7 @@
       });
       return ses.rewriter_.generate(ast);
     } catch (e) {
-      ses.logger.warn("Failed to mitigate SES gotchas. Proceeding anyways.", e);
+      ses.logger.warn('Failed to mitigate SES gotchas. Proceeding anyways.', e);
       return programSrc;
     }
   };

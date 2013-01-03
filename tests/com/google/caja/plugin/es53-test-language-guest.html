@@ -270,6 +270,56 @@
   });
 </script>
 
+<!-- Tests that functions declared at the top-level of one script -->
+<!-- block are visible to code in a different code in a different -->
+<!-- script block. -->
+<div class="testcontainer" id="testTopLevelFuncs"></div>
+<script>
+  /**
+   * We want to test these interim values but these have to be at the
+   * top-level so we accumulate the results for latter testing by the
+   * jsunit test in the following block.
+   */
+  var topFuncHoisted = 'function' === typeof topLevelFunc;
+  var nonTopFuncHoisted = 'function' === typeof nonTopFunc1;
+  nonTopFuncHoisted = nonTopFuncHoisted || 'function' === typeof nonTopFunc2;
+  nonTopFuncHoisted = nonTopFuncHoisted || 'function' === typeof nonTopFunc3;
+  nonTopFuncHoisted = nonTopFuncHoisted || 'function' === typeof funcExpr;
+
+  function topLevelFunc() {
+    function nonTopFunc1() {}  
+  }
+  (function funcExpr1() {
+    function nonTopFunc2() {}
+  })();
+
+  topFuncHoisted = topFuncHoisted && 'function' === typeof topLevelFunc;
+  nonTopFuncHoisted = nonTopFuncHoisted || 'function' === typeof nonTopFunc1;
+  nonTopFuncHoisted = nonTopFuncHoisted || 'function' === typeof nonTopFunc2;
+  nonTopFuncHoisted = nonTopFuncHoisted || 'function' === typeof nonTopFunc3;
+  nonTopFuncHoisted = nonTopFuncHoisted || 'function' === typeof funcExpr;
+
+  (function () {
+    function nonTopFunc3() {}
+  })();
+</script>
+<script>
+  topFuncHoisted = topFuncHoisted && 'function' === typeof topLevelFunc;
+  nonTopFuncHoisted = nonTopFuncHoisted || 'function' === typeof nonTopFunc1;
+  nonTopFuncHoisted = nonTopFuncHoisted || 'function' === typeof nonTopFunc2;
+  nonTopFuncHoisted = nonTopFuncHoisted || 'function' === typeof nonTopFunc3;
+  nonTopFuncHoisted = nonTopFuncHoisted || 'function' === typeof funcExpr;
+</script>
+<script>
+  jsunitRegister('testTopLevelFuncs',
+                 function testTopLevelFuncs() {
+    assertTrue('Top level func was not hoisted', topFuncHoisted);
+    assertFalse('Non-top level func got hoisted', nonTopFuncHoisted);
+
+    pass('testTopLevelFuncs');
+  });
+</script>
+
 <div id="testFunctionPrototype" class="testcontainer">
   testFunctionPrototype
 </div>
