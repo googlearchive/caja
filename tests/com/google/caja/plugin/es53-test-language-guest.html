@@ -273,3 +273,20 @@
   // jsunit complains if there are zero tests
   jsunitRegister('testNop', function testNop() { pass('testNop'); });
 </script>
+
+<div id="testFunctionPrototype" class="testcontainer waiting">
+  testFunctionPrototype
+</div>
+<script type="text/javascript">
+  jsunitRegisterIf(inES5Mode,
+      'testFunctionPrototype',
+      function testFunctionPrototype() {
+        function f () {};
+        // Test that Function.prototype is made tamper proof, not frozen.
+        // If frozen, toString would be not writable and thus we'd be
+        // unable to change it by assignment on an object deriving from it.
+        f.toString = function () { return 'foo'; };
+        assertEquals('foo', '' + f);
+        pass('testFunctionPrototype');
+      });
+</script>

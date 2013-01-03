@@ -418,17 +418,19 @@ var ses;
     var freeze = Object.freeze;
     var isFrozen = Object.isFrozen;
     var defProp = Object.defineProperty;
+    var call = Function.prototype.call;
 
     function tamperProof(obj) {
       if (obj !== Object(obj)) { return obj; }
       var func;
-      if (typeof obj === 'object' &&
+      if ((typeof obj === 'object' || obj === Function.prototype) &&
           !!gopd(obj, 'constructor') &&
           typeof (func = obj.constructor) === 'function' &&
           func.prototype === obj &&
           !isFrozen(obj)) {
         strictForEachFn(gopn(obj), function(name) {
           var value;
+          var getterCall;
           function getter() {
             if (obj === this) { return value; }
             if (this === void 0 || this === null) { return void 0; }
@@ -437,8 +439,10 @@ var ses;
             // TODO(erights): If we can reliably uncurryThis() in
             // repairES5.js, the next line should be:
             //   return callFn(getter, getProtoOf(thisObj));
-            return getter.call(getProtoOf(thisObj));
+            return getterCall(getProtoOf(thisObj));
           }
+          getterCall = call.bind(getter);
+          
           function setter(newValue) {
             if (obj === this) {
               throw new TypeError('Cannot set virtually frozen property: ' +
