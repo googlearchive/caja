@@ -137,7 +137,7 @@
     addItem('<a href="' + url + '">' + (text || url) + '</a>');
   }
 
-  function addModed(url, text, mode, minify) {
+  function addModed(url, text, mode, uncajoled) {
     var html = '';
     if (!mode || mode === 'es53') {
       html += '[<a href="' + url + '&es5=false&minified=false">es53</a> ';
@@ -151,13 +151,16 @@
     } else {
       html += '[<s>es5</s> <s>min</s>] ';
     }
+    if (uncajoled) {
+      html += '[<a href="' + uncajoled + '">uncajoled</a>] ';
+    }
     html += text || url;
     addItem(html);
   }
 
   function addQUnit(text, rawUrl) {
     addModed('browser-test-case.html?jQuery=true&test-case=' + rawUrl, text,
-        'es5');
+        'es5', rawUrl);
   }
 
   function forEach(array, callback) {
