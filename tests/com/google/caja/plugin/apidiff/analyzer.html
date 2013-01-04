@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<!--
+ - Copyright (C) 2012 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+<html>
+  <head>
+    <title>Caja/host script environment comparison tool (slow to load)</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+    <script type="text/javascript"
+            src="http://localhost:8000/caja/caja.js"></script>
+    <script type="text/javascript" src="analyzer.js"></script>
+    <style type="text/css">
+      html, body { margin: 0; padding: 0; height: 100%; }
+      table.analyzer-ui {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        border-collapse: collapse;
+        table-layout: fixed;  /* prevents column content from overriding 33% */
+      }
+      table.analyzer-ui > tbody > tr > td {
+        width: 33%;
+        margin: 0;
+        padding: 0;
+        border-left: .1em solid black;
+        vertical-align: top;
+      }
+      table.analyzer-ui > tbody > tr > td:first-child {
+        border: none;
+      }
+      table.analyzer-ui > tbody > tr > td > * {
+        display: block;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        margin: 0;
+        border: none;
+        overflow-y: scroll;
+        overflow-x: auto;
+        background: #FEFEFE;
+      }
+      caja-v-body { margin: 8px; }
+      ins, del {
+        text-decoration: none;
+      }
+      ins, ins * { background: #BFB; }
+      del, del * { background: #FBB; }
+    </style>
+  </head>
+
+  <body>
+    <script type="text/javascript">
+      var hostDone = false, guestDone = false, guestFrame;
+    </script>
+    <table class="analyzer-ui"><tr>
+      <td><iframe id="host" src="reporter.html" onload="
+        hostDone = true;
+        moreDone();
+      "></iframe></td>
+      <td><div id="guest"></div></td>
+      <td><div id="diff"></div></td>
+    </table>
+    <script type="text/javascript">
+      caja.disableSecurityForDebugger(true);
+      caja.initialize({
+        cajaServer: 'http://localhost:8000/caja',
+        forceES5Mode: true,
+        debug: true
+      });
+      caja.load(document.getElementById('guest'), caja.policy.net.ALL,
+          function(frame) {
+        guestFrame = frame;
+        frame.code('reporter.html', 'text/html').run(function() {
+          guestDone = true;
+          moreDone();
+        });
+      });
+
+      function moreDone() {
+        if (!(hostDone && guestDone)) { return; }
+
+        var hostTree = document.getElementById('host').contentDocument
+            .getElementById('root');
+        var guestTree = guestFrame.domicile.document.getElementById('root');
+
+        var diffbox = document.getElementById('diff');
+        diffbox.appendChild(analyzer.diffHTML(hostTree, guestTree));
+        var pre = document.createElement('pre');
+        pre.textContent = analyzer.diffToPlainTextKeysOnly(diffbox);
+        diffbox.appendChild(pre);
+      }
+
+      // patch for Gecko not being as nice as WebKit about table sizing to fit
+      // the page
+      function sizeFixer() {
+        var height = document.body.clientHeight + 'px';
+        var list = document.querySelectorAll('td > *');
+        for (var i = 0; i < list.length; i++) {
+          list[i].style.height = height;
+        }
+      }
+      window.addEventListener('resize', sizeFixer, false);
+      sizeFixer();
+    </script>
+  </body>
+</html>
