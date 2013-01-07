@@ -593,6 +593,42 @@ TODO(felix8a): fix javascript url handling
   });
 </script>
 
+<p id="testEventMutation" class="clickme testcontainer">testEventMutation
+    <span>(Assignment to properties of events)</span></p>
+<script type="text/javascript">
+  jsunitRegister('testEventMutation',
+                 function testEventMutation() {
+    document.getElementById('testEventMutation')
+        .addEventListener('click', jsunitCallback(function(e) {
+
+      // Tamed properties
+      assertTrue('target' in e);  // prevent trivial pass
+      for (var p in e) {
+        var original = directAccess.getFeralProperty(e, p);
+        if (p === 'target') {
+          // prevent trivial pass
+          assertEquals('object', typeof original);
+        }
+        var v = {};
+        e[p] = v;
+        assertEquals(p + ' set #1', v, e[p]);
+        e[p] = 'foo';
+        assertEquals(p + ' set #2', 'foo', e[p]);
+        assertTrue(p + ' host value preserved',
+            original === directAccess.getFeralProperty(e, p));
+      }
+
+      // Expando property
+      e.florb = 44;
+      assertEquals(44, e.florb);
+      assertTrue('expando not found',
+          undefined === directAccess.getFeralProperty(e, 'florb'));
+
+      pass('testEventMutation');
+    }), false);
+  });
+</script>
+
 <p id="testCustomEvents" class="testcontainer">Custom Events<br></p>
 <script type="text/javascript">
   jsunitRegister('testCustomEvents',

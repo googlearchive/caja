@@ -5118,22 +5118,31 @@ var Domado = (function() {
 
       var ep = TameEventConf.p.bind(TameEventConf);
 
-      var EP_RELATED = {
-        enumerable: true,
-        extendedAccessors: true,
-        get: eventMethod(function (prop) {
-          return tameRelatedNode(ep(this).feral[prop], defaultTameNode);
-        })
-      };
-
-      function P_e_view(transform) {
+      function eventVirtualizingAccessor(getter) {
         return {
           enumerable: true,
           extendedAccessors: true,
-          get: eventMethod(function (prop) {
-            return transform(ep(this).feral[prop]);
+          get: eventMethod(getter),
+          set: eventMethod(function(value, prop) {
+            // create own property which will hide this inherited accessor
+            Object.defineProperty(this, prop, {
+              enumerable: true,
+              configurable: true,
+              writable: true,
+              value: value
+            });
           })
         };
+      }
+
+      var EP_RELATED = eventVirtualizingAccessor(function(prop) {
+        return tameRelatedNode(ep(this).feral[prop], defaultTameNode);
+      });
+
+      function P_e_view(transform) {
+        return eventVirtualizingAccessor(function(prop) {
+          return transform(ep(this).feral[prop]);
+        });
       }
 
       function TameEvent(event) {
@@ -5144,56 +5153,34 @@ var Domado = (function() {
       }
       inertCtor(TameEvent, Object, 'Event');
       definePropertiesAwesomely(TameEvent.prototype, {
-        type: {
-          enumerable: true,
-          get: eventMethod(function () {
-            return bridal.untameEventType(String(ep(this).feral.type));
-          })
-        },
+        type: eventVirtualizingAccessor(function() {
+          return bridal.untameEventType(String(ep(this).feral.type));
+        }),
         eventPhase: P_e_view(Number),
-        target: {
-          enumerable: true,
-          get: eventMethod(function () {
-            var event = ep(this).feral;
-            return tameRelatedNode(
-                event.target || event.srcElement, defaultTameNode);
-          })
-        },
-        srcElement: {
-          enumerable: true,
-          get: eventMethod(function () {
-            return tameRelatedNode(ep(this).feral.srcElement, defaultTameNode);
-          })
-        },
-        currentTarget: {
-          enumerable: true,
-          get: eventMethod(function () {
-            var e = ep(this).feral;
-            return tameRelatedNode(e.currentTarget, defaultTameNode);
-          })
-        },
-        relatedTarget: {
-          enumerable: true,
-          get: eventMethod(function () {
-            var e = ep(this).feral;
-            var t = e.relatedTarget;
-            if (!t) {
-              if (e.type === 'mouseout') {
-                t = e.toElement;
-              } else if (e.type === 'mouseover') {
-                t = e.fromElement;
-              }
+        target: eventVirtualizingAccessor(function() {
+          var event = ep(this).feral;
+          return tameRelatedNode(
+              event.target || event.srcElement, defaultTameNode);
+        }),
+        srcElement: eventVirtualizingAccessor(function() {
+          return tameRelatedNode(ep(this).feral.srcElement, defaultTameNode);
+        }),
+        currentTarget: eventVirtualizingAccessor(function() {
+          var e = ep(this).feral;
+          return tameRelatedNode(e.currentTarget, defaultTameNode);
+        }),
+        relatedTarget: eventVirtualizingAccessor(function() {
+          var e = ep(this).feral;
+          var t = e.relatedTarget;
+          if (!t) {
+            if (e.type === 'mouseout') {
+              t = e.toElement;
+            } else if (e.type === 'mouseover') {
+              t = e.fromElement;
             }
-            return tameRelatedNode(t, defaultTameNode);
-          }),
-          // relatedTarget is read-only.  this dummy setter is because some code
-          // tries to workaround IE by setting a relatedTarget when it's not
-          // set.
-          // code in a sandbox can't tell the difference between "falsey because
-          // relatedTarget is not supported" and "falsey because relatedTarget
-          // is outside sandbox".
-          set: eventMethod(function () {})
-        },
+          }
+          return tameRelatedNode(t, defaultTameNode);
+        }),
         fromElement: EP_RELATED,
         toElement: EP_RELATED,
         pageX: P_e_view(Number),

@@ -430,6 +430,11 @@ function createExtraImportsForTesting(frameGroup, frame) {
     getAttribute: function (tameNode, name) {
       return frame.domicile.feralNode(tameNode).getAttribute(name);
     },
+    getFeralProperty: function(obj, prop) {
+      // Unsafe in general, busts the membrane -- use only for === tests and
+      // such.
+      return frame.untame(obj)[prop];
+    },
     getParentNode: function(tameNode) {
       // escapes foreign node/outside-of-vdoc protection
       return frame.domicile.tameNode(
