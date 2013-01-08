@@ -177,6 +177,7 @@
   ses.mitigateGotchas = function(programSrc, options) {
     try {
       options = resolveOptions(options);
+      var dirty = false;
       var path = [];
       var scopeLevel = 0;
       var ast = ses.rewriter_.parse(programSrc);
@@ -187,11 +188,14 @@
             if (options.rewriteTopLevelFuncs &&
                 isFunctionDecl(node) && scopeLevel === 0) {
               rewriteFuncDecl(node, path);
+              dirty = true;
             } else if (options.rewriteTypeOf && isTypeOf(node)) {
               rewriteTypeOf(node);
+              dirty = true;
             } else if (options.rewriteTopLevelVars &&
                        isVariableDecl(node) && scopeLevel === 0) {
               rewriteVars(node);
+              dirty = true;
             }
 
             if (introducesScope(node)) {
@@ -208,7 +212,17 @@
             }
         }
       });
-      return ses.rewriter_.generate(ast);
+      if (dirty) {
+        return "\n"
+            + "/*\n"
+            + " * Program rewritten to mitigate differences between\n"
+            + " * Caja and strict-mode JavaScript.\n"
+            + " * For more see http://code.google.com/p/google-caja/wiki/SES\n"
+            + " */\n"
+            + ses.rewriter_.generate(ast);
+      } else {
+        return programSrc;
+      }
     } catch (e) {
       ses.logger.warn('Failed to mitigate SES gotchas. Proceeding anyways.', e);
       return programSrc;
