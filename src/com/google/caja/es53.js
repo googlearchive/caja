@@ -4284,6 +4284,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       });
     freeze(ArrayLike);
     makeArrayLike = markFunc(function () { return ArrayLike; });
+    makeArrayLike.canBeFullyLive = true;
   })();} else if (numericGetters) { (function () {
     // Make ArrayLike.prototype be an object with a fixed set of numeric
     // getters.  To tame larger lists, replace ArrayLike and its prototype
@@ -4345,6 +4346,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         }
         return BiggestArrayLike;
       });
+    makeArrayLike.canBeFullyLive = false;
   })(); } else {
     // ArrayLike constructs a frozen array in the absence of better support.
     ArrayLike = markFunc(function(proto, getItem, getLength) {
@@ -4374,7 +4376,12 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     freeze(ArrayLike);
     freeze(ArrayLike.prototype);
     makeArrayLike = markFunc(function () { return ArrayLike; });
+    makeArrayLike.canBeFullyLive = false;
   }
+  makeArrayLike.DefineOwnProperty___('canBeFullyLive', {
+    value: makeArrayLike.canBeFullyLive,
+    enumerable: true
+  });
 
   ////////////////////////////////////////////////////////////////////////
   // Proxies

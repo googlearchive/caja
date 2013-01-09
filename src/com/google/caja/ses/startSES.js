@@ -850,6 +850,11 @@ ses.startSES = function(global,
      *
      * <p>The constructor returns a new object that inherits from the
      * {@code proto} passed in.
+     *
+     * makeArrayLike.canBeFullyLive indicates whether the implementation
+     * is fully dynamic -- in particular whether, if getLength increases
+     * its value between creation and access, is it guaranteed that
+     * accesses in the new range will be intercepted by getItem.
      */
     var makeArrayLike;
     (function() {
@@ -957,6 +962,7 @@ ses.startSES = function(global,
           }, Object.prototype);
           tamperProof(ArrayLike);
           makeArrayLike = function() { return ArrayLike; };
+          makeArrayLike.canBeFullyLive = true;
         })();
       } else {
         (function() {
@@ -1019,6 +1025,7 @@ ses.startSES = function(global,
             }
             return BiggestArrayLike;
           };
+          makeArrayLike.canBeFullyLive = false;
         })();
       }
     })();

@@ -2156,6 +2156,27 @@ var Domado = (function() {
 
         return cajaVM.def({
           /**
+           * Ensure that a taming wrapper for the given underlying property is
+           * memoized via the taming membrane, but only if 'memo' is true.
+           */
+          TameMemoIf: function(memo, prop, tamer) {
+            assert(typeof memo === 'boolean');  // in case of bad data
+            return {
+              enumerable: true,
+              extendedAccessors: false,
+              get: memo ? method(function() {
+                var feral = p(this).feral[prop];
+                if (!taming.hasTameTwin(feral)) {
+                  taming.tamesTo(feral, tamer.call(this, feral));
+                }
+                return taming.tame(feral);
+              }) : method(function() {
+                return tamer.call(this, p(this).feral[prop]);
+              })
+            };
+          },
+
+          /**
            * Property descriptor for properties which have the value the feral
            * object does and are not assignable.
            */
@@ -2618,6 +2639,9 @@ var Domado = (function() {
         return tamed;
       }
 
+      // Used to decide whether to memoize TameNodeList etc. instances.
+      var nodeListsAreLive = cajaVM.makeArrayLike.canBeFullyLive;
+
       function rebuildTameListConstructors(ArrayLike) {
         TameNodeList = makeTameNodeList();
         TameNodeList.prototype = Object.create(ArrayLike.prototype);
@@ -2758,8 +2782,12 @@ var Domado = (function() {
           tagName = tagName.toLowerCase();
           tagName = virtualToRealElementName(tagName);
         }
-        return new TameNodeList(rootNode.getElementsByTagName(tagName),
-            defaultTameNode);
+        var feralList = rootNode.getElementsByTagName(tagName);
+        if (!taming.hasTameTwin(feralList)) {
+          taming.tamesTo(feralList,
+              new TameNodeList(feralList, defaultTameNode));
+        }
+        return taming.tame(feralList);
       }
 
       /**
@@ -2797,9 +2825,12 @@ var Domado = (function() {
 
         // "unordered set of unique space-separated tokens representing classes"
         if (typeof rootNode.getElementsByClassName === 'function') {
-          return new TameNodeList(
-              rootNode.getElementsByClassName(
-                  classes.join(' ')), defaultTameNode);
+          var feralList = rootNode.getElementsByClassName(classes.join(' '));
+          if (!taming.hasTameTwin(feralList)) {
+            taming.tamesTo(feralList,
+                new TameNodeList(feralList, defaultTameNode));
+          }
+          return taming.tame(feralList);
         } else {
           // Add spaces around each class so that we can use indexOf later to
           // find a match.
@@ -3122,35 +3153,27 @@ var Domado = (function() {
         nextSibling: NP.related,
         previousSibling: NP.related,
         parentNode: NP.related,
-        childNodes: {
-          enumerable: true,
-          get: cajaVM.def(function () {
-            var privates = np(this);
-            if (privates.policy.childrenVisible) {
-              return new TameNodeList(np(this).feral.childNodes,
-                  defaultTameNode);
-            } else {
-              return fakeNodeList([]);
-            }
-          })
-        },
-        attributes: {
-          enumerable: true,
-          get: cajaVM.def(function () {
-            var privates = np(this);
-            if (privates.policy.attributesVisible) {
-              var thisNode = privates.feral;
-              var tameNodeCtor = function(node) {
-                return new TameBackedAttributeNode(node, thisNode);
-              };
-              // TODO(kpreid): There is no test which caught a previous
-              // editability policy failure here
-              return new TameNodeList(thisNode.attributes, tameNodeCtor);
-            } else {
-              return fakeNodeList([]);
-            }
-          })
-        }
+        childNodes: NP.TameMemoIf(nodeListsAreLive, 'childNodes', function(f) {
+          if (np(this).policy.childrenVisible) {
+            return new TameNodeList(f, defaultTameNode);
+          } else {
+            return fakeNodeList([]);
+          }
+        }),
+        attributes: NP.TameMemoIf(nodeListsAreLive, 'attributes', function(f) {
+          var privates = np(this);
+          if (privates.policy.attributesVisible) {
+            var thisNode = privates.feral;
+            var tameNodeCtor = function(node) {
+              return new TameBackedAttributeNode(node, thisNode);
+            };
+            // TODO(kpreid): There is no test which caught a previous
+            // editability policy failure here
+            return new TameNodeList(f, tameNodeCtor);
+          } else {
+            return fakeNodeList([]);
+          }
+        })
       });
       TameBackedNode.prototype.cloneNode = nodeMethod(function (deep) {
         np(this).policy.requireUnrestricted();
@@ -4620,13 +4643,9 @@ var Domado = (function() {
         proxyType: FormElementAndExpandoProxyHandler,
         properties: {
           action: NP.filterAttr(defaultToEmptyStr, String),
-          elements: {
-            enumerable: true,
-            get: nodeMethod(function () {
-              return tameHTMLCollection(
-                  np(this).feral.elements, defaultTameNode);
-            })
-          },
+          elements: NP.TameMemoIf(nodeListsAreLive, 'elements', function(f) {
+            return tameHTMLCollection(f, defaultTameNode);
+          }),
           enctype: NP.filterAttr(defaultToEmptyStr, String),
           method: NP.filterAttr(defaultToEmptyStr, String),
           target: NP.filterAttr(defaultToEmptyStr, String)
@@ -4823,13 +4842,9 @@ var Domado = (function() {
         domClass: 'HTMLSelectElement',
         properties: {
           multiple: NP.rw,
-          options: {
-            enumerable: true,
-            get: nodeMethod(function () {
-              return new TameOptionsList(
-                  np(this).feral.options, defaultTameNode, 'name');
-            })
-          },
+          options: NP.TameMemoIf(nodeListsAreLive, 'options', function(f) {
+            return new TameOptionsList(f, defaultTameNode, 'name');
+          }),
           selectedIndex: NP.filterProp(identity, toInt),
           type: NP.ro
         }
@@ -4953,15 +4968,11 @@ var Domado = (function() {
       var TameTableRowElement = defineElement({
         domClass: 'HTMLTableRowElement',
         properties: {
-          cells: {
-            // TODO(kpreid): It would be most pleasing to find a way to generalize
-            // all the accessors which are of the form
-            //     return new TameNodeList(np(this).feral...., ..., ...)
-            enumerable: true,
-            get: nodeMethod(function () {
-              return new TameNodeList(np(this).feral.cells, defaultTameNode);
-            })
-          },
+          // TODO(kpreid): Arrange so there are preexisting functions to pass
+          // into TameMemoIf rather than repeating this inline stuff.
+          cells: NP.TameMemoIf(nodeListsAreLive, 'cells', function(feralList) {
+            return new TameNodeList(feralList, defaultTameNode);
+          }),
           rowIndex: NP.ro,
           sectionRowIndex: NP.ro
         }
@@ -4982,12 +4993,9 @@ var Domado = (function() {
       var TameTableSectionElement = defineElement({
         domClass: 'HTMLTableSectionElement',
         properties: {
-          rows: {
-            enumerable: true,
-            get: nodeMethod(function () {
-              return new TameNodeList(np(this).feral.rows, defaultTameNode);
-            })
-          }
+          rows: NP.TameMemoIf(nodeListsAreLive, 'rows', function(feralList) {
+            return new TameNodeList(feralList, defaultTameNode);
+          })
         }
       });
       TameTableSectionElement.prototype.insertRow = nodeMethod(function(index) {
@@ -5005,17 +5013,13 @@ var Domado = (function() {
         superclass: TameTableSectionElement,  // nonstandard but sound
         domClass: 'HTMLTableElement',
         properties: {
-          tBodies: {
-            enumerable: true,
-            get: nodeMethod(function () {
-              if (np(this).policy.childrenVisible) {
-                return new TameNodeList(np(this).feral.tBodies,
-                    defaultTameNode);
-              } else {
-                return fakeNodeList([]);
-              }
-            })
-          },
+          tBodies: NP.TameMemoIf(nodeListsAreLive, 'tBodies', function(f) {
+            if (np(this).policy.childrenVisible) {
+              return new TameNodeList(f, defaultTameNode);
+            } else {
+              return fakeNodeList([]);
+            }
+          }),
           tHead: NP_tameDescendant,
           tFoot: NP_tameDescendant,
           cellPadding: NP.filterAttr(Number, fromInt),
@@ -5301,7 +5305,8 @@ var Domado = (function() {
             // None of our children are elements, fail
             return null;
           })},
-        forms: { enumerable: true, get: nodeMethod(function () {
+        forms: { enumerable: true, get: nodeMethod(function() {
+          // TODO(kpreid): Make this a memoized live list.
           var tameForms = [];
           for (var i = 0; i < document.forms.length; i++) {
             var tameForm = tameRelatedNode(
