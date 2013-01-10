@@ -2400,6 +2400,8 @@ var Domado = (function() {
             return new TameTextNode(node);
           case 8:  // Comment
             return new TameCommentNode(node);
+          case 9: // Document (not well supported)
+            return new TameBackedNode(node);
           case 11: // Document Fragment
             return new TameBackedNode(node);
           default:
@@ -3205,13 +3207,8 @@ var Domado = (function() {
           function(toInsert, child) {
         toInsert = TameNodeT.coerce(toInsert);
         if (child === void 0) { child = null; }
+        if (child !== null) { child = TameNodeT.coerce(child); }
 
-        if (child !== null) {
-          child = TameNodeT.coerce(child);
-          // TODO(kpreid): This child is not being mutated except for its
-          // previousSibling, so why are we rejecting here?
-          np(child).policy.requireEditable();
-        }
         checkAdoption(this, toInsert);
 
         np(this).feral.insertBefore(
@@ -3219,10 +3216,10 @@ var Domado = (function() {
         return toInsert;
       });
       TameBackedNode.prototype.removeChild = nodeMethod(function(child) {
+        var privates = np(this);
         child = TameNodeT.coerce(child);
-        np(this).policy.requireChildrenEditable();
-        np(child).policy.requireEditable();
-        np(this).feral.removeChild(np(child).feral);
+        privates.policy.requireChildrenEditable();
+        privates.feral.removeChild(np(child).feral);
         return child;
       });
       TameBackedNode.prototype.replaceChild = nodeMethod(
@@ -3231,7 +3228,6 @@ var Domado = (function() {
         oldChild = TameNodeT.coerce(oldChild);
 
         checkAdoption(this, newChild);
-        np(oldChild).policy.requireEditable();
 
         np(this).feral.replaceChild(np(newChild).feral, np(oldChild).feral);
         return oldChild;
@@ -3303,65 +3299,6 @@ var Domado = (function() {
         }
       }
       cajaVM.def(TameBackedNode);  // and its prototype
-
-      /**
-       * A fake node that is not backed by a real DOM node.
-       * @constructor
-       */
-      function TamePseudoNode() {
-        // Note inconsistency: we have an editable policy, for the sake of our
-        // children, but don't actually allow direct mutation.
-        TameNode.call(this, nodePolicyEditable);
-
-        if (domitaModules.proxiesAvailable) {
-          // finishNode will wrap 'this' with an actual proxy later.
-          np(this).proxyHandler = new ExpandoProxyHandler(this, true, {});
-        }
-      }
-      inertCtor(TamePseudoNode, TameNode);
-      TamePseudoNode.prototype.appendChild =
-      TamePseudoNode.prototype.insertBefore =
-      TamePseudoNode.prototype.removeChild =
-      TamePseudoNode.prototype.replaceChild = nodeMethod(function () {
-        if (typeof console !== 'undefined') {
-          console.log("Node not editable; no action performed.");
-        }
-        return void 0;
-      });
-      TamePseudoNode.prototype.hasChildNodes = nodeMethod(function () {
-        return this.firstChild != null;
-      });
-      definePropertiesAwesomely(TamePseudoNode.prototype, {
-        firstChild: { enumerable: true, get: nodeMethod(function () {
-          var children = this.childNodes;
-          return children.length ? children[0] : null;
-        })},
-        lastChild: { enumerable: true, get: nodeMethod(function () {
-          var children = this.childNodes;
-          return children.length ? children[children.length - 1] : null;
-        })},
-        nextSibling: { enumerable: true, get: nodeMethod(function () {
-          var self = tamingProxies.get(this) || this;
-          var parentNode = this.parentNode;
-          if (!parentNode) { return null; }
-          var siblings = parentNode.childNodes;
-          for (var i = siblings.length - 1; --i >= 0;) {
-            if (siblings[+i] === self) { return siblings[i + 1]; }
-          }
-          return null;
-        })},
-        previousSibling: { enumerable: true, get: nodeMethod(function () {
-          var self = tamingProxies.get(this) || this;
-          var parentNode = this.parentNode;
-          if (!parentNode) { return null; }
-          var siblings = parentNode.childNodes;
-          for (var i = siblings.length; --i >= 1;) {
-            if (siblings[+i] === self) { return siblings[i - 1]; }
-          }
-          return null;
-        })}
-      });
-      cajaVM.def(TamePseudoNode);  // and its prototype
 
       // Restricted node types:
 
@@ -4755,18 +4692,15 @@ var Domado = (function() {
           // TODO(kpreid): Use an alternate HTML schema (requires refactoring)
           // which makes <html> <head> <body> permitted (in particular,
           // non-opaque) so that this is unnecessary.
-          var child;
-          while ((child = makeDOMAccessible(frameFeralDoc.lastChild))) {
-            frameFeralDoc.removeChild(child);
-          }
           var tdoc = subDomicile.document;
-          var thtml = tdoc.createElement('html');
+          var child;
+          while ((child = tdoc.lastChild)) {
+            tdoc.removeChild(child);
+          }
+          var thtml = tdoc.appendChild(tdoc.createElement('html'));
           thtml.appendChild(tdoc.createElement('head'));
           thtml.appendChild(tdoc.createElement('body'));
-          frameFeralDoc.appendChild(subDomicile.feralNode(thtml));
-              // cannot do this via pseudo-node
 
-          void HtmlEmitter; // placeholder
           var emitter = new HtmlEmitter(
               makeDOMAccessible, subDomicile.htmlEmitterTarget, subDomicile);
           emitter.finish();
@@ -5249,15 +5183,21 @@ var Domado = (function() {
       cajaVM.def(TameCustomHTMLEvent);  // and its prototype
 
       function TameHTMLDocument(doc, container, domain) {
-        TamePseudoNode.call(this);
+        TameNode.call(this, nodePolicyEditable);
+
+        if (domitaModules.proxiesAvailable) {
+          // finishNode will wrap 'this' with an actual proxy later.
+          np(this).proxyHandler = new ExpandoProxyHandler(this, true, {});
+        }
 
         np(this).feralDoc = doc;
         np(this).feralContainerNode = container;
         np(this).onLoadListeners = [];
         np(this).onDCLListeners = [];
 
-        var tameContainer = defaultTameNode(container);
-        np(this).tameContainerNode = tameContainer;
+        // Used to implement operations on the document, never exposed to the
+        // guest.
+        np(this).tameContainerNode = defaultTameNode(container);
 
         definePropertiesAwesomely(this, {
           domain: P_constant(domain)
@@ -5266,11 +5206,19 @@ var Domado = (function() {
         installLocation(this);
       }
       nodeClasses.Document =
-          inertCtor(TameHTMLDocument, TamePseudoNode, 'HTMLDocument');
+          inertCtor(TameHTMLDocument, TameNode, 'HTMLDocument');
       definePropertiesAwesomely(TameHTMLDocument.prototype, {
         nodeType: P_constant(9),
         nodeName: P_constant('#document'),
         nodeValue: P_constant(null),
+        firstChild: { enumerable: true, get: nodeMethod(function() {
+          return np(this).tameContainerNode.firstChild;
+        })},
+        lastChild: { enumerable: true, get: nodeMethod(function() {
+          return np(this).tameContainerNode.lastChild;
+        })},
+        nextSibling: P_constant(null),
+        previousSibling: P_constant(null),
         childNodes: { enumerable: true, get: nodeMethod(function () {
           return np(this).tameContainerNode.childNodes;
         })},
@@ -5343,6 +5291,23 @@ var Domado = (function() {
         },
         compatMode: P_constant('CSS1Compat'),
         ownerDocument: P_constant(null)
+      });
+      TameHTMLDocument.prototype.appendChild = nodeMethod(function(add) {
+        return np(this).tameContainerNode.appendChild(add);
+      });
+      TameHTMLDocument.prototype.insertBefore =
+          nodeMethod(function(add, before) {
+        return np(this).tameContainerNode.insertBefore(add, before);
+      });
+      TameHTMLDocument.prototype.removeChild = nodeMethod(function(remove) {
+        return np(this).tameContainerNode.removeChild(remove);
+      });
+      TameHTMLDocument.prototype.replaceChild =
+          nodeMethod(function(add, remove) {
+        return np(this).tameContainerNode.replaceChild(add, remove);
+      });
+      TameHTMLDocument.prototype.hasChildNodes = nodeMethod(function() {
+        return this.firstChild != null;
       });
       TameHTMLDocument.prototype.getElementsByTagName = nodeMethod(
           function (tagName) {

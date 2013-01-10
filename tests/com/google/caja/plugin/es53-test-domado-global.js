@@ -201,6 +201,25 @@
           '}</script>');
     })();
 
+    /**
+     * Test mutation of global structure.
+     */
+    (function () {
+      registerGuestTest('testGlobalMutation',
+          '<body>testGlobalMutation' +
+          '<script>' +
+          'window.globalGuestTest = function globalGuestTest() {' +
+          '  for (var i = 0; document.firstChild && i < 100; i++) {' +
+          '    document.removeChild(document.firstChild);' +
+          '  }' +
+          '  assertEquals(0, document.childNodes.length);' +
+          '  var el = document.createElement("foo");' +
+          '  document.appendChild(el);' +
+          '  assertTrue(el === document.firstChild);' +
+          '};' +
+          '</script>');
+    })();
+
     readyToTest();
     jsunitRun();
   });
