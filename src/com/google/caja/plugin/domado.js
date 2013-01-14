@@ -5048,7 +5048,7 @@ var Domado = (function() {
       function tameEvent(event) {
         event = makeDOMAccessible(event);
         if (!taming.hasTameTwin(event)) {
-          var tamed = new TameEvent(event);
+          var tamed = new TameEvent(event, false);
           taming.tamesTo(event, tamed);
         }
         return taming.tame(event);
@@ -5083,10 +5083,12 @@ var Domado = (function() {
         });
       }
 
-      function TameEvent(event) {
+      function TameEvent(event, notYetDispatched) {
         assert(!!event);
         TameEventConf.confide(this);
-        ep(this).feral = event;
+        var privates = ep(this);
+        privates.feral = event;
+        privates.notYetDispatched = notYetDispatched;
         return this;
       }
       inertCtor(TameEvent, Object, 'Event');
@@ -5161,7 +5163,7 @@ var Domado = (function() {
       cajaVM.def(TameEvent);  // and its prototype
 
       function TameCustomHTMLEvent(event) {
-        var self = TameEvent.call(this, event);
+        var self = TameEvent.call(this, event, true);
         if (domitaModules.proxiesAvailable) {
           Object.preventExtensions(this);  // required by ES5/3 proxy emulation
           var proxy = Proxy.create(
@@ -5174,8 +5176,19 @@ var Domado = (function() {
       }
       inherit(TameCustomHTMLEvent, TameEvent);
       TameCustomHTMLEvent.prototype.initEvent
-          = eventMethod(function (type, bubbles, cancelable) {
-        bridal.initEvent(ep(this).feral, type, bubbles, cancelable);
+          = eventMethod(function(type, bubbles, cancelable) {
+        var privates = ep(this);
+        if (privates.notYetDispatched) {
+          bridal.initEvent(privates.feral, type, bubbles, cancelable);
+        } else {
+          // Do nothing. This prevents guests using initEvent to mutate
+          // browser-generated events that will be seen by the host.
+          // It also matches browser behavior (Chrome and FF, as of 2013-01-07),
+          // because they have initEvent do nothing if the event has already
+          // been dispatched, but we don't want to rely on that for security,
+          // and bridal's initEvent emulation for IE does not have that
+          // property.
+        }
       });
       setOwn(TameCustomHTMLEvent.prototype, "toString", eventMethod(function () {
         return '[Fake CustomEvent]';

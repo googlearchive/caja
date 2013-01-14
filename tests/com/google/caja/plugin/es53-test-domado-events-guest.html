@@ -727,6 +727,30 @@ TODO(felix8a): fix javascript url handling
   });
 </script>
 
+<p id="testInitEventSecurity" class="clickme testcontainer"><span>
+  testInitEventSecurity -- initEvent cannot be used to mutate host events
+</span></p>
+<script type="text/javascript">
+  jsunitRegister('testInitEventSecurity',
+                 function testInitEventSecurity() {
+    document.getElementById('testInitEventSecurity')
+        .addEventListener('click', jsunitCallback(function(e) {
+      // Currently non-custom events have no initEvent method at all, so we
+      // try borrowing one.
+      var initEvent = e.initEvent ||
+          document.createEvent('MouseEvents').initEvent;
+      // Browser behavior (Chrome, FF) is that initEvent has no effect after
+      // dispatchEvent starts. Spec says initEvent "may only be called" before
+      // dispatchEvent <http://www.w3.org/TR/DOM-Level-2-Events/events.html>,
+      // but that's awfully vague, hence this test.
+      initEvent.call(e, 'clank', false, false);
+      assertEquals('click', e.type);
+      assertEquals('click', directAccess.getFeralProperty(e, 'type'));
+      pass('testInitEventSecurity');
+    }), false);
+  });
+</script>
+
 <script type="text/javascript">
   jsunitRun();
 </script>
