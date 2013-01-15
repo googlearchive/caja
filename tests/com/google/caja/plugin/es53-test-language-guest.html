@@ -157,7 +157,7 @@
     assertEquals('-cd-', m[0]);
     assertEquals('c', m[1]);
     assertEquals('d', m[2]);
-    m = re.e
+    m = re.e;
     pass('testRegExec');
   });
 </script>
@@ -333,5 +333,43 @@
     f.toString = function() { return 'foo'; };
     assertEquals('foo', '' + f);
     pass('testFunctionPrototype');
+  });
+</script>
+
+<!-- Upstream escodegen errors causes errors rendering -->
+<!-- ObjectExpressions if they have object literals with keys and -->
+<!-- values.  This in turn causes top-level var mitigation to fail. -->
+<div id="testIssue1622" class="testcontainer">
+  testIssue1622
+</div>
+<script>
+  var issue1622_xxx = { foo: 1 };
+  function issue1622_myTopFunc() { return issue1622_xxx.foo; }
+</script>
+<script type="text/javascript">
+  jsunitRegister('testIssue1622',
+    function testIssue1622() {
+      try {
+        assertEquals(1, issue1622_myTopFunc());
+        pass('testIssue1622');
+      } catch (e) {
+        fail();
+      }
+  });
+</script>
+
+<div id="testMalformedScript" class="testcontainer">
+  testMalformedScript
+</div>
+<script type="text/javascript">
+  // Function is only supported in ES5 mode.
+  jsunitRegisterIf(inES5Mode, 'testMalformedScript',
+    function testMalformedScript() {
+      try {
+        Function("})");
+        fail();
+      } catch (e) {
+        pass('testMalformedScript');
+      }
   });
 </script>

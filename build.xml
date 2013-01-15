@@ -980,8 +980,8 @@ For help on building and testing Caja, see:
         properties on exports -->
       <input file="${src.caja}/ses/createExports.js"/>
       <input file="${third_party}/js/acorn/acorn.js" jslint="false"/>
-      <input file="${third_party}/js/escodegen/estraverse.js" jslint="false"/>
       <input file="${third_party}/js/escodegen/escodegen.js" jslint="false"/>
+      <input file="${third_party}/js/escodegen/estraverse.js" jslint="false"/>
       <input file="${src.caja}/ses/exportsToSES.js"/>
       <input file="${src.caja}/ses/mitigateGotchas.js"/>
       <input file="${src.caja}/ses/atLeastFreeVarNames.js"/>
@@ -1012,8 +1012,8 @@ For help on building and testing Caja, see:
         properties on exports -->
       <input file="${src.caja}/ses/createExports.js"/>
       <input file="${third_party}/js/acorn/acorn.js" jslint="false"/>
-      <input file="${third_party}/js/escodegen/estraverse.js" jslint="false"/>
       <input file="${third_party}/js/escodegen/escodegen.js" jslint="false"/>
+      <input file="${third_party}/js/escodegen/estraverse.js" jslint="false"/>
       <input file="${src.caja}/ses/exportsToSES.js"/>
       <input file="${src.caja}/ses/mitigateGotchas.js"/>
       <input file="${src.caja}/ses/atLeastFreeVarNames.js"/>

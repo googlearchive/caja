@@ -26,4 +26,8 @@ public class Es5BrowserTest extends UniversalBrowserTests {
   public void testExternalScript() throws Exception {
     runTestCase("es53-test-external-script-guest.html", true);
   }
+
+  public void testUnicode() throws Exception {
+    runTestDriver("es53-test-unicode.js", es5Mode);
+  }
 }

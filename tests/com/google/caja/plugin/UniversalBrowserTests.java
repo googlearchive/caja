@@ -52,10 +52,6 @@ public abstract class UniversalBrowserTests extends BrowserTestCase {
     assertNotContains(result, "{closured=false}");
   }
 
-  public void testUnicode() throws Exception {
-    runTestDriver("es53-test-unicode.js", es5Mode);
-  }
-
   public void testBasicFunctions() throws Exception {
     runTestCase("es53-test-basic-functions-guest.html", es5Mode);
   }

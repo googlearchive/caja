@@ -14,6 +14,8 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.util.FailureIsAnOption;
+
 public class Es53BrowserTest extends UniversalBrowserTests {
   public Es53BrowserTest() {
     super(false /* es5Mode */);
@@ -79,4 +81,11 @@ public class Es53BrowserTest extends UniversalBrowserTests {
     runTestDriver("es53-test-automode4.js", false);
   }
 
+  // See http://code.google.com/p/google-caja/issues/detail?id=1621
+  // TODO(jasvir): Move this test back into UniversalBrowserTests once this
+  // caja.js api supports testing cajoling errors
+  @FailureIsAnOption("Cajoling errors in ES53 not accessible via caja.js api")
+  public void testUnicode() throws Exception {
+    runTestDriver("es53-test-unicode.js", es5Mode);
+  }
 }

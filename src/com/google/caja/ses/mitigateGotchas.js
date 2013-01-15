@@ -224,8 +224,12 @@
         return programSrc;
       }
     } catch (e) {
-      ses.logger.warn('Failed to mitigate SES gotchas. Proceeding anyways.', e);
-      return programSrc;
+      ses.logger.warn('Failed to parse program', e);
+      // TODO(jasvir): Consider using the thrown exception to provide
+      // a more useful descriptive error message.  Be aware of naively
+      // interpolating error message strings.
+      return '' +
+        '(function() { throw new Error("Failed to parse program"); })()';
     }
   };
 
