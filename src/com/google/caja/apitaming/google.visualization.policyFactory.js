@@ -90,6 +90,17 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
 
 
   ////////////////////////////////////////////////////////////////////////
+  // Copy 2nd argument of draw() on a visualization, ensuring that the
+  // result has HTML in tooltips turned off
+
+  function copyDrawOpts(opts) {
+    opts = utils.copyJson(opts);
+    opts.allowHtml = false;
+    opts.tooltip = { isHtml: false };
+    return opts;
+  }
+
+  ////////////////////////////////////////////////////////////////////////
   // DataTable
 
   v.DataTable = function(opt_data, opt_version) {};
@@ -132,6 +143,15 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
   v.DataTable.prototype.getColumnProperties = function(columnIndex) {};
   v.DataTable.prototype.insertColumn = function(atColIndex, type, opt_label, opt_id) {};
   v.DataTable.prototype.addColumn = function(type, opt_label, opt_id) {};
+  v.DataTable.prototype.addColumn.__before__ = [
+    function(f, self, args) {
+      if (args.length === 1) {
+        return [ utils.copyJson(args[0]) ];
+      } else {
+        return args;
+      }
+    }
+  ];
   v.DataTable.prototype.insertRows = function(atRowIndex, numOrArray) {};
   v.DataTable.prototype.insertRows.__before__ = [ utils.mapArgs(utils.identity, utils.copyMixed) ];
   v.DataTable.prototype.addRows = function(numOrArray) {};
@@ -404,7 +424,7 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
   v.PieChart.__super__ = Object;
   v.PieChart.__before__ = [ utils.mapArgs(utils.opaqueNode) ];
   v.PieChart.prototype.draw = function(data, opt_options, opt_state) {};
-  v.PieChart.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, utils.copyJson, utils.copyJson) ];
+  v.PieChart.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, copyDrawOpts, utils.copyJson) ];
   v.PieChart.prototype.clearChart = function() {};
   v.PieChart.prototype.getSelection = function() {};
   v.PieChart.prototype.setSelection = function(selection) {};
@@ -413,7 +433,7 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
   v.ScatterChart.__super__ = Object;
   v.ScatterChart.__before__ = [ utils.mapArgs(utils.opaqueNode) ];
   v.ScatterChart.prototype.draw = function(data, opt_options, opt_state) {};
-  v.ScatterChart.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, utils.copyJson, utils.copyJson) ];
+  v.ScatterChart.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, copyDrawOpts, utils.copyJson) ];
   v.ScatterChart.prototype.clearChart = function() {};
   v.ScatterChart.prototype.getSelection = function() {};
   v.ScatterChart.prototype.setSelection = function(selection) {};
@@ -422,7 +442,7 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
   v.Gauge.__super__ = Object;
   v.Gauge.__before__ = [ utils.mapArgs(utils.opaqueNode) ];
   v.Gauge.prototype.draw = function(dataTable, opt_options) {};
-  v.Gauge.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, utils.copyJson, utils.copyJson) ];
+  v.Gauge.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, copyDrawOpts, utils.copyJson) ];
   v.Gauge.prototype.clearChart = function() {};
 
   v.GeoChart = function(container) {};
@@ -431,7 +451,7 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
   v.GeoChart.mapExists = function(userOptions) {};
   v.GeoChart.prototype.clearChart = function() {};
   v.GeoChart.prototype.draw = function(dataTable, userOptions, opt_state) {};
-  v.GeoChart.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, utils.copyJson, utils.copyJson) ];
+  v.GeoChart.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, copyDrawOpts, utils.copyJson) ];
   v.GeoChart.prototype.getSelection = function() {};
   v.GeoChart.prototype.setSelection = function(selection) {};
 
@@ -439,7 +459,7 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
   v.Table.__super__ = Object;
   v.Table.__before__ = [ utils.mapArgs(utils.opaqueNode) ];
   v.Table.prototype.draw = function(dataTable, opt_options) {};
-  v.Table.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, utils.copyJson, utils.copyJson) ];
+  v.Table.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, copyDrawOpts, utils.copyJson) ];
   v.Table.prototype.clearChart = function() {};
   v.Table.prototype.getSortInfo = function() {};
   v.Table.prototype.getSelection = function() {};
@@ -449,7 +469,7 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
   v.TreeMap.__super__ = Object;
   v.TreeMap.__before__ = [ utils.mapArgs(utils.opaqueNode) ];
   v.TreeMap.prototype.draw = function(dataTable, opt_options) {};
-  v.TreeMap.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, utils.copyJson, utils.copyJson) ];
+  v.TreeMap.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, copyDrawOpts, utils.copyJson) ];
   v.TreeMap.prototype.clearChart = function() {};
   v.TreeMap.prototype.getSelection = function() {};
   v.TreeMap.prototype.setSelection = function(selection) {};
@@ -458,7 +478,7 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
   v.ComboChart.__super__ = Object;
   v.ComboChart.__before__ = [ utils.mapArgs(utils.opaqueNode) ];
   v.ComboChart.prototype.draw = function(data, opt_options, opt_state) {};
-  v.ComboChart.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, utils.copyJson, utils.copyJson) ];
+  v.ComboChart.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, copyDrawOpts, utils.copyJson) ];
   v.ComboChart.prototype.clearChart = function() {};
   v.ComboChart.prototype.getSelection = function() {};
   v.ComboChart.prototype.setSelection = function(selection) {};
@@ -467,7 +487,7 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
   v.LineChart.__super__ = Object;
   v.LineChart.__before__ = [ utils.mapArgs(utils.opaqueNode) ];
   v.LineChart.prototype.draw = function(data, opt_options, opt_state) {};
-  v.LineChart.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, utils.copyJson, utils.copyJson) ];
+  v.LineChart.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, copyDrawOpts, utils.copyJson) ];
   v.LineChart.prototype.clearChart = function() {};
   v.LineChart.prototype.getSelection = function() {};
   v.LineChart.prototype.setSelection = function(selection) {};
@@ -476,7 +496,7 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
   v.BarChart.__super__ = Object;
   v.BarChart.__before__ = [ utils.mapArgs(utils.opaqueNode) ];
   v.BarChart.prototype.draw = function(data, opt_options, opt_state) {};
-  v.BarChart.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, utils.copyJson, utils.copyJson) ];
+  v.BarChart.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, copyDrawOpts, utils.copyJson) ];
   v.BarChart.prototype.clearChart = function() {};
   v.BarChart.prototype.getSelection = function() {};
   v.BarChart.prototype.setSelection = function(selection) {};
@@ -485,7 +505,7 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
   v.ColumnChart.__super__ = Object;
   v.ColumnChart.__before__ = [ utils.mapArgs(utils.opaqueNode) ];
   v.ColumnChart.prototype.draw = function(data, opt_options, opt_state) {};
-  v.ColumnChart.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, utils.copyJson, utils.copyJson) ];
+  v.ColumnChart.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, copyDrawOpts, utils.copyJson) ];
   v.ColumnChart.prototype.clearChart = function() {};
   v.ColumnChart.prototype.getSelection = function() {};
   v.ColumnChart.prototype.setSelection = function(selection) {};
@@ -494,7 +514,7 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
   v.AreaChart.__super__ = Object;
   v.AreaChart.__before__ = [ utils.mapArgs(utils.opaqueNode) ];
   v.AreaChart.prototype.draw = function(data, opt_options, opt_state) {};
-  v.AreaChart.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, utils.copyJson, utils.copyJson) ];
+  v.AreaChart.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, copyDrawOpts, utils.copyJson) ];
   v.AreaChart.prototype.clearChart = function() {};
   v.AreaChart.prototype.getSelection = function() {};
   v.AreaChart.prototype.setSelection = function(selection) {};
@@ -503,7 +523,7 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
   v.CandlestickChart.__super__ = Object;
   v.CandlestickChart.__before__ = [ utils.mapArgs(utils.opaqueNode) ];
   v.CandlestickChart.prototype.draw = function(data, opt_options, opt_state) {};
-  v.CandlestickChart.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, utils.copyJson, utils.copyJson) ];
+  v.CandlestickChart.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, copyDrawOpts, utils.copyJson) ];
   v.CandlestickChart.prototype.clearChart = function() {};
   v.CandlestickChart.prototype.getSelection = function() {};
   v.CandlestickChart.prototype.setSelection = function(selection) {};
@@ -523,7 +543,7 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
   //   }
   // ];
   // v.AnnotatedTimeLine.prototype.draw = function(data, opt_options) {};
-  // v.AnnotatedTimeLine.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, utils.copyJson, utils.copyJson) ];
+  // v.AnnotatedTimeLine.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, copyDrawOpts, utils.copyJson) ];
   // v.AnnotatedTimeLine.prototype.getSelection = function() {};
   // v.AnnotatedTimeLine.prototype.getVisibleChartRange = function() {};
   // v.AnnotatedTimeLine.prototype.setVisibleChartRange = function(firstDate, lastDate, opt_animate) {};
@@ -535,7 +555,7 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
   v.GeoMap.__before__ = [ utils.mapArgs(utils.opaqueNode) ];
   v.GeoMap.clickOnRegion = function(id, zoomLevel, segmentBy, instanceIndex) {};
   v.GeoMap.prototype.draw = function(dataTable, opt_options) {};
-  v.GeoMap.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, utils.copyJson, utils.copyJson) ];
+  v.GeoMap.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, copyDrawOpts, utils.copyJson) ];
   v.GeoMap.prototype.getSelection = function() {};
   v.GeoMap.prototype.setSelection = function(selection) {};
 
@@ -543,7 +563,7 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
   v.IntensityMap.__super__ = Object;
   v.IntensityMap.__before__ = [ utils.mapArgs(utils.opaqueNode) ];
   v.IntensityMap.prototype.draw = function(dataTable, opt_options) {};
-  v.IntensityMap.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, utils.copyJson, utils.copyJson) ];
+  v.IntensityMap.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, copyDrawOpts, utils.copyJson) ];
   v.IntensityMap.prototype.getSelection = function() {};
   v.IntensityMap.prototype.setSelection = function(selection) {};
 
@@ -551,7 +571,7 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
   v.OrgChart.__super__ = Object;
   v.OrgChart.__before__ = [ utils.mapArgs(utils.opaqueNode) ];
   v.OrgChart.prototype.draw = function(dataTable, opt_options) {};
-  v.OrgChart.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, utils.copyJson, utils.copyJson) ];
+  v.OrgChart.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, copyDrawOpts, utils.copyJson) ];
   v.OrgChart.prototype.getSelection = function() {};
   v.OrgChart.prototype.setSelection = function(selection) {};
   v.OrgChart.prototype.getCollapsedNodes = function() {};
@@ -565,7 +585,7 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
   // v.Map.__super__ = Object;
   // v.Map.__before__ = [ utils.mapArgs(utils.opaqueNode) ];
   // v.Map.prototype.draw = function(dataTable, opt_options) {};
-  // v.Map.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, utils.copyJson, utils.copyJson) ];
+  // v.Map.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, copyDrawOpts, utils.copyJson) ];
   // v.Map.prototype.getSelection = function() {};
   // v.Map.prototype.setSelection = function(selection) {};
 
@@ -573,14 +593,14 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
   v.MotionChart.__super__ = Object;
   v.MotionChart.__before__ = [ utils.mapArgs(utils.opaqueNode) ];
   v.MotionChart.prototype.draw = function(dataTable, opt_options) {};
-  v.MotionChart.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, utils.copyJson, utils.copyJson) ];
+  v.MotionChart.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, copyDrawOpts, utils.copyJson) ];
   v.MotionChart.prototype.getState = function() {};
 
   v.BubbleChart = function(container) {};
   v.BubbleChart.__super__ = Object;
   v.BubbleChart.__before__ = [ utils.mapArgs(utils.opaqueNode) ];
   v.BubbleChart.prototype.draw = function(data, opt_options, opt_state) {};
-  v.BubbleChart.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, utils.copyJson, utils.copyJson) ];
+  v.BubbleChart.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, copyDrawOpts, utils.copyJson) ];
   v.BubbleChart.prototype.clearChart = function() {};
   v.BubbleChart.prototype.getSelection = function() {};
   v.BubbleChart.prototype.setSelection = function(selection) {};
@@ -589,7 +609,7 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
   v.SteppedAreaChart.__super__ = Object;
   v.SteppedAreaChart.__before__ = [ utils.mapArgs(utils.opaqueNode) ];
   v.SteppedAreaChart.prototype.draw = function(data, opt_options, opt_state) {};
-  v.SteppedAreaChart.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, utils.copyJson, utils.copyJson) ];
+  v.SteppedAreaChart.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, copyDrawOpts, utils.copyJson) ];
   v.SteppedAreaChart.prototype.clearChart = function() {};
   v.SteppedAreaChart.prototype.getSelection = function() {};
   v.SteppedAreaChart.prototype.setSelection = function(selection) {};
@@ -632,41 +652,6 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
   v.ControlWrapper.prototype.setState = function(state_obj) {};
   v.ControlWrapper.prototype.setState.__before__ = [ utils.mapArgs(utils.copyJson) ];
 
-
-  ////////////////////////////////////////////////////////////////////////
-  // Specific dashboard control types
-
-  v.StringFilter = function(container) {};
-  v.StringFilter.__super__ = Object;
-  v.StringFilter.__before__ = [ utils.mapArgs(utils.opaqueNode) ];
-  v.StringFilter.prototype.draw = function(dataTable, opt_options, opt_state) {};
-  v.StringFilter.prototype.applyFilter = function() {};
-  v.StringFilter.prototype.getState = function() {};
-  v.StringFilter.prototype.resetControl = function() {};
-
-  v.NumberRangeFilter = function(container) {};
-  v.NumberRangeFilter.__super__ = Object;
-  v.NumberRangeFilter.__before__ = [ utils.mapArgs(utils.opaqueNode) ];
-  v.NumberRangeFilter.prototype.draw = function(dataTable, opt_options, opt_state) {};
-  v.NumberRangeFilter.prototype.applyFilter = function() {};
-  v.NumberRangeFilter.prototype.getState = function() {};
-  v.NumberRangeFilter.prototype.resetControl = function() {};
-
-  v.CategoryFilter = function(container) {};
-  v.CategoryFilter.__super__ = Object;
-  v.CategoryFilter.__before__ = [ utils.mapArgs(utils.opaqueNode) ];
-  v.CategoryFilter.prototype.draw = function(dataTable, opt_options, opt_state) {};
-  v.CategoryFilter.prototype.applyFilter = function() {};
-  v.CategoryFilter.prototype.getState = function() {};
-  v.CategoryFilter.prototype.resetControl = function() {};
-
-  v.ChartRangeFilter = function(container) {};
-  v.ChartRangeFilter.__super__ = Object;
-  v.ChartRangeFilter.__before__ = [ utils.mapArgs(utils.opaqueNode) ];
-  v.ChartRangeFilter.prototype.draw = function(dataTable, opt_options, opt_state) {};
-  v.ChartRangeFilter.prototype.applyFilter = function() {};
-  v.ChartRangeFilter.prototype.getState = function() {};
-  v.ChartRangeFilter.prototype.resetControl = function() {};
 
   return {
     version: '1.0',

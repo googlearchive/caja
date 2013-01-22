@@ -1,0 +1,129 @@
+<html>
+  <head>
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      function $(s) { return document.getElementById(s); }
+
+      google.load("visualization", "1", {packages:["corechart", "table"]});
+
+      var LT = '\u003c';
+      var GT = '\u003e';
+
+      var clickToRunJs =
+          LT + 
+            'span style="border: 1px solid black; background-color: #d0ffd0;"' +
+          GT +
+          LT + 'a onclick="alert(1);"' + GT + 'clickToRunJs' + LT + '/a' + GT +
+          LT + '/span' + GT;
+
+      google.setOnLoadCallback(function() {
+        try {
+          drawChart();
+          drawTable();
+          drawBarsViz();
+        } catch (e) {
+          $('errors').innerText = '' + e;
+        }
+      });
+
+      ////////////////////////////////////////////////////////////////////////
+      // Demonstrates HTML-valued tooltips in charts
+
+      function drawChart() {
+        var data = new google.visualization.DataTable();
+        data.addColumn('string', clickToRunJs);
+        data.addColumn('number', clickToRunJs);
+        data.addColumn('number', clickToRunJs);
+        data.addColumn({type: 'string', role: 'tooltip', p: { html: true }});
+        data.addRows([
+          ['2001', 100,  400, clickToRunJs],
+          ['2002', 200,  600, clickToRunJs],
+          ['2003', 100,  400, clickToRunJs],
+          ['2004', 200,  600, clickToRunJs]
+        ]);
+
+        var chart = new google.visualization.AreaChart($('chart_div_0'));
+
+        chart.draw(data, {
+          title: clickToRunJs,
+          hAxis: { title: clickToRunJs },
+          tooltip: { isHtml: true }
+        });
+      }
+
+      ////////////////////////////////////////////////////////////////////////
+      // Demonstrates HTML-valued cells and column headers in tables
+
+      function drawTable() {
+        var data = new google.visualization.DataTable();
+        data.addColumn('string', clickToRunJs);
+        data.addColumn('number', 'Salary');
+        data.addRows([
+          [
+            'Mike',
+            {v: 10000, f: clickToRunJs}
+          ],
+          [
+            clickToRunJs,
+            {v:8000,   f: '$8,000'}
+          ]
+        ]);
+
+        var table = new google.visualization.Table($('chart_div_1'));
+        table.draw(data, {showRowNumber: true, allowHtml: true });
+      }
+
+      ////////////////////////////////////////////////////////////////////////
+      // Demonstrates HTML-valued mouseover visualizations in charts (which
+      // is really a special case of tooltips)
+
+      function drawBarsViz() {
+        // barsVisualization must be global in our script tag to be able
+        // to get and set selection.
+        var barsVisualization;
+
+        function drawMouseoverVisualization() {
+          var data = new google.visualization.DataTable();
+          data.addColumn('string', 'Year');
+          data.addColumn('number', 'Score');
+          data.addColumn({type: 'string', role: 'tooltip', p: { html: true }});
+          data.addRows([
+            [clickToRunJs, 3.6, clickToRunJs],
+            ['2006',       4.1, 'tooltip content 1'],
+          ]);
+
+          barsVisualization =
+              new google.visualization.ColumnChart($('chart_div_2'));
+          barsVisualization.draw(data, {
+            allowHtml: true,
+            tooltip: {
+              isHtml: true
+            }
+          });
+
+          // Add our over/out handlers.
+          google.visualization.events.addListener(
+              barsVisualization, 'onmouseover', barMouseOver);
+          google.visualization.events.addListener(
+              barsVisualization, 'onmouseout', barMouseOut);
+        }
+
+        function barMouseOver(e) {
+          barsVisualization.setSelection([e]);
+        }
+
+        function barMouseOut(e) {
+          barsVisualization.setSelection([{'row': null, 'column': null}]);
+        }
+
+        drawMouseoverVisualization();
+      }
+    </script>
+  </head>
+  <body>
+    <div id="errors"></div>
+    <div id="chart_div_0" style="width: 900px; height: 200px;"></div>
+    <div id="chart_div_1" style="width: 900px; height: 100px;"></div>
+    <div id="chart_div_2" style="width: 900px; height: 200px;"></div>
+  </body>
+</html>
