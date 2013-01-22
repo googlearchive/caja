@@ -225,7 +225,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
       passed = true;
     } finally {
       localServer.stop();
-      if (!passed && driver != null) {
+      if ((!passed && !isKnownFailure()) && driver != null) {
         // It's helpful for debugging to keep failed windows open.
         switchToNewWindow(driver);
       }

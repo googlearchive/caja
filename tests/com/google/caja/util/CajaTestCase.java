@@ -482,6 +482,16 @@ public abstract class CajaTestCase extends TestCase {
   private InputSource sourceOf(CharProducer cp) {
     return cp.getSourceBreaks(0).source();
   }
+  
+  protected boolean isKnownFailure() {
+    try {
+      Method method = getClass().getMethod(getName(), new Class[0]);
+      return (method.isAnnotationPresent(FailureIsAnOption.class));
+    } catch (NoSuchMethodException ex) {
+      // skip
+      return false;
+    }
+  }
 
   @Override
   protected void runTest() throws Throwable {
@@ -506,21 +516,15 @@ public abstract class CajaTestCase extends TestCase {
     //     If there is none, make one by running the test.
     // (4) In the "Environment" tab, add a property
     //     test.suppressKnownFailures=true
-    if ("true".equals("test.suppressKnownFailures")) {
+    if ("true".equals("test.suppressKnownFailures") &&
+        isKnownFailure()) {
       try {
-        Method method = getClass().getMethod(getName(), new Class[0]);
-        if (method.isAnnotationPresent(FailureIsAnOption.class)) {
-          try {
-            super.runTest();
-          } catch (Throwable th) {
-            System.err.println("Suppressing known failure of " + getName());
-            th.printStackTrace();
-          }
-        }
-        return;
-      } catch (NoSuchMethodException ex) {
-        // skip
+        super.runTest();
+      } catch (Throwable th) {
+        System.err.println("Suppressing known failure of " + getName());
+        th.printStackTrace();
       }
+      return;
     }
     super.runTest();
   }
