@@ -390,13 +390,31 @@
         });
 
     // measureText
-    context.measureText("hello world");
-    expectFailure(function () {
+    var textMetrics = context.measureText("hello world");
+    expectFailure(function() {
       context.measureText("hello world", 1, 2);
     }, 'measureText too many args');
-    expectFailure(function () {
+    expectFailure(function() {
       context.measureText(1);
     }, 'measureText not string text');
+    // TextMetrics object
+    [
+      'actualBoundingBoxAscent',
+      'actualBoundingBoxDescent',
+      'actualBoundingBoxLeft',
+      'actualBoundingBoxRight',
+      'alphabeticBaseline',
+      'emHeightAscent',
+      'emHeightDescent',
+      'fontBoundingBoxAscent',
+      'fontBoundingBoxDescent',
+      'hangingBaseline',
+      'ideographicBaseline',
+      'width'
+    ].forEach(function(key) {
+      assertEquals(key, 'number', typeof textMetrics[key]);
+    })
+    
 
     expectFailure(function () {
       context.drawImage(

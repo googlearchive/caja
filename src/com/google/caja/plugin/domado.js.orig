@@ -4123,28 +4123,6 @@ var Domado = (function() {
           }
         }
 
-        function TameTextMetrics(feralMetrics) {
-          feralMetrics = makeDOMAccessible(feralMetrics);
-          [
-            'actualBoundingBoxAscent',
-            'actualBoundingBoxDescent',
-            'actualBoundingBoxLeft',
-            'actualBoundingBoxRight',
-            'alphabeticBaseline',
-            'emHeightAscent',
-            'emHeightDescent',
-            'fontBoundingBoxAscent',
-            'fontBoundingBoxDescent',
-            'hangingBaseline',
-            'ideographicBaseline',
-            'width'
-          ].forEach(function(prop) {
-            this[prop] = +feralMetrics[prop];
-          }, this);
-          Object.freeze(this);
-        }
-        inertCtor(TameTextMetrics, Object, 'TextMetrics');
-
         function TameCanvasElement(node) {
           // TODO(kpreid): review whether this can use defineElement
           TameElement.call(this, node);
@@ -4354,7 +4332,7 @@ var Domado = (function() {
                     arguments.length);
               }
               enforceType(string, 'string', 'measureText argument');
-              return new TameTextMetrics(context.measureText(string));
+              return context.measureText(string);
             },
 
             drawImage: function (imageElement) {
