@@ -2036,31 +2036,164 @@ After
   });
 </script>
 
-<p id="testDomitaGlobalsAccessible" class="testcontainer">
-  Test Domita globals accessible
-</p>
+<script>
+  // This is a list of object instances of various types across all of Domado.
+  // It is used for checking properties which should hold of all such objects,
+  // such as that they have (inert) constructors available for instanceof tests.
+  var sampleObjects = [];
+  try {
+    [
+      // typenames should be from most to least specific
+      { 
+        typenames: ['Attr'],
+        sample: document.body.getAttributeNode('class')
+      },
+      {
+        typenames: [/* TODO(kpreid): 'CanvasRenderingContext2D' */],
+        sample: document.createElement('canvas').getContext('2d')
+      },
+      {
+        typenames: [/* TODO(kpreid): 'CanvasGradient' */],
+        sample: document.createElement('canvas').getContext('2d')
+            .createLinearGradient(0, 1, 2, 3)
+      },
+      {
+        typenames: ['Comment'],
+        sample: document.createComment('foo')
+      },
+      // { TODO(kpreid): not implemented
+      //   typenames: ['DocumentFragment'],
+      //   sample: document.createDocumentFragment()
+      // },
+      // { TODO(kpreid): not implemented
+      //   typenames: ['DocumentType'],
+      //   sample: document.doctype
+      // },
+      { // TODO(kpreid): This is a 'tame custom event'. Should also have native
+        typenames: ['Event'],
+        sample: document.createEvent('HTMLEvents')
+      },
+      {
+        typenames: ['HTMLDocument', 'Document'],
+        sample: document
+      },
+      {
+        typenames: ['HTMLBodyElement', 'HTMLElement', 'Element', 'Node'],
+        sample: document.body
+      },
+      {
+        typenames: ['HTMLParagraphElement', 'HTMLElement', 'Element', 'Node'],
+        sample: document.createElement('p')
+      },
+      {
+        typenames: [/* TODO(kpreid): 'ImageData' */],
+        sample: document.createElement('canvas').getContext('2d').createImageData(1, 1)
+      },
+      {
+        typenames: [/* TODO(kpreid): 'NodeList', ??? */],
+        sample: document.body.childNodes
+      },
+      {
+        typenames: [/* TODO(kpreid): ??? */],
+        sample: document.createElement('select').options
+      },
+      {
+        typenames: [/* TODO(kpreid): ??? */],
+        sample: document.createElement('form').elements
+      },
+      {
+        typenames: [/* TODO(kpreid): 'CSSStyleDeclaration', etc */],
+        sample: document.body.style
+      },
+      {
+        typenames: ['Text'],
+        sample: document.createTextNode('foo')
+      },
+      {
+        typenames: ['Window'],
+        sample: window
+      },
+      {
+        typenames: ['XMLHttpRequest'],
+        sample: new XMLHttpRequest(),
+        constructorCallable: true
+      },
+      {
+        typenames: [],
+        sample: setTimeout
+      },
+      {
+        typenames: [],
+        sample: clearTimeout
+      },
+      {
+        typenames: [],
+        sample: setInterval
+      },
+      {
+        typenames: [],
+        sample: clearInterval
+      },
+      {
+        typenames: [],
+        sample: window.location
+      },
+      {
+        typenames: [],
+        sample: window.navigator
+      },
+      {
+        typenames: [],
+        sample: new Image()
+      },
+      {
+        typenames: [],
+        sample: new Option()
+      }
+      // TODO(kpreid): Add opaque and foreign nodes as test cases here.
+    ].forEach(function(record, index) {
+      Object.freeze(record.typenames);
+      var note = record.note = String(record.typenames) ||
+          String('(' + index + ') ' + record.sample);
+      assertTrue(note + ' sample is present', !!record.sample);
+      record.constructorCallable = record.constructorCallable || false;
+      sampleObjects.push(Object.freeze(record));
+    });
+    Object.freeze(sampleObjects);
+  } catch (e) {
+    sampleObjects = null; // provoke failure in tests using this
+    throw e;
+  }
+  window.sampleObjects = sampleObjects;  // SES scope workaround
+</script>
+
+<p class="testcontainer" id="testInterfaceGlobals">
+    testInterfaceGlobals &mdash; Do objects have their expected "types"?</p>
 <script type="text/javascript">
-  jsunitRegister('testDomitaGlobalsAccessible',
-                 function testDomitaGlobalsAccessible() {
-    assertTrue(!!HTMLElement);
-    assertTrue(!!Node);
-    assertTrue(!!Event);
-    assertTrue(!!Text);
-    assertTrue(!!window.HTMLElement);
-    assertTrue(!!window.Node);
-    assertTrue(!!window.Event);
-    assertTrue(!!window.Text);
+  jsunitRegister('testInterfaceGlobals',
+                function testInterfaceGlobals() {
+    function assertInstanceof(className, object) {
+      assertTrue('Class ' + className + ' exists',
+          className in window);
+      var constructor = window[className];
+      assertEquals('constructor ' + className + ' type', 'function',
+          typeof constructor);
+      assertTrue('Object ' + object + ' (for ' + className + ') is an object',
+          typeof object === 'object');
+      assertTrue(object + ' instanceof ' + className,
+          object instanceof constructor);
+    }
 
-    assertEquals('function', typeof HTMLElement);
-    assertEquals('function', typeof Node);
-    assertEquals('function', typeof Event);
-    assertEquals('function', typeof Text);
-    assertEquals('function', typeof window.HTMLElement);
-    assertEquals('function', typeof window.Node);
-    assertEquals('function', typeof window.Event);
-    assertEquals('function', typeof window.Text);
+    // sanity check that we're not testing nothing
+    assertTrue('sampleObjects nonempty', sampleObjects.length > 0);
 
-    pass('testDomitaGlobalsAccessible');
+    sampleObjects.forEach(function(record) {
+      record.typenames.forEach(function(typename) {
+        assertInstanceof(typename, record.sample);
+      });
+    });
+
+    pass('testInterfaceGlobals');
   });
 </script>
 
@@ -2072,18 +2205,28 @@ After
                  function testFactoriesNotBypassable() {
     // It's not possible to create an element by (new HTMLElement) in any
     // browser since factories choose the underlying implementation.
-    expectFailure(
-        function () { new window.HTMLElement({ nodeType: 1 }, false); },
-        'HTMLElement');
-    expectFailure(
-        function () { new window.Node({ nodeType: 0 }, false); },
-        'Node');
-    expectFailure(
-        function () { new window.Event({}); },
-        'Event');
-    expectFailure(
-        function () { new window.Text({ nodeType: 3 }, false); },
-        'Text');
+    // More generally, all of these objects' .constructor properties should be
+    // inert constructors, which cannot be used. If they are not, they are
+    // likely to be taming constructors, which are potentially dangerous to
+    // invoke on guest objects.
+    assertTrue('sampleObjects nonempty', sampleObjects.length > 0);
+    sampleObjects.forEach(function(record) {
+      var note = record.note;
+      var constructor = record.sample.constructor;
+      if (!constructor ||
+          /^function (?:Object|Function|FakeFunction|Array)\b/
+              .test(constructor.toString()) ||
+          record.constructorCallable) {
+        // Not concerned with objects which don't expose their type,
+        // or which are explicitly safe
+        return;
+      }
+      expectFailure(function() {
+        new constructor();
+      }, note, function(e) {
+        return /This constructor cannot be called directly\./.test(String(e));
+      });
+    });
     pass('testFactoriesNotBypassable');
   });
 </script>
@@ -2768,45 +2911,6 @@ Test row cell
     assertEquals('[domado object HTMLDocument #document]',
         document.toString());
     pass('testToString');
-  });
-</script>
-
-<p class="testcontainer" id="testInterfaceGlobals">
-    testInterfaceGlobals (/classes/constructors/whatever) &mdash;
-    Do objects have their expected "types"?</p>
-<script type="text/javascript">
-  jsunitRegister('testInterfaceGlobals',
-                function testInterfaceGlobals() {
-    function assertInstanceof(className, object) {
-      assertTrue('Class ' + className + ' exists',
-          className in window);
-      assertTrue('Object ' + object + ' (for ' + className + ') is an object',
-          typeof object === 'object');
-      assertTrue(object + ' instanceof ' + className,
-          object instanceof window[className]);
-    }
-
-    assertInstanceof('Attr', document.getElementById('testInterfaceGlobals')
-        .getAttributeNode('class'));
-    assertInstanceof('Comment', document.createComment('foo'));
-    //assertInstanceof('CanvasRenderingContext2D', // TODO(kpreid): should work
-    //    document.createElement('canvas').getContext('2d'));
-    assertInstanceof('Document', document);
-    //assertInstanceof('DocumentFragment', document.createDocumentFragment());
-    //assertInstanceof('DocumentType', document.doctype);
-    assertInstanceof('HTMLElement', document.body);
-    assertInstanceof('HTMLElement', document.getElementsByTagName('p')[0]);
-    assertInstanceof('HTMLDocument', document);
-    assertInstanceof('Element', document.body);
-    assertInstanceof('Element', document.getElementsByTagName('p')[0]);
-    assertInstanceof('Event', document.createEvent('HTMLEvents'));
-    assertInstanceof('Node', document.body);
-    assertInstanceof('Node', document.getElementsByTagName('p')[0]);
-    assertInstanceof('Text', document.createTextNode('foo'));
-    assertInstanceof('Window', window);
-    assertInstanceof('XMLHttpRequest', new XMLHttpRequest());
-
-    pass('testInterfaceGlobals');
   });
 </script>
 

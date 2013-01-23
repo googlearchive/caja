@@ -622,3 +622,37 @@ can test window.scrollBy with a positive x value with a visible effect.
     }), 1000);
   });
 </script>
+
+<p id="testRulebreakerBreach" class="testcontainer">testRulebreakerBreach</p>
+<script type="text/javascript">
+  jsunitRegisterIf(!inES5Mode,
+                   'testRulebreakerBreach',
+                   function testRulebreakerBreach() {
+    // If rulebreaker.makeDOMAccessible is exposed to guest code, we want it to
+    // still be mostly harmless if the guest code does not also have a host
+    // object to apply it to.
+    
+    var makeDOMAccessible = rulebreakerBreachSimulation.makeDOMAccessible;
+    
+    [
+      // some ordinary objects
+      {},
+      [],
+      function() {},
+      // some Domado stuff (taming frame objects)
+      document,
+      document.body,
+      setTimeout,
+      document.body.childNodes.constructor,
+    ].forEach(function(specimen, i) {
+      expectFailure(function() {
+        makeDOMAccessible(specimen);
+      }, 'makeDOMAccessible on guest object ' + i, function(e) {
+        return /shouldn't happen: ES5\/3 object passed to makeDOMAccessible/
+            .test(String(e));
+      });
+    });
+    
+    pass('testRulebreakerBreach');
+  });
+</script>

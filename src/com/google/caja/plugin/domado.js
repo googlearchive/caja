@@ -982,10 +982,10 @@ var Domado = (function() {
     var setOwn = domitaModules.setOwn;
     var canHaveEnumerableAccessors = domitaModules.canHaveEnumerableAccessors;
 
-    function inherit(sub, souper) {
-      sub.prototype = Object.create(souper.prototype);
-      Object.defineProperty(sub.prototype, "constructor", {
-        value: sub,
+    function inherit(subCtor, superCtor) {
+      setOwn(subCtor, 'prototype', Object.create(superCtor.prototype));
+      Object.defineProperty(subCtor.prototype, 'constructor', {
+        value: subCtor,
         writable: true,
         configurable: true
       });
@@ -2646,15 +2646,11 @@ var Domado = (function() {
 
       function rebuildTameListConstructors(ArrayLike) {
         TameNodeList = makeTameNodeList();
-        TameNodeList.prototype = Object.create(ArrayLike.prototype);
-        Object.defineProperty(TameNodeList.prototype, 'constructor',
-            { value: TameNodeList });
+        inertCtor(TameNodeList, ArrayLike);
         Object.freeze(TameNodeList.prototype);
         Object.freeze(TameNodeList);
         TameOptionsList = makeTameOptionsList();
-        TameOptionsList.prototype = Object.create(ArrayLike.prototype);
-        Object.defineProperty(TameOptionsList.prototype, 'constructor',
-            { value: TameOptionsList });
+        inertCtor(TameOptionsList, ArrayLike);
         Object.freeze(TameOptionsList.prototype);
         Object.freeze(TameOptionsList);
       }
@@ -5174,7 +5170,7 @@ var Domado = (function() {
         }
         return self;
       }
-      inherit(TameCustomHTMLEvent, TameEvent);
+      inertCtor(TameCustomHTMLEvent, TameEvent);
       TameCustomHTMLEvent.prototype.initEvent
           = eventMethod(function(type, bubbles, cancelable) {
         var privates = ep(this);

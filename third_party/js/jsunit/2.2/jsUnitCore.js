@@ -356,10 +356,9 @@ function assertRoughlyEquals() {
     var expected = nonCommentArg(1, 3, arguments);
     var actual = nonCommentArg(2, 3, arguments);
     var tolerance = nonCommentArg(3, 3, arguments);
-    assertTrue(
-            (comment ? comment + ' : ' : '')
-            + "Expected " + expected + ", but got " + actual + " which was more than " + tolerance + " away",
-            Math.abs(expected - actual) < tolerance
+    _assert(commentArg(3, arguments),
+            Math.abs(expected - actual) < tolerance,
+            "Expected " + expected + ", but got " + actual + " which was more than " + tolerance + " away"
             );
 }
 
@@ -367,9 +366,9 @@ function assertContains() {
     _validateArguments(2, arguments);
     var contained = nonCommentArg(1, 2, arguments);
     var container = nonCommentArg(2, 2, arguments);
-    assertTrue(
-            "Expected '" + container + "' to contain '" + contained + "'",
-            container.indexOf(contained) != -1
+    _assert(commentArg(2, arguments),
+            container.indexOf(contained) != -1,
+            "Expected '" + container + "' to contain '" + contained + "'"
             );
 }
 

@@ -116,6 +116,11 @@ fetch('es53-test-domado-special-initial-state.html', function(initialHtml) {
     frame.grantRead(externalScript, 'loaded');
     extraImports.externalScript = frame.tame(externalScript);
 
+    if (frameGroup.testing_makeDomadoRuleBreaker) {
+      var rulebreaker = frameGroup.testing_makeDomadoRuleBreaker();
+      extraImports.rulebreakerBreachSimulation = rulebreaker;
+    }
+
     frame.code('es53-test-domado-special-guest.html')
          .api(extraImports)
          .run(function(result) {

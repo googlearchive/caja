@@ -144,6 +144,10 @@ var caja = (function () {
     'configure': makeFrameGroup,
     'disableSecurityForDebugger': disableSecurityForDebugger,
 
+    // For use by the Caja test suite only. Should not be used for any other
+    // purpose and is hard to use correctly.
+    'testing_makeDomadoRuleBreaker': premature,
+
     // unused, removed by Closure
     closureCanary: 1
   };

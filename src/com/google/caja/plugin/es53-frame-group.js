@@ -101,7 +101,11 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     iframe: window.frameElement,
 
     makeES5Frame: makeES5Frame,
-    disableSecurityForDebugger: disableSecurityForDebugger
+    disableSecurityForDebugger: disableSecurityForDebugger,
+    
+    // For use by the Caja test suite only. Should not be used for any other
+    // purpose and is hard to use correctly.
+    testing_makeDomadoRuleBreaker: makeDomadoRuleBreaker
   };
 
   return frameGroup;
@@ -475,15 +479,13 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     // This accepts functions because some objects are incidentally
     // functions. makeDOMAccessible does not make functions callable.
 
-    // Testing for own properties, not 'in', because some quirk of Firefox
-    // makes event objects appear as if they have the taming frame's
-    // prototype after being passed into taming frame code (!), so we want
-    // to be able to override Object.prototype.v___ etc. Except for that,
-    // it would be safer to not allow applying this to apparently defined-
-    // in-taming-frame objects.
-    if ((typeof o === 'object' || typeof o === 'function')
-        && o !== null
-        && !Object.prototype.hasOwnProperty.call(o, 'v___')) {
+    // Not a kind of value which has properties
+    if (!((typeof o === 'object' || typeof o === 'function')
+          && o !== null)) {
+      return o;
+    }
+    
+    if (!('v___' in o)) {
       // IE<=8 needs wrappers for text nodes and attribute nodes.  Note, we
       // make no effort to return the same wrapper for the same node.
       // TODO(felix8a): verify the contract violation is unimportant.
@@ -497,6 +499,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
         // instead.
         return readPropertyAsHostFrame(node, p);
       };
+      o.v___.ThisIsMakeDomAccessible = true;
       o.w___ = function (p, v) {
         node[p] = v;
       };
@@ -518,7 +521,15 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
         throw new TypeError('Not a function: ' + p);
       };
       o.HasProperty___ = function (p) { return p in node; };
+    } else /* object has v___ already */ {
+      if (!o.v___.ThisIsMakeDomAccessible) {
+        // object is a ES53 object but not by us, which indicates a serious
+        // problem.
+        throw new Error(
+            'shouldn\'t happen: ES5/3 object passed to makeDOMAccessible');
+      }
     }
+    
     return o;
   }
 
