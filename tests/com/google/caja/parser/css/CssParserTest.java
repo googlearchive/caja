@@ -191,6 +191,54 @@ public class CssParserTest extends CajaTestCase {
     assertMessagesLessSevereThan(MessageLevel.WARNING);
   }
 
+  public final void testNestedFunctions() throws Exception {
+    runTestCssParser(
+        fromString("p { background-image:-webkit-gradient(" +
+            "linear, left top, left bottom, from(#dd4b39), to(#b0281a))}"),
+        fromString(Join.join(
+            "\n",
+            "StyleSheet",
+            "  RuleSet",
+            "    Selector",
+            "      SimpleSelector",
+            "        IdentLiteral : p",
+            "    PropertyDeclaration",
+            "      Property : background-image",
+            // TODO(jasvir): This should not be a negation
+            "      Expr",
+            "        Term : NEGATION",
+            "          FunctionCall : webkit-gradient",
+            "            Expr",
+            "              Term",
+            "                IdentLiteral : linear",
+            "              Operation : COMMA",
+            "              Term",
+            "                IdentLiteral : left",
+            "              Operation : NONE",
+            "              Term",
+            "                IdentLiteral : top",
+            "              Operation : COMMA",
+            "              Term",
+            "                IdentLiteral : left",
+            "              Operation : NONE",
+            "              Term",
+            "                IdentLiteral : bottom",
+            "              Operation : COMMA",
+            "              Term",
+            "                FunctionCall : from",
+            "                  Expr",
+            "                    Term",
+            "                      HashLiteral : #dd4b39",
+            "              Operation : COMMA",
+            "              Term",
+            "                FunctionCall : to",
+            "                  Expr",
+            "                    Term",
+            "                      HashLiteral : #b0281a")),
+            true);
+    assertMessagesLessSevereThan(MessageLevel.WARNING);
+  }
+
   private void runTolerantParsing(
       String cssFile, String goldenFile, String snippetFile) throws Exception {
     InputSource inputSource = new InputSource(

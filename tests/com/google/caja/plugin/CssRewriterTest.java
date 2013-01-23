@@ -180,6 +180,13 @@ public class CssRewriterTest extends CajaTestCase {
     if (failure != null) { throw failure; }
   }
 
+  public final void testGradients() throws Exception {
+    runTest("p { background-image:gradient(" +
+        "linear, left top, left bottom)}",
+        "", false);
+       assertNoErrors();
+  }
+
   public final void testSubstitutions() throws Exception {
     try {
       runTest("#foo { left: ${x * 4}px; top: ${y * 4}px; }",
