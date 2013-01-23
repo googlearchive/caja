@@ -5506,16 +5506,16 @@ var Domado = (function() {
         var listeners = np(self).onDCLListeners;
         np(self).onDCLListeners = [];
         for (var i = 0, n = listeners.length; i < n; ++i) {
-          window.setTimeout(listeners[+i], 0);
+          tameWindow.setTimeout(listeners[+i], 0);
         }
         var onload = tameWindow.onload;
         if (onload) {
-          window.setTimeout(onload, 0);
+          tameWindow.setTimeout(onload, 0);
         }
         listeners = np(self).onLoadListeners;
         np(self).onLoadListeners = [];
         for (var i = 0, n = listeners.length; i < n; ++i) {
-          window.setTimeout(listeners[+i], 0);
+          tameWindow.setTimeout(listeners[+i], 0);
         }
       });
 
