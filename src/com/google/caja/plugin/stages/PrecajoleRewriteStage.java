@@ -22,6 +22,8 @@ import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.Placeholder;
 import com.google.caja.precajole.PrecajoleMap;
+import com.google.caja.reporting.MessagePart;
+import com.google.caja.reporting.MessageType;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Pipeline.Stage;
 import com.google.caja.util.Strings;
@@ -78,6 +80,9 @@ public class PrecajoleRewriteStage implements Stage<Jobs> {
       if (src != null && src.length() != 0) {
         CajoledModule pre = precajoleMap.lookupUri(src, minify);
         if (pre != null) {
+          jobs.getMessageQueue().addMessage(
+              MessageType.PRECAJOLE_HIT,
+              MessagePart.Factory.valueOf(src));
           replaceScript(jobs, el, pre);
           return true;
         }

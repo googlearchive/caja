@@ -23,6 +23,9 @@ import com.google.caja.plugin.PluginCompiler;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.plugin.UriPolicy;
+import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.MessagePart;
+import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Join;
@@ -40,6 +43,8 @@ public class PrecajoledPipelineTest extends CajaTestCase {
     assertContains(js, "'precajoled': 'data:banana false'");
     assertContains(js, "'precajoled': 'data:capricorn false'");
     assertContains(js, "'precajoled': 'cached:dalmatian false'");
+    assertPrecajoleHit("data:banana");
+    assertPrecajoleHit("data:capricorn");
     assertNoWarnings();
   }
 
@@ -54,7 +59,14 @@ public class PrecajoledPipelineTest extends CajaTestCase {
     assertContains(js, "'precajoled': 'data:banana true'");
     assertContains(js, "'precajoled': 'data:capricorn true'");
     assertContains(js, "'precajoled': 'cached:dalmatian true'");
+    assertPrecajoleHit("data:banana");
+    assertPrecajoleHit("data:capricorn");
     assertNoWarnings();
+  }
+
+  private void assertPrecajoleHit(String uri) throws Exception {
+    assertMessage(true, MessageType.PRECAJOLE_HIT, MessageLevel.LOG,
+        MessagePart.Factory.valueOf(uri));
   }
 
   private PluginCompiler makeCompiler(boolean minify) {
