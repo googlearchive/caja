@@ -298,14 +298,52 @@ var Domado = (function() {
   };
   cajaVM.def(domitaModules.ProxyHandler);
 
+  /**
+   * Identical to Object.defineProperty except that if used to define a
+   * non-writable data property, it converts it to an accessor as cajVM.def
+   * does.
+   */
+  function definePropertyAllowOverride(obj, name, desc) {
+    var existing = Object.getOwnPropertyDescriptor(obj, name);
+    if (typeof obj === 'function' && name === 'prototype' && !existing) {
+      // TODO(kpreid): Remove this workaround for issue 1631 when it is fixed.
+      existing = {configurable:false};
+    }
+    if ('value' in desc && !desc.writable &&
+        (!existing || existing.configurable)) {
+      var value = desc.value;
+      // TODO(kpreid): Duplicate of tamperProof() from repairES5.js.
+      // We should extract that getter/setter pattern as a separate routine; but
+      // note that we need to make the same API available from ES5/3 (though not
+      // the same behavior, since ES5/3 rejects the 'override mistake',
+      // ASSIGN_CAN_OVERRIDE_FROZEN in repairES5 terms) available from ES5/3.
+      desc = {
+        configurable: desc.configurable,
+        enumerable: desc.enumerable,
+        get: cajaVM.def(function setOwnGetter() { return value; }),
+        set: cajaVM.def(function setOwnSetter(newValue) {
+          if (obj === this) {
+            throw new TypeError('Cannot set virtually frozen property: ' +
+                                name);
+          }
+          if (!!Object.getOwnPropertyDescriptor(this, name)) {
+            this[name] = newValue;
+          }
+          // TODO(erights): Do all the inherited property checks
+          Object.defineProperty(this, name, {
+            value: newValue,
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
+        })
+      };
+    }
+    return Object.defineProperty(obj, name, desc);
+  }
 
   /**
    * Like object[propName] = value, but DWIMs enumerability.
-   *
-   * This is also used as a workaround for possible bugs/unfortunate-choices in
-   * SES, where a non-writable property cannot be overridden by an own property
-   * by simple assignment. Or maybe I (kpreid) am misunderstanding what the
-   * right thing is.
    *
    * The property's enumerability is inherited from the ancestor's property's
    * descriptor. The property is not writable or configurable.
@@ -317,7 +355,7 @@ var Domado = (function() {
     propName += '';
     // IE<=8, DOM objects are missing 'valueOf' property'
     var desc = domitaModules.getPropertyDescriptor(object, propName);
-    Object.defineProperty(object, propName, {
+    definePropertyAllowOverride(object, propName, {
       enumerable: desc ? desc.enumerable : false,
       value: value
     });
@@ -849,7 +887,7 @@ var Domado = (function() {
       return (result === undefined || result === null) ?
         result : String(result);
     });
-    /*SES*/setOwn(TameXMLHttpRequest.prototype, "toString", method(function () {
+    setOwn(TameXMLHttpRequest.prototype, "toString", method(function () {
       return 'Not a real XMLHttpRequest';
     }));
 
@@ -3367,13 +3405,12 @@ var Domado = (function() {
         np(this).ownerElement = ownerElement;
       }
       inertCtor(TameBackedAttributeNode, TameBackedNode, 'Attr');
-      setOwn(TameBackedAttributeNode.prototype, 'cloneNode',
-          nodeMethod(function (deep) {
+      TameBackedAttributeNode.prototype.cloneNode = nodeMethod(function(deep) {
         var clone = bridal.cloneNode(np(this).feral, Boolean(deep));
         // From http://www.w3.org/TR/DOM-Level-2-Core/core.html#ID-3A0ED0A4
         //   "Note that cloning an immutable subtree results in a mutable copy"
         return new TameBackedAttributeNode(clone, np(this).ownerElement);
-      }));
+      });
       var nameAccessor = {
         enumerable: true,
         get: nodeMethod(function () {
@@ -3888,8 +3925,8 @@ var Domado = (function() {
         virtualized: true,
         domClass: 'HTMLBodyElement'
       });
-      setOwn(TameBodyElement.prototype, 'setAttribute', nodeMethod(
-          function (attrib, value) {
+      TameBodyElement.prototype.setAttribute = nodeMethod(
+          function(attrib, value) {
         TameElement.prototype.setAttribute.call(this, attrib, value);
         var attribName = String(attrib).toLowerCase();
         // Window event handlers are exposed as content attributes on <body>
@@ -3917,7 +3954,7 @@ var Domado = (function() {
                 function () { tameWindow[fnName].call(this, {}, this); };
           }
         }
-      }));
+      });
 
       // http://dev.w3.org/html5/spec/Overview.html#the-canvas-element
       (function() {
@@ -4556,8 +4593,8 @@ var Domado = (function() {
         ExpandoProxyHandler.call(this, target, editable, storage);
       }
       inherit(FormElementAndExpandoProxyHandler, ExpandoProxyHandler);
-      setOwn(FormElementAndExpandoProxyHandler.prototype,
-          'getOwnPropertyDescriptor', function (name) {
+      FormElementAndExpandoProxyHandler.prototype.getOwnPropertyDescriptor =
+          function (name) {
         if (name !== 'ident___' &&
             Object.prototype.hasOwnProperty.call(this.target.elements, name)) {
           return Object.getOwnPropertyDescriptor(this.target.elements, name);
@@ -4565,23 +4602,23 @@ var Domado = (function() {
           return ExpandoProxyHandler.prototype.getOwnPropertyDescriptor
               .call(this, name);
         }
-      });
-      setOwn(FormElementAndExpandoProxyHandler.prototype,
-          'get', domitaModules.permuteProxyGetSet.getter(function (name) {
+      };
+      FormElementAndExpandoProxyHandler.prototype.get =
+          domitaModules.permuteProxyGetSet.getter(function(name) {
         if (name !== 'ident___' &&
             Object.prototype.hasOwnProperty.call(this.target.elements, name)) {
           return this.target.elements[name];
         } else {
           return ExpandoProxyHandler.prototype.get.unpermuted.call(this, name);
         }
-      }));
-      setOwn(FormElementAndExpandoProxyHandler.prototype, 'getOwnPropertyNames',
-          function () {
+      });
+      FormElementAndExpandoProxyHandler.prototype.getOwnPropertyNames =
+          function() {
         // TODO(kpreid): not quite right result set
         return Object.getOwnPropertyNames(this.target.elements);
-      });
-      setOwn(FormElementAndExpandoProxyHandler.prototype, 'delete',
-          function (name) {
+      };
+      FormElementAndExpandoProxyHandler.prototype['delete'] =
+          function(name) {
         if (name === "ident___") {
           return false;
         } else if (Object.prototype.hasOwnProperty.call(
@@ -4590,7 +4627,7 @@ var Domado = (function() {
         } else {
           return ExpandoProxyHandler.prototype['delete'].call(this, name);
         }
-      });
+      };
       cajaVM.def(FormElementAndExpandoProxyHandler);
 
       var TameFormElement = defineElement({
@@ -4870,7 +4907,7 @@ var Domado = (function() {
         }
       });
 
-      setOwn(TameScriptElement.prototype, 'setAttribute', nodeMethod(
+      TameScriptElement.prototype.setAttribute = nodeMethod(
           function (attrib, value) {
         var feral = np(this).feral;
         np(this).policy.requireEditable();
@@ -4879,7 +4916,7 @@ var Domado = (function() {
         if ("src" === attribName) {
           np(this).src = String(value);
         }
-      }));
+      });
 
       defineTrivialElement('HTMLSpanElement');
 

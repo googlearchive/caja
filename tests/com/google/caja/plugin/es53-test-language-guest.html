@@ -373,3 +373,33 @@
       }
   });
 </script>
+
+<p id="testWindowObject" class="testcontainer">Test Window Object</p>
+<script type="text/javascript">
+  var testWindowObjectVariable;
+
+  jsunitRegister('testWindowObject',
+                   function testWindowObject() {
+    // Check to see that globals are properties of window
+    testWindowObjectVariable = 3;
+    assertEquals(testWindowObjectVariable, window.testWindowObjectVariable);
+    assertEquals(testWindowObjectVariable, 3);
+    pass('testWindowObject');
+  });
+</script>
+
+<div class="testcontainer" id="testVariablePropertyConflict">
+    testVariablePropertyConflict</div>
+<script>
+  function foo() { return '<toString overridden by test>'; }
+  var toString = foo;
+</script>
+<script>
+  jsunitRegister('testVariablePropertyConflict',
+                 function testVariablePropertyConflict() {
+    // Existing code (Angular) uses toString as a variable name
+    assertEquals(foo, toString);
+    pass('testVariablePropertyConflict');
+  });
+</script>
+

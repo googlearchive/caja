@@ -2403,20 +2403,6 @@ After
     });
 </script>
 
-<p id="testWindowObject" class="testcontainer">Test Window Object</p>
-<script type="text/javascript">
-  var testWindowObjectVariable;
-
-  jsunitRegister('testWindowObject',
-                   function testWindowObject() {
-    // Check to see that globals are properties of window
-    testWindowObjectVariable = 3;
-    assertEquals(testWindowObjectVariable, window.testWindowObjectVariable);
-    assertEquals(testWindowObjectVariable, 3);
-    pass('testWindowObject');
-  });
-</script>
-
 <p id="testAttributeNodes" class="testcontainer">
   <input id="testAttributeNodes-onclick" type="checkbox" onclick="return 0;">
   Test Attribute Nodes
