@@ -473,6 +473,18 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "assertEquals((function(a,b,c){}).length, 3);");
     rewriteAndExecute(
         "assertEquals((function x(a,b,c){}).name, 'x');");
+    rewriteAndExecute(
+        "var f = function(){};" +
+        "assertTrue(!!Object.getOwnPropertyDescriptor(f, 'prototype'));");
+    rewriteAndExecute(
+        "var f = function(){};" +
+        "assertTrue(!!Object.getOwnPropertyDescriptor(f, 'name'));");
+    rewriteAndExecute(
+        "var f = function(){};" +
+        "assertTrue(!!Object.getOwnPropertyDescriptor(f, 'length'));");
+    rewriteAndExecute(
+        "var f = function(){};" +
+        "assertEquals(Object.getOwnPropertyNames(f).length, 5);");
     // Check frozen functions created early in es53.js
     rewriteAndExecute(
         "assertTrue(!!(cajaVM.USELESS.toString.prototype));");

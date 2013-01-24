@@ -631,6 +631,10 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    * We defer the creation of these properties until they're asked for.
    */
   function installFunctionInstanceProps(f) {
+    delete f.v___;
+    delete f.w___;
+    delete f.c___;
+    delete f.DefineOwnProperty___;
     var name = f.name___;
     delete f.name___;
     // Object.prototype.DefineOwnProperty___ may not be defined yet
@@ -681,38 +685,22 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   }
 
   function deferredV(name) {
-    delete this.v___;
-    delete this.w___;
-    delete this.c___;
-    delete this.DefineOwnProperty___;
     installFunctionInstanceProps(this);
     // Object.prototype.v___ may not be defined yet
     return this.v___ ? this.v___(name) : void 0;
   }
 
   function deferredW(name, val) {
-    delete this.v___;
-    delete this.w___;
-    delete this.c___;
-    delete this.DefineOwnProperty___;
     installFunctionInstanceProps(this);
     return this.w___(name, val);
   }
 
   function deferredC(name) {
-    delete this.v___;
-    delete this.w___;
-    delete this.c___;
-    delete this.DefineOwnProperty___;
     installFunctionInstanceProps(this);
     return this.c___(name);
   }
 
   function deferredDOP(name, desc) {
-    delete this.v___;
-    delete this.w___;
-    delete this.c___;
-    delete this.DefineOwnProperty___;
     installFunctionInstanceProps(this);
     return this.DefineOwnProperty___(name, desc);
   }
@@ -2840,6 +2828,9 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       if (Type(obj) !== 'Object') {
         notObject(obj);
       }
+      if (obj.v___ === deferredV) {
+        installFunctionInstanceProps(obj);
+      }
       // 2. Let name be ToString(P).
       var name = '' + P;
       // 3. Let desc be the result of calling the [[GetOwnProperty]]
@@ -2852,7 +2843,12 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
 
   // 15.2.3.4
   virtualize(Object, 'getOwnPropertyNames',
-      function (obj) { return obj.ownKeys___(); });
+      function (obj) {
+        if (obj.v___ === deferredV) {
+          installFunctionInstanceProps(obj);
+        }
+        return obj.ownKeys___();
+      });
 
   // 15.2.3.5
   /**
