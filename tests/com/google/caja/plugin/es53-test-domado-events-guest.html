@@ -197,6 +197,8 @@
         'DOMContentLoaded',
         jsunitCallback(
             function eventListener(event) {
+              assertEquals('DOMContentLoaded', event.type);
+              assertEquals(1, arguments.length);
               pass('testDocumentDomContentLoaded');
             }));
   });
@@ -435,7 +437,9 @@ TODO(felix8a): fix javascript url handling
           b1 = true;
         });
     var setb2 = jsunitCallback(
-        function setb2cb() {
+        function setb2cb(event) {
+          assertEquals('load', event.type);
+          assertEquals(1, arguments.length);
           console.log('set onload b2');
           b2 = true;
         });

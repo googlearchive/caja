@@ -5550,24 +5550,30 @@ var Domado = (function() {
         };
       });
 
+      function dispatchToListeners(eventType, eventName, listeners) {
+        var event = tameDocument.createEvent(eventType);
+        event.initEvent(eventName, false, false);
+        // In case a listener attempts to append another listener
+        var len = listeners.length;
+        for (var i = 0; i < len; ++i) {
+          tameWindow.setTimeout(
+              Function.prototype.bind.call(
+                listeners[+i], tameWindow, event), 0);
+        }
+        listeners.length = 0;
+      }
+
       // Called by the html-emitter when the virtual document has been loaded.
       domicile.signalLoaded = cajaVM.def(function () {
-        // TODO(kpreid): Review if this rewrite of the condition here is correct
-        var self = tameDocument;
-        var listeners = np(self).onDCLListeners;
-        np(self).onDCLListeners = [];
-        for (var i = 0, n = listeners.length; i < n; ++i) {
-          tameWindow.setTimeout(listeners[+i], 0);
-        }
-        var onload = tameWindow.onload;
-        if (onload) {
-          tameWindow.setTimeout(onload, 0);
-        }
-        listeners = np(self).onLoadListeners;
-        np(self).onLoadListeners = [];
-        for (var i = 0, n = listeners.length; i < n; ++i) {
-          tameWindow.setTimeout(listeners[+i], 0);
-        }
+        dispatchToListeners(
+            'Event',
+            'DOMContentLoaded',
+            np(tameDocument).onDCLListeners);
+        if (tameWindow.onload) { tameWindow.setTimeout(tameWindow.onload, 0); }
+        dispatchToListeners(
+            'UIEvent',
+            'load',
+            np(tameDocument).onLoadListeners);
       });
 
       // For JavaScript handlers.  See function dispatchEvent below
