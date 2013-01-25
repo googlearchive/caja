@@ -1020,11 +1020,28 @@ var Domado = (function() {
     var setOwn = domitaModules.setOwn;
     var canHaveEnumerableAccessors = domitaModules.canHaveEnumerableAccessors;
 
-    function inherit(subCtor, superCtor) {
-      setOwn(subCtor, 'prototype', Object.create(superCtor.prototype));
+    function inherit(subCtor, superCtor, opt_writableProto) {
+      var inheritingProto = Object.create(superCtor.prototype);
+      // TODO(kpreid): The following should work but is a no-op on Chrome
+      // 24.0.1312.56, which breaks everything. Enable it when possible.
+      //Object.defineProperty(subCtor, 'prototype', {
+      //  value: inheritingProto,
+      //  writable: Boolean(opt_writableProto),
+      //  enumerable: false,
+      //  configurable: false
+      //});
+      // Workaround:
+      if (opt_writableProto) {
+        // TODO(kpreid): Wrongly enumerable, see above.
+        subCtor.prototype = inheritingProto;
+      } else {
+        setOwn(subCtor, 'prototype', inheritingProto);
+      }
+
       Object.defineProperty(subCtor.prototype, 'constructor', {
         value: subCtor,
         writable: true,
+        enumerable: false,
         configurable: true
       });
     }
@@ -2682,63 +2699,55 @@ var Domado = (function() {
       // Used to decide whether to memoize TameNodeList etc. instances.
       var nodeListsAreLive = cajaVM.makeArrayLike.canBeFullyLive;
 
-      function rebuildTameListConstructors(ArrayLike) {
-        TameNodeList = makeTameNodeList();
-        inertCtor(TameNodeList, ArrayLike);
-        Object.freeze(TameNodeList.prototype);
-        Object.freeze(TameNodeList);
-        TameOptionsList = makeTameOptionsList();
-        inertCtor(TameOptionsList, ArrayLike);
-        Object.freeze(TameOptionsList.prototype);
-        Object.freeze(TameOptionsList);
+      // Implementation for DOM live lists (NodeList, etc).
+      var arrayLikeCtorUpdaters = [];
+      function registerArrayLikeClass(constructor) {
+        function updater(ArrayLike) {
+          inertCtor(constructor, ArrayLike, undefined, true);
+          Object.freeze(constructor.prototype);
+        }
+        arrayLikeCtorUpdaters.push(updater);
+      }
+      function constructArrayLike(ctor, getItem, getLength) {
+        var len = +getLength();
+        var ArrayLike = cajaVM.makeArrayLike(len);
+        if (!(ctor.prototype instanceof ArrayLike)) {
+          arrayLikeCtorUpdaters.forEach(function(f) { f(ArrayLike); });
+        }
+        var instance = ArrayLike(ctor.prototype, getItem, getLength);
+        setOwn(instance, 'item', cajaVM.def(getItem));
+        return instance;
       }
 
-      function makeTameNodeList() {
-        return function TNL(nodeList, tameNodeCtor) {
-            var visibleList = new NodeListFilter(nodeList);
-            function getItem(i) {
-              i = +i;
-              if (i >= visibleList.getLength()) { return void 0; }
-              return tameNodeCtor(visibleList.item(i));
-            }
-            var getLength = visibleList.getLength.bind(visibleList);
-            var len = +getLength();
-            var ArrayLike = cajaVM.makeArrayLike(len);
-            if (!(TameNodeList.prototype instanceof ArrayLike)) {
-              rebuildTameListConstructors(ArrayLike);
-            }
-            var result = ArrayLike(TameNodeList.prototype, getItem, getLength);
-            Object.defineProperty(result, 'item',
-                { value: Object.freeze(getItem) });
-            return result;
-          };
+      function TameNodeList(nodeList, tameNodeCtor) {
+        var visibleList = new NodeListFilter(nodeList);
+        function getItem(i) {
+          i = +i;
+          if (i >= visibleList.getLength()) { return void 0; }
+          return tameNodeCtor(visibleList.item(i));
+        }
+        var getLength = visibleList.getLength.bind(visibleList);
+        var result = constructArrayLike(TameNodeList, getItem, getLength);
+        return result;
       }
+      registerArrayLikeClass(TameNodeList);
+      // not def'd - prototype is replaced
 
-      var TameNodeList = Object.freeze(makeTameNodeList());
-
-      function makeTameOptionsList() {
-        return function TOL(nodeList, opt_tameNodeCtor) {
-            var visibleList = new NodeListFilter(nodeList);
-            function getItem(i) {
-              i = +i;
-              return opt_tameNodeCtor(visibleList.item(i));
-            }
-            var getLength = visibleList.getLength.bind(visibleList);
-            var len = +getLength();
-            var ArrayLike = cajaVM.makeArrayLike(len);
-            if (!(TameOptionsList.prototype instanceof ArrayLike)) {
-              rebuildTameListConstructors(ArrayLike);
-            }
-            var result = ArrayLike(
-                TameOptionsList.prototype, getItem, getLength);
-            Object.defineProperty(result, 'selectedIndex', {
-                get: function () { return +nodeList.selectedIndex; }
-              });
-            return result;
-          };
+      function TameOptionsList(nodeList, opt_tameNodeCtor) {
+        var visibleList = new NodeListFilter(nodeList);
+        function getItem(i) {
+          i = +i;
+          return opt_tameNodeCtor(visibleList.item(i));
+        }
+        var getLength = visibleList.getLength.bind(visibleList);
+        var result = constructArrayLike(TameOptionsList, getItem, getLength);
+        Object.defineProperty(result, 'selectedIndex', {
+            get: function () { return +nodeList.selectedIndex; }
+          });
+        return result;
       }
-
-      var TameOptionsList = Object.freeze(makeTameOptionsList());
+      registerArrayLikeClass(TameOptionsList);
+      // not def'd - prototype is replaced
 
       /**
        * Return a fake node list containing tamed nodes.
@@ -3022,12 +3031,17 @@ var Domado = (function() {
        *
        * Register the inert ctor under the given name if specified.
        */
-      function inertCtor(tamedCtor, someSuper, opt_name) {
-        inherit(tamedCtor, someSuper);
+      function inertCtor(tamedCtor, someSuper, opt_name, opt_writableProto) {
+        inherit(tamedCtor, someSuper, opt_writableProto);
 
         var inert = function() {
           throw new TypeError('This constructor cannot be called directly.');
         };
+        var string = opt_name ? '[domado inert constructor ' + opt_name + ']'
+                              : '[domado inert constructor]';
+        inert.toString = cajaVM.def(function inertCtorToString() {
+          return string;
+        });
         inert.prototype = tamedCtor.prototype;
         Object.freeze(inert);  // not def, because inert.prototype must remain
         setOwn(tamedCtor.prototype, "constructor", inert);
