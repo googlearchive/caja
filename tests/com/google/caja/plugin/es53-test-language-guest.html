@@ -228,12 +228,12 @@
   >var topVar1 = '1', topVar2 = '2';
    var topVar3;
    topVar3 = '3';
-   function foo() {
+   function testTopLevel_foo() {
      var notTopVar1 = 'fail', notTopVar2 = 'fail';
      var notTopVar3;
      notTopVar3 = 'fail';
    }
-   foo();
+   testTopLevel_foo();
   </script>
 </div>
 <script type="text/javascript">
@@ -374,6 +374,128 @@
   });
 </script>
 
+<!-- Tests that vars in catch blocks do get hoisted -->
+<div class="testcontainer" id="testTopLevelVarsInCatch">
+testTopLevelVarsInCatch
+</div>
+<script>
+  try {
+    throw "some err";
+  } catch (e) {
+    var topCatchVar = 1;
+  }
+</script>
+<script>
+  jsunitRegister('testTopLevelVarsInCatch',
+                 function testTopLevelVarsInCatch() {
+    assertEquals(topCatchVar, 1);
+
+    pass('testTopLevelVarsInCatch');
+  });
+</script>
+
+<!-- Test the correctness of typeof rewriting -->
+<div id="testIssue1629" class="testcontainer">
+  testIssue1629
+</div>
+<script type="text/javascript">
+  function A() {}
+  A.prototype.x = 1;
+  A.prototype.xType = function() {
+    return typeof this.x;
+  }
+  var a = new A;
+</script>
+<script type="text/javascript">
+  jsunitRegister('testIssue1629', function testIssue1629() {
+    assertEquals('number', a.xType());
+    pass('testIssue1629');
+  });
+</script>
+
+<div id="testTypeOf1" class="testcontainer">
+  testTypeOf1
+</div>
+<script type="text/javascript">
+  jsunitRegisterIf(inES5Mode, 'testTypeOf1',
+    function testTypeOf1() {
+      var result = (function() { return typeof this; })();
+      assertEquals('undefined', result);
+      pass('testTypeOf1');
+  });
+</script>
+
+<div id="testTypeOf2" class="testcontainer">
+  testTypeOf2
+</div>
+<script type="text/javascript">
+  var isWindow = typeof this;
+</script>
+<script type="text/javascript">
+  jsunitRegisterIf(inES5Mode, 'testTypeOf2',
+    function testTypeOf2() {
+      assertEquals('object', isWindow);
+      assertEquals('undefined', typeof this);
+      pass('testTypeOf2');
+  });
+</script>
+
+<div id="testTypeOf3" class="testcontainer">
+  testTypeOf3
+</div>
+<script type="text/javascript">
+  jsunitRegister('testTypeOf3',
+    function testTypeOf3() {
+      var xxx = { yyy : 1 };
+      assertEquals('number', (function() { return typeof xxx.yyy; })());
+      pass('testTypeOf3');
+  });
+</script>
+
+<!-- Ensure typeof arg refers to the inner-most var not the global -->
+<div id="testTypeOf4" class="testcontainer">
+  testTypeOf4
+</div>
+<script type="text/javascript">
+  var xxx = 1;
+  jsunitRegister('testTypeOf4',
+    function testTypeOf4() {
+      var xxx = 'string';
+      assertEquals('string', (function() { return typeof xxx; })());
+      pass('testTypeOf4');
+  });
+</script>
+
+<!-- Ensure typeof expression that throws doesn't get suppressed -->
+<div id="testTypeOf5" class="testcontainer">
+  testTypeOf5
+</div>
+<script type="text/javascript">
+  function testType5_foo() { throw 'some error'; }
+  jsunitRegister('testTypeOf5',
+    function testTypeOf5() {
+      try {
+        debugger;
+        typeof testType5_foo();
+        fail();
+      } catch (e) {
+        debugger;
+        assertEquals('some error', e);
+        pass('testTypeOf5');
+      }
+  });
+</script>
+
+<div id="testTypeOf6" class="testcontainer">
+  testTypeOf6
+</div>
+<script type="text/javascript">
+  jsunitRegister('testTypeOf6', function testTypeOf6() {
+      assertEquals('object', typeof {});
+      pass('testTypeOf6');
+  });
+</script>
+
 <p id="testWindowObject" class="testcontainer">Test Window Object</p>
 <script type="text/javascript">
   var testWindowObjectVariable;
@@ -391,15 +513,16 @@
 <div class="testcontainer" id="testVariablePropertyConflict">
     testVariablePropertyConflict</div>
 <script>
-  function foo() { return '<toString overridden by test>'; }
-  var toString = foo;
+  function testVariablePropertyConflict_foo() {
+    return '<toString overridden by test>';
+  }
+  var toString = testVariablePropertyConflict_foo;
 </script>
 <script>
   jsunitRegister('testVariablePropertyConflict',
                  function testVariablePropertyConflict() {
     // Existing code (Angular) uses toString as a variable name
-    assertEquals(foo, toString);
+    assertEquals(testVariablePropertyConflict_foo, toString);
     pass('testVariablePropertyConflict');
   });
 </script>
-

@@ -30,7 +30,7 @@
  */
 
 (function() {
-  function introducesScope(node) {
+  function introducesVarScope(node) {
     return node.type === 'FunctionExpression' ||
            node.type === 'FunctionDeclaration';
   }
@@ -39,6 +39,10 @@
     return (node.type === 'UnaryExpression' &&
             node.operator === 'typeof' &&
             !node.synthetic);
+  }
+
+  function isId(node) {
+    return node.type === 'Identifier';
   }
   
   function isVariableDecl(node) {
@@ -75,7 +79,7 @@
   /**
    * Rewrite var decls in place into assignments on the global object
    * turning expression "var x, y = 2, z" to
-   * window.x = window.x, window.y = 2, window.z = window.z
+   * global.x = global.x, global.y = 2, global.z = global.z
    */
   function rewriteVars(node) {
     var assignments = [];
@@ -99,8 +103,7 @@
     return {
       'type': 'MemberExpression',
       'object': {
-        'type': 'Identifier',
-        'name': 'window'
+        'type': 'ThisExpression'
       },
       'property': varName
     };
@@ -108,7 +111,9 @@
   
   /**
    * Rewrite node in place turning expression "typeof x" to
-   * (function() { try { typeof x } catch (e) { return "undefined" } })()
+   * (function() {
+   *   try { return typeof x; } catch (e) { return "undefined"; }
+   * })()
    */
   function rewriteTypeOf(node) {
     var arg = node.argument;
@@ -189,7 +194,8 @@
                 isFunctionDecl(node) && scopeLevel === 0) {
               rewriteFuncDecl(node, path);
               dirty = true;
-            } else if (options.rewriteTypeOf && isTypeOf(node)) {
+            } else if (options.rewriteTypeOf &&
+                isTypeOf(node) && isId(node.argument)) {
               rewriteTypeOf(node);
               dirty = true;
             } else if (options.rewriteTopLevelVars &&
@@ -198,7 +204,7 @@
               dirty = true;
             }
 
-            if (introducesScope(node)) {
+            if (introducesVarScope(node)) {
               scopeLevel++;
             }
         },
@@ -207,7 +213,7 @@
             if (node !== last) {
               throw new Error('Internal error traversing the AST');
             }
-            if (introducesScope(node)) {
+            if (introducesVarScope(node)) {
               scopeLevel--;
             }
         }
