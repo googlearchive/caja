@@ -103,6 +103,12 @@
         'var a\u2009 = 46; api.result = a\u2009;');
   });
 
+  // Issue1637 Parse breaks on unicode escapes if they consist of more than 4
+  // hex characters 
+  registerTest('testUnicode9', function () { basicPassingTest('testUnicode9',
+    'api.result = "\u003c123"', "\u003c123");
+  });
+
   readyToTest();
   jsunitRun();
 })();
