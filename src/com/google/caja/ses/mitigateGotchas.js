@@ -53,12 +53,17 @@
     return (node.type === 'FunctionDeclaration');
   }
 
+  function isForStatement(node) {
+    return (node.type === 'ForStatement' ||
+        node.type == 'ForInStatement');
+  }
+
   /**
    * Rewrite func decls in place by appending assignments on the global object
    * turning expression "function x() {}" to
    * function x(){}; global.x = x;
    */
-  function rewriteFuncDecl(node, path) {
+  function rewriteFuncDecl(node, parent) {
     var exprNode = {
       'type': 'ExpressionStatement',
       'expression': {
@@ -68,20 +73,23 @@
         'right': node.id
       }
     };
-    var parent = path[path.length - 2].body;
-    var currentIdx = parent.indexOf(node);
+    var body = parent.body;
+    var currentIdx = body.indexOf(node);
     var nextIdx = currentIdx + 1;
 
     // Insert assignment immediately after FunctionDecl
-    parent.splice(nextIdx, 0, exprNode);
+    body.splice(nextIdx, 0, exprNode);
   }
 
   /**
    * Rewrite var decls in place into assignments on the global object
-   * turning expression "var x, y = 2, z" to
-   * global.x = global.x, global.y = 2, global.z = global.z
+   * turning variable declaration "var x, y = 2, z" to an expression
+   * statement: "global.x = global.x, global.y = 2, global.z = global.z"
+   * The rewrite also rewrites var declarations that appear in a for-loop
+   * initializer "for (var x = 1;;) {}" into an expression: 
+   * "for (this.x = 1;;) {}"
    */
-  function rewriteVars(node) {
+  function rewriteVars(node, parent) {
     var assignments = [];
     node.declarations.forEach(function(decl) {
       assignments.push({
@@ -90,13 +98,17 @@
         'left': globalVarAst(decl.id),
         'right': decl.init || globalVarAst(decl.id)
       });
-  
     });
-    node.type = 'ExpressionStatement';
-    node.expression = {
-      'type': 'SequenceExpression',
-      'expressions': assignments
-    };
+    if (isForStatement(parent)) {
+      node.type = 'SequenceExpression';
+      node.expressions = assignments;
+    } else {
+      node.type = 'ExpressionStatement';
+      node.expression = {
+        type: 'SequenceExpression',
+        expressions: assignments
+      };
+    }
   }
   
   function globalVarAst(varName) {
@@ -188,11 +200,12 @@
       var ast = ses.rewriter_.parse(programSrc);
       ses.rewriter_.traverse(ast, {
         enter: function enter(node) {
+            var parent = path[path.length - 1];
             path.push(node);
 
             if (options.rewriteTopLevelFuncs &&
                 isFunctionDecl(node) && scopeLevel === 0) {
-              rewriteFuncDecl(node, path);
+              rewriteFuncDecl(node, parent);
               dirty = true;
             } else if (options.rewriteTypeOf &&
                 isTypeOf(node) && isId(node.argument)) {
@@ -200,7 +213,7 @@
               dirty = true;
             } else if (options.rewriteTopLevelVars &&
                        isVariableDecl(node) && scopeLevel === 0) {
-              rewriteVars(node);
+              rewriteVars(node, parent);
               dirty = true;
             }
 

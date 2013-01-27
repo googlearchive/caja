@@ -475,11 +475,9 @@ testTopLevelVarsInCatch
   jsunitRegister('testTypeOf5',
     function testTypeOf5() {
       try {
-        debugger;
         typeof testType5_foo();
         fail();
       } catch (e) {
-        debugger;
         assertEquals('some error', e);
         pass('testTypeOf5');
       }
@@ -511,7 +509,8 @@ testTopLevelVarsInCatch
 </script>
 
 <div class="testcontainer" id="testVariablePropertyConflict">
-    testVariablePropertyConflict</div>
+  testVariablePropertyConflict
+</div>
 <script>
   function testVariablePropertyConflict_foo() {
     return '<toString overridden by test>';
@@ -524,5 +523,36 @@ testTopLevelVarsInCatch
     // Existing code (Angular) uses toString as a variable name
     assertEquals(testVariablePropertyConflict_foo, toString);
     pass('testVariablePropertyConflict');
+  });
+</script>
+
+<div class="testcontainer" id="testVarInForLoops">
+  testVarInForLoops
+</div>
+<script>
+  for (var varInForLoops_i = 0; varInForLoops_i < 5; varInForLoops_i++) {}
+</script>
+<script>
+  jsunitRegister('testVarInForLoops',
+                 function testVarInForLoops() {
+    assertEquals(5, varInForLoops_i);
+    pass('testVarInForLoops');
+  });
+</script>
+
+<div class="testcontainer" id="testVarsInForLoops">
+  testVarsInForLoops
+</div>
+<script>
+  for (var varsInForLoops_1 = 0, varsInForLoops_2 = 0;
+      varsInForLoops_1 + varsInForLoops_2 < 5;
+      varsInForLoops_1++, varsInForLoops_2++) {}
+</script>
+<script>
+  jsunitRegister('testVarsInForLoops',
+                 function testVarsInForLoops() {
+    assertEquals(3, varsInForLoops_1);
+    assertEquals(3, varsInForLoops_2);
+    pass('testVarsInForLoops');
   });
 </script>
