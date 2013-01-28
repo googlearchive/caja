@@ -284,6 +284,8 @@ function assertThrowsMsg(shouldThrow, msg) {
   try {
     shouldThrow();
   } catch (e) {
-    assertTrue(e.message.indexOf(msg) > -1);
+    assertContains(msg, e.message);
+    return;
   }
+  fail('Did not throw: ' + msg);
 }

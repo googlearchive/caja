@@ -1924,10 +1924,10 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
   private static String assertThrowsMsg =
       "function assertThrowsMsg(f, msg) {\n" +
       "  try { f(); } catch (e) {\n" +
-      "    assertTrue(e.message.indexOf(msg) > -1);\n" +
-      "    return true;\n" +
+      "    assertContains(msg, e.message);\n" +
+      "    return;\n" +
       "  }\n" +
-      "  return false;\n" +
+      "  fail('Did not throw: ' + msg);\n" +
       "}\n";
 
   @Override
