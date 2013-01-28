@@ -1566,6 +1566,15 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
   }
 
   /**
+   * Tests that Object.create(null) has an understandable error message.
+   */
+  public final void testObjectCreateNull() throws Exception {
+    rewriteAndExecute(
+        "assertThrowsMsg(function() { Object.create(null); }," +
+        "    'ES5/3 can not support Object.create(null).');");
+  }
+
+  /**
    * Tests that ES5/3 code can't cause a privilege
    * escalation by calling a tamed exophoric function with null as the
    * this-value.

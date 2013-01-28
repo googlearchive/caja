@@ -2872,7 +2872,10 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   Object.create = function (O, opt_Properties) {
       // 1. If Type(O) is not Object or Null throw a TypeError exception.
       // (ES3 doesn't support null prototypes.)
-      if (Type(O) !== 'Object') {
+      var type = Type(O);
+      if (type === 'Null') {
+        throw new TypeError('ES5/3 can not support Object.create(null).');
+      } else if (type !== 'Object') {
         notObject(O);
       }
       // 2. Let obj be the result of creating a new object
