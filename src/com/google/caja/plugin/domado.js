@@ -305,10 +305,6 @@ var Domado = (function() {
    */
   function definePropertyAllowOverride(obj, name, desc) {
     var existing = Object.getOwnPropertyDescriptor(obj, name);
-    if (typeof obj === 'function' && name === 'prototype' && !existing) {
-      // TODO(kpreid): Remove this workaround for issue 1631 when it is fixed.
-      existing = {configurable:false};
-    }
     if ('value' in desc && !desc.writable &&
         (!existing || existing.configurable)) {
       var value = desc.value;
