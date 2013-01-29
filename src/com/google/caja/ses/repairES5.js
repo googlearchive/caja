@@ -1679,6 +1679,35 @@ var ses;
   }
 
   /**
+   * Detects whether calling push on a frozen array throws an error.
+   */
+  function test_PUSH_DOES_NOT_THROW_ON_FROZEN_ARRAY() {
+    var x = [1,2];
+    Object.freeze(x);
+    try {
+      x.push(3);
+    } catch (e) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Detects whether calling push on a frozen array can modify the array.
+   */
+  function test_PUSH_IGNORES_FROZEN() {
+    var x = [1,2];
+    Object.freeze(x);
+    try {
+      x.push(3);
+    } catch (e) {
+      if (x.length !== 2) { return 'Unexpected modification of frozen array'; }
+      if (x[0] === 1 && x[1] === 2) { return false; }
+    }
+    return (x.length !== 2 || x[0] !== 1 || x[1] !== 2);
+  }
+
+  /**
    * In some browsers, assigning to array length can delete
    * non-configurable properties.
    * https://bugzilla.mozilla.org/show_bug.cgi?id=590690
@@ -2625,21 +2654,6 @@ var ses;
     });
   }
 
-  function repair_PUSH_IGNORES_SEALED() {
-    var push = Array.prototype.push;
-    var sealed = Object.isSealed;
-    Object.defineProperty(Array.prototype, 'push', {
-      value: function (compareFn) {
-        if (sealed(this)) {
-          throw new TypeError('Cannot push onto a sealed object.');
-        }
-        return push.apply(this, arguments);
-      },
-      configurable: true,
-      writable: true
-    });
-  }
-
   ////////////////////// Kludge Records /////////////////////
   //
   // Each kludge record has a <dl>
@@ -3198,11 +3212,31 @@ var ses;
     {
       description: 'Array.prototype.push ignores sealing',
       test: test_PUSH_IGNORES_SEALED,
-      repair: repair_PUSH_IGNORES_SEALED,
-      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: true,
+      repair: undefined, // workaround is too slow
+      preSeverity: severities.NO_KNOWN_EXPLOIT_SPEC_VIOLATION,
+      canRepair: false,
       urls: ['http://code.google.com/p/v8/issues/detail?id=2412'],
       sections: ['15.4.4.11'],
+      tests: [] // TODO(erights): Add to test262
+    },
+    {
+      description: 'Array.prototype.push does not throw on a frozen array',
+      test: test_PUSH_DOES_NOT_THROW_ON_FROZEN_ARRAY,
+      repair: undefined,
+      preSeverity: severities.NO_KNOWN_EXPLOIT_SPEC_VIOLATION,
+      canRepair: false,
+      urls: [],
+      sections: ['15.2.3.9'],
+      tests: [] // TODO(erights): Add to test262
+    },
+    {
+      description: 'Array.prototype.push ignores frozen',
+      test: test_PUSH_IGNORES_FROZEN,
+      repair: undefined,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      canRepair: false,
+      urls: [],
+      sections: ['15.2.3.9'],
       tests: [] // TODO(erights): Add to test262
     },
     {
