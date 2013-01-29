@@ -81,6 +81,10 @@ public class Es53BrowserTest extends UniversalBrowserTests {
     runTestDriver("es53-test-automode4.js", false);
   }
 
+  public void testCustomCajolingServiceClient() throws Exception {
+    runTestDriver("es53-test-custom-cajoling-service-client.js", false);
+  }
+
   // See http://code.google.com/p/google-caja/issues/detail?id=1621
   // TODO(jasvir): Move this test back into UniversalBrowserTests once this
   // caja.js api supports testing cajoling errors

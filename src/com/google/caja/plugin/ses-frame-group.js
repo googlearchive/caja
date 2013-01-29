@@ -89,6 +89,8 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     USELESS: USELESS,
     iframe: window.frameElement,
 
+    Q: Q,
+
     makeES5Frame: makeES5Frame,
     disableSecurityForDebugger: disableSecurityForDebugger
   };

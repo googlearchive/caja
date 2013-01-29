@@ -143,6 +143,7 @@ var caja = (function () {
     'makeFrameGroup': makeFrameGroup,
     'configure': makeFrameGroup,
     'disableSecurityForDebugger': disableSecurityForDebugger,
+    'Q': premature,
 
     // For use by the Caja test suite only. Should not be used for any other
     // purpose and is hard to use correctly.
@@ -361,6 +362,9 @@ var caja = (function () {
         throw 'targetAttributePresets.whitelist array must be nonempty';
       }
       full['targetAttributePresets'] = partial['targetAttributePresets'];
+    }
+    if (typeof(partial['cajolingServiceClient']) === 'object'){
+      full['cajolingServiceClient'] = partial['cajolingServiceClient'];
     }
     return full;
   }

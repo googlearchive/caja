@@ -50,6 +50,7 @@
     ['es53-test-cajajs-version-skew-js-files.js'],
     ['es53-test-client-uri-rewriting.js'],
     ['es53-test-container-overflow.js'],
+    ['es53-test-custom-cajoling-service-client.js', 'es53'],
     ['es53-test-defensible-objects.js'],
     ['es53-test-domado-global.js'],
     ['es53-test-domado-events.js'],

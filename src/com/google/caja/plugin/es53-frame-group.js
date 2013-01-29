@@ -33,7 +33,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
     throw new Error('wrong frame');
   }
 
-  var cajoler = cajolingServiceClientMaker(
+  var cajoler = config.cajolingServiceClient || cajolingServiceClientMaker(
     cajaInt.joinUrl(config.server, 'cajole'),
     jsonRestTransportMaker(),
     true,
@@ -99,6 +99,8 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
 
     USELESS: tamingWin.___.USELESS,
     iframe: window.frameElement,
+
+    Q: tamingWin.Q,
 
     makeES5Frame: makeES5Frame,
     disableSecurityForDebugger: disableSecurityForDebugger,
