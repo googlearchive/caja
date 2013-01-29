@@ -288,8 +288,11 @@ public abstract class BrowserTestCase extends CajaTestCase {
    */
   protected String driveBrowser(
       final WebDriver driver, Object data, final String pageName) {
-    // 10s because test-domado-dom startup is very slow in es53 mode
-    countdown(10000, 200, new Countdown() {
+    // 40s because test-domado-dom startup is very very very slow in es53 mode,
+    // and something we're doing is leading to huge unpredictable slowdowns
+    // in random test startup; perhaps we're holding onto a lot of ram and
+    // we're losing on swapping/gc time.  unclear.
+    countdown(40000, 200, new Countdown() {
       @Override public String toString() { return "startup"; }
       public int run() {
         List<WebElement> readyElements = driver.findElements(
