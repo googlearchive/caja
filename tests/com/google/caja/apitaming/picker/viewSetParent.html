@@ -1,0 +1,46 @@
+<html>
+ <head>
+   <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+   <script type="text/javascript">
+     google.load('picker', '1.0');
+
+     function createPicker() {
+       var docsView = new google.picker.DocsView(google.picker.ViewId.FOLDERS);
+       docsView.setParent("0B1WyIFBvIVXGTDA1Ylo0UmxZNjA");
+
+       var docsUploadView = new google.picker.DocsUploadView();
+       docsUploadView.setParent("0B1WyIFBvIVXGTDA1Ylo0UmxZNjA");
+
+       var photosView = new google.picker.PhotosView();
+       photosView.setParent("5806817027085091617");
+
+       var picker = new google.picker.PickerBuilder()
+             .addView(docsView)
+             .addView(docsUploadView)
+             .addView(photosView)
+             .setCallback(pickerCallback)
+             .build();
+       picker.setVisible(true);
+       document.getElementById('msgs').innerHTML = ''
+     }
+
+     // A simple callback implementation.
+     function pickerCallback(data) {
+       var url = 'www.google.com';
+       if (data[google.picker.Response.ACTION] == google.picker.Action.PICKED) {
+         var doc = data[google.picker.Response.DOCUMENTS][0];
+         url = doc[google.picker.Document.URL];
+         document.getElementById('msgs').innerHTML =
+             '<a href=' + url + ' target="_blank" onclick="createPicker()">' +
+             '  <p style="text-align:center">Your file is ready!</p>' +
+             '</a>'
+       }
+     }
+
+     google.load('picker', '1', {callback: createPicker});
+   </script>
+ </head>
+ <body>
+   <pre id="msgs"></pre>
+ </body>
+</html>

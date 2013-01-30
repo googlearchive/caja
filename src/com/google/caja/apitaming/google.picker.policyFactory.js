@@ -24,9 +24,15 @@ caja.tamingGoogleLoader.addPolicyFactory('google.picker', function(frame, utils)
 
   var p = {};
 
+  function stringArg(o) { return '' + o; }
+
   p.DocsUploadView = function() {};
   p.DocsUploadView.__super__ = Object;
   p.DocsUploadView.prototype.setIncludeFolders = function(aBoolean) {};
+  p.DocsUploadView.prototype.setParent = function(aString) {};
+  p.DocsUploadView.prototype.setParent.__before__ = [
+    utils.mapArgs(stringArg)
+  ];
 
   p.View = function() {};
   p.View.__super__ = Object;
@@ -40,6 +46,8 @@ caja.tamingGoogleLoader.addPolicyFactory('google.picker', function(frame, utils)
   p.DocsView.prototype.setMode = function() {};
   p.DocsView.prototype.setOwnedByMe = function() {};
   p.DocsView.prototype.setStarred = function() {};
+  p.DocsView.prototype.setParent = function(aString) {};
+  p.DocsView.prototype.setParent.__before__ = [ utils.mapArgs(stringArg) ];
 
   p.DocsViewMode = {};
   p.DocsViewMode.GRID = 1;
@@ -94,6 +102,8 @@ caja.tamingGoogleLoader.addPolicyFactory('google.picker', function(frame, utils)
   p.PhotosView = function() {};
   p.PhotosView.__super__ = ['google', 'picker', 'View'];
   p.PhotosView.prototype.setType = function() {};
+  p.PhotosView.prototype.setParent = function(aString) {};
+  p.PhotosView.prototype.setParent.__before__ = [ utils.mapArgs(stringArg) ];
 
   p.PhotosView.Type = {};
   p.PhotosView.Type.FEATURED = 1;
@@ -106,31 +116,6 @@ caja.tamingGoogleLoader.addPolicyFactory('google.picker', function(frame, utils)
   p.Picker.prototype.setCallback = function(c) {};
   p.Picker.prototype.setRelayUrl = function(u) {};
   p.Picker.prototype.setVisible = function(b) {};
-
-/*
-  p.PickerBuilder = function() {};
-  p.PickerBuilder.__super__ = Object;
-  p.PickerBuilder.prototype.0= function() {};
-  p.PickerBuilder.prototype.addViewGroup = function() {};
-  p.PickerBuilder.prototype.build = function() {};
-  p.PickerBuilder.prototype.disableFeature = function() {};
-  p.PickerBuilder.prototype.enableFeature = function() {};
-  p.PickerBuilder.prototype.getRelayUrl = function() {};
-  p.PickerBuilder.prototype.getTitle = function() {};
-  p.PickerBuilder.prototype.hideTitleBar = function() {};
-  p.PickerBuilder.prototype.isFeatureEnabled = function() {};
-  p.PickerBuilder.prototype.setAppId = function() {};
-  p.PickerBuilder.prototype.setAuthUser = function() {};
-  p.PickerBuilder.prototype.setCallback = function() {};
-  p.PickerBuilder.prototype.setDocument = function() {};
-  p.PickerBuilder.prototype.setLocale = function() {};
-  p.PickerBuilder.prototype.setRelayUrl = function() {};
-  p.PickerBuilder.prototype.setSelectableMimeTypes = function() {};
-  p.PickerBuilder.prototype.setSize = function() {};
-  p.PickerBuilder.prototype.setTitle = function() {};  // TODO: Add "trusted path" annotation
-  p.PickerBuilder.prototype.setUploadToAlbumId = function() {};
-  p.PickerBuilder.prototype.toUri = function() {};
-*/
 
   p.PickerBuilder = function() {};
   p.PickerBuilder.__super__ = Object;
@@ -154,12 +139,6 @@ caja.tamingGoogleLoader.addPolicyFactory('google.picker', function(frame, utils)
   p.PickerBuilder.prototype.setUploadToAlbumId = function() {};
   p.PickerBuilder.prototype.toUri = function() {};
   p.PickerBuilder.prototype.build = function() {};
-  p.PickerBuilder.prototype.build.__around__ = [
-    function(f, self, args) {
-      var result = f(self, args);
-      return result;
-    }
-  ];
 
   p.ResourceId = {};
   p.ResourceId.generate = function() {};
