@@ -90,17 +90,26 @@ public abstract class BrowserTestCase extends CajaTestCase {
   // instance between individual tests. There is no narrower scope we can use,
   // unless we were to move to JUnit 4 style tests, which have per-class setup.
   static WebDriver driver = null;
+
+  // We keep a blank window open so the browser stays running when we close
+  // a test window.
+  static String firstWindow = null;
+
   static {
     Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
       public void run() {
         if (driver != null) {
-          // Close current window, which will quit if it's the only window.
+          // Close first window, which quits the browser if it's the only one.
+          if (firstWindow != null) {
+            driver.switchTo().window(firstWindow);
+          }
           driver.close();
           driver = null;
         }
       }
     }));
   }
+
 
   protected String testBuildVersion = null;
 
@@ -209,6 +218,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
 
       if (driver == null) {
         driver = makeDriver();
+        firstWindow = driver.getWindowHandle();
         try {
           driver.manage().timeouts().pageLoadTimeout(15, TimeUnit.SECONDS);
           driver.manage().timeouts().setScriptTimeout(5, TimeUnit.SECONDS);
@@ -216,6 +226,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
           // ignore
         }
       }
+      switchToNewWindow(driver);
       driver.get(page);
       if (flag(START_AND_WAIT)) {
         Thread.currentThread().join();
@@ -225,9 +236,12 @@ public abstract class BrowserTestCase extends CajaTestCase {
       passed = true;
     } finally {
       localServer.stop();
-      if ((!passed && !isKnownFailure()) && driver != null) {
+      if (driver != null) {
         // It's helpful for debugging to keep failed windows open.
-        switchToNewWindow(driver);
+        if (passed || isKnownFailure()) {
+          driver.close();
+          driver.switchTo().window(firstWindow);
+        }
       }
     }
     return result;
@@ -319,7 +333,7 @@ public abstract class BrowserTestCase extends CajaTestCase {
 
     // TODO(felix8a): reduce this timeout.  the problem is that progress
     // is very slow on test pages that do a lot of caja.load() calls.
-    countdown(25000, 200, new Countdown() {
+    countdown(40000, 200, new Countdown() {
       private List<WebElement> waitingList = null;
       @Override public String toString() {
         return "completion (Remaining elements = " +
