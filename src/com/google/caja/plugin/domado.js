@@ -1192,6 +1192,11 @@ var Domado = (function() {
           && VALID_ID_PATTERN.test(s);
     }
 
+    function isValidFragment(s) {
+      var idValue = s.substring(1);
+      return s.charAt(0) === '#' && ('' === idValue || isValidId(idValue));
+    }
+
     function isValidIdList(s) {
       return !FORBIDDEN_ID_LIST_PATTERN.test(s)
           && VALID_ID_LIST_PATTERN.test(s);
@@ -1989,7 +1994,7 @@ var Domado = (function() {
             value = String(value);
             // URI fragments reference contents within the document and
             // aren't subject to the URI policy
-            if (value.charAt(0) === '#' && isValidId(value.substring(1))) {
+            if (isValidFragment(value)) {
               return value + idSuffix;
             }
             value = URI.utils.resolve(domicile.pseudoLocation.href, value);
@@ -2007,7 +2012,7 @@ var Domado = (function() {
                 }) || null;
           case html4.atype.URI_FRAGMENT:
             value = String(value);
-            if (value.charAt(0) === '#' && isValidId(value.substring(1))) {
+            if (isValidFragment(value)) {
               return value + idSuffix;
             }
             return null;
@@ -5641,7 +5646,7 @@ var Domado = (function() {
       });
       domicile.rewriteUriInAttribute = cajaVM.def(
           function (value, tagName, attribName) {
-        if (value.charAt(0) === '#' && isValidId(value.substring(1))) {
+        if (isValidFragment(value)) {
           return value + idSuffix;
         }
         var schemaAttr = htmlSchema.attribute(tagName, attribName);

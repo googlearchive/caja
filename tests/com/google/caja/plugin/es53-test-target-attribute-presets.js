@@ -181,6 +181,42 @@
     });
   });
 
+  registerTargetTest(
+      'testTrivialUriFragTargetDefault',
+      '<a href="#" target="foo">a</a>',
+      'target="foo"', 'href="#-caja-guest-');
+
+  registerTargetTest(
+      'testTrivialUriFragTargetWhitelist',
+      '<a href="#" target="bar">a</a>',
+      'target="bar"', 'href="#-caja-guest-');
+
+  registerTargetTest(
+      'testTrivialUriFragTargetIllegal',
+      '<a href="#" target="baz">a</a>',
+      'target="foo"', 'href="#-caja-guest-');
+
+  registerTargetTest(
+      'testTrivialUriFragTargetNone',
+      '<a href="#">a</a>',
+      'href="#-caja-guest-');
+
+  registerTest('testTrivialUriFragTargetSetAttribute', function() {
+    var div = createDiv();
+    caja.load(div, null, function(frame) {
+      frame.code('http://a.com/', 'text/html',
+          '<a id="a">a</a>' +
+          '<script type="text/javascript">' +
+          '  document.getElementById(\'a\')' +
+          '      .setAttribute(\'href\', \'#\');' +
+          '</script>')
+          .run(function() {
+            assertInnerHtmlDoesNotContain(div, 'target=');
+            jsunitPass('testTrivialUriFragTargetSetAttribute');
+          });
+    });
+  });
+
   readyToTest();
   jsunitRun();
 })();
