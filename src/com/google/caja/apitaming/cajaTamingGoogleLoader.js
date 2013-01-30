@@ -203,9 +203,9 @@ caja.tamingGoogleLoader = (function() {
     function mapArgs() {
       var mappings = arguments;
       return function(f, self, args) {
-        var mappedArgs = args.slice(0);
-        for (var i = 0; i < mappedArgs.length && i < mappings.length; i++) {
-          mappedArgs[i] = mappings[i](mappedArgs[i]);
+        var mappedArgs = [];
+        for (var i = 0; i < mappings.length && i < args.length; i++) {
+          mappedArgs[i] = mappings[i](args[i]);
         }
         return mappedArgs;
       };

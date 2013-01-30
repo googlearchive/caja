@@ -5,6 +5,12 @@
     <title>
       Google Visualization API Sample
     </title>
+    <style type="text/css">
+      .dataSelectionDiv {
+        border: 1px solid red;
+        background-color: green;
+      }
+    </style>
     <script type="text/javascript" src="http://www.google.com/jsapi"></script>
     <script type="text/javascript">
       google.load('visualization', '1.0', {packages: ['charteditor']});
@@ -12,6 +18,10 @@
     <script type="text/javascript">
       google.setOnLoadCallback(loadEditor);
       var chartEditor = null;
+
+      var dataSelectionDiv = document.createElement('div');
+      dataSelectionDiv.setAttribute('class', 'dataSelectionDiv');
+      dataSelectionDiv.innerText = 'Guest Data Selection Div';
 
       function loadEditor() {
         // Create the chart to edit.
@@ -24,7 +34,9 @@
 
         chartEditor = new google.visualization.ChartEditor();
         google.visualization.events.addListener(chartEditor, 'ok', redrawChart);
-        chartEditor.openDialog(wrapper, {});
+        chartEditor.openDialog(wrapper, {
+          dataSourceInput: dataSelectionDiv
+        });
       }
 
       // On "OK" save the chart to a div on the page.
