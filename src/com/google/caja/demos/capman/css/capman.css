@@ -1,0 +1,71 @@
+/* @override http://localhost/~markl/capman/css/capman.css */
+
+#game-console {
+  background-color: #8b887a;
+  
+  border-radius: 8px;
+  box-shadow: inset 0 5px 12px -1px rgba(92, 95, 76, 0.6);
+  padding: 2em 1em 1em;
+  margin-bottom: 2em;
+  color: #eaeaea;
+}
+
+#game-buttons {
+  list-style: none;
+  margin: 0;
+}
+#game-buttons li a {
+  width: 3em;
+  margin-bottom: 0.5em;
+  margin-right: 0.5em;
+}
+#pacman {
+  margin: 0px;
+} 
+
+#game-console h3 {
+  margin-top: 0;
+}
+#game-console .status {
+  border: 1px solid black;
+  height: 6em;
+  margin-bottom: 1em;
+  overflow: hidden;
+  background: #5e5e5e;
+  color: #00ca00;
+}
+
+#code {
+
+}
+
+#code h3 {
+  padding-left: 2em;
+}
+.ui-accordion {
+}
+
+.CodeMirror {
+}
+
+.CodeMirror-scroll {
+  height: auto;
+  overflow-y: hidden;
+  overflow-x: auto;
+  width: 100%;
+}
+
+#edit-area  .maia-notification {
+  margin-top: 0;
+  margin-bottom: 2em;
+}
+
+#edit-area .maia-notification ol ul {
+  list-style: disc;
+  margin-left: 1.5em;
+}
+
+#edit-area .maia-promo ul + ul {
+  border-top: 1px solid #5e93ff;
+  padding-top: 1em;
+}

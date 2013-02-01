@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+
+<html class="google" lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport"
+        content="initial-scale=1, minimum-scale=1, width=device-width">
+  <script>
+(function(H){H.className=H.className.replace(/\bgoogle\b/,'google-js')})(document.documentElement)
+  </script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js" type="text/javascript"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js" type="text/javascript"></script>
+  <link href="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.7/themes/smoothness/jquery-ui.css" rel="stylesheet" type="text/css" />
+
+<script src="js/prettify.js"></script>
+  <script src="//caja.appspot.com/caja.js"></script>
+  <script src="js/pacman.js"></script>
+  <script src="js/modernizr-1.5.min.js"></script>
+  <script src="js/codemirror-compressed.js"></script>
+
+  <link rel="stylesheet" href="css/codemirror.css" type="text/css">
+  <link rel="stylesheet" href="css/prettify.css" type="text/css">
+  <link rel="stylesheet" href="css/capman.css" type="text/css">
+
+  <title>CapMan &#226;&#8364;&#8220; Google Caja Challenge</title>
+  <link href="//fonts.googleapis.com/css?family=Open+Sans:300,400,600,700&amp;subset=latin"
+        rel="stylesheet"
+        type="text/css">
+  <link href="//www.google.com/css/maia.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+  <div class="maia-header" id="maia-header">
+    <div class="maia-aux">
+      <h1>
+        <a href="//www.google.com/">
+          <img alt="Google"
+               src="//www.google.com/images/logos/google_logo_41.png">
+          Caja CapMan
+        </a>
+      </h1>
+    </div>
+  </div>
+  <div class="maia-nav" id="maia-nav-x">
+    <div class="maia-aux">
+      <ul>
+        <li class="active"><a id="challenges" href="#play">Play</a></li>
+
+        <li><a id="about" href="//developers.google.com/caja/">More about Caja</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div id="maia-main">
+    <h1>Write and play against your own ghosts!</h1>
+  
+    <div class="maia-cols" id="game-console">
+      <div class="maia-col-1">
+        <ul id="game-buttons">
+          <li><a href="#" class="maia-button" id="start">Start</a></li>
+          <li><a href="#" class="maia-button maia-button-secondary" id="pause">Pause</a></li>
+          <li><a href="#" class="maia-button maia-button-secondary" id="mute">Mute</a></li>
+        </ul>
+      </div>
+      
+      <div class="maia-col-5">
+        <div id="pacman"></div>
+      </div>
+
+      <div class="maia-col-5">
+        <h3>Macky</h3>
+        <div class="status" id="ghost-macky-status"></div>
+        <h3>Micky</h3>
+        <div class="status" id="ghost-micky-status"></div>
+        <h3>Mucky</h3>
+        <div class="status" id="ghost-mucky-status"></div>
+        <h3>Mocky</h3>
+        <div class="status" id="ghost-mocky-status"></div>
+      </div>
+    </div>
+  
+    <h1>Edit the ghosts' code here:</h1>
+  <div class="maia-cols" id="edit-area">
+    <div id="code" class="maia-col-8">
+      <div id="ghost-macky-code"></div>
+      <div id="ghost-micky-code"></div>
+      <div id="ghost-mucky-code"></div>
+      <div id="ghost-mocky-code"></div>
+    </div>
+    <div class="maia-col-4">
+      <div class="maia-notification">
+        <h3>Suggested challenges</h3>
+        <ol>
+          <li>Write a better ghost that follows the shortest path to
+        the PacMan.</li>
+          <li>Modify the ghosts to co-operate and co-ordinate their
+        attack</li>
+          <li>Cheat! Bypass Caja sandbox or how the game uses it to:</li>
+          <ul>
+            <li>kill the PacMan directly (using javascript jedi
+          mindtricks)</li>
+            <li>modify the state of PacMan</li>
+            <li>modify the score directly</li>
+            <li>to allow the ghosts to communicate with each other
+          or with the web</li>
+          </ul>
+        </ol>
+      </div>
+      <div class="maia-promo">
+        <h3>Whitelisted API</h3>
+        <ul>
+          <li>self.getPosition() -- get your own position</li>
+          <li>self.randomMove() -- returns a random position for your ghost
+        to move in.</li>
+          <li>self.isVunerable() -- can pacman eat you right now?</li>
+        </ul>
+        <ul>
+          <li>game.map() -- get a map of the warground</li>
+          <li>game.look() -- find out where everyone is</li>
+        </ul>
+        <ul>
+          <li>console.log -- useful for debugging</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div id="maia-signature"></div>
+
+  <div class="maia-footer" id="maia-footer">
+    <div id="maia-footer-global">
+      <div class="maia-aux">
+        <ul>
+          <li><a href="//www.google.com/">Google</a></li>
+
+          <li><a href="//www.google.com/intl/en/policies/">Privacy &amp;
+          Terms</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <script>
+    function start() { 
+      var el = document.getElementById("pacman");
+      PACMAN.init(el, "./", "#start", "#pause", "#mute", [
+          "ghost-macky-code",
+          "ghost-micky-code",
+          "ghost-mucky-code",
+          "ghost-mocky-code"
+        ].map(function(x){ return document.getElementById(x) }));
+    }
+    if (Modernizr.canvas && Modernizr.localstorage && 
+      Modernizr.audio && (Modernizr.audio.ogg || Modernizr.audio.mp3)) {
+      window.setTimeout(start, 0);
+    } else { 
+      alert("Needs a modern browser (ie. Firefox 3.6+, Chrome 4+, Opera 10+ and Safari 4+)");
+    }
+  </script>
+</body>
+</html>
