@@ -36,20 +36,83 @@
     <uri>http://caja.appspot.com/imaginary-2/canary2.js</uri>
   </precajole>
 
+  <!-- 2013-02-01: by request -->
+  <precajole file="jquery/1.6.0/jquery-1.6.0.js">
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.6.0/jquery.js</uri>
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.6.0/jquery.min.js</uri>
+    <uri>http://code.jquery.com/jquery-1.6.js</uri>
+    <uri>http://code.jquery.com/jquery-1.6.min.js</uri>
+  </precajole>
+
+  <!-- 2013-02-01: by request -->
+  <precajole file="jquery/1.6.1/jquery-1.6.1.js">
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.js</uri>
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js</uri>
+    <uri>http://code.jquery.com/jquery-1.6.1.js</uri>
+    <uri>http://code.jquery.com/jquery-1.6.1.min.js</uri>
+  </precajole>
+
+  <!-- 2013-02-01: by request -->
+  <precajole file="jquery/1.6.2/jquery-1.6.2.js">
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.js</uri>
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js</uri>
+    <uri>http://code.jquery.com/jquery-1.6.2.js</uri>
+    <uri>http://code.jquery.com/jquery-1.6.2.min.js</uri>
+  </precajole>
+
+  <!-- 2013-02-01: by request -->
+  <precajole file="jquery/1.6.3/jquery-1.6.3.js">
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.6.3/jquery.js</uri>
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.6.3/jquery.min.js</uri>
+    <uri>http://code.jquery.com/jquery-1.6.3.js</uri>
+    <uri>http://code.jquery.com/jquery-1.6.3.min.js</uri>
+  </precajole>
+
   <!-- 2011-11-08: latest version -->
   <precajole file="jquery/1.6.4/jquery-1.6.4.js">
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.6/jquery.js</uri>
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.6/jquery.min.js</uri>
     <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.js</uri>
     <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js</uri>
     <uri>http://code.jquery.com/jquery-1.6.4.js</uri>
     <uri>http://code.jquery.com/jquery-1.6.4.min.js</uri>
   </precajole>
 
+  <!-- 2013-02-01: by request -->
+  <!-- note, at jquery 1.7 means 1.7.0, but googleapis 1.7 means 1.7.2 -->
+  <precajole file="jquery/1.7.0/jquery-1.7.0.js">
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.js</uri>
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js</uri>
+    <uri>http://code.jquery.com/jquery-1.7.js</uri>
+    <uri>http://code.jquery.com/jquery-1.7.min.js</uri>
+    <uri>http://code.jquery.com/jquery-1.7.0.js</uri>
+    <uri>http://code.jquery.com/jquery-1.7.0.min.js</uri>
+  </precajole>
+
+  <!-- 2013-02-01: by request -->
+  <precajole file="jquery/1.7.1/jquery-1.7.1.js">
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.js</uri>
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js</uri>
+    <uri>http://code.jquery.com/jquery-1.7.1.js</uri>
+    <uri>http://code.jquery.com/jquery-1.7.1.min.js</uri>
+  </precajole>
+
   <!-- 2012-05-13: latest version -->
   <precajole file="jquery/1.7.2/jquery-1.7.2.js">
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.js</uri>
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js</uri>
     <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.js</uri>
     <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js</uri>
     <uri>http://code.jquery.com/jquery-1.7.2.js</uri>
     <uri>http://code.jquery.com/jquery-1.7.2.min.js</uri>
+  </precajole>
+
+  <!-- 2013-02-01: by request -->
+  <precajole file="jquery/1.8.0/jquery-1.8.0.js">
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.js</uri>
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js</uri>
+    <uri>http://code.jquery.com/jquery-1.8.0.js</uri>
+    <uri>http://code.jquery.com/jquery-1.8.0.min.js</uri>
   </precajole>
 
   <!-- 2012-09-13: latest version -->
@@ -62,10 +125,28 @@
 
   <!-- 2012-09-26: latest version -->
   <precajole file="jquery/1.8.2/jquery-1.8.2.js">
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.js</uri>
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js</uri>
     <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.js</uri>
     <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js</uri>
     <uri>http://code.jquery.com/jquery-1.8.2.js</uri>
     <uri>http://code.jquery.com/jquery-1.8.2.min.js</uri>
+  </precajole>
+
+  <!-- 2013-02-01: by request -->
+  <precajole file="jquery/1.8.3/jquery-1.8.3.js">
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.js</uri>
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js</uri>
+    <uri>http://code.jquery.com/jquery-1.8.3.js</uri>
+    <uri>http://code.jquery.com/jquery-1.8.3.min.js</uri>
+  </precajole>
+
+  <!-- 2013-02-01: latest version. -->
+  <precajole file="jquery/1.9.0/jquery-1.9.0.js">
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.js</uri>
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js</uri>
+    <uri>http://code.jquery.com/jquery-1.9.0.js</uri>
+    <uri>http://code.jquery.com/jquery-1.9.0.min.js</uri>
   </precajole>
 
   <!-- 2012-06-07: latest version on google's cdn -->
