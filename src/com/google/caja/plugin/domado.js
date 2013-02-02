@@ -5153,6 +5153,12 @@ var Domado = (function() {
         });
       }
 
+      var featureTestKeyEvent = {};
+      try {
+        featureTestKeyEvent = makeDOMAccessible(
+            document.createEvent('KeyboardEvent'));
+      } catch (e) {}
+
       function TameEvent(event, notYetDispatched) {
         assert(!!event);
         TameEventConf.confide(this);
@@ -5163,10 +5169,26 @@ var Domado = (function() {
       }
       inertCtor(TameEvent, Object, 'Event');
       definePropertiesAwesomely(TameEvent.prototype, {
+        eventPhase: P_e_view(Number),
         type: eventVirtualizingAccessor(function() {
           return bridal.untameEventType(String(ep(this).feral.type));
         }),
-        eventPhase: P_e_view(Number),
+        bubbles: P_e_view(Boolean),
+        cancelable: P_e_view(Boolean),
+        view: eventVirtualizingAccessor(function() {
+          var view = ep(this).feral.view;
+          if (view === window) {
+            return tameWindow;
+          } else if (view === null) {
+            return null;
+          } else {
+            if (typeof console !== 'undefined') {
+              console.warn('Domado: Discarding unrecognized feral view value:',
+                  view);
+            }
+            return null;
+          }
+        }),
         target: eventVirtualizingAccessor(function() {
           var event = ep(this).feral;
           return tameRelatedNode(
@@ -5193,6 +5215,7 @@ var Domado = (function() {
         }),
         fromElement: EP_RELATED,
         toElement: EP_RELATED,
+        detail: P_e_view(Number),
         pageX: P_e_view(Number),
         pageY: P_e_view(Number),
         altKey: P_e_view(Boolean),
@@ -5205,8 +5228,20 @@ var Domado = (function() {
         screenX: P_e_view(Number),
         screenY: P_e_view(Number),
         which: P_e_view(function (v) { return v && Number(v); }),
-        keyCode: P_e_view(function (v) { return v && Number(v); })
+        location: P_e_view(Number),  // KeyboardEvent
+        keyCode: P_e_view(function(v) { return v && Number(v); }),
+        charCode: P_e_view(function(v) { return v && Number(v); })
       });
+      if ('key' in featureTestKeyEvent) {
+        definePropertiesAwesomely(TameEvent.prototype, {
+          key: P_e_view(String)
+        });
+      }
+      if ('char' in featureTestKeyEvent) {
+        definePropertiesAwesomely(TameEvent.prototype, {
+          char: P_e_view(String)
+        });
+      }
       TameEvent.prototype.stopPropagation = eventMethod(function () {
         // TODO(mikesamuel): make sure event doesn't propagate to dispatched
         // events for this gadget only.
@@ -5245,11 +5280,15 @@ var Domado = (function() {
         return self;
       }
       inertCtor(TameCustomHTMLEvent, TameEvent);
-      TameCustomHTMLEvent.prototype.initEvent
-          = eventMethod(function(type, bubbles, cancelable) {
+      /**
+       * Helper for init*Event.
+       * 'method' is relied on. 'args' should be untamed.
+       */
+      function tameInitSomeEvent(method, type, bubbles, cancelable, args) {
         var privates = ep(this);
         if (privates.notYetDispatched) {
-          bridal.initEvent(privates.feral, type, bubbles, cancelable);
+          bridal.initEvent(
+              privates.feral, method, type, bubbles, cancelable, args);
         } else {
           // Do nothing. This prevents guests using initEvent to mutate
           // browser-generated events that will be seen by the host.
@@ -5259,7 +5298,62 @@ var Domado = (function() {
           // and bridal's initEvent emulation for IE does not have that
           // property.
         }
+      }
+      /** Helper for init*Event */
+      function untameView(view) {
+        if (view === tameWindow) {
+          return window;
+        } else if (view === null) {
+          return null;
+        } else {
+          if (typeof console !== 'undefined') {
+            console.warn('Domado: Discarding unrecognized guest view value:',
+                view);
+          }
+        }
+      }
+      TameCustomHTMLEvent.prototype.initEvent =
+          eventMethod(function(type, bubbles, cancelable) {
+        tameInitSomeEvent.call(this, 'initEvent', type, bubbles, cancelable,
+            []);
       });
+      TameCustomHTMLEvent.prototype.initUIEvent = eventMethod(function(
+          type, bubbles, cancelable, view, detail) {
+        tameInitSomeEvent.call(this, 'initUIEvent', type, bubbles,
+            cancelable, [untameView(view), +detail]);
+      });
+      TameCustomHTMLEvent.prototype.initMouseEvent = eventMethod(function(
+          // per MDN
+          type, bubbles, cancelable, view, detail, screenX, screenY, clientX,
+          clientY, ctrlKey, altKey, shiftKey, metaKey, button, relatedTarget) {
+        tameInitSomeEvent.call(this, 'initMouseEvent', type, bubbles,
+            cancelable, [untameView(view), +detail, +screenX, +screenY,
+            +clientX, +clientY, Boolean(ctrlKey), Boolean(altKey),
+            Boolean(shiftKey), Boolean(metaKey), +button,
+            toFeralNode(relatedTarget)]);
+      });
+      if ('initKeyEvent' in featureTestKeyEvent) {
+        TameCustomHTMLEvent.prototype.initKeyEvent = eventMethod(function(
+            // per MDN
+            type, bubbles, cancelable, view, ctrlKey, altKey, shiftKey, metaKey,
+            keyCode, charCode) {
+          tameInitSomeEvent.call(this, 'initKeyEvent', type, bubbles,
+              cancelable, [untameView(view), Boolean(ctrlKey), Boolean(altKey),
+              Boolean(shiftKey), Boolean(metaKey), Number(keyCode),
+              Number(charCode)]);
+        });
+      }
+      if ('initKeyboardEvent' in featureTestKeyEvent) {
+        TameCustomHTMLEvent.prototype.initKeyboardEvent = eventMethod(function(
+            // per MDN
+            type, bubbles, cancelable, view, char, key, location, modifiers,
+            repeat, locale) {
+          tameInitSomeEvent.call(this, 'initKeyboardEvent', type, bubbles,
+              cancelable, [untameView(view), String(char), String(key),
+              Number(location), String(modifiers), Boolean(repeat),
+              String(locale)]);
+        });
+      }
       setOwn(TameCustomHTMLEvent.prototype, "toString", eventMethod(function () {
         return '[Fake CustomEvent]';
       }));
@@ -5577,12 +5671,19 @@ var Domado = (function() {
             np(tameDocument).onLoadListeners);
       });
 
+      function toFeralNode(tame) {
+        if (tame === null || tame === undefined) {
+          return tame;
+        } else {
+          return np(tame).feral;  // NOTE: will be undefined for pseudo nodes
+        }
+      }
+      cajaVM.def(toFeralNode);
+
       // For JavaScript handlers.  See function dispatchEvent below
       domicile.handlers = [];
       domicile.tameNode = cajaVM.def(defaultTameNode);
-      domicile.feralNode = cajaVM.def(function (tame) {
-        return np(tame).feral;  // NOTE: will be undefined for pseudo nodes
-      });
+      domicile.feralNode = cajaVM.def(toFeralNode);
       domicile.tameEvent = cajaVM.def(tameEvent);
       domicile.blessHtml = cajaVM.def(blessHtml);
       domicile.blessCss = cajaVM.def(function (var_args) {

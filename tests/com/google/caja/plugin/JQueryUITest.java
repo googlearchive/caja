@@ -53,16 +53,17 @@ public class JQueryUITest extends QUnitTestCase {
   }
 
   public final void testDatepicker() throws Exception {
-    runQUnitTestCase("datepicker", 398);
+    runQUnitTestCase("datepicker", 482);
     // Current failure categories:
     //   * keystroke response discrepancies
     //   * parseDate
+    //   * got absolute URL where relative expected
   }
 
   public final void testDialog() throws Exception {
-    runQUnitTestCase("dialog", 217 /* Firefox; ??? on Chrome */);
+    runQUnitTestCase("dialog", 226 /* Firefox; ??? on Chrome */);
     // Current failure categories:
-    //   * "event.initMouseEvent is not a function"
+    //   * What may be event simulation failures
     //   * Some numeric discrepancies
   }
 
@@ -87,13 +88,13 @@ public class JQueryUITest extends QUnitTestCase {
   }
 
   public final void testSlider() throws Exception {
-    runQUnitTestCase("slider", 89);
+    runQUnitTestCase("slider", 92);
     // Current failure categories:
-    //   * "Unrecognized event type Events"
+    //   * Keyboard events not working
   }
 
   public final void testSpinner() throws Exception {
-    runQUnitTestCase("spinner", 139);
+    runQUnitTestCase("spinner", 137);
     // Current failure categories:
     //   * unexamined
   }

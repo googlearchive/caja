@@ -633,32 +633,51 @@ TODO(felix8a): fix javascript url handling
   });
 </script>
 
+<script>
+  function runEventDispatchTest(type, eventTarget, constructEvent,
+      assertProperties, assertFinally) {
+    withFailureOnLeakedEvent(type, function() {
+       // Event dispatch for custom events is synchronous
+      var fired = false;
+      var eventToSend;
+
+      eventTarget.addEventListener(type, jsunitCallback(function(event) {
+        // assertEquals("received correct event", eventToSend, event);
+        assertProperties(event);
+        fired = true;
+      }), true);
+
+      eventToSend = constructEvent();
+      eventTarget.dispatchEvent(eventToSend);
+      assertTrue('event did fire', fired);
+      
+      assertFinally();
+    });
+  }
+</script>
+
 <p id="testCustomEvents" class="testcontainer">Custom Events<br></p>
 <script type="text/javascript">
   jsunitRegister('testCustomEvents',
                  function testCustomEvents() {
-    withFailureOnLeakedEvent('howdy', function() {
-      assertTrue('createEvent exists', !!document.createEvent);
+    assertTrue('createEvent exists', !!document.createEvent);
 
-      // Event dispatch for custom events is synchronous
-      var fired = false;
-      var eventToSend = undefined;
-
-      var eventTarget = document.getElementById('testCustomEvents');
-      eventTarget.addEventListener('howdy', jsunitCallback(function (event) {
-        // assertEquals("received correct event", eventToSend, event);
-        assertEquals("received correct details", 'hiya', event.details);
-        fired = true;
-      }), true);
-
-      eventToSend = document.createEvent('HTMLEvents');
-      eventToSend.details = 'hiya';
-      eventToSend.initEvent('howdy', true, true);
-      assertEquals('initEvent correct', 'hiya', eventToSend.details);
-
-      eventTarget.dispatchEvent(eventToSend);
-      assertTrue('event did fire', fired);
-    });
+    runEventDispatchTest(
+        'howdy',
+        document.getElementById('testCustomEvents'),
+        function constructEvent() {
+          var eventToSend = document.createEvent('HTMLEvents');
+          // TODO(kpreid): What's the intent here? .details is not standard;
+          // are we testing that expando properties are preserved?
+          eventToSend.details = 'hiya';
+          eventToSend.initEvent('howdy', true, true);
+          return eventToSend;
+        },
+        function assertProperties(event) {
+          assertEquals("received correct details", 'hiya', event.details);
+        },
+        function assertFinally() {
+        });
     pass('testCustomEvents');
   });
 </script>
@@ -702,32 +721,152 @@ TODO(felix8a): fix javascript url handling
 <script type="text/javascript">
   jsunitRegister('testDispatchedNoncustom',
                  function testDispatchedNoncustom() {
-    withFailureOnLeakedEvent('click', function() {
-       // Event dispatch for custom events is synchronous
-      var fired = false;
-      var eventToSend = undefined;
+    var eventTarget = document.getElementById('testDispatchedNoncustom-c');
+    runEventDispatchTest(
+        'click',
+        eventTarget,
+        function constructEvent() {
+          var eventToSend = document.createEvent('MouseEvents');
+          eventToSend.initMouseEvent('click', true, true, window, 1, 7, 0, 0, 0,
+              false, false, false, false, 0, null);
 
-      var eventTarget = document.getElementById('testDispatchedNoncustom-c');
-      eventTarget.addEventListener('click', jsunitCallback(function (event) {
-        // assertEquals("received correct event", eventToSend, event);
-        assertEquals("received correct details", 'hiya', event.details);
-        fired = true;
-      }), true);
+          assertEquals('check initial state', false, eventTarget.checked);
 
-      eventToSend = document.createEvent('MouseEvents');
-      eventToSend.details = 'hiya';
-      eventToSend.initEvent('click', true, true);
-      // Should be initMouseEvent, but we don't implement that yet.
-      //eventToSend.initMouseEvent('click', true, true, window, 1, 100, 0, 0, 0,
-      //    false, false, false, false, 0, null);
-      //assertEquals('initEvent correct', 100, eventToSend.screenX);
-
-      assertEquals('check initial state', false, eventTarget.checked);
-      eventTarget.dispatchEvent(eventToSend);
-      assertTrue('event did fire', fired);
-      assertEquals('check final state not changed', false, eventTarget.checked);
-    });
+          return eventToSend;
+        },
+        function assertProperties(event) {
+          assertEquals('received correct data', 7, event.screenX);
+        },
+        function assertFinally() {
+          assertEquals('check final state not changed', false,
+            eventTarget.checked);
+        });
     pass('testDispatchedNoncustom');
+  });
+</script>
+
+<p id="testInitEvent" class="testcontainer">testInitEvent - all variants</p>
+<script type="text/javascript">
+  jsunitRegister('testInitEvent',
+                 function testInitEvent() {
+    var event;
+
+    // initEvent
+    event = document.createEvent('HTMLEvents');
+    event.initEvent('howdy', true, false);
+    assertEquals('initEvent type', 'howdy', event.type);
+    assertEquals('initEvent bubbles', true, event.bubbles);
+    assertEquals('initEvent cancelable', false, event.cancelable);
+
+    event = document.createEvent('HTMLEvents');
+    event.initEvent('howdy', false, true);
+    assertEquals('initEvent bubbles #2', false, event.bubbles);
+    assertEquals('initEvent cancelable #2', true, event.cancelable);
+
+    // initUIEvent
+    event = document.createEvent('UIEvents');
+    event.initUIEvent('foo', true, false, window, 2);
+    assertEquals('initUIEvent type', 'foo', event.type);
+    assertEquals('initUIEvent bubbles', true, event.bubbles);
+    assertEquals('initUIEvent cancelable', false, event.cancelable);
+    assertEquals('initUIEvent view', window, event.view);
+    assertEquals('initUIEvent detail', 2, event.detail);
+
+    event = document.createEvent('UIEvents');
+    event.initUIEvent('foo', false, true, {}, 'a');
+    assertEquals('initUIEvent bubbles #2', false, event.bubbles);
+    assertEquals('initUIEvent cancelable #2', true, event.cancelable);
+    assertEquals('initUIEvent bad view', null, event.view);
+    assertEquals('initUIEvent bad detail', 0, event.detail);
+
+    // initMouseEvent
+    event = document.createEvent('MouseEvents');
+    event.initMouseEvent(
+        'mousemove', true, false, window, 2,
+        3, 4, 5, 6, false, true, false, true, 7, document.body);
+    assertEquals('initMouseEvent type', 'mousemove', event.type);
+    assertEquals('initMouseEvent bubbles', true, event.bubbles);
+    assertEquals('initMouseEvent cancelable', false, event.cancelable);
+    assertEquals('initMouseEvent view', window, event.view);
+    assertEquals('initMouseEvent detail', 2, event.detail);
+    assertEquals('initMouseEvent screenX', 3, event.screenX);
+    assertEquals('initMouseEvent screenY', 4, event.screenY);
+    assertEquals('initMouseEvent clientX', 5, event.clientX);
+    assertEquals('initMouseEvent clientY', 6, event.clientY);
+    assertEquals('initMouseEvent ctrlKey', false, event.ctrlKey);
+    assertEquals('initMouseEvent altKey', true, event.altKey);
+    assertEquals('initMouseEvent shiftKey', false, event.shiftKey);
+    assertEquals('initMouseEvent metaKey', true, event.metaKey);
+    assertEquals('initMouseEvent button', 7, event.button);
+    assertEquals('initMouseEvent relatedTarget', document.body,
+        event.relatedTarget);
+
+    // initKeyboardEvent/initKeyEvent (ack TODO)
+    var keyboardOK = false;
+    if (event.initKeyboardEvent) {
+      event = document.createEvent('KeyboardEvent');
+      // per MDN 2013-01-29
+      event.initKeyboardEvent(
+          'keydown', true, false, window,
+          'q', 'q', 0, '', false, 'jbo_US');
+      // would test a value for modifiers arg, but it seems to misbehave on
+      // Chrome (24.0.1312.56, 26.0.1394.0).
+      assertEquals('initKeyboardEvent type', 'keydown', event.type);
+      assertEquals('initKeyboardEvent bubbles', true, event.bubbles);
+      assertEquals('initKeyboardEvent cancelable', false, event.cancelable);
+      assertEquals('initKeyboardEvent view', window, event.view);
+      if (directAccess.feralFeatureTest(event, 'char')) {
+        assertEquals('initKeyboardEvent char', 'q', event.char);
+      }
+      if (directAccess.feralFeatureTest(event, 'key')) {
+        assertEquals('initKeyboardEvent key', 'q', event.key);
+      }
+      assertEquals('initKeyboardEvent charCode', 0, event.charCode);
+      assertEquals('initKeyboardEvent keyCode', 0, event.keyCode);
+          // yes, not code of 'q' -- per Chrome 26.0.1394.0
+      if (directAccess.feralFeatureTest(event, 'location')) {
+        assertEquals('initKeyboardEvent location', 0, event.location);
+      }
+      assertEquals('initKeyboardEvent ctrlKey', false, event.ctrlKey);
+      assertEquals('initKeyboardEvent altKey', false, event.altKey);
+      assertEquals('initKeyboardEvent shiftKey', false, event.shiftKey);
+      assertEquals('initKeyboardEvent metaKey', 'boolean',
+          typeof event.metaKey);  // value is odd so not testing it
+      // described in MDN but not provided by Chrome or Firefox:
+      //assertEquals('initKeyboardEvent repeat', false, event.repeat);
+      //assertEquals('initKeyboardEvent locale', 'jbo_US', event.locale);
+      keyboardOK = true;
+    }
+    if (event.initKeyEvent) {
+      event = document.createEvent('KeyboardEvent');
+      // per MDN 2013-01-29
+      event.initKeyEvent(
+          'keydown', true, false, window,
+          false, false, true, false,
+          'Q'.charCodeAt(0), 0);
+      assertEquals('initKeyEvent type', 'keydown', event.type);
+      assertEquals('initKeyEvent bubbles', true, event.bubbles);
+      assertEquals('initKeyEvent cancelable', false, event.cancelable);
+      assertEquals('initKeyEvent view', window, event.view);
+      if (directAccess.feralFeatureTest(event, 'char')) {
+        assertEquals('initKeyboardEvent char', 'q', event.char);
+      }
+      if (directAccess.feralFeatureTest(event, 'key')) {
+        assertEquals('initKeyboardEvent key', 'q', event.key);
+      }
+      assertEquals('initKeyEvent charCode', 0, event.charCode);
+      //assertEquals('initKeyEvent keyCode', 'Q'.charCodeAt(0), event.keyCode);
+          // TODO(kpreid): is coming from the browser as 0, not sure why
+      assertEquals('initKeyEvent ctrlKey', false, event.ctrlKey);
+      assertEquals('initKeyEvent altKey', false, event.altKey);
+      assertEquals('initKeyEvent shiftKey', true, event.shiftKey);
+      assertEquals('initKeyEvent metaKey', false, event.metaKey);
+      keyboardOK = true;
+    }
+    assertTrue('one of initKeyboardEvent or initKeyEvent is available',
+        keyboardOK);
+
+    pass('testInitEvent');
   });
 </script>
 

@@ -468,9 +468,9 @@ function createExtraImportsForTesting(frameGroup, frame) {
     getIdSuffix: function() {
       return frame.idSuffix;
     },
-    // Test if a given feral node has a property
-    feralFeatureTest: function(tameNode, jsProp) {
-      return jsProp in frame.domicile.feralNode(tameNode);
+    // Test if a given feral object has a property
+    feralFeatureTest: function(tame, jsProp) {
+      return jsProp in frame.untame(tame);
     }
   };
 

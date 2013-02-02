@@ -266,15 +266,25 @@ var bridalMaker = function (makeDOMAccessible, document) {
     return type;
   }
 
-  function initEvent(event, type, bubbles, cancelable) {
+  function initEvent(event, methodName, type, bubbles, cancelable, args) {
     event = makeDOMAccessible(event);
+    methodName = String(methodName);
     type = tameEventType(type, true);
     bubbles = Boolean(bubbles);
     cancelable = Boolean(cancelable);
 
-    if (event.initEvent) {  // Non-IE
+    if (methodName in event) { // Non-IE, specialized init such as initMouseEvent
+      var method = makeDOMAccessible(event[methodName]);
+      if (typeof method !== 'function') {
+        // we don't expect this to happen, but if it does, explain
+        throw new Error('Domado internal error: event.' + methodName +
+            ' exists but is a ' + typeof method + ', not a function');
+      }
+      method.apply(event, [type, bubbles, cancelable].concat(args));
+    } else if (event.initEvent) {  // Non-IE
       event.initEvent(type, bubbles, cancelable);
     } else if (bubbles && cancelable) {  // IE
+      // TODO(kpreid): How do we handle args?
       if (!hiddenEventTypes) {
         hiddenEventTypes = new WeakMap();
       }
