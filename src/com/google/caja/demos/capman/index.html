@@ -68,6 +68,8 @@
       </div>
 
       <div class="maia-col-5">
+        <h3>Pacman</h3>
+        <div class="status" id="pacman-status"></div>
         <h3>Macky</h3>
         <div class="status" id="ghost-macky-status"></div>
         <h3>Micky</h3>
@@ -79,13 +81,11 @@
       </div>
     </div>
   
-    <h1>Edit the ghosts' code here:</h1>
+    <h1>Edit the code here:</h1>
   <div class="maia-cols" id="edit-area">
     <div id="code" class="maia-col-8">
-      <div id="ghost-macky-code"></div>
-      <div id="ghost-micky-code"></div>
-      <div id="ghost-mucky-code"></div>
-      <div id="ghost-mocky-code"></div>
+      <div id="ghost-code"></div>
+      <div id="pacman-code"></div>
     </div>
     <div class="maia-col-4">
       <div class="maia-notification">
@@ -143,10 +143,8 @@
     function start() { 
       var el = document.getElementById("pacman");
       PACMAN.init(el, "./", "#start", "#pause", "#mute", [
-          "ghost-macky-code",
-          "ghost-micky-code",
-          "ghost-mucky-code",
-          "ghost-mocky-code"
+          "ghost-code",
+          "pacman-code"
         ].map(function(x){ return document.getElementById(x) }));
     }
     if (Modernizr.canvas && Modernizr.localstorage && 

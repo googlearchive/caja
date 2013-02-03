@@ -45,8 +45,8 @@ Pacman.Ghost = function (game, map, ghostEditor, ghostDetail) {
               randomMove: caja.markFunction(getRandomDirection),
               // Query the status of yourself
 	      getPosition: caja.markFunction(getPosition),
+              getName: caja.markFunction(function() { return ghostDetail.name; }),
               isHidden: caja.markFunction(isHidden),
-              isVunerable: caja.markFunction(isVunerable),
             },
 
             // Your world related functions
@@ -142,7 +142,7 @@ Pacman.Ghost = function (game, map, ghostEditor, ghostDetail) {
     };
 
     function makeEatable() {
-        direction = oppositeDirection(direction);
+        //direction = oppositeDirection(direction);
         eatable = game.getTick();
     };
 
@@ -343,7 +343,7 @@ Pacman.Ghost = function (game, map, ghostEditor, ghostDetail) {
     };
 };
 
-Pacman.User = function (game, map) {
+Pacman.User = function (game, map, pacmanEditor, pacmanDetail) {
     
     var position  = null,
         direction = null,
@@ -352,11 +352,52 @@ Pacman.User = function (game, map) {
         lives     = null,
         score     = 5,
         keyMap    = {};
+
+    var pacmanApi;
+    var pacmanCallback = function() { return 1; };
+    caja.whenReady(function() {
+        pacmanApi = {
+            // A function which the game will call back for a move every tick
+            register: caja.markFunction(function register(p) { pacmanCallback = p; }),
+            // Functions to do with yourself
+            self: {
+              // Returns a random move
+              randomMove: caja.markFunction(getRandomDirection),
+              // Query the status of yourself
+	      getPosition: caja.markFunction(getPosition),
+              getName: caja.markFunction(function() { return pacmanDetail.name; }),
+            },
+
+            // Your world related functions
+            game: {
+              // Map of the ghostly world - you shouldn't be able to change it
+              map: caja.markReadOnlyRecord(map),
+            },
+
+            // Logging
+            console: { log: caja.markFunction(function (x) {
+                console.log(Array.prototype.slice.call(arguments)); }) 
+            },
+
+            // Some constants - you shouldn't be able to change them
+            // else you'll be able to mess with other ghosts
+            LEFT: LEFT,
+            RIGHT: RIGHT,
+            UP: UP,
+            DOWN: DOWN,
+        };
+    });
     
     keyMap[KEY.ARROW_LEFT]  = LEFT;
     keyMap[KEY.ARROW_UP]    = UP;
     keyMap[KEY.ARROW_RIGHT] = RIGHT;
     keyMap[KEY.ARROW_DOWN]  = DOWN;
+
+    function getRandomDirection() {
+        var moves = (direction === LEFT || direction === RIGHT) 
+            ? [UP, DOWN] : [LEFT, RIGHT];
+        return moves[Math.floor(Math.random() * 2)];
+    };
 
     function addScore(nScore) { 
         score += nScore;
@@ -397,9 +438,20 @@ Pacman.User = function (game, map) {
     function reset() {
         initUser();
         resetPosition();
+
+        var div = getStatusEl();
+        div.innerHTML = "";
+        caja.load(div, caja.policy.net.NO_NETWORK,
+          function(frame) {
+      	      frame.code('http://fake.url/', 'text/javascript', pacmanEditor.getValue())
+                  .api(caja.tame(pacmanApi))
+      		  .run();
+          });
     };        
     
     function keyDown(e) {
+        // Pacman is now under script control.
+        return true;
         if (typeof keyMap[e.keyCode] !== "undefined") { 
             due = keyMap[e.keyCode];
 	    //            e.preventDefault();
@@ -511,6 +563,12 @@ Pacman.User = function (game, map) {
             if (block === Pacman.PILL) { 
                 game.eatenPill();
             }
+        }
+
+        try {
+          due = pacmanCallback();
+        } catch (e) {
+          debugger;
         }   
                 
         return {
@@ -557,6 +615,10 @@ Pacman.User = function (game, map) {
         
         ctx.fill();    
     };
+
+    function getStatusEl() {
+      return document.getElementById(pacmanDetail.elName);
+    }
 
     function draw(ctx) { 
 
@@ -868,6 +930,10 @@ var PACMAN = (function () {
               elName: "ghost-mucky-status",
               color: "#FFB847"
             }],
+        pacmanSpec = {
+          name: "Capman",
+          elName: "pacman-status"
+        },
         eatenCount   = 0,
         level        = 0,
         tick         = 0,
@@ -1137,11 +1203,14 @@ var PACMAN = (function () {
         return false;
     };
     
-    function init(wrapper, root, start, pause, mute, ghostEditors) {
+    function init(wrapper, root, start, pause, mute, playerEditors) {
         
         var i, len, ghost,
             blockSize = wrapper.offsetWidth / 19,
             canvas    = document.createElement("canvas");
+
+        var defaultPacmanCode = ""
+          + "// Hello!";
 
         var defaultGhostCode = ""
           + "var pacStatus = document.createElement('div');\n"
@@ -1184,27 +1253,41 @@ var PACMAN = (function () {
 
         audio = new Pacman.Audio({"soundDisabled":soundDisabled});
         map   = new Pacman.Map(blockSize);
+
+        var pacmanEditor = playerEditors[1];
+        var pacmanParent = pacmanEditor.parentNode;
+        var pacmanHeader = document.createElement('h3');
+        pacmanHeader.appendChild(document.createTextNode("CapMan Brain"));
+        pacmanParent.insertBefore(pacmanHeader, pacmanEditor);
+        var pacmanCode = CodeMirror(pacmanEditor, {
+            value: defaultPacmanCode,
+            mode:  "javascript",
+            lineNumbers: true
+        });
+
         user  = new Pacman.User({ 
             "completedLevel" : completedLevel, 
             "eatenPill"      : eatenPill,
-        }, map);
+        }, map, pacmanCode, pacmanSpec);
 
-        var ghostParent = undefined;
+        var ghostEditor = playerEditors[0];
+        var ghostParent = ghostEditor.parentNode;
+        var ghostHeader = document.createElement('h3');
+        ghostHeader.appendChild(document.createTextNode("Ghost Brain"));
+        ghostParent.insertBefore(ghostHeader, ghostEditor);
+        var ghostCode = CodeMirror(ghostEditor, {
+            value: defaultGhostCode,
+            mode:  "javascript",
+            lineNumbers: true
+        });
+
         var editors = [];
         for (i = 0, len = ghostSpecs.length; i < len; i += 1) {
-            ghostParent = ghostEditors[i].parentNode;
-            var header = document.createElement('h3');
-            header.appendChild(document.createTextNode(ghostSpecs[i].name));
-            ghostParent.insertBefore(header, ghostEditors[i]);
-            var codeMirror = CodeMirror(ghostEditors[i], {
-                value: defaultGhostCode,
-                mode:  "javascript",
-                lineNumbers: true
-            });
-            editors.push(codeMirror);
-            ghost = new Pacman.Ghost({"getTick":getTick, "look":look}, map, codeMirror, ghostSpecs[i]);
+            ghost = new Pacman.Ghost({"getTick":getTick, "look":look}, map, ghostCode, ghostSpecs[i]);
             ghosts.push(ghost);
         }
+        editors.push(ghostCode);
+        editors.push(pacmanCode);
         $(ghostParent).accordion({fillSpace: true});
         $(ghostParent).bind('accordionchange', function() {
           editors[$(this).accordion('option', 'active')].refresh();
