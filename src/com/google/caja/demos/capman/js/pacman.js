@@ -61,7 +61,14 @@ Pacman.makeApi = function(
           return apiMap.isFloorSpace({ x: x, y: y })
         }),
       }),
-      look: caja.markFunction(apiGame.look)
+      look: caja.markFunction(apiGame.look),
+      // Some constants - you shouldn't be able to change them
+      // else you'll be able to mess with other ghosts
+      LEFT: LEFT,
+      RIGHT: RIGHT,
+      UP: UP,
+      DOWN: DOWN,
+      NONE: NONE
     }),
 
     // Logging
@@ -69,15 +76,7 @@ Pacman.makeApi = function(
       log: caja.markFunction(function (x) {
         console.log(Array.prototype.slice.call(arguments));
       })
-    }),
-
-    // Some constants - you shouldn't be able to change them
-    // else you'll be able to mess with other ghosts
-    LEFT: LEFT,
-    RIGHT: RIGHT,
-    UP: UP,
-    DOWN: DOWN,
-    NONE: NONE
+    })
   };
 };
 
@@ -1062,7 +1061,10 @@ var PACMAN = (function () {
     };
 
     function look() {
-	return { "pacman": user.getPosition(), "ghosts": ghosts.map(function(x) { return x.getPosition() }) }
+      return {
+        pacman: user.getPosition(),
+        ghosts: ghosts.map(function(x) { return x.getPosition(); })
+      };
     }
 
     function drawFooter() {
@@ -1250,13 +1252,13 @@ var PACMAN = (function () {
           + '  if (Math.random() > 0.5)\n'
           + '    return self.randomMove();'
           + '  if (pacman.x < me.x)\n'
-          + '    return LEFT;\n'
+          + '    return game.LEFT;\n'
           + '  if (pacman.x > me.x)\n'
-          + '    return RIGHT;\n'
+          + '    return game.RIGHT;\n'
           + '  if (pacman.y > me.y)\n'
-          + '    return DOWN;\n'
+          + '    return game.DOWN;\n'
           + '  if (pacman.y < me.y)\n'
-          + '    return UP;\n'
+          + '    return game.UP;\n'
           + '  return self.randomMove();\n'
           + '});\n'
           + '<\/script>\n';
