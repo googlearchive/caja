@@ -26,6 +26,49 @@ var NONE        = 4,
 
 Pacman.FPS = 30;
 
+Pacman.makeApi = function(
+    selfName,
+    selfRegister,
+    selfGetPosition,
+    selfGetRandomDirection,
+    selfMap,
+    selfGame) {
+  return {
+    // A function which the game will call back for a move every tick
+    register: caja.markFunction(selfRegister),
+
+    // Functions to do with yourself
+    self: caja.markReadOnlyRecord({
+      // Returns a random move
+      randomMove: caja.markFunction(selfGetRandomDirection),
+      // Query the status of yourself
+      getPosition: caja.markFunction(selfGetPosition),
+      getName: caja.markFunction(function() { return selfName; })
+    }),
+
+    // Your world related functions
+    game: caja.markReadOnlyRecord({
+      // Map of the ghostly world - you shouldn't be able to change it
+      map: caja.markReadOnlyRecord(selfMap),
+      look: caja.markFunction(selfGame.look)
+    }),
+
+    // Logging
+    console: caja.markReadOnlyRecord({
+      log: caja.markFunction(function (x) {
+        console.log(Array.prototype.slice.call(arguments));
+      })
+    }),
+
+    // Some constants - you shouldn't be able to change them
+    // else you'll be able to mess with other ghosts
+    LEFT: LEFT,
+    RIGHT: RIGHT,
+    UP: UP,
+    DOWN: DOWN,
+  };
+};
+
 Pacman.Ghost = function (game, map, ghostEditor, ghostDetail) {
     var position  = null,
         direction = null,
@@ -34,38 +77,15 @@ Pacman.Ghost = function (game, map, ghostEditor, ghostDetail) {
         due       = null;
     var api;
     var ghostCallback = function() { return 1;};
+
     caja.whenReady(function() {
-        api = {
-            // A function which the game will call back for a move every tick
-            register: caja.markFunction(function register(p) { ghostCallback = p; }),
-
-            // Functions to do with yourself
-            self: {
-              // Returns a random move
-              randomMove: caja.markFunction(getRandomDirection),
-              // Query the status of yourself
-	      getPosition: caja.markFunction(getPosition),
-              getName: caja.markFunction(function() { return ghostDetail.name; }),
-              isHidden: caja.markFunction(isHidden),
-            },
-
-            // Your world related functions
-            game: {
-              // Map of the ghostly world - you shouldn't be able to change it
-              map: caja.markReadOnlyRecord(map),
-              look: caja.markFunction(game.look)
-            },
-
-            // Logging
-            console: { log: caja.markFunction(function (x) { console.log(Array.prototype.slice.call(arguments)); }) },
-
-            // Some constants - you shouldn't be able to change them
-            // else you'll be able to mess with other ghosts
-            LEFT: LEFT,
-            RIGHT: RIGHT,
-            UP: UP,
-            DOWN: DOWN,
-        };
+      api = Pacman.makeApi(
+          ghostDetail.name,
+          function(p) { ghostCallback = p; },
+          getPosition,
+          getRandomDirection,
+          map,
+          game);
     });
 
     function getNewCoord(dir, current) { 
@@ -355,40 +375,17 @@ Pacman.User = function (game, map, pacmanEditor, pacmanDetail) {
 
     var pacmanApi;
     var pacmanCallback = function() { return 1; };
+
     caja.whenReady(function() {
-        pacmanApi = {
-            alert: caja.markFunction(function(msg) { alert(msg); }),
-            // A function which the game will call back for a move every tick
-            register: caja.markFunction(function register(p) { pacmanCallback = p; }),
-            // Functions to do with yourself
-            self: {
-              // Returns a random move
-              randomMove: caja.markFunction(getRandomDirection),
-              // Query the status of yourself
-	      getPosition: caja.markFunction(getPosition),
-              getName: caja.markFunction(function() { return pacmanDetail.name; }),
-            },
-
-            // Your world related functions
-            game: {
-              // Map of the ghostly world - you shouldn't be able to change it
-              map: caja.markReadOnlyRecord(map),
-            },
-
-            // Logging
-            console: { log: caja.markFunction(function (x) {
-                console.log(Array.prototype.slice.call(arguments)); }) 
-            },
-
-            // Some constants - you shouldn't be able to change them
-            // else you'll be able to mess with other ghosts
-            LEFT: LEFT,
-            RIGHT: RIGHT,
-            UP: UP,
-            DOWN: DOWN,
-        };
+      pacmanApi = Pacman.makeApi(
+          'Pacman',
+          function(p) { pacmanCallback = p; },
+          getPosition,
+          getRandomDirection,
+          map,
+          game);
     });
-    
+
     keyMap[KEY.ARROW_LEFT]  = LEFT;
     keyMap[KEY.ARROW_UP]    = UP;
     keyMap[KEY.ARROW_RIGHT] = RIGHT;
@@ -1274,6 +1271,11 @@ var PACMAN = (function () {
         user  = new Pacman.User({ 
             "completedLevel" : completedLevel, 
             "eatenPill"      : eatenPill,
+            look: function() {
+              return {
+                pacman: 9
+              }
+            }
         }, map, pacmanCode, pacmanSpec);
 
         var ghostEditor = playerEditors[0];
@@ -1379,7 +1381,7 @@ Pacman.BLOCK   = 3;
 Pacman.PILL    = 4;
 
 Pacman.MAP = [
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 	[0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
 	[0, 4, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 4, 0],
 	[0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0],
