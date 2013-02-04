@@ -1268,15 +1268,18 @@ var PACMAN = (function () {
             lineNumbers: true
         });
 
+
+        var game = {
+          getTick: getTick,
+          look: look
+        };
+
         user  = new Pacman.User({ 
-            "completedLevel" : completedLevel, 
-            "eatenPill"      : eatenPill,
-            look: function() {
-              return {
-                pacman: 9
-              }
-            }
-        }, map, pacmanCode, pacmanSpec);
+            completedLevel: completedLevel,
+            eatenPill : eatenPill,
+            getTick: game.getTick,
+            look: game.look
+          }, map, pacmanCode, pacmanSpec);
 
         var ghostEditor = playerEditors[0];
         var ghostParent = ghostEditor.parentNode;
@@ -1291,7 +1294,7 @@ var PACMAN = (function () {
 
         var editors = [];
         for (i = 0, len = ghostSpecs.length; i < len; i += 1) {
-            ghost = new Pacman.Ghost({"getTick":getTick, "look":look}, map, ghostCode, ghostSpecs[i]);
+            ghost = new Pacman.Ghost(game, map, ghostCode, ghostSpecs[i]);
             ghosts.push(ghost);
         }
         editors.push(ghostCode);
