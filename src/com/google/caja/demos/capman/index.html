@@ -45,15 +45,12 @@
     <div class="maia-aux">
       <ul>
         <li class="active"><a id="challenges" href="#play">Play</a></li>
-
         <li><a id="about" href="//developers.google.com/caja/">More about Caja</a></li>
       </ul>
     </div>
   </div>
-
   <div id="maia-main">
-    <h1>Write and play against your own ghosts!</h1>
-  
+    <h1 class="maia-display">Write your own pacman and ghosts</h1>
     <div class="maia-cols" id="game-console">
       <div class="maia-col-1">
         <ul id="game-buttons">
@@ -81,11 +78,21 @@
       </div>
     </div>
   
-    <h1>Edit the code here:</h1>
+    <h1 class="maia-display">Edit the code here:</h1>
   <div class="maia-cols" id="edit-area">
     <div id="code" class="maia-col-8">
-      <div id="ghost-code"></div>
-      <div id="pacman-code"></div>
+      <h3>Ghost Brain</h3>
+      <form onsubmit="return false">
+        <input id="ghost-url" type="text" value="http://www.thinkfu.com/ghost-brain.html"></input>
+	<button id="ghost-load" class="maia-button">load</button>
+        <div id="ghost-code"></div>
+      </form>
+      <h3>CapMan Brain</h3>
+      <form onsubmit="return false">
+        <input id="pacman-url" type="text" value="http://www.thinkfu.com/pacman-brain.html"></input>
+        <button id="pacman-load" class="maia-button">load</button>
+        <div id="pacman-code"></div>
+      </form>
     </div>
     <div class="maia-col-4">
       <div class="maia-notification">

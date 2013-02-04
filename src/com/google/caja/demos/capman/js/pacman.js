@@ -1264,6 +1264,18 @@ var PACMAN = (function () {
         canvas.setAttribute("width", (blockSize * 19) + "px");
         canvas.setAttribute("height", (blockSize * 22) + 30 + "px");
 
+        function loadFromUrl(from, into) {
+          $.ajax($(from).val(), {
+                dataType: 'text',
+                success: function (text) {
+                  into.setValue(text);
+                },
+                error: function (req) {
+                  into.setValue('Error loading url...');
+                },
+              });
+        }
+
         wrapper.appendChild(canvas);
 
         ctx  = canvas.getContext('2d');
@@ -1273,9 +1285,6 @@ var PACMAN = (function () {
 
         var pacmanEditor = playerEditors[1];
         var pacmanParent = pacmanEditor.parentNode;
-        var pacmanHeader = document.createElement('h3');
-        pacmanHeader.appendChild(document.createTextNode("CapMan Brain"));
-        pacmanParent.insertBefore(pacmanHeader, pacmanEditor);
         var pacmanCode = CodeMirror(pacmanEditor, {
             value: defaultPacmanCode,
             mode:  "javascript",
@@ -1302,13 +1311,17 @@ var PACMAN = (function () {
 
         var ghostEditor = playerEditors[0];
         var ghostParent = ghostEditor.parentNode;
-        var ghostHeader = document.createElement('h3');
-        ghostHeader.appendChild(document.createTextNode("Ghost Brain"));
-        ghostParent.insertBefore(ghostHeader, ghostEditor);
         var ghostCode = CodeMirror(ghostEditor, {
             value: defaultGhostCode,
             mode:  "javascript",
             lineNumbers: true
+        });
+
+        $('#ghost-load').click(function(e) {
+          loadFromUrl('#ghost-url', ghostCode);
+        });
+        $('#pacman-load').click(function(e) {
+          loadFromUrl('#pacman-url', pacmanCode);
         });
 
         var editors = [];
@@ -1318,8 +1331,8 @@ var PACMAN = (function () {
         }
         editors.push(ghostCode);
         editors.push(pacmanCode);
-        $(ghostParent).accordion({fillSpace: true});
-        $(ghostParent).bind('accordionchange', function() {
+        $(ghostParent.parentNode).accordion({fillSpace: true});
+        $(ghostParent.parentNode).bind('accordionchange', function() {
           editors[$(this).accordion('option', 'active')].refresh();
         });
         $(start).click(startNewGame);
