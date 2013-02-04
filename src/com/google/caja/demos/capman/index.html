@@ -117,8 +117,7 @@
         <h3>API for brains</h3>
         <ul>
           <li>register(<var>f</var>) &mdash; register function <var>f</var> as
-        brain; should return the move to make, one of LEFT, RIGHT, UP, DOWN, or
-        NONE.</li>
+        brain; should return the move to make (see constants on <var>game</var>).</li>
         </ul>
         <ul>
           <li>self.getName() &mdash; Your own name: one of "Pacman", "Macky",
@@ -145,6 +144,8 @@
             <li>.ghosts: &mdash; array of 4 points
           </ul>
           }</li>
+          <li>game.LEFT, game.RIGHT, game.UP, game.DOWN, game.NONE &mdash;
+            constants for identifying move directions.</li>
         </ul>
         <ul>
           <li>console.log &mdash; useful for debugging</li>
