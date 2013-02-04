@@ -51,7 +51,16 @@ Pacman.makeApi = function(
     // Your world related functions
     game: caja.markReadOnlyRecord({
       // Map of the ghostly world - you shouldn't be able to change it
-      map: caja.markReadOnlyRecord(apiMap),
+      map: caja.markReadOnlyRecord({
+        width: apiMap.width,
+        height: apiMap.height,
+        isWallSpace: caja.markFunction(function(x, y) {
+          return apiMap.isWallSpace({ x: x, y: y })
+        }),
+        isFloorSpace: caja.markFunction(function(x, y) {
+          return apiMap.isFloorSpace({ x: x, y: y })
+        }),
+      }),
       look: caja.markFunction(apiGame.look)
     }),
 
