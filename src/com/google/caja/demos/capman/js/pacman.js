@@ -510,7 +510,15 @@ Pacman.User = function (game, map, pacmanEditor, pacmanDetail) {
             nextWhole   = null, 
             oldPosition = position,
             block       = null;
-        
+
+        try {
+          due = pacmanCallback();
+        } catch (e) {
+          // TODO(ihab.awad): Make Pacman vulnerable -- how?
+          console.log("Pacman behaving badly and has made themselves vulnerable!");
+          console.log("Threw exception: " + e.toString());
+        }
+
         if (due !== direction) {
             npos = getNewCoord(due, position);
             
@@ -564,14 +572,6 @@ Pacman.User = function (game, map, pacmanEditor, pacmanDetail) {
             }
         }
 
-        try {
-          due = pacmanCallback();
-        } catch (e) {
-          // TODO(ihab.awad): Make Pacman vulnerable -- how?
-          console.log("Pacman behaving badly and has made themselves vulnerable!");
-          console.log("Threw exception: " + e.toString());
-        }
-                
         return {
             "new" : position,
             "old" : oldPosition
@@ -1162,7 +1162,7 @@ var PACMAN = (function () {
             }
         } else if (state === COUNTDOWN) {
             
-            diff = 5 + Math.floor((timerStart - tick) / Pacman.FPS);
+            diff = 1 + Math.floor((timerStart - tick) / Pacman.FPS);
             
             if (diff === 0) {
                 map.draw(ctx);
@@ -1210,37 +1210,26 @@ var PACMAN = (function () {
             blockSize = wrapper.offsetWidth / 19,
             canvas    = document.createElement("canvas");
 
-        var defaultPacmanCode = ''
-          + '<script>\n'
-          + '  register(function() {\n'
-          + '    var m;\n'
-          + '    for (m = NONE; m === NONE; m = self.randomMove()) ;\n'
-          + '    console.log(\'tick \' + m);\n'
-          + '    return m;\n'
-          + '  });\n'
-          + '<\/script>\n';
+        var defaultPacmanCode = ""
+          + "<script>\n"
+          + 'register(function controlGhost() {\n'
+          + '  var me = self.getPosition();\n'
+          + '  return self.randomMove();\n'
+          + '});\n'
+          + "<\/script>\n";
 
         var defaultGhostCode = ''
-          + '<div id="pacstatus"></div>'
+          + '<div id="mystatus"></div>'
           + '<script>\n'
-          + 'var pacStatus = document.getElementById("pacstatus");\n'
-          + 'document.body.appendChild(pacStatus);\n'
-          + 'var meStatus = document.getElementById("me");\n'
-          + 'document.body.appendChild(meStatus);\n'
+          + 'var myStatus = document.getElementById("mystatus");\n'
 
-          + 'function logPac(pos) {\n'
-          + '  pacStatus.innerHTML =\n'
-          + '   "Pacman is at " + pos.x + "," + pos.y;\n'
-          + '}\n'
-          + 'function logMe(pos) {\n'
-          + '  meStatus.innerHTML =\n'
+          + 'function log(pos) {\n'
+          + '  myStatus.innerHTML =\n'
           + '   "I am at " + pos.x + "," + pos.y;\n'
           + '}\n'
           + 'register(function controlGhost() {\n'
-          + '  var pacman = game.look().pacman;\n'
           + '  var me = self.getPosition();\n'
-          + '  logMe(me);\n'
-          + '  logPac(pacman);\n'
+          + '  var pacman = game.look().pacman;\n'
           + '  if (Math.random() > 0.6)\n'
           + '    return self.randomMove();'
           + '  if (pacman.x < me.x)\n'
@@ -1331,7 +1320,8 @@ var PACMAN = (function () {
 
         caja.initialize({
           cajaServer: "http://caja.appspot.com/",
-          forceES5Mode: true
+          forceES5Mode: true,
+          debug: true
         });
 
         load(audio_files, function() { loaded(); });
