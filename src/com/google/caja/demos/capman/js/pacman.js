@@ -27,30 +27,32 @@ var NONE        = 4,
 Pacman.FPS = 30;
 
 Pacman.makeApi = function(
-    selfName,
-    selfRegister,
-    selfGetPosition,
-    selfGetRandomDirection,
-    selfMap,
-    selfGame) {
+    apiName,
+    apiRegister,
+    apiGetPosition,
+    apiGetRandomDirection,
+    apiMap,
+    apiGame,
+    apiIsVulnerable) {
   return {
     // A function which the game will call back for a move every tick
-    register: caja.markFunction(selfRegister),
+    register: caja.markFunction(apiRegister),
 
     // Functions to do with yourself
     self: caja.markReadOnlyRecord({
       // Returns a random move
-      randomMove: caja.markFunction(selfGetRandomDirection),
+      randomMove: caja.markFunction(apiGetRandomDirection),
       // Query the status of yourself
-      getPosition: caja.markFunction(selfGetPosition),
-      getName: caja.markFunction(function() { return selfName; })
+      getPosition: caja.markFunction(apiGetPosition),
+      getName: caja.markFunction(function() { return apiName; }),
+      isVulnerable: caja.markFunction(apiIsVulnerable)
     }),
 
     // Your world related functions
     game: caja.markReadOnlyRecord({
       // Map of the ghostly world - you shouldn't be able to change it
-      map: caja.markReadOnlyRecord(selfMap),
-      look: caja.markFunction(selfGame.look)
+      map: caja.markReadOnlyRecord(apiMap),
+      look: caja.markFunction(apiGame.look)
     }),
 
     // Logging
@@ -86,7 +88,8 @@ Pacman.Ghost = function (game, map, ghostEditor, ghostDetail) {
           getPosition,
           getRandomDirection,
           map,
-          game);
+          game,
+          function() { return eatable; });
     });
 
     function getNewCoord(dir, current) { 
@@ -139,6 +142,7 @@ Pacman.Ghost = function (game, map, ghostEditor, ghostDetail) {
     function reset() {
         eaten = null;
         eatable = null;
+        game.setAllGhostsEatable(false);
         position = {"x": 90, "y": 80};
         var div = getStatusEl();
         div.innerHTML = "";
@@ -165,10 +169,12 @@ Pacman.Ghost = function (game, map, ghostEditor, ghostDetail) {
     function makeEatable() {
         //direction = oppositeDirection(direction);
         eatable = game.getTick();
+        game.setAllGhostsEatable(true);
     };
 
     function eat() { 
         eatable = null;
+        game.setAllGhostsEatable(false);
         eaten = game.getTick();
     };
 
@@ -220,6 +226,7 @@ Pacman.Ghost = function (game, map, ghostEditor, ghostDetail) {
     
         if (eatable && secondsAgo(eatable) > 8) {
             eatable = null;
+            game.setAllGhostsEatable(false);
         }
         
         if (eaten && secondsAgo(eaten) > 3) { 
@@ -384,7 +391,8 @@ Pacman.User = function (game, map, pacmanEditor, pacmanDetail) {
           getPosition,
           getRandomDirection,
           map,
-          game);
+          game,
+          function() { return !game.isAllGhostsEatable(); });
     });
 
     keyMap[KEY.ARROW_LEFT]  = LEFT;
@@ -1184,9 +1192,8 @@ var PACMAN = (function () {
         timerStart = tick;
         eatenCount = 0;
         for (i = 0; i < ghosts.length; i += 1) {
-            ghosts[i].makeEatable(ctx);
+          ghosts[i].makeEatable(ctx);
         }
-                
     };
     
     function completedLevel() {
@@ -1266,17 +1273,22 @@ var PACMAN = (function () {
             lineNumbers: true
         });
 
+        var ghostsEatable = false;
 
         var game = {
           getTick: getTick,
-          look: look
+          look: look,
+          isAllGhostsEatable: function() { return ghostsEatable; },
+          setAllGhostsEatable: function(s) { ghostsEatable = s; }
         };
 
         user  = new Pacman.User({ 
             completedLevel: completedLevel,
             eatenPill : eatenPill,
             getTick: game.getTick,
-            look: game.look
+            look: game.look,
+            isAllGhostsEatable: game.isAllGhostsEatable,
+            setAllGhostsEatable: game.setAllGhostsEatable,
           }, map, pacmanCode, pacmanSpec);
 
         var ghostEditor = playerEditors[0];
