@@ -123,7 +123,7 @@ Pacman.Ghost = function (game, map, ghostEditor, ghostDetail) {
         div.innerHTML = "";
         caja.load(div, caja.policy.net.NO_NETWORK,
           function(frame) {
-      	      frame.code('http://fake.url/', 'text/javascript', ghostEditor.getValue())
+      	      frame.code('http://fake.url/', 'text/html', ghostEditor.getValue())
                   .api(caja.tame(api))
       		  .run();
           });
@@ -357,6 +357,7 @@ Pacman.User = function (game, map, pacmanEditor, pacmanDetail) {
     var pacmanCallback = function() { return 1; };
     caja.whenReady(function() {
         pacmanApi = {
+            alert: caja.markFunction(function(msg) { alert(msg); }),
             // A function which the game will call back for a move every tick
             register: caja.markFunction(function register(p) { pacmanCallback = p; }),
             // Functions to do with yourself
@@ -443,7 +444,7 @@ Pacman.User = function (game, map, pacmanEditor, pacmanDetail) {
         div.innerHTML = "";
         caja.load(div, caja.policy.net.NO_NETWORK,
           function(frame) {
-      	      frame.code('http://fake.url/', 'text/javascript', pacmanEditor.getValue())
+      	      frame.code('http://fake.url/', 'text/html', pacmanEditor.getValue())
                   .api(caja.tame(pacmanApi))
       		  .run();
           });
@@ -1210,39 +1211,44 @@ var PACMAN = (function () {
             canvas    = document.createElement("canvas");
 
         var defaultPacmanCode = ""
-          + "// Hello!";
+          + "<script>\n"
+          + "// Hello!\n"
+          + "<\/script>\n";
 
-        var defaultGhostCode = ""
-          + "var pacStatus = document.createElement('div');\n"
-          + "document.body.appendChild(pacStatus);\n"
-          + "var meStatus = document.createElement('div');\n"
-          + "document.body.appendChild(meStatus);\n"
+        var defaultGhostCode = ''
+          + '<div id="pacstatus"></div>'
+          + '<script>\n'
+          + 'var pacStatus = document.getElementById("pacstatus");\n'
+          + 'document.body.appendChild(pacStatus);\n'
+          + 'var meStatus = document.getElementById("me");\n'
+          + 'document.body.appendChild(meStatus);\n'
 
-          + "function logPac(pos) {\n"
-          + "  pacStatus.innerHTML =\n"
-          + "   'Pacman is at ' + pos.x + ',' + pos.y;\n"
-          + "}\n"
-          + "function logMe(pos) {\n"
-          + "  meStatus.innerHTML =\n"
-          + "   'I am at ' + pos.x + ',' + pos.y;\n"
-          + "}\n"
-          + "register(function controlGhost() {\n"
-          + "  var pacman = game.look().pacman;\n"
-          + "  var me = self.getPosition();\n"
-          + "  logMe(me);\n"
-          + "  logPac(pacman);\n"
-          + "  if (Math.random() > 0.6)\n"
-          + "    return self.randomMove();"
-          + "  if (pacman.x < me.x)\n"
-          + "    return LEFT;\n"
-          + "  if (pacman.x > me.x)\n"
-          + "    return RIGHT;\n"
-          + "  if (pacman.y > me.y)\n"
-          + "    return DOWN;\n"
-          + "  if (pacman.y < me.y)\n"
-          + "    return UP;\n"
-          + "  return self.randomMove();\n"
-          + "});\n"
+          + 'function logPac(pos) {\n'
+          + '  pacStatus.innerHTML =\n'
+          + '   "Pacman is at " + pos.x + "," + pos.y;\n'
+          + '}\n'
+          + 'function logMe(pos) {\n'
+          + '  meStatus.innerHTML =\n'
+          + '   "I am at " + pos.x + "," + pos.y;\n'
+          + '}\n'
+          + 'register(function controlGhost() {\n'
+          + '  var pacman = game.look().pacman;\n'
+          + '  var me = self.getPosition();\n'
+          + '  logMe(me);\n'
+          + '  logPac(pacman);\n'
+          + '  if (Math.random() > 0.6)\n'
+          + '    return self.randomMove();'
+          + '  if (pacman.x < me.x)\n'
+          + '    return LEFT;\n'
+          + '  if (pacman.x > me.x)\n'
+          + '    return RIGHT;\n'
+          + '  if (pacman.y > me.y)\n'
+          + '    return DOWN;\n'
+          + '  if (pacman.y < me.y)\n'
+          + '    return UP;\n'
+          + '  return self.randomMove();\n'
+          + '});\n'
+          + '<\/script>\n';
 
         canvas.setAttribute("width", (blockSize * 19) + "px");
         canvas.setAttribute("height", (blockSize * 22) + 30 + "px");

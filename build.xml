@@ -1694,6 +1694,16 @@ For help on building and testing Caja, see:
       </fileset>
     </copy>
   </target>
+
+  <target name="capman" depends="jars"
+   description="CapMan Demo">
+    <mkdir dir="${war}/capman"/>
+    <copy todir="${war}/capman">
+      <fileset dir="${src.caja}/demos/capman">
+        <include name="**"/>
+      </fileset>
+    </copy>
+  </target>
   
   <target name="demos" depends="jars"
    description="Examples of hosting gadgets/modules.">
