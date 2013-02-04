@@ -66,6 +66,7 @@ Pacman.makeApi = function(
     RIGHT: RIGHT,
     UP: UP,
     DOWN: DOWN,
+    NONE: NONE
   };
 };
 
@@ -335,7 +336,7 @@ Pacman.Ghost = function (game, map, ghostEditor, ghostDetail) {
         } catch (e) {
             makeEatable();
             console.log("Ghost " + ghostDetail.name + " behaving badly and has made themselves vulnerable!");
-	    console.log("Failed to ", e);
+            console.log("Threw exception: " + e.toString());
         }
         
         return {
@@ -566,8 +567,10 @@ Pacman.User = function (game, map, pacmanEditor, pacmanDetail) {
         try {
           due = pacmanCallback();
         } catch (e) {
-          debugger;
-        }   
+          // TODO(ihab.awad): Make Pacman vulnerable -- how?
+          console.log("Pacman behaving badly and has made themselves vulnerable!");
+          console.log("Threw exception: " + e.toString());
+        }
                 
         return {
             "new" : position,
@@ -1207,10 +1210,15 @@ var PACMAN = (function () {
             blockSize = wrapper.offsetWidth / 19,
             canvas    = document.createElement("canvas");
 
-        var defaultPacmanCode = ""
-          + "<script>\n"
-          + "// Hello!\n"
-          + "<\/script>\n";
+        var defaultPacmanCode = ''
+          + '<script>\n'
+          + '  register(function() {\n'
+          + '    var m;\n'
+          + '    for (m = NONE; m === NONE; m = self.randomMove()) ;\n'
+          + '    console.log(\'tick \' + m);\n'
+          + '    return m;\n'
+          + '  });\n'
+          + '<\/script>\n';
 
         var defaultGhostCode = ''
           + '<div id="pacstatus"></div>'
