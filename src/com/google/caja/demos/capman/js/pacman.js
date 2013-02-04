@@ -91,7 +91,7 @@ Pacman.Ghost = function (game, map, ghostEditor, ghostDetail) {
 
     function getNewCoord(dir, current) { 
         
-        var speed  = isVunerable() ? 1 : isHidden() ? 4 : 2,
+        var speed  = isVulnerable() ? 1 : isHidden() ? 1 : 2,
             xSpeed = (dir === LEFT && -speed || dir === RIGHT && speed || 0),
             ySpeed = (dir === DOWN && speed || dir === UP && -speed || 0);
     
@@ -115,7 +115,7 @@ Pacman.Ghost = function (game, map, ghostEditor, ghostDetail) {
         return x1 + x2;
     };
     
-    function isVunerable() { 
+    function isVulnerable() { 
         return eatable !== null;
     };
     
@@ -355,7 +355,7 @@ Pacman.Ghost = function (game, map, ghostEditor, ghostDetail) {
     return {
         "getPosition" : getPosition,
         "eat"         : eat,
-        "isVunerable" : isVunerable,
+        "isVulnerable" : isVulnerable,
         "isDangerous" : isDangerous,
         "makeEatable" : makeEatable,
         "reset"       : reset,
@@ -1111,7 +1111,7 @@ var PACMAN = (function () {
         
         for (i = 0, len = ghosts.length; i < len; i += 1) {
             if (collided(userPos, ghostPos[i]["new"])) {
-                if (ghosts[i].isVunerable()) { 
+                if (ghosts[i].isVulnerable()) { 
                     audio.play("eatghost");
                     ghosts[i].eat();
                     eatenCount += 1;
@@ -1185,7 +1185,8 @@ var PACMAN = (function () {
         eatenCount = 0;
         for (i = 0; i < ghosts.length; i += 1) {
             ghosts[i].makeEatable(ctx);
-        }        
+        }
+                
     };
     
     function completedLevel() {
@@ -1230,7 +1231,7 @@ var PACMAN = (function () {
           + 'register(function controlGhost() {\n'
           + '  var me = self.getPosition();\n'
           + '  var pacman = game.look().pacman;\n'
-          + '  if (Math.random() > 0.6)\n'
+          + '  if (Math.random() > 0.5)\n'
           + '    return self.randomMove();'
           + '  if (pacman.x < me.x)\n'
           + '    return LEFT;\n'
