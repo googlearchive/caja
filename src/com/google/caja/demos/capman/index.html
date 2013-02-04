@@ -114,19 +114,40 @@
         </ol>
       </div>
       <div class="maia-promo">
-        <h3>Whitelisted API</h3>
+        <h3>API for brains</h3>
         <ul>
-          <li>self.getPosition() -- get your own position</li>
-          <li>self.randomMove() -- returns a random position for your ghost
-        to move in.</li>
-          <li>self.isVulnerable() -- can your opponent eat you right now?</li>
+          <li>register(<var>f</var>) &mdash; register function <var>f</var> as
+        brain; should return the move to make, one of LEFT, RIGHT, UP, DOWN, or
+        NONE.</li>
         </ul>
         <ul>
-          <li>game.map() -- get a map of the warground</li>
-          <li>game.look() -- find out where everyone is</li>
+          <li>self.getName() &mdash; Your own name: one of "Pacman", "Macky",
+        "Micky", "Mucky", or "Mocky".</li>
+          <li>self.getPosition() &mdash; get your own position as a point
+        <code>{x:&hellip;, y:&hellip;}</code>; integer coordinates.</li>
+          <li>self.randomMove() &mdash; returns a random direction for your
+        ghost to move in.</li>
+          <li>self.isVulnerable() &mdash; can any of your opponents eat you
+        right now?</li>
         </ul>
         <ul>
-          <li>console.log -- useful for debugging</li>
+          <li>game.map() &mdash; get a map of the battleground: {
+          <ul>
+            <li>.width, .height
+            <li>.isWallSpace(x,y) &mdash; is a wall (x, y in whole tiles)
+            <li>.isFloorSpace(x,y) &mdash; is walkable
+          </ul>
+          }
+          </li>
+          <li>game.look() &mdash; find out where everyone is: {
+          <ul>
+            <li>.pacman &mdash; point,
+            <li>.ghosts: &mdash; array of 4 points
+          </ul>
+          }</li>
+        </ul>
+        <ul>
+          <li>console.log &mdash; useful for debugging</li>
         </ul>
       </div>
     </div>
