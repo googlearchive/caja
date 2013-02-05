@@ -1330,7 +1330,7 @@ var PACMAN = (function () {
       if (editors[active]) { editors[active].refresh(); }
     });
     $(start).click(function () {
-      matchRunning = false;
+      matchStop();
       startNewGame();
     });
     $(pause).click(togglePause);
@@ -1379,7 +1379,16 @@ var PACMAN = (function () {
     }
   }
 
+  function matchStop() {
+    matchRunning = false;
+    $('#match-run').text('Run');
+    setState(WAITING);
+  }
+
   function matchRun() {
+    if (matchRunning) { matchStop(); return; }
+    matchRunning = true;
+    $('#match-run').text('Stop');
     var key = $('#match-data-key').val();
     if (!key) { console.error('No match data key?'); return; }
     key = encodeURIComponent(key);
@@ -1426,9 +1435,10 @@ var PACMAN = (function () {
 
     capmanP.done(function (capman) {
       ghostP.done(function (ghost) {
-        matchRunning = true;
-        $('#match-info').text(capman.name + ' vs ' + ghost.name);
-        startNewGame();
+        if (matchRunning) {
+          $('#match-info').text(capman.name + ' vs ' + ghost.name);
+          startNewGame();
+        }
       });
     });
   }
