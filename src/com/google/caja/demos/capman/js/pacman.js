@@ -145,11 +145,16 @@ Pacman.Ghost = function (game, map, ghostEditor, ghostDetail) {
 
     function look(dir) {}
 
+    var positions = [
+      [90, 80], [40, 10], [150, 10], [40, 200], [150, 200]
+    ];
+
     function reset() {
       eaten = null;
       eatable = null;
       game.setAllGhostsEatable(false);
-      position = {"x": 90, "y": 80};
+      var p = positions[Math.floor(Math.random() * positions.length)];
+      position = {"x": p[0], "y": p[1]};
       var div = getStatusEl();
       div.innerHTML = "";
       caja.load(div, caja.policy.net.NO_NETWORK,
