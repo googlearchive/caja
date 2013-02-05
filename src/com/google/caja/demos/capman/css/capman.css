@@ -36,6 +36,11 @@
   text-align: center;
 }
 
+#match-info, #match-countdown {
+  font-size: large;
+  text-align: center;
+}
+
 #pacman {
   margin: 0px;
 } 
