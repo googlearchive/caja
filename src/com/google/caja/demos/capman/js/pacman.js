@@ -1309,9 +1309,12 @@ var PACMAN = (function () {
     }
     editors.push(ghostCode);
     editors.push(pacmanCode);
-    $(ghostParent.parentNode).accordion({fillSpace: true});
+    $(ghostParent.parentNode).accordion({
+      collapsible: true, fillSpace: true
+    });
     $(ghostParent.parentNode).bind('accordionchange', function() {
-      editors[$(this).accordion('option', 'active')].refresh();
+      var active = $(this).accordion('option', 'active');
+      if (editors[active]) { editors[active].refresh(); }
     });
     $(start).click(startNewGame);
     $(pause).click(togglePause);
