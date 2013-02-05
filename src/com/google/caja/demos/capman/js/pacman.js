@@ -340,10 +340,11 @@ Pacman.Ghost = function (game, map, ghostEditor, ghostDetail) {
       try {
         due = ghostCallback();
       } catch (e) {
-        makeEatable();
-        console.log("Ghost " + ghostDetail.name +
-            " behaving badly and has made themselves vulnerable!");
-        console.log("Threw exception: " + e.toString());
+        console.log("Ghost " + ghostDetail.name + " threw exception: ", e);
+        if (!eatable && !eaten) {
+          makeEatable();
+          console.log("Ghost " + ghostDetail.name + " made itself vulnerable!");
+        }
       }
 
       return {
@@ -525,9 +526,11 @@ Pacman.User = function (game, map, pacmanEditor, pacmanDetail) {
       try {
         due = pacmanCallback();
       } catch (e) {
-        // TODO(ihab.awad): Make Pacman vulnerable -- how?
-        console.log("Cap-Man behaving badly and has made themselves vulnerable!");
-        console.log("Threw exception: " + e.toString());
+        console.log("Cap-Man threw exception: ", e);
+        if (lives > 1) {
+          lives--;
+          console.log("Cap-Man has lost a life!");
+        }
       }
 
       if (due !== direction) {
