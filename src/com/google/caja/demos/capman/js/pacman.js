@@ -405,9 +405,14 @@ Pacman.User = function (game, map, pacmanEditor, pacmanDetail) {
       return moves[Math.floor(Math.random() * 2)];
     };
 
-    function addScore(nScore) { 
+    function addScore(nScore) {
+      var oscore = score;
       score += nScore;
-      if (score >= 10000 && score - nScore < 10000) { 
+      if (oscore < 500 && 500 <= score) {
+        lives += 1;
+      } else if (oscore < 5000 && 5000 <= score) {
+        lives += 1;
+      } else if (oscore < 50000 && 50000 <= score) {
         lives += 1;
       }
     };
@@ -426,7 +431,7 @@ Pacman.User = function (game, map, pacmanEditor, pacmanDetail) {
 
     function initUser() {
       score = 0;
-      lives = 3;
+      lives = 1;
       newLevel();
     }
 
@@ -1360,7 +1365,7 @@ var PACMAN = (function () {
   function matchDone() {
     if (!matchRunning) { return; }
     matchRunning = false;
-    matchCountdownTick(10);
+    matchCountdownTick(5);
   }
 
   function matchCountdownTick(n) {
