@@ -1166,7 +1166,7 @@ var PACMAN = (function () {
     } else if (state === WAITING && stateChanged) {            
       stateChanged = false;
       map.draw(ctx);
-      dialog("Click Start");            
+      if (!matchAutoRunning) { dialog("Click Start"); }
     } else if (state === EATEN_PAUSE && 
              (tick - timerStart) > (Pacman.FPS / 3)) {
       map.draw(ctx);
@@ -1264,6 +1264,7 @@ var PACMAN = (function () {
 
   var matchAuto = true;
   var matchRunning = false;
+  var matchAutoRunning = false;
 
   function init(wrapper, root, start, pause, mute, playerEditors) {
     var i, len, ghost,
@@ -1402,6 +1403,7 @@ var PACMAN = (function () {
 
   function matchStop() {
     matchRunning = false;
+    matchAutoRunning = false;
     $('#match-run').text('Run');
     setState(WAITING);
   }
@@ -1409,6 +1411,7 @@ var PACMAN = (function () {
   function matchRun() {
     if (matchRunning) { matchStop(); return; }
     matchRunning = true;
+    matchAutoRunning = matchAuto;
     $('#match-run').text('Stop');
     var key = $('#match-data-key').val();
     if (!key) { console.error('No match data key?'); return; }
