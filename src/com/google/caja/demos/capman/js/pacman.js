@@ -1200,44 +1200,44 @@ var PACMAN = (function () {
   var pacmanCode;
   var ghostCode;
 
+  var defaultPacmanCode = ""
+    + "<script>\n"
+    + 'register(function controlGhost() {\n'
+    + '  var me = self.getPosition();\n'
+    + '  return self.randomMove();\n'
+    + '});\n'
+    + "<\/script>\n";
+
+  var defaultGhostCode = ''
+    + '<div id="mystatus"></div>'
+    + '<script>\n'
+    + 'var myStatus = document.getElementById("mystatus");\n'
+
+    + 'function log(pos) {\n'
+    + '  myStatus.innerHTML =\n'
+    + '   "I am at " + pos.x + "," + pos.y;\n'
+    + '}\n'
+    + 'register(function controlGhost() {\n'
+    + '  var me = self.getPosition();\n'
+    + '  var capman = game.look().capman;\n'
+    + '  if (Math.random() > 0.5)\n'
+    + '    return self.randomMove();'
+    + '  if (capman.x < me.x)\n'
+    + '    return game.LEFT;\n'
+    + '  if (capman.x > me.x)\n'
+    + '    return game.RIGHT;\n'
+    + '  if (capman.y > me.y)\n'
+    + '    return game.DOWN;\n'
+    + '  if (capman.y < me.y)\n'
+    + '    return game.UP;\n'
+    + '  return self.randomMove();\n'
+    + '});\n'
+    + '<\/script>\n';
+
   function init(wrapper, root, start, pause, mute, playerEditors) {
     var i, len, ghost,
         blockSize = wrapper.offsetWidth / 19,
         canvas    = document.createElement("canvas");
-
-    var defaultPacmanCode = ""
-      + "<script>\n"
-      + 'register(function controlGhost() {\n'
-      + '  var me = self.getPosition();\n'
-      + '  return self.randomMove();\n'
-      + '});\n'
-      + "<\/script>\n";
-
-    var defaultGhostCode = ''
-      + '<div id="mystatus"></div>'
-      + '<script>\n'
-      + 'var myStatus = document.getElementById("mystatus");\n'
-
-      + 'function log(pos) {\n'
-      + '  myStatus.innerHTML =\n'
-      + '   "I am at " + pos.x + "," + pos.y;\n'
-      + '}\n'
-      + 'register(function controlGhost() {\n'
-      + '  var me = self.getPosition();\n'
-      + '  var capman = game.look().capman;\n'
-      + '  if (Math.random() > 0.5)\n'
-      + '    return self.randomMove();'
-      + '  if (capman.x < me.x)\n'
-      + '    return game.LEFT;\n'
-      + '  if (capman.x > me.x)\n'
-      + '    return game.RIGHT;\n'
-      + '  if (capman.y > me.y)\n'
-      + '    return game.DOWN;\n'
-      + '  if (capman.y < me.y)\n'
-      + '    return game.UP;\n'
-      + '  return self.randomMove();\n'
-      + '});\n'
-      + '<\/script>\n';
 
     canvas.setAttribute("width", (blockSize * 19) + "px");
     canvas.setAttribute("height", (blockSize * 22) + 30 + "px");
@@ -1350,53 +1350,103 @@ var PACMAN = (function () {
   };
 
   function matchRun() {
-    var url = 'https://docs.google.com/spreadsheet/pub?output=csv&single=true';
     var key = $('#match-data-key').val();
     if (!key) { console.error('No match data key?'); return; }
     key = encodeURIComponent(key);
-    $.ajax(url + '&gid=0&key=' + key, {
-      datatype: 'text', fail: loadFail
-    }).done(function (capmanData) {
-      $.ajax(url + '&gid=1&key=' + key, {
-        datatype: 'text', fail: loadFail
-      }).done(function (ghostData) {
+    var capmanP = matchLoadData(key, 0);
+    var ghostP = matchLoadData(key, 1);
+    capmanP.done(function (capmanData) {
+      ghostP.done(function (ghostData) {
         matchRunFromData(capmanData, ghostData);
       });
     });
   }
 
+  function matchLoadData(key, gid) {
+    var url = 'https://docs.google.com/spreadsheet/pub?output=csv&single=true';
+    var p = $.Deferred();
+    $.ajax(url + '&gid=' + gid + '&key=' + key, { datatype: 'text' })
+      .done(function (data) {
+        p.resolve(data);
+      })
+      .fail(function () {
+        loadFail.apply(null, arguments);
+        p.resolve('');
+      });
+    return p;
+  }
+
   function loadFail(xhr, status, message) {
-    console.log('ajax failed', xhr, status, message);
+    console.log('$.ajax failed', xhr, status, message);
   }
 
   function matchRunFromData(capmanData, ghostData) {
     capmanData = $.csv.toArrays(capmanData);
     ghostData = $.csv.toArrays(ghostData);
-    var capmanEntry = matchPick(capmanData);
-    var ghostEntry = matchPick(ghostData);
-    $.ajax(capmanEntry[0], {
-      datatype: 'text', fail: loadFail
-    }).done( function (capmanText) {
-      $('#pacman-url').val(capmanEntry[0]);
-      pacmanCode.setValue(capmanText);
-      $.ajax(ghostEntry[0], {
-        datatype: 'text', fail: loadFail
-      }).done(function (ghostText) {
-        $('#ghost-url').val(ghostEntry[0]);
-        ghostCode.setValue(ghostText);
+    var capmanP = matchLoadRandom(capmanData, defaultPacmanCode);
+    var ghostP = matchLoadRandom(ghostData, defaultGhostCode);
+    capmanP.done(function (capman) {
+      $('#pacman-url').val(capman.url);
+      pacmanCode.setValue(capman.code);
+    });
+    ghostP.done(function (ghost) {
+      $('#ghost-url').val(ghost.url);
+      ghostCode.setValue(ghost.code);
+    });
+
+    capmanP.done(function (capman) {
+      ghostP.done(function (ghost) {
+        $('#match-info').text(capman.name + ' vs ' + ghost.name);
         startNewGame();
       });
     });
   }
 
-  function matchPick(entries) {
-    var a = [];
+  function matchLoadRandom(data, defaultCode) {
+    var p = $.Deferred();
+    var entrant = matchPick(data, defaultCode);
+    if (entrant.code) {
+      p.resolve(entrant);
+    } else {
+      $.ajax(entrant.url, { datatype: 'text' })
+        .done(function (code) {
+          entrant.code = code;
+          p.resolve(entrant);
+        })
+        .fail(function () {
+          loadFail.apply(null, arguments);
+          p.resolve(matchDefaultEntrant(defaultCode));
+        });
+    }
+    return p;
+  }
+
+  function matchDefaultEntrant(defaultCode) {
+    return {
+      url: '',
+      code: defaultCode,
+      name: 'Default'
+    };
+  }
+
+  function matchPick(entries, defaultCode) {
+    // null placeholder for default code
+    var a = [null];
     for (var i = 0; i < entries.length; i++) {
       if (/^https?:/i.test(entries[i][0])) {
         a.push(entries[i]);
       }
     }
-    return a[Math.floor(a.length * Math.random())];
+    var n = Math.floor(a.length * Math.random());
+    if (!a[n] || !a[n][0]) {
+      return matchDefaultEntrant(defaultCode);
+    } else {
+      return {
+        url: a[n][0],
+        name: a[n][1],
+        code: null
+      };
+    }
   }
 
   function matchAuto() {
