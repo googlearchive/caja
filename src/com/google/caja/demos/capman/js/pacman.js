@@ -947,6 +947,8 @@ var PACMAN = (function () {
       user         = null,
       stored       = null;
 
+  var maxGameTicks = 55 * Pacman.FPS;
+
   function getTick() { 
     return tick;
   };
@@ -983,6 +985,7 @@ var PACMAN = (function () {
 
   function startNewGame() {
     setState(WAITING);
+    tick = 0;
     level = 1;
     user.reset();
     map.reset();
@@ -1131,11 +1134,26 @@ var PACMAN = (function () {
     }                             
   };
 
+  function updateGameTimer() {
+    var remaining = Math.max(0, maxGameTicks - tick) / Pacman.FPS + .5;
+    var mm = Math.floor(remaining / 60);
+    var ss = Math.floor(remaining) % 60;
+    if (ss < 10) { ss = '0' + ss; }
+    $('#game-timer').text('Time remaining: ' + mm + ':' + ss);
+  }
+
   function mainLoop() {
     var diff;
 
     if (state !== PAUSE) { 
       ++tick;
+      if (state !== WAITING) {
+        updateGameTimer();
+        if (maxGameTicks < tick) {
+          lives = 1;
+          loseLife();
+        }
+      }
     }
 
     map.drawPills(ctx);
