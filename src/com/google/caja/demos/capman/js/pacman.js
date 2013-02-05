@@ -385,7 +385,7 @@ Pacman.User = function (game, map, pacmanEditor, pacmanDetail) {
 
     caja.whenReady(function() {
       pacmanApi = Pacman.makeApi(
-          'Pacman',
+          'Cap-Man',
           function(p) { pacmanCallback = p; },
           getPosition,
           getRandomDirection,
@@ -521,7 +521,7 @@ Pacman.User = function (game, map, pacmanEditor, pacmanDetail) {
         due = pacmanCallback();
       } catch (e) {
         // TODO(ihab.awad): Make Pacman vulnerable -- how?
-        console.log("Pacman behaving badly and has made themselves vulnerable!");
+        console.log("Cap-Man behaving badly and has made themselves vulnerable!");
         console.log("Threw exception: " + e.toString());
       }
 
@@ -926,7 +926,7 @@ var PACMAN = (function () {
             color: "#FFB847"
           }],
       pacmanSpec = {
-        name: "Capman",
+        name: "Cap-Man",
         elName: "pacman-status"
       },
       eatenCount   = 0,
@@ -1040,7 +1040,7 @@ var PACMAN = (function () {
 
   function look() {
     return {
-      pacman: user.getPosition(),
+      capman: user.getPosition(),
       ghosts: ghosts.map(function(x) { return x.getPosition(); })
     };
   }
@@ -1221,16 +1221,16 @@ var PACMAN = (function () {
       + '}\n'
       + 'register(function controlGhost() {\n'
       + '  var me = self.getPosition();\n'
-      + '  var pacman = game.look().pacman;\n'
+      + '  var capman = game.look().capman;\n'
       + '  if (Math.random() > 0.5)\n'
       + '    return self.randomMove();'
-      + '  if (pacman.x < me.x)\n'
+      + '  if (capman.x < me.x)\n'
       + '    return game.LEFT;\n'
-      + '  if (pacman.x > me.x)\n'
+      + '  if (capman.x > me.x)\n'
       + '    return game.RIGHT;\n'
-      + '  if (pacman.y > me.y)\n'
+      + '  if (capman.y > me.y)\n'
       + '    return game.DOWN;\n'
-      + '  if (pacman.y < me.y)\n'
+      + '  if (capman.y < me.y)\n'
       + '    return game.UP;\n'
       + '  return self.randomMove();\n'
       + '});\n'
