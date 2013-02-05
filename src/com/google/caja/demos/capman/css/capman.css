@@ -19,6 +19,23 @@
   margin-bottom: 0.5em;
   margin-right: 0.5em;
 }
+
+#match-buttons {
+  list-style: none;
+  margin: 2em 0 0 0;
+}
+#match-buttons li a {
+  width: 3em;
+  margin-bottom: 0.5em;
+  margin-right: 0.5em;
+}
+#match-buttons li.label b {
+  width: 3em;
+  display: inline-block;
+  margin: 0 0.5em 0.5em 0;
+  text-align: center;
+}
+
 #pacman {
   margin: 0px;
 } 
@@ -68,4 +85,8 @@
 #edit-area .maia-promo ul + ul {
   border-top: 1px solid #5e93ff;
   padding-top: 1em;
+}
+
+#match-form label {
+  font-weight: normal;
 }

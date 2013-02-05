@@ -1197,6 +1197,9 @@ var PACMAN = (function () {
     return false;
   };
 
+  var pacmanCode;
+  var ghostCode;
+
   function init(wrapper, root, start, pause, mute, playerEditors) {
     var i, len, ghost,
         blockSize = wrapper.offsetWidth / 19,
@@ -1260,7 +1263,7 @@ var PACMAN = (function () {
 
     var pacmanEditor = playerEditors[1];
     var pacmanParent = pacmanEditor.parentNode;
-    var pacmanCode = CodeMirror(pacmanEditor, {
+    pacmanCode = CodeMirror(pacmanEditor, {
         value: defaultPacmanCode,
         mode:  "javascript",
         lineNumbers: true
@@ -1289,7 +1292,7 @@ var PACMAN = (function () {
 
     var ghostEditor = playerEditors[0];
     var ghostParent = ghostEditor.parentNode;
-    var ghostCode = CodeMirror(ghostEditor, {
+    ghostCode = CodeMirror(ghostEditor, {
       value: defaultGhostCode,
       mode:  "javascript",
       lineNumbers: true
@@ -1320,6 +1323,9 @@ var PACMAN = (function () {
     $(pause).click(togglePause);
     $(mute).click(toggleSound);
 
+    $('#match-run').click(matchRun);
+    $('#match-auto').click(matchAuto);
+
     map.draw(ctx);
     dialog("Loading ...");
 
@@ -1342,6 +1348,60 @@ var PACMAN = (function () {
 
     load(audio_files, function() { loaded(); });
   };
+
+  function matchRun() {
+    var url = 'https://docs.google.com/spreadsheet/pub?output=csv&single=true';
+    var key = $('#match-data-key').val();
+    if (!key) { console.error('No match data key?'); return; }
+    key = encodeURIComponent(key);
+    $.ajax(url + '&gid=0&key=' + key, {
+      datatype: 'text', fail: loadFail
+    }).done(function (capmanData) {
+      $.ajax(url + '&gid=1&key=' + key, {
+        datatype: 'text', fail: loadFail
+      }).done(function (ghostData) {
+        matchRunFromData(capmanData, ghostData);
+      });
+    });
+  }
+
+  function loadFail(xhr, status, message) {
+    console.log('ajax failed', xhr, status, message);
+  }
+
+  function matchRunFromData(capmanData, ghostData) {
+    capmanData = $.csv.toArrays(capmanData);
+    ghostData = $.csv.toArrays(ghostData);
+    var capmanEntry = matchPick(capmanData);
+    var ghostEntry = matchPick(ghostData);
+    $.ajax(capmanEntry[0], {
+      datatype: 'text', fail: loadFail
+    }).done( function (capmanText) {
+      $('#pacman-url').val(capmanEntry[0]);
+      pacmanCode.setValue(capmanText);
+      $.ajax(ghostEntry[0], {
+        datatype: 'text', fail: loadFail
+      }).done(function (ghostText) {
+        $('#ghost-url').val(ghostEntry[0]);
+        ghostCode.setValue(ghostText);
+        startNewGame();
+      });
+    });
+  }
+
+  function matchPick(entries) {
+    var a = [];
+    for (var i = 0; i < entries.length; i++) {
+      if (/^https?:/i.test(entries[i][0])) {
+        a.push(entries[i]);
+      }
+    }
+    return a[Math.floor(a.length * Math.random())];
+  }
+
+  function matchAuto() {
+    console.log('matchAuto stub XXX');
+  }
 
   function load(arr, callback) {
     if (arr.length === 0) { 

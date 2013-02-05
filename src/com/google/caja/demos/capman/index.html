@@ -12,11 +12,12 @@
   <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js" type="text/javascript"></script>
   <link href="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.7/themes/smoothness/jquery-ui.css" rel="stylesheet" type="text/css" />
 
-<script src="js/prettify.js"></script>
+  <script src="js/prettify.js"></script>
   <script src="//caja.appspot.com/caja.js"></script>
   <script src="js/pacman.js"></script>
   <script src="js/modernizr-1.5.min.js"></script>
   <script src="js/codemirror-compressed.js"></script>
+  <script src="js/jquery.csv-0.71.min.js"></script>
 
   <link rel="stylesheet" href="css/codemirror.css" type="text/css">
   <link rel="stylesheet" href="css/prettify.css" type="text/css">
@@ -58,8 +59,13 @@
           <li><a href="#" class="maia-button maia-button-secondary" id="pause">Pause</a></li>
           <li><a href="#" class="maia-button maia-button-secondary" id="mute">Mute</a></li>
         </ul>
+        <ul id="match-buttons">
+          <li class="label"><b>Random Match</b></li>
+          <li><a href="javascript:;" class="maia-button" id="match-run">Run</a></bli>
+          <li><a href="javascript:;" class="maia-button maia-button-secondary" id="match-auto">Auto<a></li>
+        </ul>
       </div>
-      
+
       <div class="maia-col-5">
         <div id="pacman"></div>
       </div>
@@ -92,6 +98,14 @@
         <input id="pacman-url" type="text" value="http://www.thinkfu.com/capman-brain.html"></input>
         <button id="pacman-load" class="maia-button">load</button>
         <div id="pacman-code"></div>
+      </form>
+      <h3>Random Match Configuration</h3>
+      <form id="match-form" onsubmit="return false">
+        <label>
+          <input id="match-data-key" type="text"
+                 value="0AiX0HQJhbQOddFJOS3VsZ0dGVGRfVWtxbUxob3c5OEE">
+          Spreadsheet Key
+        </label>
       </form>
     </div>
     <div class="maia-col-4">
