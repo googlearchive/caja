@@ -1025,6 +1025,8 @@ var PACMAN = (function () {
     user.loseLife();
     if (user.getLives() > 0) {
       startLevel();
+    } else {
+      matchDone();
     }
   }
 
@@ -1234,6 +1236,9 @@ var PACMAN = (function () {
     + '});\n'
     + '<\/script>\n';
 
+  var matchAuto = true;
+  var matchRunning = false;
+
   function init(wrapper, root, start, pause, mute, playerEditors) {
     var i, len, ghost,
         blockSize = wrapper.offsetWidth / 19,
@@ -1319,12 +1324,15 @@ var PACMAN = (function () {
       var active = $(this).accordion('option', 'active');
       if (editors[active]) { editors[active].refresh(); }
     });
-    $(start).click(startNewGame);
+    $(start).click(function () {
+      matchRunning = false;
+      startNewGame();
+    });
     $(pause).click(togglePause);
     $(mute).click(toggleSound);
 
     $('#match-run').click(matchRun);
-    $('#match-auto').click(matchAuto);
+    $('#match-auto').click(matchAutoToggle);
 
     map.draw(ctx);
     dialog("Loading ...");
@@ -1348,6 +1356,23 @@ var PACMAN = (function () {
 
     load(audio_files, function() { loaded(); });
   };
+
+  function matchDone() {
+    if (!matchRunning) { return; }
+    matchRunning = false;
+    matchCountdownTick(10);
+  }
+
+  function matchCountdownTick(n) {
+    if (!matchAuto) { return; }
+    if (n <= 0) {
+      $('#match-countdown').text('');
+      matchRun();
+    } else {
+      $('#match-countdown').text('Next Match in ' + n);
+      setTimeout(function() { matchCountdownTick(n - 1); }, 1000);
+    }
+  }
 
   function matchRun() {
     var key = $('#match-data-key').val();
@@ -1396,6 +1421,7 @@ var PACMAN = (function () {
 
     capmanP.done(function (capman) {
       ghostP.done(function (ghost) {
+        matchRunning = true;
         $('#match-info').text(capman.name + ' vs ' + ghost.name);
         startNewGame();
       });
@@ -1449,8 +1475,9 @@ var PACMAN = (function () {
     }
   }
 
-  function matchAuto() {
-    console.log('matchAuto stub XXX');
+  function matchAutoToggle() {
+    matchAuto = !matchAuto;
+    $('#match-auto').text(matchAuto ? 'Auto' : 'Manual');
   }
 
   function load(arr, callback) {
