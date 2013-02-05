@@ -1042,7 +1042,7 @@ var PACMAN = (function () {
     if (user.getLives() > 0) {
       startLevel();
     } else {
-      matchDone();
+      matchFinish();
     }
   }
 
@@ -1171,7 +1171,7 @@ var PACMAN = (function () {
     } else if (state === WAITING && stateChanged) {            
       stateChanged = false;
       map.draw(ctx);
-      if (!matchAutoRunning) { dialog("Click Start"); }
+      if (!matchAutoFlag) { dialog("Click Start"); }
     } else if (state === EATEN_PAUSE && 
              (tick - timerStart) > (Pacman.FPS / 3)) {
       map.draw(ctx);
@@ -1267,9 +1267,8 @@ var PACMAN = (function () {
     + '});\n'
     + '<\/script>\n';
 
-  var matchAuto = true;
+  var matchAutoFlag = /[&?#]auto=1/.test(location.search + location.hash);
   var matchRunning = false;
-  var matchAutoRunning = false;
 
   function init(wrapper, root, start, pause, mute, playerEditors) {
     var i, len, ghost,
@@ -1363,8 +1362,9 @@ var PACMAN = (function () {
     $(pause).click(togglePause);
     $(mute).click(toggleSound);
 
-    $('#match-run').click(matchRun);
-    $('#match-auto').click(matchAutoToggle);
+    $('#match-once').click(matchOnce);
+    $('#match-auto').click(matchAutoRun);
+    $('#match-stop').click(matchStop);
 
     map.draw(ctx);
     dialog("Loading ...");
@@ -1389,35 +1389,50 @@ var PACMAN = (function () {
     load(audio_files, function() { loaded(); });
   };
 
-  function matchDone() {
-    if (!matchRunning) { return; }
-    matchRunning = false;
-    matchCountdownTick(5);
+  function matchOnce() {
+    matchAutoFlag = false;
+    matchRun();
   }
 
-  function matchCountdownTick(n) {
-    if (!matchAuto) { return; }
-    if (n <= 0) {
-      $('#match-countdown').text('');
-      matchRun();
-    } else {
-      $('#match-countdown').text('Next Match in ' + n);
-      setTimeout(function() { matchCountdownTick(n - 1); }, 1000);
-    }
+  function matchAutoRun() {
+    matchAutoFlag = true;
+    matchRun();
   }
 
   function matchStop() {
+    matchAutoFlag = false;
     matchRunning = false;
-    matchAutoRunning = false;
-    $('#match-run').text('Run');
     setState(WAITING);
   }
 
+  function matchFinish() {
+    if (matchRunning) {
+      matchRunning = false;
+      if (matchAutoFlag) {
+        matchAutoCountdown(5);
+      }
+    }
+  }
+
+  function matchAutoCountdown(n) {
+    if (!matchAutoFlag) { return; }
+    if (n <= 0) {
+      $('#match-countdown').text('');
+      matchReload();
+    } else {
+      $('#match-countdown').text('Next Match in ' + n);
+      setTimeout(function() { matchAutoCountdown(n - 1); }, 1000);
+    }
+  }
+
+  function matchReload() {
+    var url = location.origin + location.pathname + "?auto=1";
+    location.replace(url);
+  }
+
   function matchRun() {
-    if (matchRunning) { matchStop(); return; }
+    if (matchRunning) { return; }
     matchRunning = true;
-    matchAutoRunning = matchAuto;
-    $('#match-run').text('Stop');
     var key = $('#match-data-key').val();
     if (!key) { console.error('No match data key?'); return; }
     key = encodeURIComponent(key);
@@ -1519,11 +1534,6 @@ var PACMAN = (function () {
     }
   }
 
-  function matchAutoToggle() {
-    matchAuto = !matchAuto;
-    $('#match-auto').text(matchAuto ? 'Auto' : 'Manual');
-  }
-
   function load(arr, callback) {
     if (arr.length === 0) { 
         callback();
@@ -1534,7 +1544,11 @@ var PACMAN = (function () {
   };
       
   function loaded() {
-    dialog("Click Start");
+    if (matchAutoFlag) {
+      matchAutoRun();
+    } else {
+      dialog("Click Start");
+    }
     
     document.addEventListener("keydown", keyDown, true);
     document.addEventListener("keypress", keyPress, true); 
