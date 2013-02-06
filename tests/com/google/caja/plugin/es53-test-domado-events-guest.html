@@ -72,12 +72,48 @@
 
 <p class="clickme testcontainer" id="testCodeInAttributes">
   <span onclick="if (true) pass('testCodeInAttributes');">
-    click me.  Nontrivial code in attributes should work.
+    click me.  Nontrivial code in event handler attributes should work.
   </span>
 </p>
 <script type="text/javascript">
   jsunitRegister('testCodeInAttributes',
                  function testCodeInAttributes() { });
+</script>
+
+<p class="testcontainer" id="testRejectedHandlerString">
+  testRejectedHandlerString -- Rejected complex handlers should still be
+  attributes (expected by jQuery)
+</p>
+<script type="text/javascript">
+  jsunitRegister('testRejectedHandlerString',
+                 function testRejectedHandlerString() {
+    var elem = document.getElementById('testRejectedHandlerString');
+
+    elem.setAttribute('onclick', 'foo');
+    
+    if (!inES5Mode) {
+      // This assert is not testing for desired behavior, but if it fails due to
+      // the handler being real code, this test is no longer testing what it was
+      // written to test (the behavior of adding unsupported handler values).
+      assertEquals('/*not supported*/',
+                   directAccess.getAttribute(elem, 'onclick'));
+    }
+
+    assertEquals('virtual atribute string', 'string',
+        typeof elem.getAttribute('onclick'));
+    assertEquals('host attribute string', 'string',
+        typeof directAccess.getAttribute(elem, 'onclick'));
+    assertTrue(
+        'onclick node (' + elem.getAttributeNode('onclick') + ') exists',
+        elem.getAttributeNode('onclick') instanceof Attr);
+    // TODO(kpreid): This should work too and is what jQuery is doing, but we
+    // don't have named .attributes lookup yet.
+    //assertTrue(
+    //    '.attributes.onclick (' + elem.attributes.onclick + ') exists',
+    //    elem.attributes.onclick instanceof Attr);
+
+    pass('testRejectedHandlerString');
+  });
 </script>
 
 <p class="manual testcontainer" id="testRelatedTarget-mouse-container">

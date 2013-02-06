@@ -1976,10 +1976,10 @@ var Domado = (function() {
               fnNameExpr = domicile.handlers.push(handlerFn) - 1;
             } else {
               if (typeof console !== 'undefined') {
-                console.log('Rejecting complex event handler ' + tagName + ' ' +
-                    attribName + '="' + value + '"');
+                console.log('Cannot emulate complex event handler ' + tagName +
+                    ' ' + attribName + '="' + value + '" in ES5/3 mode');
               }
-              return null;
+              return "/*not supported*/";
             }
             var trustedHandler = (doesReturn ? 'return ' : '')
                 + '___.plugin_dispatchEvent___('
