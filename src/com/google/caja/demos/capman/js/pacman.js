@@ -361,7 +361,8 @@ Pacman.Ghost = function (game, map, ghostEditor, ghostDetail) {
     function getPosition() {
       return {
         "y" : pointToCoord(position.y),
-        "x" : pointToCoord(position.x)
+        "x" : pointToCoord(position.x),
+        "isVulnerable" : (eatable !== null)
       };
     }
     
