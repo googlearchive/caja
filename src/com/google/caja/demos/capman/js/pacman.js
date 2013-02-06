@@ -955,7 +955,7 @@ var PACMAN = (function () {
       user         = null,
       stored       = null;
 
-  var maxGameTicks = 55 * Pacman.FPS;
+  var maxGameTicks = 25 * Pacman.FPS;
 
   function getTick() { 
     return tick;
