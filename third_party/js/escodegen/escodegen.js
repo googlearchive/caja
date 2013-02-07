@@ -121,7 +121,7 @@
         VariableDeclarator: 'VariableDeclarator',
         WhileStatement: 'WhileStatement',
         WithStatement: 'WithStatement',
-        YieldExpression: 'YieldExpression',
+        YieldExpression: 'YieldExpression'
 
     };
 
