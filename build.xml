@@ -973,17 +973,6 @@ For help on building and testing Caja, see:
       <input file="${src.caja}/ses/WeakMap.js"/>
       <input file="${src.caja}/ses/StringMap.js"/>
       <input file="${src.caja}/ses/whitelist.js"/>
-      <!-- Accumulate exports from acorn, escodegen and estravese
-        and move them onto the ses.rewrite object.  This happens to 
-        work as a group rather than having to happen individually
-        because acorn, estraverse and escodegen don't add conflicting 
-        properties on exports -->
-      <input file="${src.caja}/ses/createExports.js"/>
-      <input file="${third_party}/js/acorn/acorn.js" jslint="false"/>
-      <input file="${third_party}/js/escodegen/escodegen.js" jslint="false"/>
-      <input file="${third_party}/js/escodegen/estraverse.js" jslint="false"/>
-      <input file="${src.caja}/ses/exportsToSES.js"/>
-      <input file="${src.caja}/ses/mitigateGotchas.js"/>
       <input file="${src.caja}/ses/atLeastFreeVarNames.js"/>
       <input file="${src.caja}/ses/startSES.js"/>
       <input file="${src.caja}/ses/hookupSES.js"/>
@@ -1005,21 +994,27 @@ For help on building and testing Caja, see:
       <input file="${src.caja}/ses/debug.js"/>
       <input file="${src.caja}/ses/StringMap.js"/>
       <input file="${src.caja}/ses/whitelist.js"/>
-      <!-- Accumulate exports from acorn, escodegen and estravese
-        and move them onto the ses.rewrite object.  This happens to 
-        work as a group rather than having to happen individually
-        because acorn, estraverse and escodegen don't add conflicting 
-        properties on exports -->
+      <input file="${src.caja}/ses/atLeastFreeVarNames.js"/>
+      <input file="${src.caja}/ses/startSES.js"/>
+      <input file="${src.caja}/ses/ejectorsGuardsTrademarks.js"/>
+      <input file="${src.caja}/ses/hookupSESPlus.js"/>
+    </transform>
+    <transform>
+      <!-- utility-frame: Used by caja.js when the browser is SES-capable.
+      -->
+      <output file="${lib}/utility-frame.jslint.stamp" language="jslint"/>
+      <output file="${lib.caja}/plugin/utility-frame.opt.js"
+       language="javascript" renderer="minify"/>
+      <output file="${lib.caja}/plugin/utility-frame.js"
+       language="javascript" renderer="concat"/>
+      <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
       <input file="${src.caja}/ses/createExports.js"/>
       <input file="${third_party}/js/acorn/acorn.js" jslint="false"/>
       <input file="${third_party}/js/escodegen/escodegen.js" jslint="false"/>
       <input file="${third_party}/js/escodegen/estraverse.js" jslint="false"/>
       <input file="${src.caja}/ses/exportsToSES.js"/>
       <input file="${src.caja}/ses/mitigateGotchas.js"/>
-      <input file="${src.caja}/ses/atLeastFreeVarNames.js"/>
-      <input file="${src.caja}/ses/startSES.js"/>
-      <input file="${src.caja}/ses/ejectorsGuardsTrademarks.js"/>
-      <input file="${src.caja}/ses/hookupSESPlus.js"/>
+      <input file="${src.caja}/plugin/caja-iframe-done.js"/>
     </transform>
     <transform>
       <!-- ses-taming-frame: Used by caja.js when the browser is SES-capable.
@@ -1123,6 +1118,8 @@ For help on building and testing Caja, see:
       <include name="ses-guest-frame.js" />
       <include name="ses-taming-frame.opt.js" />
       <include name="ses-taming-frame.js" />
+      <include name="utility-frame.opt.js" />
+      <include name="utility-frame.js" />
     </replace>
   </target>
 
@@ -1474,6 +1471,8 @@ For help on building and testing Caja, see:
         <include name="ses-taming-frame.opt.js"/>
         <include name="ses-guest-frame.js"/>
         <include name="ses-guest-frame.opt.js"/>
+        <include name="utility-frame.js"/>
+        <include name="utility-frame.opt.js"/>
       </fileset>
     </copy>
 

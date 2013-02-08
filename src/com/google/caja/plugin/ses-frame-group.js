@@ -23,7 +23,8 @@
  * @overrides window
  */
 
-function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
+function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
+    additionalParams) {
   if (tamingWin !== window) {
     throw new Error('wrong frame');
   }
@@ -223,6 +224,7 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
           cajaInt.documentBaseUrl(), domicile, htmlEmitter, guestWin, USELESS,
           uriPolicy, sesRun);
       guestWin.ses.DISABLE_SECURITY_FOR_DEBUGGER = unsafe;
+      guestWin.ses.mitigateGotchas = additionalParams.mitigateGotchas;
       es5ready(gman);
     });
   }

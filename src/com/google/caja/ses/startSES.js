@@ -184,13 +184,6 @@ var cajaVM;
  *        (currently only Firefox 4 and after), use {@code
  *        with(aProxy) {...}} to intercept free variables rather than
  *        atLeastFreeVarNames.
- * @param opt_mitigateGotchas ::F([string], Record(any)) | undefined
- *        Given the sourceText for a strict Program, if provided,
- *        opt_mitigateGotchas(sourceText, options) returns rewritten
- *        program with the same semantics as the original but with as
- *        many of the gotchas removed as possible.  {@code options} is
- *        a record of which gotcha-rewriting-stages to use or omit.
- *        Passing no option performs the default.
  * @param extensions ::F([], Record(any)]) A function returning a
  *        record whose own properties will be copied onto cajaVM. This
  *        is used for the optional components which bring SES to
@@ -208,7 +201,6 @@ var cajaVM;
 ses.startSES = function(global,
                         whitelist,
                         atLeastFreeVarNames,
-                        opt_mitigateGotchas,
                         extensions) {
   "use strict";
 
@@ -257,7 +249,22 @@ ses.startSES = function(global,
   var keys = Object.keys;
   var freeze = Object.freeze;
   var create = Object.create;
-  var mitigateGotchas = opt_mitigateGotchas || function (s) { return '' + s; };
+
+  /**
+   * The function ses.mitigateGotchas, if defined, is a function which
+   * given the sourceText for a strict Program, returns rewritten
+   * program with the same semantics as the original but with as
+   * many of the ES5 gotchas removed as possible.  {@code options} is
+   * a record of which gotcha-rewriting-stages to use or omit.
+   * Passing no option performs no mitigation.
+   */
+  function mitigateGotchas(programSrc, options) {
+    if ('function' === typeof ses.mitigateGotchas) {
+      return ses.mitigateGotchas(programSrc, options);
+    } else {
+      return '' + programSrc;
+    }
+  }
 
   /**
    * Use to tamper proof a function which is not intended to ever be

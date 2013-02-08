@@ -391,24 +391,30 @@ var caja = (function () {
 
   function trySES(config, frameGroupReady, onFailure) {
     var guestMaker = makeFrameMaker(config, 'ses-guest-frame');
-    loadCajaFrame(config, 'ses-taming-frame', function (tamingWin) {
-      var mustSES = config['es5Mode'] === true;
-      if (canSES(tamingWin['ses'], config['maxAcceptableSeverity'])) {
-        var fg = tamingWin['SESFrameGroup'](
-            cajaInt, config, tamingWin, window, guestMaker);
-        frameGroupReady(fg, true /* es5Mode */);
-      } else if (!mustSES) {
-        config['log']('Unable to use SES.  Switching to ES53.');
-        // TODO(felix8a): set a cookie to remember this?
-        initES53(config, frameGroupReady, onFailure);
-      } else {
-        var err = new Error('ES5 mode requested but browser is unsupported');
-        if ("function" === typeof onFailure) {
-          onFailure(err);
+    var sesMaker = makeFrameMaker(config, 'ses-taming-frame');
+    
+    loadCajaFrame(config, 'utility-frame', function (mitigateWin) {
+      var mitigateGotchas = mitigateWin['ses']['mitigateGotchas'];
+      sesMaker['make'](function (tamingWin) {
+        var mustSES = config['es5Mode'] === true;
+        if (canSES(tamingWin['ses'], config['maxAcceptableSeverity'])) {
+          var fg = tamingWin['SESFrameGroup'](
+              cajaInt, config, tamingWin, window, guestMaker,
+              { 'mitigateGotchas': mitigateGotchas });
+          frameGroupReady(fg, true /* es5Mode */);
+        } else if (!mustSES) {
+          config['log']('Unable to use SES.  Switching to ES53.');
+          // TODO(felix8a): set a cookie to remember this?
+          initES53(config, frameGroupReady, onFailure);
         } else {
-          throw err;
+          var err = new Error('ES5 mode requested but browser is unsupported');
+          if ("function" === typeof onFailure) {
+            onFailure(err);
+          } else {
+            throw err;
+          }
         }
-      }
+      });
     });
   }
 

@@ -27,7 +27,8 @@
  * @overrides window
  */
 
-function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker) {
+function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
+    additionalParams) {
   // Note: in IE<9, window !== window.self
   if (tamingWin !== window.self) {
     throw new Error('wrong frame');

@@ -35,7 +35,6 @@
     ses.startSES(global,
                  ses.whitelist,
                  ses.atLeastFreeVarNames,
-                 ses.mitigateGotchas,
                  ses.ejectorsGuardsTrademarks);
   } catch (err) {
     ses.updateMaxSeverity(ses.severities.NOT_SUPPORTED);

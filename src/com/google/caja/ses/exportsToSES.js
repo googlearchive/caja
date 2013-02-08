@@ -24,7 +24,9 @@
  * \@overrides exports
  */
 
-(function(ses, global) {
+(function(global) {
+  global.ses = global.ses || {};
+
   ses.rewriter_ = {};
   ses.rewriter_.traverse = exports.traverse;
   ses.rewriter_.parse = exports.parse;
@@ -32,4 +34,4 @@
 
   // No longer need exports
   delete global.exports;
-})(ses, this);
+})(this);
