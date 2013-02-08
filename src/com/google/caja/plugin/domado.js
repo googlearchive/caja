@@ -4899,7 +4899,11 @@ var Domado = (function() {
           try {
             if (privates.src &&
               'function' === typeof domicile.evaluateUntrustedExternalScript) {
-              domicile.evaluateUntrustedExternalScript(privates.src);
+              // Per HTML5 spec (2013-02-08), execution time (now) is when the
+              // relative URL is resolved, not e.g. setAttribute time.
+              domicile.evaluateUntrustedExternalScript(
+                  URI.utils.resolve(domicile.pseudoLocation.href,
+                      privates.src));
             }
           } finally {
             window[name] = undefined;
