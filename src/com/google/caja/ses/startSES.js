@@ -801,53 +801,43 @@ ses.startSES = function(global,
       global.eval = fakeEval;
     }
 
+
+    // For use by def below
     var defended = WeakMap();
-    var defending = WeakMap();
+    var defendingStack = [];
+    function pushDefending(val) {
+      if (!val) { return; }
+      var t = typeof val;
+      if (t === 'number' || t === 'string' || t === 'boolean') { return; }
+      if (t !== 'object' && t !== 'function') {
+        throw new TypeError('unexpected typeof: ' + t);
+      }
+      if (defended.get(val)) { return; }
+      defended.set(val, true);
+      defendingStack.push(val);
+    }
+
     /**
      * To define a defended object is to tamperProof it and all objects
      * transitively reachable from it via transitive reflective
      * property and prototype traversal.
      */
     function def(node) {
-      var defendingList = [];
-      function recur(val) {
-        if (!val) { return; }
-        var t = typeof val;
-        if (t === 'number' || t === 'string' || t === 'boolean') { return; }
-        if (defended.get(val) || defending.get(val)) { return; }
-        defending.set(val, true);
-        defendingList.push(val);
-
-        tamperProof(val);
-
-        recur(getProto(val));
-
-        // How to optimize? This is a performance sensitive loop, but
-        // forEach seems to be faster on Chrome 18 Canary but a
-        // for(;;) loop seems better on FF 12 Nightly.
-        gopn(val).forEach(function(p) {
-          if (typeof val === 'function' &&
-              (p === 'caller' || p === 'arguments')) {
-            return;
-          }
-          var desc = gopd(val, p);
-          recur(desc.value);
-          recur(desc.get);
-          recur(desc.set);
-        });
-      }
+      var next;
       try {
-        recur(node);
+        pushDefending(node);
+        while (defendingStack.length > 0) {
+          next = defendingStack.pop();
+          pushDefending(getProto(next));
+          tamperProof(next, pushDefending);
+        }
       } catch (err) {
-        defending = WeakMap();
+        defended = WeakMap();
+        defendingStack = [];
         throw err;
       }
-      defendingList.forEach(function(obj) {
-        defended.set(obj, true);
-      });
       return node;
     }
-
 
     /**
      * makeArrayLike() produces a constructor for the purpose of
