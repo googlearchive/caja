@@ -542,7 +542,7 @@ public class PlaygroundView {
                 return uri;
               }
               return "http://www.gmodules.com/gadgets/proxy"
-                  + "?url=" + encodeURIComponent(uri)
+                  + "?url=" + encodeURIComponent(uri.toString())
                   + "&container=caja";
             }
             return null;

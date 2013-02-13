@@ -113,6 +113,17 @@ public class UriUtilTest extends TestCase {
     fail(result);
   }
 
+  public final void testMissingScheme() {
+    String result;
+    try {
+      result = UriUtil.normalizeUri(" javascript:alert(1)");
+    } catch (URISyntaxException ex) {
+      return;  // OK
+    }
+    // No way to reconstruct user intent so fail.
+    fail(result);
+  }
+
   public final void testMalformedPort() {
     String result;
     try {

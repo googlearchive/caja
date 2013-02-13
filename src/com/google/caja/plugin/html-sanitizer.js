@@ -28,7 +28,7 @@
  *
  * @author mikesamuel@gmail.com
  * @author jasvir@gmail.com
- * \@requires html4
+ * \@requires html4, URI
  * \@overrides window
  * \@provides html, html_sanitize
  */
@@ -785,24 +785,23 @@ var html = (function(html4) {
     });
   }
 
-  // From RFC3986
-  var URI_SCHEME_RE = new RegExp(
-      '^' +
-      '(?:' +
-        '([^:\/?# ]+)' +         // scheme
-      ':)?'
-  );
-
   var ALLOWED_URI_SCHEMES = /^(?:https?|mailto)$/i;
 
   function safeUri(uri, effect, ltype, hints, naiveUriRewriter) {
     if (!naiveUriRewriter) { return null; }
-    var parsed = ('' + uri).match(URI_SCHEME_RE);
-    if (parsed && (!parsed[1] || ALLOWED_URI_SCHEMES.test(parsed[1]))) {
-      return naiveUriRewriter(uri, effect, ltype, hints);
-    } else {
+    try {
+      var parsed = URI.parse('' + uri);
+      if (parsed) {
+        if (!parsed.hasScheme() ||
+            ALLOWED_URI_SCHEMES.test(parsed.getScheme())) {
+          var safe = naiveUriRewriter(parsed, effect, ltype, hints);
+          return safe ? safe.toString() : null;
+        }
+      }
+    } catch (e) {
       return null;
     }
+    return null;
   }
 
   function log(logger, tagName, attribName, oldValue, newValue) {

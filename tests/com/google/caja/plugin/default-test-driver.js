@@ -40,7 +40,7 @@ if (testCase) {
         jQuery ? caja.policy.net.ALL : {
           fetch: caja.policy.net.ALL.fetch,
           rewrite: function (uri, uriEffect, loaderType, hints) {
-            if (uri.indexOf('test-image-41x13.png') !== -1) {
+            if (uri.getPath().indexOf('test-image-41x13.png') !== -1) {
               // used by es53-test-domado-dom-guest.html
               return 'test-image-41x13.png';
             }

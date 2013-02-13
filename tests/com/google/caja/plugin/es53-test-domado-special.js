@@ -34,7 +34,7 @@ function initFrame(div, frameCallback) {
       {
         rewrite: function (uri, uriEffect, loaderType, hints) {
           // special case for testScriptLoading
-          var m = uri.match(
+          var m = uri.getPath().match(
               /^([^?#]*\/)?unproxied_whitelisted_script\.js$/);
           if (m) { return (m[1] || '') + 'whitelisted_script.js'; }
           

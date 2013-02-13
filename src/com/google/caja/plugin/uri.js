@@ -315,7 +315,9 @@ URI.prototype.clone = function () {
 };
 
 URI.prototype.getScheme = function () {
-  return this.scheme_ && decodeURIComponent(this.scheme_);
+  // HTML5 spec does not require the scheme to be lowercased but
+  // all common browsers except Safari lowercase the scheme.
+  return this.scheme_ && decodeURIComponent(this.scheme_).toLowerCase();
 };
 URI.prototype.getRawScheme = function () {
   return this.scheme_;

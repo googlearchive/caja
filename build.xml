@@ -886,6 +886,7 @@ For help on building and testing Caja, see:
         language="closure"/>
       <output file="${lib.caja}/plugin/html-sanitizer-bundle.js"
         language="javascript" renderer="concat"/>
+      <input file="${src.caja}/plugin/uri.js"/>
       <input file="${lib.caja}/plugin/html4-defs.js"/>
       <input file="${src.caja}/plugin/html-sanitizer.js"/>
     </transform>

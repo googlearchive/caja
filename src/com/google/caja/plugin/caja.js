@@ -58,7 +58,7 @@ var caja = (function () {
       // namespace but rather just the loaderFrame
       installSyncScript(rndName,
         proxyServer ? String(proxyServer) : caja['server']
-        + '/cajole?url=' + encodeURIComponent(url)
+        + '/cajole?url=' + encodeURIComponent(url.toString())
         + '&input-mime-type=' + encodeURIComponent(mime)
         + '&transform=PROXY'
         + '&callback=' + encodeURIComponent(rndName)
@@ -68,7 +68,7 @@ var caja = (function () {
 
   function xhrFetcher(url, mime, callback) {
     var request = new XMLHttpRequest();
-    request.open('GET', url, true);
+    request.open('GET', url.toString(), true);
     request.overrideMimeType(mime);
     request.onreadystatechange = function() {
       if(request.readyState == 4) {

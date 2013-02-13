@@ -83,8 +83,16 @@ var Domado = (function() {
    * This matches the logic in UriPolicyNanny#apply
    */
   function allowedUriScheme(uri) {
-    var parsed = ('' + uri).match(URI_SCHEME_RE);
-    return (parsed && (!parsed[1] || ALLOWED_URI_SCHEMES.test(parsed[1])));
+    return (uri.hasScheme() && ALLOWED_URI_SCHEMES.test(uri.getScheme()));
+  }
+
+  function ifThrowsThenNull(uri, func) {
+    try {
+      return func();
+    } catch (e) {
+      console.log('Rejecting url ' + uri + ' because ' + e);
+      return null;
+    }
   }
 
   function uriFetch(naiveUriPolicy, uri, mime, callback) {
@@ -92,20 +100,31 @@ var Domado = (function() {
       || 'function' !== typeof naiveUriPolicy.fetch) {
       return;
     }
-    if (allowedUriScheme(uri)) {
-      naiveUriPolicy.fetch(uri, mime, callback);
-    } else {
-      naiveUriPolicy.fetch(undefined, mime, callback);
-    }
+    uri = '' + uri;
+    var parsed = URI.parse(uri);
+    ifThrowsThenNull(uri, function() {
+      if (allowedUriScheme(parsed)) {
+        naiveUriPolicy.fetch(parsed, mime, callback);
+      } else {
+        naiveUriPolicy.fetch(undefined, mime, callback);
+      }
+    });
   }
 
   function uriRewrite(naiveUriPolicy, uri, effects, ltype, hints) {
-    if (!naiveUriPolicy) { return null; }
-    return allowedUriScheme(uri) ?
-        'function' === typeof naiveUriPolicy.rewrite ?
-          naiveUriPolicy.rewrite(uri, effects, ltype, hints)
-        : null
-      : null;
+    if (!naiveUriPolicy || 'function' !== typeof naiveUriPolicy.rewrite) {
+      return null;
+    }
+    uri = '' + uri;
+    var parsed = URI.parse(uri);
+    return ifThrowsThenNull(uri, function() {
+      if (allowedUriScheme(parsed)) {
+        var safeUri = naiveUriPolicy.rewrite(parsed, effects, ltype, hints);
+        return safeUri ? safeUri.toString() : null;
+      } else {
+        return null;
+      }
+    });
   }
 
   // TODO(kpreid): If not used for the upcoming modularity-of-element-tamings

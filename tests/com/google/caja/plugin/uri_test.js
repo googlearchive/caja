@@ -599,6 +599,95 @@ jsunitRegister("testSetPathWithAbsoluteUrl",
   assertEquals("uri3", "//example.com/foo/bar", uri3.toString());
 });
 
+jsunitRegister("testUrlScheme", function testUrlScheme() {
+  assertUriSchemeEquals('http', 'HTTP://example.com/');
+});
+
+/**
+ * TODO(jasvir): Enable these tests when host normalization is implemented
+
+jsunitRegister("testUrlHost", function testUrlHost() {
+  assertUriDomainEquals('google.com', 'http://GoOgLe.CoM/');
+  assertUriDomainEquals('goo%20%20goo%7C%7C.com', 'http://Goo%20 goo%7C|.com/');
+  assertUriDomainEquals('goo%20%20goo.com', 'http://GOO 　goo.com/');
+  assertUriDomainEquals('googoo.com', 'http://GOO​⁠﻿goo.com/');
+  assertUriDomainEquals('www.foo.bar.com', 'http://www.foo。bar.com/');
+  assertUriDomainEquals('%EF%BF%BDzyx', 'http://﷐zyx.com/');
+  assertUriDomainEquals('%EF%BF%BDzyx.com', 'http://%ef%b7%90zyx.com/');
+  assertUriDomainEquals('go.com', 'http://Ｇｏ.com/');
+  assertUriDomainEquals('a.com', 'http://％４１.com/');
+  assertUriDomainEquals('a.com', 'http://%ef%bc%85%ef%bc%94%ef%bc%91.com/');
+  assertUriDomainEquals('%00.com', 'http://％００.com/');
+  assertUriDomainEquals('%00.com', 'http://%ef%bc%85%ef%bc%90%ef%bc%90.com/');
+  assertUriDomainEquals('xn--6qqa088eba.com', 'http://你好你好/');
+  assertUriDomainEquals('xn--6qqa088eba.com', 'http://%E4%BD%A0%E5%A5%BD你好/');
+  assertUriDomainEquals('%25zzf%25a.com', 'http://%zz%66%a/');
+  assertUriDomainEquals('%25.com', 'http://%25/');
+  assertUriDomainEquals('hello%00', 'http://hello%00/');
+  assertUriDomainEquals(
+    '192.168.0.1', 'http://%30%78%63%30%2e%30%32%35%30.01/');
+  assertUriDomainEquals(
+    '192.168.0.1', 'http://%30%78%63%30%2e%30%32%35%30.01%2e/');
+  assertUriDomainEquals(
+    '%253gxc0.0250..01', 'http://%3g%78%63%30%2e%30%32%35%30%2E.01/');
+  assertUriDomainEquals('192.168.0.1%20hello', 'http://192.168.0.1 hello/');
+  assertUriDomainEquals('192.168.0.1', 'http://０Ｘｃ０．０２５０．０１/');
+  assertUriDomainEquals('192.168.0.257', 'http://192.168.0.257/');
+  assertUriDomainEquals('[google.com]', 'http://[google.com]/');
+  assertUriDomainEquals('xn--%28-7ed/', 'http://т(/');
+});
+*/
+
+jsunitRegister("testUrlPort", function testUrlPort() {
+  assertUriPortEquals(null, 'http://www.example.com:as df/');
+  assertUriPortEquals(null, 'http://www.example.com:-2/');
+  assertUriPortEquals("80", 'http://www.example.com:80/');
+  assertUriPortEquals("8080", 'http://www.example.com:8080/');
+  assertUriPortEquals("80", 'foobar://www.example.com:80/');
+});
+
 function assertResolvedEquals(expected, base, other) {
   assertEquals(expected, '' + URI.resolve(URI.parse(base), URI.parse(other)));
+}
+
+function assertUriSchemeEquals(expected, uri) {
+  var candidate = URI.parse(uri);
+  assertEquals(expected, candidate.getScheme());
+}
+
+function assertUriDomainEquals(expected, uri) {
+  var candidate = URI.parse(uri);
+  assertEquals(expected, candidate.getDomain());
+}
+
+function assertUriPortEquals(expected, uri) {
+  var candidate = URI.parse(uri);
+  assertEquals(expected, candidate.getPort());
+}
+
+
+function assertUriPathEquals(expected, uri) {
+  var candidate = URI.parse(uri);
+  assertEquals(expected, candidate.getPath());
+}
+
+
+function assertUriQueryEquals(expected, uri) {
+  var candidate = URI.parse(uri);
+  assertEquals(expected, candidate.getQuery());
+}
+
+function assertUriFragmentEquals(expected, uri) {
+  var candidate = URI.parse(uri);
+  assertEquals(expected, candidate.getFragment());
+}
+
+function assertUriEquals(expected, uri) {
+  var candidate = URI.parse(uri);
+  assertEquals(expected[0], candidate.getScheme());
+  assertEquals(expected[1], candidate.getDomain());
+  assertEquals(expected[2], candidate.getPort());
+  assertEquals(expected[3], candidate.getPath());
+  assertEquals(expected[4], candidate.getQuery());
+  assertEquals(expected[5], candidate.getFragment());
 }

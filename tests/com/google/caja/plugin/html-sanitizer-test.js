@@ -1,8 +1,8 @@
 function uriPolicy(value, effects, ltype, hints) {
-  if ("specialurl" === value) {
+  if (value && "specialurl" === value.toString()) {
     return value;
   }
-  return 'u:' + value;
+  return 'u:' + value.toString();
 }
 
 function nmTokenPolicy(nmTokens) {
@@ -39,7 +39,7 @@ function check(original, opt_result) {
 }
 
 function interactiveTest(input) {
-  var result = html.sanitize(input);
+  var result = html.sanitize(input, uriPolicy, nmTokenPolicy);
   var el = document.getElementById('results');
   el.innerHTML = '';
   el.appendChild(document.createTextNode(result));
@@ -279,6 +279,12 @@ jsunitRegister('testUriPolicy',
         function(uri) { return uri; }));
   assertEquals('<a>hi</a>',
       html.sanitize('<a href="javascript:alert(1)">hi</a>',
+        function(uri) { return null; }));
+  assertEquals('<a>hi</a>',
+      html.sanitize('<a href=" javascript:alert(1)">hi</a>',
+        function(uri) { return uri; }));
+  assertEquals('<a>hi</a>',
+      html.sanitize('<a href=" javascript:alert(1)">hi</a>',
         function(uri) { return null; }));
   assertEquals('<a href="//www.example.com/">hi</a>',
       html.sanitize('<a href="//www.example.com/">hi</a>',

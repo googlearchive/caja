@@ -114,7 +114,7 @@
     var div = createDiv();
     var dynamicPolicy = {
         rewrite: function (uri, effects, ltype, hints) {
-          if (/\/xhr/.test(uri)) {
+          if (/\/xhr/.test(uri.getPath())) {
             assert(typeof hints !== "undefined");
             assert(!!hints["XHR"]);
             return 'xhrTest.txt';
@@ -237,7 +237,7 @@
             {
               rewrite: jsunitCallback(function rewrite(
                   uri, effects, ltype, hints) {
-                assertEquals('http://x.com/a.jpg', uri);
+                assertEquals('http://x.com/a.jpg', uri.toString());
                 assertEquals('CSS', hints.TYPE);
                 assertEquals('background-image', hints.CSS_PROP);
                 calledPolicy = true;
@@ -287,7 +287,7 @@
       '  xhr.send(undefined);' +
       '</script>',
       function(testName, uri, effects, ltype, hints) {
-        assertEquals('http://foo.com/a.json', uri);
+        assertEquals('http://foo.com/a.json', uri.toString());
         assertEquals('XHR', hints.TYPE);
         assertEquals('GET', hints.XHR_METHOD);
         jsunitPass(testName);
@@ -302,7 +302,7 @@
       '  xhr.send(undefined);' +
       '</script>',
       function(testName, uri, effects, ltype, hints) {
-        assertEquals('http://a.com/a.json', uri);
+        assertEquals('http://a.com/a.json', uri.toString());
         jsunitPass(testName);
         return true;
       });
