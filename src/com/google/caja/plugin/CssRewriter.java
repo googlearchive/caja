@@ -664,7 +664,7 @@ public final class CssRewriter {
         }
       });
 
-    // 2) Ban content properties, and attr pseudo classes, and any other
+    // 2) Ban attr pseudo classes, and any other
     //    pseudo selectors that don't match the whitelist
     t.node.acceptPreOrder(new Visitor() {
         public boolean visit(AncestorChain<?> ancestors) {

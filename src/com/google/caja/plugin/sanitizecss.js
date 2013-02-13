@@ -398,7 +398,11 @@ function sanitizeCssSelectors(selectors, suffix, tagPolicy) {
           }
           historySensitive = true;
           pseudoSelector = ':' + tok;
+          ++start;
           element = 'a';
+        } else if (tok === 'before' || tok === 'after') {
+          historySensitive = false;
+          pseudoSelector = ':' + tok;
           ++start;
         }
       }

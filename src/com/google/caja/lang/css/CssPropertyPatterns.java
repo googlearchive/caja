@@ -545,6 +545,7 @@ public class CssPropertyPatterns {
         .put("hex-color", CssPropBit.HASH_VALUE)
         .put("specific-voice", CssPropBit.QSTRING_CONTENT)
         .put("family-name", CssPropBit.QSTRING_CONTENT)
+        .put("string", CssPropBit.QSTRING_CONTENT)
         .put("uri", CssPropBit.QSTRING_URL)
         .put("z-index", CssPropBit.QUANTITY)
         .build();

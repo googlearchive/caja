@@ -443,17 +443,19 @@ function createExtraImportsForTesting(frameGroup, frame) {
     getBodyNode: function () {
       return frame.domicile.tameNode(frame.innerContainer);
     },
-    getComputedStyle: function (tameNode, styleProp) {
+    getComputedStyle: function (tameNode, styleProp, opt_pseudoElement) {
       var node = frame.domicile.feralNode(tameNode);
-      if (node.currentStyle) {
+      if (node.currentStyle && !opt_pseudoElement) {
         return node.currentStyle[styleProp.replace(
             /-([a-z])/g,
             function (_, letter) {
               return letter.toUpperCase();
             })];
       } else if (window.getComputedStyle) {
-        return window.getComputedStyle(node, null)
-            .getPropertyValue(styleProp);
+        var cs = window.getComputedStyle(
+            node,
+            opt_pseudoElement || null);
+        return cs.getPropertyValue(styleProp);
       } else {
         return null;
       }

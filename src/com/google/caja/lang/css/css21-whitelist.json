@@ -117,8 +117,6 @@
   ],
 
   "denied": [
-    { "key": "content",
-      "reason": "Allows importing of content from another URI.  Is this really problematic?" },
     { "key": "orphans",
       "reason": "Allows manipulation of page outside clipping region" },
     { "key": "widows",

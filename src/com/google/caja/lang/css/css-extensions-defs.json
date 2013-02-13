@@ -161,12 +161,17 @@
       "as": "border-top-left-radius" },
 
     { "key": "content",
-      "signature": " \"\" | \" \" | \".\" ",
+      "signature": "normal | none | <string> +",
       "default": " \"\" ",
       "description": [
-          "Allow space and dot since YUI frequently uses those.",
-          "Allow the empty string since it is the default value."
-          ]
+        "Allow per CSS spec with some exceptions",
+        "Reject <counter> because it exposes global page state",
+        "Reject attr(<identifier>) because it circumvents Domado attribute value virtualizations",
+        "Reject inherit because of possible strange semantics with stuff outside the Domado container",
+        "Reject <uri> because, if we accept it, our CSS sanitizers assume any string is a URI",
+        "Reject no-open-quote and no-close-quote because they expose a global counter",
+        "Reject open-quote and close-quote because we cannot test for them yet"
+      ]
     },
 
     { "key": "cursor",

@@ -3099,6 +3099,32 @@ Test row cell
   });
 </script>
 
+<p id="testCssContent" class="testcontainer">testCssContent</p>
+<style type="text/css">
+  #testCssContent:before {
+    content: 'text before via css';
+  }
+  #testCssContent:after {
+    content: 'text after via css';
+  }
+</style>
+<script type="text/javascript">
+  jsunitRegister('testCssContent',
+                 function testCssContent() {
+    function getPseudoContent(element, pseudo) {
+      var s = directAccess.getComputedStyle(element, 'content', pseudo);
+      // Firefox encloses the reported value of style property 'content' in
+      // double quotes, while Chrome encloses it in single quotes.
+      return s.substring(1, s.length - 1);
+    }
+
+    var t = document.getElementById('testCssContent');
+    assertEquals('text before via css', getPseudoContent(t, ':before'));
+    assertEquals('text after via css', getPseudoContent(t, ':after'));
+    pass('testCssContent');
+  });
+</script>
+
 <p class="testcontainer" id="testDocumentBodyAppendChild"
  >I should be the last element until something is appended to document.body</p>
 <script type="text/javascript">

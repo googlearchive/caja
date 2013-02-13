@@ -111,12 +111,25 @@ runCssSelectorTests([
     ]
   },
   {
-    "test_name": "ContentRemoved",
+    "test_name": "UrlContentRemoved",
+    "tests": [
+      {
+        "cssText":
+          "a { color: blue; content: url(x.png); text-decoration: underline; }",
+        "golden":
+          ".namespace__ a{color:blue;text-decoration:underline}"
+      }
+    ]
+  },
+  {
+    "test_name": "LiteralContentPreserved",
     "tests": [
       {
         "cssText":
           "a { color: blue; content: 'booyah'; text-decoration: underline; }",
-        "golden": ".namespace__ a{color:blue;text-decoration:underline}"
+        "golden":
+          ".namespace__ a{color:blue;content:\"booyah\";"
+              + "text-decoration:underline}"
       }
     ]
   },
