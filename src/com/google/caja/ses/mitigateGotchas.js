@@ -53,11 +53,6 @@
     return (node.type === 'FunctionDeclaration');
   }
 
-  function isForStatement(node) {
-    return (node.type === 'ForStatement' ||
-        node.type == 'ForInStatement');
-  }
-
   /**
    * Rewrite func decls in place by appending assignments on the global object
    * turning expression "function x() {}" to
@@ -90,6 +85,18 @@
    * "for (this.x = 1;;) {}"
    */
   function rewriteVars(node, parent) {
+
+    // TODO(jasvir): Consider mitigating top-level vars in for..in
+    // loops.  We currently do not support rewriting var declarations
+    // in the VarDeclarator of a ForInStatement.  Given for (var x in
+    // y) { var z; }, we do not rewrite var x.  This is because our
+    // standard local rewrite for var decls is incorrect in this case.
+
+    // We can support rewriting these vars iff requested.
+
+    if (parent.type === 'ForInStatement') {
+      return;
+    }
     var assignments = [];
     node.declarations.forEach(function(decl) {
       assignments.push({
@@ -99,7 +106,7 @@
         'right': decl.init || globalVarAst(decl.id)
       });
     });
-    if (isForStatement(parent)) {
+    if (parent.type === 'ForStatement') {
       node.type = 'SequenceExpression';
       node.expressions = assignments;
     } else {

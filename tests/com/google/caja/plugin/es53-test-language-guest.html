@@ -556,3 +556,30 @@ testTopLevelVarsInCatch
     pass('testVarsInForLoops');
   });
 </script>
+
+<!-- Also see issue 1634
+     http://code.google.com/p/google-caja/issues/detail?id=1634 
+     This test just ensures that for..in loops run correctly, however,
+     does not test that var declarations in for..in loops become
+     top-level variables.
+
+     This is because we choose not to implement top-level var
+     mitigation (rather than because we have choosen not to test for
+     this case).
+-->
+<div class="testcontainer" id="testVarsInForInLoops">
+  testVarsInForInLoops
+</div>
+<script>
+  var varsInForInLoop_i = 0;
+  for (var varsInForInLoop in [1,2,3]) {
+    varsInForInLoop_i++;
+  }
+</script>
+<script>
+  jsunitRegister('testVarsInForInLoops',
+                 function testVarsInForInLoops() {
+    assertEquals(3, varsInForInLoop_i);
+    pass('testVarsInForInLoops');
+  });
+</script>
