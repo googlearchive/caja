@@ -23,7 +23,7 @@ import com.google.caja.reporting.BuildInfo;
  *
  * @author ihab.awad@gmail.com
  */
-public abstract class UniversalBrowserTests extends BrowserTestCase {
+public abstract class UniversalBrowserTests extends BrowserTestCase<Void> {
   protected final String bv = BuildInfo.getInstance().getBuildVersion();
 
   protected final boolean es5Mode;

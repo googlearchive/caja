@@ -8,7 +8,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
-public abstract class QUnitTestCase extends BrowserTestCase {
+public abstract class QUnitTestCase extends BrowserTestCase<Integer> {
 
   public QUnitTestCase() {
     super();
@@ -19,7 +19,9 @@ public abstract class QUnitTestCase extends BrowserTestCase {
    * @param pageName The tail of a URL.  Unused in this implementation
    * @param passCount The number of tests we expect to pass, or null for all.
    */
-  protected String driveBrowser(final WebDriver driver, Object passCount, final String pageName) {
+  @Override
+  protected String driveBrowser(final WebDriver driver, Integer passCount,
+      final String pageName) {
     final String testResultId = "qunit-testresult-caja-guest-0___";
     // Find the reporting div
     countdown(20000, 200, new Countdown() {
@@ -69,8 +71,8 @@ public abstract class QUnitTestCase extends BrowserTestCase {
    * @param passCount The number of tests we expect to pass, or null for all.
    *             We should update this monotonically as we improve Caja.
    */
-  protected String runQUnitTestCase(String testCase, Integer passCount, String... params)
-      throws Exception {
+  protected String runQUnitTestCase(String testCase, Integer passCount,
+      String... params) throws Exception {
     return runBrowserTest("browser-test-case.html",
         passCount,
         add(params,

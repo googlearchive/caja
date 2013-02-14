@@ -64,7 +64,7 @@ public class JQueryTest extends QUnitTestCase {
   }
 
   public final void testAttributes() throws Exception {
-    runQUnitTestCase("attributes", 419);
+    runQUnitTestCase("attributes", firefoxVsChrome(420, 409));
     // Current failure categories:
     //   * URI rewriting is visible to the guest.
     //   * Simple event handler rewriting is visible to the guest.
@@ -78,7 +78,7 @@ public class JQueryTest extends QUnitTestCase {
   }
 
   public final void testEvent() throws Exception {
-    runQUnitTestCase("event", 383 /* Firefox; 390? Chrome */);
+    runQUnitTestCase("event", 383);
     // Current failure categories:
     //   * Various lost-signal failures:
     //        in 'bind(),live(),delegate() with non-null,defined data'
@@ -104,7 +104,7 @@ public class JQueryTest extends QUnitTestCase {
   }
 
   public final void testManipulation() throws Exception {
-    runQUnitTestCase("manipulation", 474 /* Firefox; 488 Chrome */);
+    runQUnitTestCase("manipulation", firefoxVsChrome(474, 488));
     // Current modifications made to test suite:
     //   * Removed SES-incompatible Array.prototype modification; was only for
     //     testing jQuery robustness.
@@ -122,7 +122,7 @@ public class JQueryTest extends QUnitTestCase {
   }
 
   public final void testCSS() throws Exception {
-    runQUnitTestCase("css", 199 /* in Firefox; 202 in Chrome; of 203 */);
+    runQUnitTestCase("css", firefoxVsChrome(199, 202) /* of 203 */);
     // Current failure categories:
     //   * We don't implement SVG (fill-opacity CSS property).
     //   * defaultDisplay() doesn't get the intended answer on Firefox, but

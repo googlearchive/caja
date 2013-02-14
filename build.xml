@@ -219,10 +219,12 @@ For help on building and testing Caja, see:
           haltonfailure="yes">
         <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
         <classpath refid="classpath.tests"/>
-        <formatter type="xml"/>
+        <!-- usefile=false prints to stdout; we don't want to mix up these
+             tests' reports with the main required-for-submit tests -->
+        <formatter type="plain" usefile="false"/>
         <jvmarg line="${jvmarg}"/>
         <syspropertyset refid="test.propertyset"/>
-        <batchtest todir="${reports}/tests">
+        <batchtest>
           <fileset dir="${tests}">
             <and>
               <files/>
@@ -368,8 +370,6 @@ For help on building and testing Caja, see:
      failureProperty="runtests.failure">
       <fileset dir="${reports}/tests">
         <include name="TEST-*.xml"/>
-        <exclude name="TEST-*.JQueryTest.xml"/>
-        <exclude name="TEST-*.JQueryUITest.xml"/>
       </fileset>
     </summarize>
     <!-- Generate the code coverage report. -->

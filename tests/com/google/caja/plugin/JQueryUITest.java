@@ -28,13 +28,13 @@ public class JQueryUITest extends QUnitTestCase {
   }
 
   public final void testAccordion() throws Exception {
-    runQUnitTestCase("accordion", 285);
+    runQUnitTestCase("accordion", firefoxVsChrome(285, 288));
     // Current failure categories:
     //   * unexamined
   }
 
   public final void testAutocomplete() throws Exception {
-    runQUnitTestCase("autocomplete", 120);
+    runQUnitTestCase("autocomplete", firefoxVsChrome(120, 147));
     // Current modifications made to test suite:
     //   * Work around lost-signal problems due to lack of event simulation
     // Current failure categories:
@@ -53,7 +53,7 @@ public class JQueryUITest extends QUnitTestCase {
   }
 
   public final void testDatepicker() throws Exception {
-    runQUnitTestCase("datepicker", 482);
+    runQUnitTestCase("datepicker", firefoxVsChrome(482, 528));
     // Current failure categories:
     //   * keystroke response discrepancies
     //   * parseDate
@@ -61,7 +61,7 @@ public class JQueryUITest extends QUnitTestCase {
   }
 
   public final void testDialog() throws Exception {
-    runQUnitTestCase("dialog", 226 /* Firefox; ??? on Chrome */);
+    runQUnitTestCase("dialog", firefoxVsChrome(226, 230));
     // Current failure categories:
     //   * What may be event simulation failures
     //   * Some numeric discrepancies
@@ -74,7 +74,7 @@ public class JQueryUITest extends QUnitTestCase {
   }
 
   public final void testMenu() throws Exception {
-    runQUnitTestCase("menu", 164);
+    runQUnitTestCase("menu", firefoxVsChrome(164, 211));
     // Current failure categories:
     //   * unexamined
   }
@@ -88,19 +88,19 @@ public class JQueryUITest extends QUnitTestCase {
   }
 
   public final void testSlider() throws Exception {
-    runQUnitTestCase("slider", 92);
+    runQUnitTestCase("slider", firefoxVsChrome(92, 123));
     // Current failure categories:
     //   * Keyboard events not working
   }
 
   public final void testSpinner() throws Exception {
-    runQUnitTestCase("spinner", 137);
+    runQUnitTestCase("spinner", firefoxVsChrome(137, 467));
     // Current failure categories:
     //   * unexamined
   }
 
   public final void testTabs() throws Exception {
-    runQUnitTestCase("tabs", 488);
+    runQUnitTestCase("tabs", firefoxVsChrome(488, 519));
     // Current modifications made to test suite:
     //   * Work around lost-signal problems due to lack of event simulation
     // Current failure categories:

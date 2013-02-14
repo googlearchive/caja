@@ -20,7 +20,7 @@ import org.mortbay.jetty.servlet.ServletHolder;
 /**
  * @author ihab.awad@gmail.com
  */
-public class ModulesBrowserTest extends BrowserTestCase {
+public class ModulesBrowserTest extends BrowserTestCase<Void> {
   public final void testModules() throws Exception {
     runBrowserTest("modules-test.html");
   }

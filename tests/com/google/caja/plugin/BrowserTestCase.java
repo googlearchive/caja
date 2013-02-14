@@ -74,11 +74,13 @@ import org.openqa.selenium.remote.RemoteWebDriver;
  *   <dd>Hostname that a remote browser should use to contact the
  *   localhost server. If unset, guesses a non-loopback hostname.</dd>
  * </dl>
+ * <p>
+ * Type parameter D is for data passed in to subclass overrides of driveBrowser.
  *
  * @author maoziqing@gmail.com (Ziqing Mao)
  * @author kpreid@switchb.org (Kevin Reid)
  */
-public abstract class BrowserTestCase extends CajaTestCase {
+public abstract class BrowserTestCase<D> extends CajaTestCase {
   private static final String BROWSER = "caja.test.browser";
   private static final String BROWSER_PATH = "caja.test.browserPath";
   private static final String HEADLESS = "caja.test.headless";
@@ -94,6 +96,9 @@ public abstract class BrowserTestCase extends CajaTestCase {
   // We keep a blank window open so the browser stays running when we close
   // a test window.
   static String firstWindow = null;
+
+  private final static String browserType = System.getProperty(BROWSER,
+      "firefox");
 
   static {
     Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
@@ -183,11 +188,11 @@ public abstract class BrowserTestCase extends CajaTestCase {
    */
   protected String runBrowserTest(String pageName, String... params)
       throws Exception {
-    return runBrowserTest(pageName, 0, params);
+    return runBrowserTest(pageName, null, params);
   }
 
-  protected String runBrowserTest(String pageName, Object data, String... params)
-      throws Exception {
+  protected String runBrowserTest(String pageName, D data,
+      String... params) throws Exception {
     if (flag(SERVER_ONLY) || flag(START_AND_WAIT)) {
       pageName = "test-index.html";
       params = null;
@@ -298,10 +303,20 @@ public abstract class BrowserTestCase extends CajaTestCase {
 
   /**
    * Do what should be done with the browser.
-   * @param pageName The tail of a URL.  Unused in this implementation
+   *
+   * @param data
+   *          Parameter from runBrowserTest, for use by subclasses; must be null
+   *          but subclasses overriding this method may make use of it.
+   * @param pageName
+   *          The tail of a URL. Unused in this implementation.
    */
   protected String driveBrowser(
-      final WebDriver driver, Object data, final String pageName) {
+      final WebDriver driver, final D data, final String pageName) {
+    if (data != null) {
+      throw new IllegalArgumentException(
+          "data parameter is not used and should be null");
+    }
+
     // 40s because test-domado-dom startup is very very very slow in es53 mode,
     // and something we're doing is leading to huge unpredictable slowdowns
     // in random test startup; perhaps we're holding onto a lot of ram and
@@ -420,24 +435,39 @@ public abstract class BrowserTestCase extends CajaTestCase {
     if (flag(HEADLESS)) {
       return null;
     }
-    String browser = System.getProperty(BROWSER, "firefox");
     String browserPath = System.getProperty(BROWSER_PATH);
     String remote = System.getProperty(REMOTE, "");
     DesiredCapabilities dc = new DesiredCapabilities();
     if (!"".equals(remote)) {
-      dc.setBrowserName(browser);
+      dc.setBrowserName(browserType);
       dc.setJavascriptEnabled(true);
       return new RemoteWebDriver(new URL(remote), dc);
     }
-    if ("chrome".equals(browser)) {
+    if ("chrome".equals(browserType)) {
       if (browserPath != null) {
         dc.setCapability("chrome.binary", browserPath);
       }
       return new ChromeDriver(dc);
-    } else if ("firefox".equals(browser)) {
+    } else if ("firefox".equals(browserType)) {
       return new FirefoxDriver();
     } else {
-      throw new RuntimeException("Unsupported local browser '" + browser + "'");
+      throw new RuntimeException("No local driver for browser type '"
+          + browserType + "'");
+    }
+  }
+
+  /**
+   * Helper to respond to browser differences.
+   */
+  D firefoxVsChrome(D firefox, D chrome) {
+    // In the event that we support testing on more browsers, this should be
+    // redesigned appropriately, rather than being a long if-else.
+    if ("firefox".equals(browserType)) {
+      return firefox;
+    } else if ("chrome".equals(browserType)) {
+      return chrome;
+    } else {
+      return firefox;
     }
   }
 }
