@@ -112,6 +112,10 @@
  *         one occurrence of the described problem.
  *         The default behavior here should only the number of
  *         problems, not the individual problems.</dd>
+ *   <dt>beginStartup()</dt>
+ *     <dd>Invoked before all other logging.</dd>
+ *   <dt>endStartup()</dt>
+ *     <dd>Invoked after SES initialization has completed.</dd>
  * </dl>
  *
  * <p>Assumes only ES3. Compatible with ES5, ES5-strict, or
@@ -180,7 +184,19 @@ if (!ses) { ses = {}; }
       log:   function log(var_args)   { forward('log', arguments); },
       info:  function info(var_args)  { forward('info', arguments); },
       warn:  function warn(var_args)  { forward('warn', arguments); },
-      error: function error(var_args) { forward('error', arguments); }
+      error: function error(var_args) { forward('error', arguments); },
+      beginStartup: function beginStartup() {
+        if (console.groupCollapsed) {
+          console.groupCollapsed('SES initialization');
+        } else if (console.group) {
+          console.group('SES initialization');
+        }
+      },
+      endStartup: function endStartup() {
+        if (console.groupEnd) {
+          console.groupEnd();
+        }
+      }
     };
   } else {
     logger = {
@@ -269,6 +285,19 @@ if (!ses) { ses = {}; }
     logger.reportDiagnosis = defaultReportDiagnosis;
   }
 
+  function defaultBeginEndStartup() {}
+
+  if (!logger.beginStartup) {
+    logger.beginStartup = defaultBeginEndStartup;
+  }
+
+  if (!logger.endStartup) {
+    logger.endStartup = defaultBeginEndStartup;
+  }
+
   ses.logger = logger;
 
+  // No better place to put this at the moment.
+  // Balanced by endStartup in hookupSES[Plus].js
+  logger.beginStartup();
 })();

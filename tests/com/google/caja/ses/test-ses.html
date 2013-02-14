@@ -1,0 +1,85 @@
+<!doctype html>
+<html>
+  <head>
+    <title>SES browser test</title>
+  </head>
+  <body class="readytotest">
+    <p>This file tests loading the standalone SES,
+        without the rest of Caja, in a browser. It does not test that SES loads
+        successfully (as it may not be supported), but only that it reports
+        success or failure (as opposed to having a syntax error or such).</p>
+
+    <p>If you are seeking to troubleshoot SES, then you probably want
+        <a href="../../../../../src/com/google/caja/ses/explicit.html">
+        explicit.html</a> instead.</p>
+
+    <p>Open the browser's console for details.</p>
+    <script type="text/javascript">
+      "use strict";
+
+      // URL parameter parsing code from blog at:
+      // http://www.netlobo.com/url_query_string_javascript.html
+      // copied from browser-test-case.js
+      function getUrlParam(name) {
+        name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
+        var regexS = "[\\?&]"+name+"=([^&#]*)";
+        var regex = new RegExp(regexS);
+        var results = regex.exec(window.location.href);
+        return decodeURIComponent((results == null) ? "" : results[1]);
+      }
+
+      // Note: We are deliberately not using the ses.logger or
+      // ses.maxAcceptableSeverity interfaces to manage startup. This test is
+      // intended to test that SES "just works", in the absence of supporting
+      // code.
+
+      // However, we also want to check that it is manipulating the console
+      // correctly.
+      function doBefore(obj, name, before) {
+        var orig = obj[name];
+        if (typeof orig !== 'function') return;
+        obj[name] = function() {
+          before.apply(undefined, arguments);
+          return orig.apply(obj, arguments);
+        };
+      }
+      var groups = 0;
+      doBefore(console, 'group', function() { groups++; });
+      doBefore(console, 'groupCollapsed', function() { groups++; });
+      doBefore(console, 'groupEnd', function() { groups--; });
+
+      document.write('<script type="text/javascript" src="' +
+          getUrlParam('load') + '"></'+'script>');
+    </script>
+    <script type="text/javascript">
+      "use strict";
+
+      var success = true;
+
+      // "all tests passed" is the keyword our test automation looks for
+      if (groups !== 0) {
+        console.error('test-ses: console not balanced');
+        success = false;
+      }
+      
+      if (!ses.ok(ses.severities.NOT_SUPPORTED)) {
+        console.info('test-ses: SES not even not supported.');
+        success = false;
+      } else if (ses.ok(ses['severities'][ses.maxAcceptableSeverityName])) {
+        // Check that startSES finished and cleared its internal 'dirty' flag.
+        // If not, this will throw.
+        // TODO(kpreid): Make a more sensible way to test for startSES (as
+        // opposed to repairES5) success.
+        success = success && cajaVM.eval('true') === true;
+      } else {
+        console.info('test-ses: SES not OK but loaded successfully.');
+      }
+      
+      if (success) {
+        document.title = 'all tests passed - ' + document.title;
+      } else {
+        document.title = 'failed - ' + document.title;
+        console.error('test-ses: assertions failed');
+      }
+    </script>
+</html>

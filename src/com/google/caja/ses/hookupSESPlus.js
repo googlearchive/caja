@@ -27,11 +27,11 @@
 (function hookupSESPlusModule(global) {
   "use strict";
 
-  if (!ses.ok()) {
-    return;
-  }
-
   try {
+    if (!ses.ok()) {
+      return;
+    }
+
     ses.startSES(global,
                  ses.whitelist,
                  ses.atLeastFreeVarNames,
@@ -39,5 +39,8 @@
   } catch (err) {
     ses.updateMaxSeverity(ses.severities.NOT_SUPPORTED);
     ses.logger.error('hookupSESPlus failed with: ', err);
+  } finally {
+    // Balanced by beginStartup in logger.js
+    ses.logger.endStartup();
   }
 })(this);

@@ -1150,6 +1150,10 @@ For help on building and testing Caja, see:
         <include name="**/caja/**/*.txt"/>
         <include name="**/caja/**/*.xml"/>
       </fileset>
+      <fileset dir="${lib}">
+        <!-- Testing standalone SES, not part of the cajaServer (ant-war) -->
+        <include name="**/caja/ses/**.js"/>
+      </fileset>
       <fileset dir="${third_party}">
         <include name="js/jqueryjs/runtest/env.js"/>
         <include name="js/jsunit/2.2/jsUnitCore.js"/>

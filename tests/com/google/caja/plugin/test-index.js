@@ -68,6 +68,10 @@
 
   var bare_tests = [
     'modules-test.html',
+    '../ses/test-ses.html?load=initSES.js',
+    '../ses/test-ses.html?load=initSES-minified.js',
+    '../ses/test-ses.html?load=initSESPlus.js',
+    '../ses/test-ses.html?load=initSESPlus-minified.js',
   ];
 
   var headless_rhino_tests = [
