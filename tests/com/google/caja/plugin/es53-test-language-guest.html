@@ -583,3 +583,19 @@ testTopLevelVarsInCatch
     pass('testVarsInForInLoops');
   });
 </script>
+
+<div class="testcontainer" id="testReferenceError">
+  testReferenceError
+</div>
+<script>
+  jsunitRegister('testReferenceError',
+                 function testReferenceError() {
+    expectFailure(function() {
+      testReferenceError_thisIsUndefined;
+    }, null, function(e) {
+      return e instanceof ReferenceError && e.message ===
+          '"testReferenceError_thisIsUndefined" is not defined in this scope.';
+    });
+    pass('testReferenceError');
+  });
+</script>

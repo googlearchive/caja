@@ -543,7 +543,8 @@ ses.startSES = function(global,
               // behalf of a typeof expression, we'd return the string
               // "undefined" here instead. Unfortunately, without
               // parsing or proxies, that isn't possible.
-              throw new ReferenceError('"' + name + '" blocked by Caja');
+              throw new ReferenceError('"' + name +
+                  '" is not defined in this scope.');
             },
             set: function scopedSet(newValue) {
               if (name in imports) {

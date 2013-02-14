@@ -5401,7 +5401,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     if (imports.HasProperty___(name)) {
       return imports.v___(name);
     }
-    throw new ReferenceError(name + ' is not defined.');
+    throw new ReferenceError('"' + name + '" is not defined in this scope.');
   }
 
   function declareImport(imports, name) {
@@ -5416,7 +5416,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       imports.w___(name, value);
       return value;
     }
-    throw new ReferenceError(name + ' is not defined.');
+    throw new ReferenceError('"' + name + '" is not defined in this scope.');
   }
 
   function goodParseInt(n, radix) {
