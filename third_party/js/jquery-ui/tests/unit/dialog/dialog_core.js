@@ -8,12 +8,12 @@ var
 	widthBefore, widthAfter,
 	dragged;
 
-window.el = undefined;  // Patched for Caja - used by tests
+// Patched for Caja - otherwise-undeclared global variable used in other files
+var el = undefined;
 
 function dlg() {
 	return window.el.dialog('widget');
 }
-window.dlg = dlg;  // Patched for Caja - used by other test modules
 
 TestHelpers.isOpen = function(why) {
 	ok(dlg().is(":visible"), why);
@@ -40,7 +40,6 @@ function drag(handle, dx, dy) {
 	heightAfter = d.height();
 	widthAfter = d.width();
 }
-window.drag = drag;  // Patched for Caja - used by other test modules
 
 TestHelpers.dialogMoved = function(dx, dy, msg) {
 	msg = msg ? msg + "." : "";

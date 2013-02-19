@@ -657,13 +657,12 @@ config = {
 
 // Export global variables, unless an 'exports' object exists,
 // in that case we assume we're in CommonJS (dealt with on the bottom of the script)
-// Patched for Caja - disabled
-//if ( typeof exports === "undefined" ) {
+if ( typeof exports === "undefined" ) {
 	extend( window, QUnit );
 
 	// Expose QUnit object
 	window.QUnit = QUnit;
-//}
+}
 
 // Extend QUnit object,
 // these after set here because they should not be exposed as global functions
@@ -1970,11 +1969,10 @@ QUnit.diff = (function() {
 	};
 }());
 
-// Patched for Caja - disabled
-//// for CommonJS enviroments, export everything
-//if ( typeof exports !== "undefined" ) {
-//	extend(exports, QUnit);
-//}
+// for CommonJS enviroments, export everything
+if ( typeof exports !== "undefined" ) {
+	extend(exports, QUnit);
+}
 
 // get at whatever the global object is, like window in browsers
 // Patched for Caja strict mode to be just 'window'

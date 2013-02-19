@@ -143,7 +143,6 @@ document.write(
           }
         });
   }
-  window.assertDomTree = assertDomTree; // SES scope workaround
 </script>
 
 <p id="testDomClassHierarchy" class="clickme testcontainer">
@@ -1221,7 +1220,6 @@ document.write(
         },
         "testEventHandlerAttributes")
   };
-  window.autoclicky = autoclicky;  // SES scope workaround
 
   jsunitRegister('testEventHandlerAttributes',
                  function testEventHandlerAttributes() {
@@ -1487,7 +1485,6 @@ document.write(
       assertEquals(msg, golden, actual);
     }
   }
-  window.assertWithin = assertWithin;
 </script>
 
 <div id="testWhitespaceNodes1" class="testcontainer">
@@ -2164,7 +2161,6 @@ After
     sampleObjects = null; // provoke failure in tests using this
     throw e;
   }
-  window.sampleObjects = sampleObjects;  // SES scope workaround
 </script>
 
 <p class="testcontainer" id="testInterfaceGlobals">

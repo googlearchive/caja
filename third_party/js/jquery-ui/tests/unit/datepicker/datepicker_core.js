@@ -11,7 +11,6 @@ function equalsDate(d1, d2, message) {
 	d2 = new Date(d2.getFullYear(), d2.getMonth(), d2.getDate());
 	equal(d1.toString(), d2.toString(), message);
 }
-window.equalsDate = equalsDate;  // Patched for Caja
 
 TestHelpers.addMonths = function(date, offset) {
 	var maxDay = 32 - new Date(date.getFullYear(), date.getMonth() + offset, 32).getDate();
@@ -24,7 +23,6 @@ function init(id, options) {
 	$.datepicker.setDefaults($.datepicker.regional['']);
 	return $(id).datepicker($.extend({showAnim: ''}, options || {}));
 }
-window.init = init;  // Patched for Caja
 
 TestHelpers.PROP_NAME = 'datepicker';
 

@@ -4830,9 +4830,6 @@ loop:
 }());
 
 // Make JSHINT a Node module, if possible.
-// Patched for Caja - disabled
-//if (typeof exports === "object" && exports) {
-//    exports.JSHINT = JSHINT;
-//}
-// Patched for Caja - need explicit export
-window.JSHINT = JSHINT;
+if (typeof exports === "object" && exports) {
+    exports.JSHINT = JSHINT;
+}
