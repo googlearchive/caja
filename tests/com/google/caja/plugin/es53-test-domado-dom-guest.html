@@ -3115,7 +3115,7 @@ Test row cell
       var s = directAccess.getComputedStyle(element, 'content', pseudo);
       // Firefox encloses the reported value of style property 'content' in
       // double quotes, while Chrome encloses it in single quotes.
-      return s.substring(1, s.length - 1);
+      return /^(['"])(.*)\1$/.exec(s)[2];
     }
 
     var t = document.getElementById('testCssContent');
