@@ -497,7 +497,7 @@ For help on building and testing Caja, see:
     <!-- Copy supporting javascript to lib -->
     <copy todir="${lib}">
       <fileset dir="${third_party}">
-        <include name="js/jqueryjs/runtest/env.js"/>
+        <include name="js/envjs/env.js"/>
       </fileset>
       <fileset dir="${tests}">
         <include name="**/caja/plugin/console-stubs.js"/>
@@ -706,17 +706,17 @@ For help on building and testing Caja, see:
   <macrodef name="JQueryTestCase">
     <attribute name="testcase" />
     <sequential>
-        <copy file="${lib}/js/jqueryjs/test/index-template.html" tofile="${lib}/js/jqueryjs/test/@{testcase}-uncajoled.html" />
-        <replace file="${lib}/js/jqueryjs/test/@{testcase}-uncajoled.html" value="@{testcase}">
+        <copy file="${tests}/com/google/caja/jquery/index-template.html" tofile="${testlib}/js/jqueryjs/test/@{testcase}-uncajoled.html" />
+        <replace file="${testlib}/js/jqueryjs/test/@{testcase}-uncajoled.html" value="@{testcase}">
             <replacetoken><![CDATA[@jquery-testcase@]]></replacetoken>
         </replace>
-        <copy file="${lib}/js/jqueryjs/test/hostpage-template.html" tofile="${lib}/js/jqueryjs/test/@{testcase}.html" />
-        <replace file="${lib}/js/jqueryjs/test/@{testcase}.html" value="@{testcase}">
+        <copy file="${tests}/com/google/caja/jquery/hostpage-template.html" tofile="${testlib}/js/jqueryjs/test/@{testcase}.html" />
+        <replace file="${testlib}/js/jqueryjs/test/@{testcase}.html" value="@{testcase}">
             <replacetoken><![CDATA[@jquery-testcase@]]></replacetoken>
         </replace>
         <transform>
-            <input file="${lib}/js/jqueryjs/test/@{testcase}-uncajoled.html" />
-            <output file="${lib}/js/jqueryjs/test/@{testcase}-cajoled.js"
+            <input file="${testlib}/js/jqueryjs/test/@{testcase}-uncajoled.html" />
+            <output file="${testlib}/js/jqueryjs/test/@{testcase}-cajoled.js"
                     onlyJsEmitted="true"
                     language="caja"
                     canLink="http://simon.incutio.com/archive/2003/03/25#getElementsBySelector \
@@ -728,38 +728,38 @@ For help on building and testing Caja, see:
                            http://simon.incutio.com/"
                     />
 
-            <depend file="${lib}/js/jqueryjs/test/data/ua.txt"/>
-            <depend file="${lib}/js/jqueryjs/test/qunit/qunit/qunit.css"/>
-            <depend file="${lib}/js/jqueryjs/test/data/testsuite.css"/>
-            <depend file="${lib}/js/jqueryjs/test/data/testinit.js"/>
-            <depend file="${lib}/js/jqueryjs/test/qunit/qunit/qunit.js"/>
-            <depend file="${lib}/js/jqueryjs/test/data/testrunner.js"/>
-            <depend file="${lib}/js/jqueryjs/dist/jquery.js"/>
-            <depend file="${lib}/js/jqueryjs/test/unit/core.js"/>
-            <depend file="${lib}/js/jqueryjs/test/unit/callbacks.js"/>
-            <depend file="${lib}/js/jqueryjs/test/unit/deferred.js"/>
-            <depend file="${lib}/js/jqueryjs/test/unit/support.js"/>
-            <depend file="${lib}/js/jqueryjs/test/unit/data.js"/>
-            <depend file="${lib}/js/jqueryjs/test/unit/queue.js"/>
-            <depend file="${lib}/js/jqueryjs/test/unit/attributes.js"/>
-            <depend file="${lib}/js/jqueryjs/test/unit/event.js"/>
-            <depend file="${lib}/js/jqueryjs/src/sizzle/test/unit/selector.js"/>
-            <depend file="${lib}/js/jqueryjs/test/unit/selector.js"/>
-            <depend file="${lib}/js/jqueryjs/test/unit/traversing.js"/>
-            <depend file="${lib}/js/jqueryjs/test/unit/manipulation.js"/>
-            <depend file="${lib}/js/jqueryjs/test/unit/css.js"/>
-            <depend file="${lib}/js/jqueryjs/test/unit/ajax.js"/>
-            <depend file="${lib}/js/jqueryjs/test/unit/effects.js"/>
-            <depend file="${lib}/js/jqueryjs/test/unit/offset.js"/>
-            <depend file="${lib}/js/jqueryjs/test/unit/dimensions.js"/>
-            <depend file="${lib}/js/jqueryjs/test/unit/exports.js"/>
+            <depend file="${testlib}/js/jqueryjs/test/data/ua.txt"/>
+            <depend file="${testlib}/js/jqueryjs/test/qunit/qunit/qunit.css"/>
+            <depend file="${testlib}/js/jqueryjs/test/data/testsuite.css"/>
+            <depend file="${testlib}/js/jqueryjs/test/data/testinit.js"/>
+            <depend file="${testlib}/js/jqueryjs/test/qunit/qunit/qunit.js"/>
+            <depend file="${testlib}/js/jqueryjs/test/data/testrunner.js"/>
+            <depend file="${testlib}/js/jqueryjs/dist/jquery.js"/>
+            <depend file="${testlib}/js/jqueryjs/test/unit/core.js"/>
+            <depend file="${testlib}/js/jqueryjs/test/unit/callbacks.js"/>
+            <depend file="${testlib}/js/jqueryjs/test/unit/deferred.js"/>
+            <depend file="${testlib}/js/jqueryjs/test/unit/support.js"/>
+            <depend file="${testlib}/js/jqueryjs/test/unit/data.js"/>
+            <depend file="${testlib}/js/jqueryjs/test/unit/queue.js"/>
+            <depend file="${testlib}/js/jqueryjs/test/unit/attributes.js"/>
+            <depend file="${testlib}/js/jqueryjs/test/unit/event.js"/>
+            <depend file="${testlib}/js/jqueryjs/src/sizzle/test/unit/selector.js"/>
+            <depend file="${testlib}/js/jqueryjs/test/unit/selector.js"/>
+            <depend file="${testlib}/js/jqueryjs/test/unit/traversing.js"/>
+            <depend file="${testlib}/js/jqueryjs/test/unit/manipulation.js"/>
+            <depend file="${testlib}/js/jqueryjs/test/unit/css.js"/>
+            <depend file="${testlib}/js/jqueryjs/test/unit/ajax.js"/>
+            <depend file="${testlib}/js/jqueryjs/test/unit/effects.js"/>
+            <depend file="${testlib}/js/jqueryjs/test/unit/offset.js"/>
+            <depend file="${testlib}/js/jqueryjs/test/unit/dimensions.js"/>
+            <depend file="${testlib}/js/jqueryjs/test/unit/exports.js"/>
         </transform>
     </sequential>
 </macrodef>
 
   <target name="jquery" depends="CajoledDomado">
     <!-- The root files of the Domita test cases are statically cajoled -->
-    <copy todir="${lib}">
+    <copy todir="${testlib}">
       <fileset dir="${third_party}">
         <include name="js/jqueryjs/**/*"/>
         <exclude name="**/*.jar"/>
@@ -784,16 +784,16 @@ For help on building and testing Caja, see:
     <JQueryTestCase testcase="dimensions" />
     <JQueryTestCase testcase="exports" />
     <copy todir="${war}/jquery">
-      <fileset file="${lib}/js/jqueryjs/index.html" />
+      <fileset file="${tests}/com/google/caja/jquery/index.html" />
     </copy>
     <copy todir="${war}/jquery/test">
-      <fileset dir="${lib}/js/jqueryjs/test/" />
+      <fileset dir="${testlib}/js/jqueryjs/test/" />
     </copy>
     <copy todir="${war}/jquery/src">
-      <fileset dir="${lib}/js/jqueryjs/src/" />
+      <fileset dir="${testlib}/js/jqueryjs/src/" />
     </copy>
     <copy todir="${war}/jquery/dist">
-      <fileset dir="${lib}/js/jqueryjs/dist/" />
+      <fileset dir="${testlib}/js/jqueryjs/dist/" />
     </copy>
   </target>
 
@@ -1155,13 +1155,10 @@ For help on building and testing Caja, see:
         <include name="**/caja/ses/**.js"/>
       </fileset>
       <fileset dir="${third_party}">
-        <include name="js/jqueryjs/runtest/env.js"/>
+        <include name="js/envjs/env.js"/>
         <include name="js/jsunit/2.2/jsUnitCore.js"/>
         <include name="js/json_sans_eval/json_sans_eval.js"/>
       </fileset>
-    </copy>
-    <copy todir="${testlib}/js/jqueryjs/">
-      <fileset dir="${lib}/js/jqueryjs" includes="**" />
     </copy>
     <copy todir="${testlib}/com/google/caja/plugin"
           file="${third_party}/js/jsunit/2.2/jsUnitCore.js"/>

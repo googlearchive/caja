@@ -106,7 +106,7 @@ public class RhinoTestBed {
     inputs.add(new Executor.Input(
         RhinoTestBed.class, "../plugin/console-stubs.js"));
     inputs.add(new Executor.Input(
-        RhinoTestBed.class, "/js/jqueryjs/runtest/env.js"));
+        RhinoTestBed.class, "/js/envjs/env.js"));
     int injectHtmlIndex = inputs.size();
 
     List<Pair<String, InputSource>> scriptContent

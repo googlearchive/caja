@@ -200,7 +200,7 @@
 
   forEach(jquery, function(test) {
     addQUnit('jQuery ' + test,
-             '/ant-lib/js/jqueryjs/test/' + test + '-uncajoled.html');
+             '/ant-testlib/js/jqueryjs/test/' + test + '-uncajoled.html');
   })
 
   forEach(jqueryui, function(test) {
