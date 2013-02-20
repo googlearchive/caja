@@ -219,7 +219,7 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
       try {
         Executor.Input[] inputs = new Executor.Input[] {
             // Browser Stubs
-            new Executor.Input(getClass(), "/js/jqueryjs/runtest/env.js"),
+            new Executor.Input(getClass(), "/js/envjs/env.js"),
             // Console Stubs
             new Executor.Input(getClass(), "console-stubs.js"),
             // Initialize the DOM
