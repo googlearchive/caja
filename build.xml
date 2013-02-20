@@ -1854,4 +1854,19 @@ For help on building and testing Caja, see:
     </pathconvert>
   </target>
 
+  <target name="antdeps"
+      description="Generate a graph of ant dependencies">
+    <mkdir dir="${reports}" />
+    <typedef resource="net/ggtools/grand/antlib.xml"
+             classpath="${third_party}/java/grand/grand-1.8.jar" />
+    <grand output="${reports}/antdeps.dot" />
+    <echo>Next step will fail if you don't have Graphviz installed</echo>
+    <exec executable="dot">
+      <arg value="-Tpng" />
+      <arg value="-o${reports}/antdeps.png" />
+      <arg value="${reports}/antdeps.dot" />
+    </exec>
+    <echo>Created ${reports}/antdeps.png</echo>
+  </target>
+
 </project>
