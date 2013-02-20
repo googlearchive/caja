@@ -26,7 +26,8 @@ public class JsHandlerTest extends ServiceTestCase {
     assertSubstringsInJson(
         (String) requestGet("?url=http://foo/bar.js"
             + "&input-mime-type=text/javascript"
-            + "&build-version=" + BuildInfo.getInstance().getBuildVersion()),
+            + "&build-version=" + BuildInfo.getInstance().getBuildVersion(),
+            "application/json"),
         "js",
         "moduleResult___=" +
         "(IMPORTS___.g_v___?IMPORTS___.g:___.ri(IMPORTS___,'g')).i___(1);");
@@ -40,7 +41,8 @@ public class JsHandlerTest extends ServiceTestCase {
           + "&input-mime-type=text/javascript"
           + "&alt=json-in-script"
           + "&callback=foo"
-          + "&build-version=" + BuildInfo.getInstance().getBuildVersion());
+          + "&build-version=" + BuildInfo.getInstance().getBuildVersion(),
+          "text/javascript");
       assertCallbackInJsonp(s, "foo");
       assertSubstringsInJsonp(s, "js",
           "moduleResult___=" +
@@ -53,7 +55,8 @@ public class JsHandlerTest extends ServiceTestCase {
               + "&input-mime-type=text/javascript"
               + "&alt=json-in-script"
               + "&callback=foo.bar"
-              + "&build-version=" + BuildInfo.getInstance().getBuildVersion()),
+              + "&build-version=" + BuildInfo.getInstance().getBuildVersion(),
+              "text/javascript"),
           "foo.bar");
       fail("Failed to reject non-identifier JSONP callback");
     } catch (RuntimeException e) {
@@ -65,7 +68,8 @@ public class JsHandlerTest extends ServiceTestCase {
           (String) requestGet("?url=http://foo/bar.js"
               + "&input-mime-type=text/javascript"
               + "&callback=foo.bar"
-              + "&build-version=" + BuildInfo.getInstance().getBuildVersion()),
+              + "&build-version=" + BuildInfo.getInstance().getBuildVersion(),
+              "text/javascript"),
           "foo.bar");
       fail("Added JSONP callback when not requested");
     } catch (AssertionFailedError e) {
@@ -78,7 +82,8 @@ public class JsHandlerTest extends ServiceTestCase {
               + "&input-mime-type=text/javascript"
               + "&alt=json"
               + "&callback=foo.bar"
-              + "&build-version=" + BuildInfo.getInstance().getBuildVersion()),
+              + "&build-version=" + BuildInfo.getInstance().getBuildVersion(),
+              "text/javascript"),
           "foo.bar");
       fail("Added JSONP callback when not requested");
     } catch (AssertionFailedError e) {

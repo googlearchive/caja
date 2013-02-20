@@ -104,10 +104,12 @@ public abstract class ServiceTestCase extends CajaTestCase {
             content, contentType, charset, new InputSource(URI.create(uri))));
   }
 
-  protected Object requestGet(String queryString) throws Exception {
+  protected Object requestGet(String queryString, String expectedResponseType)
+      throws Exception {
     TestHttpServletRequest req = new TestHttpServletRequest(queryString);
     TestHttpServletResponse resp = new TestHttpServletResponse();
     servlet.doGet(req, resp);
+    assertResponseContentType(expectedResponseType, resp);
     return resp.getOutputObject();
   }
 
@@ -115,12 +117,14 @@ public abstract class ServiceTestCase extends CajaTestCase {
       String queryString,
       byte[] content,
       String contentType,
-      String contentEncoding) throws Exception {
+      String contentEncoding,
+      String expectedResponseType) throws Exception {
     TestHttpServletRequest req =
         new TestHttpServletRequest(queryString, content, contentType,
             contentEncoding);
     TestHttpServletResponse resp = new TestHttpServletResponse();
     servlet.doPost(req, resp);
+    assertResponseContentType(expectedResponseType, resp);
     return resp.getOutputObject();
   }
 
@@ -152,7 +156,7 @@ public abstract class ServiceTestCase extends CajaTestCase {
     assertNotNull(emitted);
     JSONObject json = (JSONObject) json(emitted);
     assertNotNull(json);
-    assertTrue(json.containsKey(jsonProperty));
+    assertTrue(jsonProperty + " present", json.containsKey(jsonProperty));
     String value = (String) json.get(jsonProperty);
     for (String s : expectedSubstrings) {
       assertContainsIgnoreSpace(value, s);
@@ -163,7 +167,7 @@ public abstract class ServiceTestCase extends CajaTestCase {
       String emitted,
       String jsonProperty,
       String... expectedSubstrings) throws Exception {
-    Pattern p = Pattern.compile("^[a-zA-Z_]+\\((\\{.*\\})\\)$");
+    Pattern p = Pattern.compile("(?s)^[a-zA-Z_]+\\((\\{.*\\})\\)$");
     Matcher m = p.matcher(emitted);
     assertTrue(m.matches());
     assertSubstringsInJson(m.group(1), jsonProperty, expectedSubstrings);
@@ -172,8 +176,13 @@ public abstract class ServiceTestCase extends CajaTestCase {
   protected static void assertCallbackInJsonp(
       String emitted,
       String jsonpCallback) throws Exception {
-    Pattern p = Pattern.compile("^" + jsonpCallback + "\\((\\{.*\\})\\)$");
+    Pattern p = Pattern.compile("(?s)^" + jsonpCallback + "\\((\\{.*\\})\\)$");
     Matcher m = p.matcher(emitted);
     assertTrue(m.matches());
+  }
+
+  private void assertResponseContentType(String expectedResponseType,
+      TestHttpServletResponse resp) {
+    assertEquals(expectedResponseType, resp.getContentType().split(";")[0]);
   }
 }

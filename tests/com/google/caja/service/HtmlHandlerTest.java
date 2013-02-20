@@ -39,7 +39,8 @@ public class HtmlHandlerTest extends ServiceTestCase {
           + "&input-mime-type=text/html"
           + "&alt=json-in-script"
           + "&callback=foo"
-          + "&build-version=" + BuildInfo.getInstance().getBuildVersion());
+          + "&build-version=" + BuildInfo.getInstance().getBuildVersion(),
+          "text/javascript");
       assertCallbackInJsonp(s, "foo");
       assertSubstringsInJsonp(s, "html", "some random text");
     }
@@ -50,7 +51,8 @@ public class HtmlHandlerTest extends ServiceTestCase {
               + "&input-mime-type=text/html"
               + "&alt=json-in-script"
               + "&callback=foo.bar"
-              + "&build-version=" + BuildInfo.getInstance().getBuildVersion()),
+              + "&build-version=" + BuildInfo.getInstance().getBuildVersion(),
+              "text/javascript"),
           "foo.bar");
       fail("Failed to reject non-identifier JSONP callback");
     } catch (RuntimeException e) {
@@ -62,7 +64,8 @@ public class HtmlHandlerTest extends ServiceTestCase {
           (String) requestGet("?url=http://foo/bar.html"
               + "&input-mime-type=text/html"
               + "&callback=foo.bar"
-              + "&build-version=" + BuildInfo.getInstance().getBuildVersion()),
+              + "&build-version=" + BuildInfo.getInstance().getBuildVersion(),
+              "text/javascript"),
           "foo.bar");
       fail("Added JSONP callback when not requested");
     } catch (AssertionFailedError e) {
@@ -75,7 +78,8 @@ public class HtmlHandlerTest extends ServiceTestCase {
               + "&input-mime-type=text/html"
               + "&alt=json"
               + "&callback=foo.bar"
-              + "&build-version=" + BuildInfo.getInstance().getBuildVersion()),
+              + "&build-version=" + BuildInfo.getInstance().getBuildVersion(),
+              "text/javascript"),
           "foo.bar");
       fail("Added JSONP callback when not requested");
     } catch (AssertionFailedError e) {
@@ -94,7 +98,8 @@ public class HtmlHandlerTest extends ServiceTestCase {
     String result = (String) requestGet(
         "?url=http://foo/index.html&input-mime-type=text/html"
         + "&output-mime-type=text/html&sext=true&idclass=foo___"
-        + "&build-version=" + BuildInfo.getInstance().getBuildVersion());
+        + "&build-version=" + BuildInfo.getInstance().getBuildVersion(),
+        "application/json");
     JSONObject json = (JSONObject) json(result);
     assertContainsIgnoreSpace(
         (String) json.get("js"),
@@ -128,7 +133,8 @@ public class HtmlHandlerTest extends ServiceTestCase {
     String result = (String) requestGet(
         "?url=http://foo/index.html&input-mime-type=text/html"
         + "&output-mime-type=text/html&sext=true&idclass=foo___"
-        + "&build-version=" + BuildInfo.getInstance().getBuildVersion());
+        + "&build-version=" + BuildInfo.getInstance().getBuildVersion(),
+        "application/json");
     JSONObject json = (JSONObject) json(result);
 
     assertContainsIgnoreSpace(
@@ -178,7 +184,8 @@ public class HtmlHandlerTest extends ServiceTestCase {
 
     Object result = json((String) requestGet(
         "?url=http://foo/bar.html&input-mime-type=" + inputMimeType
-        + "&build-version=" + BuildInfo.getInstance().getBuildVersion()));
+        + "&build-version=" + BuildInfo.getInstance().getBuildVersion(),
+        "application/json"));
     assertNotNull(result);
     assertTrue(result instanceof JSONObject);
     JSONObject json = (JSONObject) result;
@@ -263,7 +270,8 @@ public class HtmlHandlerTest extends ServiceTestCase {
 
     Object result = json((String) requestGet(
         "?url=http://foo/bar.html&input-mime-type=text/html"
-        + "&build-version=" + BuildInfo.getInstance().getBuildVersion()));
+        + "&build-version=" + BuildInfo.getInstance().getBuildVersion(),
+        "application/json"));
     assertTrue(result instanceof JSONObject);
     JSONObject json = (JSONObject) result;
 

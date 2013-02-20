@@ -120,6 +120,9 @@ public final class TestHttpServletResponse implements HttpServletResponse {
   public void setContentType(String arg0) {
     setHeader("Content-type", arg0);
   }
+  public String getContentType() {
+    return headers.get("content-type");
+  }
   public Object getOutputObject() {
     if (output == null) { return null; }
     if (output instanceof ByteArrayOutputStream) {
@@ -167,9 +170,6 @@ public final class TestHttpServletResponse implements HttpServletResponse {
     throw new UnsupportedOperationException();
   }
   public void setLocale(Locale arg0) {
-    throw new UnsupportedOperationException();
-  }
-  public String getContentType() {
     throw new UnsupportedOperationException();
   }
   public void setCharacterEncoding(String charset) {

@@ -27,19 +27,18 @@ public class CajolingServiceTest extends ServiceTestCase {
   private final String cajaBuildVersionParam =
       "&build-version=" + BuildInfo.getInstance().getBuildVersion();
 
-  @Override
   protected JSONObject requestGet(String queryString) throws Exception {
-    return (JSONObject) json((String) super.requestGet(queryString));
+    return (JSONObject) json((String) super.requestGet(queryString,
+        "application/json"));
   }
 
-  @Override
   protected JSONObject requestPost(
       String queryString,
       byte[] content,
       String contentType,
       String contentEncoding) throws Exception {
-    return (JSONObject) json((String)
-        super.requestPost(queryString, content, contentType, contentEncoding));
+    return (JSONObject) json((String) super.requestPost(queryString, content,
+        contentType, contentEncoding, "application/json"));
   }
 
   protected void assertNoError(JSONObject result)  {

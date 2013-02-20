@@ -79,15 +79,15 @@ public class ProxyHandler extends AbstractCajolingHandler {
           null,
           contentParams.b, mq, writer, true);
         writer.flush();
-        return Pair.pair(result.getContentType(), result.getCharSet());
-        }
-        return null;
-      } catch (UnsupportedEncodingException ex) {
-        return null;
-      } catch (UriFetcher.UriFetchException ex) {
-        return null;
-      } catch (IOException e) {
-        throw new UnsupportedContentTypeException();
+        return Pair.pair(contentParams.a.mimeType, Charsets.UTF_8.name());
       }
+      return null;
+    } catch (UnsupportedEncodingException ex) {
+      return null;
+    } catch (UriFetcher.UriFetchException ex) {
+      return null;
+    } catch (IOException e) {
+      throw new UnsupportedContentTypeException();
+    }
   }
 }
