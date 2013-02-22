@@ -646,3 +646,23 @@ testTopLevelVarsInCatch
     pass('testReferenceError');
   });
 </script>
+
+<div class="testcontainer" id="testVarInitializer">
+  testVarInitializer
+</div>
+<script>
+  var varInitializer1 = varInitializer1 || 33, varInitializer2;
+  for (var varInitializer3 = varInitializer3 || 66;
+    varInitializer3 <  69; varInitializer3++) {
+  }
+  varInitializer2 = 99;
+</script>
+<script>
+  jsunitRegister('testVarInitializer',
+                 function testVarInitializer() {
+    assertEquals(33, varInitializer1);
+    assertEquals(99, varInitializer2);
+    assertEquals(69, varInitializer3);
+    pass('testVarInitializer');
+  });
+</script>

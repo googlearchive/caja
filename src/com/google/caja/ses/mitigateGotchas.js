@@ -79,10 +79,11 @@
   /**
    * Rewrite var decls in place into assignments on the global object
    * turning variable declaration "var x, y = 2, z" to an expression
-   * statement: "global.x = global.x, global.y = 2, global.z = global.z"
+   * statement: 
+   * "this.x = this.x, this.y = this.y, this.y = 2, this.z = this.z"
    * The rewrite also rewrites var declarations that appear in a for-loop
    * initializer "for (var x = 1;;) {}" into an expression: 
-   * "for (this.x = 1;;) {}"
+   * "for (this.x = this.x, this.x = 1;;) {}"
    */
   function rewriteVars(node, parent) {
 
@@ -103,8 +104,16 @@
         'type': 'AssignmentExpression',
         'operator': '=',
         'left': globalVarAst(decl.id),
-        'right': decl.init || globalVarAst(decl.id)
+        'right': globalVarAst(decl.id)
       });
+      if (decl.init) {
+        assignments.push({
+          'type': 'AssignmentExpression',
+          'operator': '=',
+          'left': globalVarAst(decl.id),
+          'right': decl.init
+        });
+      }
     });
     if (parent.type === 'ForStatement') {
       node.type = 'SequenceExpression';
