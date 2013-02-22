@@ -115,7 +115,7 @@
 </p>
 <script type="text/javascript">
   jsunitRegister('testNegativeIndicesWorkaround',
-                 function testNegativeIndices() {
+                 function testNegativeIndicesWorkaround() {
     // Test potential weakness of the ES53 workaround for the negative index bug
     var i;
     function f(a, b, c) {}
@@ -139,6 +139,53 @@
       }
     })();
     pass('testNegativeIndicesWorkaround');
+  });
+</script>
+
+<p id="testMakeArrayLikeLength" class="testcontainer">
+  testMakeArrayLikeLength -- don't <em>blow up</em> on bad numbers
+</p>
+<script type="text/javascript">
+  function getPropertyNames(o) {
+    if (o === null) {
+      return [];
+    } else {
+      var names = getPropertyNames(Object.getPrototypeOf(o));
+      names.push.apply(names, Object.getOwnPropertyNames(o));
+      return names;
+    }
+  }
+
+  jsunitRegister('testMakeArrayLikeLength',
+                 function testMakeArrayLikeLength() {
+    // NOTE: This test may be considered fragile, because the bug it tested for
+    // only occurred on the *first* invocation of makeArrayLike.
+
+    var ArrayLike = cajaVM.makeArrayLike(-1);
+    var instance = ArrayLike(Object.create(ArrayLike.prototype),
+        function getLength() { return 0; },
+        function getItem(i) { return i; });
+
+    // ArrayLike implementations do not necessarily respond "properly" to the
+    // 'in' operator, so instead we seek to confirm that the instance does _not_
+    // have an excess of actual reified properties (that, or it is a proxy
+    // implementation which doesn't report even the properties it does have).
+    var props = getPropertyNames(instance);
+
+    // Make sure -1 isn't interpreted as 2^31 - 1. The actual consequence of
+    // the bug will likely be the browser bogging down and the test automation
+    // timing out while it attempts to create 2^31 - 1 properties; this assert
+    // is only intended to be correct-in-principle or correct in the event that
+    // the tests are running on a machine with lots of memory and CPU.
+    assertFalse('-1 blew up', props.indexOf('100000') >= 0);
+
+    // Make sure we aren't passing bogusly because some other code made normal
+    // use of makeArrayLike. (Yes, testing for [1], not [0], because the
+    // power-of-2 implementation always rounds up by at least 1.)
+    assertFalse('someone got here first with a length > 0',
+        props.indexOf('1') >= 0);
+
+    pass('testMakeArrayLikeLength');
   });
 </script>
 

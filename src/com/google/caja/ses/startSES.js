@@ -933,14 +933,10 @@ ses.startSES = function(global,
             return result;
           }
           function getOwnPN() {
-            var lenGetter = lengthMap.get(this);
-            if (!lenGetter) { return void 0; }
-            var len = lenGetter();
-            var result = ['length'];
-            for (var i = 0; i < len; ++i) {
-              result.push('' + i);
-            }
-            return result;
+            // Cannot return an appropriate set of numeric properties, because
+            // this proxy is the ArrayLike.prototype which is shared among all
+            // instances.
+            return ['length'];
           };
           function del(P) {
             P = '' + P;
@@ -972,6 +968,10 @@ ses.startSES = function(global,
           // See
           // http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
           function nextUInt31PowerOf2(v) {
+            if (!(isFinite(v) && v >= 0)) {
+              // avoid emitting nonsense
+              throw new RangeError(v + ' not >= 0');
+            }
             v &= 0x7fffffff;
             v |= v >> 1;
             v |= v >> 2;
@@ -985,6 +985,11 @@ ses.startSES = function(global,
           var BiggestArrayLike = void 0;
           var maxLen = 0;
           makeArrayLike = function(length) {
+            length = +length;
+            if (!(isFinite(length) && length >= 0)) {
+              // Avoid bad behavior from negative numbers or other bad input.
+              length = 0;
+            }
             if (!BiggestArrayLike || length > maxLen) {
               var len = nextUInt31PowerOf2(length);
               // Create a new ArrayLike constructor to replace the old one.
