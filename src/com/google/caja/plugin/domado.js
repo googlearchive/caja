@@ -132,6 +132,17 @@ var Domado = (function() {
   var domitaModules = {};
 
   domitaModules.proxiesAvailable = typeof Proxy !== 'undefined';
+  domitaModules.proxiesInterceptNumeric = domitaModules.proxiesAvailable &&
+      (function() {
+    var handler = {
+      getOwnPropertyDescriptor: function(name) {
+        return {value: name === '1' ? 'ok' : 'other'};
+      }
+    };
+    handler.getPropertyDescriptor = handler.getOwnPropertyDescriptor;
+    var proxy = Proxy.create(handler);
+    return proxy[1] === 'ok';
+  }());
 
   // The proxy facilities provided by Firefox and ES5/3 differ in whether the
   // proxy itself (or rather 'receiver') is the first argument to the 'get'
@@ -366,7 +377,7 @@ var Domado = (function() {
    * TODO(kpreid): Attempt to eliminate the need for uses of this. Some may be
    * due to a fixed bug in ES5/3.
    */
-  domitaModules.setOwn = function (object, propName, value) {
+  function setOwn(object, propName, value) {
     propName += '';
     // IE<=8, DOM objects are missing 'valueOf' property'
     var desc = domitaModules.getPropertyDescriptor(object, propName);
@@ -374,7 +385,40 @@ var Domado = (function() {
       enumerable: desc ? desc.enumerable : false,
       value: value
     });
-  };
+  }
+
+  /**
+   * Given that n is a string, is n an "array element" property name?
+   */
+  function isNumericName(n) {
+    return ('' + (+n)) === n;
+  }
+
+  function inherit(subCtor, superCtor, opt_writableProto) {
+    var inheritingProto = Object.create(superCtor.prototype);
+    // TODO(kpreid): The following should work but is a no-op on Chrome
+    // 24.0.1312.56, which breaks everything. Enable it when possible.
+    //Object.defineProperty(subCtor, 'prototype', {
+    //  value: inheritingProto,
+    //  writable: Boolean(opt_writableProto),
+    //  enumerable: false,
+    //  configurable: false
+    //});
+    // Workaround:
+    if (opt_writableProto) {
+      // TODO(kpreid): Wrongly enumerable, see above.
+      subCtor.prototype = inheritingProto;
+    } else {
+      setOwn(subCtor, 'prototype', inheritingProto);
+    }
+
+    Object.defineProperty(subCtor.prototype, 'constructor', {
+      value: subCtor,
+      writable: true,
+      enumerable: false,
+      configurable: true
+    });
+  }
 
   /**
    * Checks that a user-supplied callback is a function. Return silently if the
@@ -410,8 +454,6 @@ var Domado = (function() {
    * objects).
    */
   domitaModules.Confidence = (function () {
-    var setOwn = domitaModules.setOwn;
-
     function Confidence(typename) {
       var table = new WeakMap();
 
@@ -480,7 +522,7 @@ var Domado = (function() {
     return cajaVM.def(Confidence);
   })();
 
-  domitaModules.ExpandoProxyHandler = (function () {
+  var ExpandoProxyHandler = domitaModules.ExpandoProxyHandler = (function() {
     var getPropertyDescriptor = domitaModules.getPropertyDescriptor;
     var ProxyHandler = domitaModules.ProxyHandler;
 
@@ -662,6 +704,61 @@ var Domado = (function() {
     return cajaVM.def(ExpandoProxyHandler);
   })();
 
+  var CollectionProxyHandler = (function() {
+    /**
+     * Handler for a proxy which presents value properties derived from an
+     * external data source.
+     * 
+     * The subclass should implement .col_lookup(name) -> internalvalue,
+     * .col_evaluate(internalvalue) -> value, and .col_names() -> array.
+     */
+    function CollectionProxyHandler(target, editable, storage) {
+      ExpandoProxyHandler.call(this, target, editable, storage);
+    }
+    inherit(CollectionProxyHandler, ExpandoProxyHandler);
+    CollectionProxyHandler.prototype.getOwnPropertyDescriptor =
+        function (name) {
+      var lookup;
+      if (name !== 'ident___' && (lookup = this.col_lookup(name))) {
+        return {
+          configurable: true,  // proxy invariant check
+          enumerable: true,  // TODO(kpreid): may vary
+          writable: false,
+          value: this.col_evaluate(lookup)
+        };
+      } else {
+        return ExpandoProxyHandler.prototype.getOwnPropertyDescriptor
+            .call(this, name);
+      }
+    };
+    CollectionProxyHandler.prototype.get =
+        domitaModules.permuteProxyGetSet.getter(function(name) {
+      var lookup;
+      if (name !== 'ident___' && (lookup = this.col_lookup(name))) {
+        return this.col_evaluate(lookup);
+      } else {
+        return ExpandoProxyHandler.prototype.get.unpermuted.call(this, name);
+      }
+    });
+    CollectionProxyHandler.prototype.getOwnPropertyNames = function() {
+      var names =
+          ExpandoProxyHandler.prototype.getOwnPropertyNames.call(this);
+      names.push.apply(names, this.col_names());
+      return names;
+    };
+    CollectionProxyHandler.prototype['delete'] = function(name) {
+      var lookup;
+      if (name === 'ident___') {
+        return false;
+      } else if ((lookup = this.col_lookup(name))) {
+        return false;
+      } else {
+        return ExpandoProxyHandler.prototype['delete'].call(this, name);
+      }
+    };
+    return cajaVM.def(CollectionProxyHandler);
+  }());
+
   /** XMLHttpRequest or an equivalent on IE 6. */
   domitaModules.XMLHttpRequestCtor = function (makeDOMAccessible,
       XMLHttpRequest, ActiveXObject, XDomainRequest) {
@@ -728,7 +825,6 @@ var Domado = (function() {
       naiveUriPolicy,
       getBaseURL) {
     var Confidence = domitaModules.Confidence;
-    var setOwn = domitaModules.setOwn;
     var canHaveEnumerableAccessors = domitaModules.canHaveEnumerableAccessors;
     // See http://www.w3.org/TR/XMLHttpRequest/
 
@@ -1032,34 +1128,7 @@ var Domado = (function() {
     var Confidence = domitaModules.Confidence;
     var ProxyHandler = domitaModules.ProxyHandler;
     var ExpandoProxyHandler = domitaModules.ExpandoProxyHandler;
-    var setOwn = domitaModules.setOwn;
     var canHaveEnumerableAccessors = domitaModules.canHaveEnumerableAccessors;
-
-    function inherit(subCtor, superCtor, opt_writableProto) {
-      var inheritingProto = Object.create(superCtor.prototype);
-      // TODO(kpreid): The following should work but is a no-op on Chrome
-      // 24.0.1312.56, which breaks everything. Enable it when possible.
-      //Object.defineProperty(subCtor, 'prototype', {
-      //  value: inheritingProto,
-      //  writable: Boolean(opt_writableProto),
-      //  enumerable: false,
-      //  configurable: false
-      //});
-      // Workaround:
-      if (opt_writableProto) {
-        // TODO(kpreid): Wrongly enumerable, see above.
-        subCtor.prototype = inheritingProto;
-      } else {
-        setOwn(subCtor, 'prototype', inheritingProto);
-      }
-
-      Object.defineProperty(subCtor.prototype, 'constructor', {
-        value: subCtor,
-        writable: true,
-        enumerable: false,
-        configurable: true
-      });
-    }
 
     /**
      * For each enumerable p: d in propDescs, do the equivalent of
@@ -2062,7 +2131,27 @@ var Domado = (function() {
             return null;
         }
       }
-      
+
+      /**
+       * Given a guest-provided attribute name, produce the corresponding
+       * name to use in the actual DOM. Note that in the general case,
+       * attributes' values are also to be rewritten, so this should only be
+       * used for obtaining attribute <em>nodes<em>.
+       */
+      function rewriteAttributeName(feralElement, attribName) {
+        attribName = attribName.toLowerCase();
+        if (/__$/.test(attribName)) {
+          throw new TypeError('Attributes may not end with __');
+        }
+        var tagName = feralElement.tagName.toLowerCase();
+        var atype = htmlSchema.attribute(tagName, attribName).type;
+        if (atype === void 0) {
+          return cajaPrefix + attribName;
+        } else {
+          return attribName;
+        }
+      }
+
       // Implementation of HTML5 "HTML fragment serialization algorithm"
       // per http://www.whatwg.org/specs/web-apps/current-work/multipage/the-end.html#html-fragment-serialization-algorithm
       // as of 2012-09-11.
@@ -2540,6 +2629,30 @@ var Domado = (function() {
         return null;
       }
 
+      /**
+       * Is this node a descendant of a foreign node, and therefore to be
+       * omitted from node lists?
+       */
+      function isNodeToBeHidden(feralNode) {
+        if (!feralNode) return false;
+        for (
+            var ancestor = makeDOMAccessible(feralNode.parentNode);
+            ancestor !== null;
+            ancestor = makeDOMAccessible(ancestor.parentNode)) {
+          if (taming.hasTameTwin(ancestor)) {
+            if (taming.tame(ancestor) instanceof TameForeignNode) {
+              // Every foreign node is already tamed as foreign, by
+              // definition.
+              return true;
+            } else {
+              // Reached a node known to be non-foreign.
+              return false;
+            }
+          }
+        }
+        return false;
+      }
+
       domicile.tameNodeAsForeign = function(node) {
         return defaultTameNode(node, true);
       };
@@ -2633,24 +2746,9 @@ var Domado = (function() {
             var node = feralNodeList[feralIndex];
             expectation.push(node);
             makeDOMAccessible(node);
-            // Filter out foreign nodes' descendants
-            walkUp: for (
-                var ancestor = makeDOMAccessible(node.parentNode);
-                ancestor !== null;
-                ancestor = makeDOMAccessible(ancestor.parentNode)) {
-              if (taming.hasTameTwin(ancestor)) {
-                if (taming.tame(ancestor) instanceof TameForeignNode) {
-                  // Every foreign node is already tamed as foreign, by
-                  // definition.
-                  continue nodeListScan;
-                } else {
-                  // Reached a node known to be non-foreign.
-                  break walkUp;
-                }
-              }
+            if (!isNodeToBeHidden(node)) {
+              filteredCache.push(node);
             }
-            // Not a foreign node descendant, so include it in the list.
-            filteredCache.push(node);
           }
         }
         return cajaVM.def({
@@ -2721,9 +2819,12 @@ var Domado = (function() {
 
       // Implementation for DOM live lists (NodeList, etc).
       var arrayLikeCtorUpdaters = [];
-      function registerArrayLikeClass(constructor) {
+      /**
+       * @param opt_superCtor If provided, must be itself registered.
+       */
+      function registerArrayLikeClass(constructor, opt_superCtor) {
         function updater(ArrayLike) {
-          inertCtor(constructor, ArrayLike, undefined, true);
+          inertCtor(constructor, opt_superCtor || ArrayLike, undefined, true);
           Object.freeze(constructor.prototype);
         }
         arrayLikeCtorUpdaters.push(updater);
@@ -2739,7 +2840,7 @@ var Domado = (function() {
         return instance;
       }
 
-      function TameNodeList(nodeList, tameNodeCtor) {
+      function TameNodeList(nodeList, tameNodeCtor, opt_leafCtor) {
         var visibleList = new NodeListFilter(nodeList);
         function getItem(i) {
           i = +i;
@@ -2747,11 +2848,107 @@ var Domado = (function() {
           return tameNodeCtor(visibleList.item(i));
         }
         var getLength = visibleList.getLength.bind(visibleList);
-        var result = constructArrayLike(TameNodeList, getItem, getLength);
+        var result = constructArrayLike(
+            opt_leafCtor || TameNodeList,  // allow inheritance
+            getItem, getLength);
         return result;
       }
       registerArrayLikeClass(TameNodeList);
       // not def'd - prototype is replaced
+
+      // NamedNodeMap is a NodeList + live string-named properties; therefore we
+      // can't just use ArrayLike.
+      var TameNamedNodeMap, namedNodeMapsAreLive;
+      if (domitaModules.proxiesAvailable &&
+          domitaModules.proxiesInterceptNumeric) {
+        namedNodeMapsAreLive = true;
+        /**
+         * @param {NamedNodeMap} feral
+         * @param {function} mapping.tame (feral node in map) -> tame node
+         * @param {function} mapping.untameName (guest's view of name) -> host's
+         *     view of name (i.e. virtualized)
+         * @param {function} mapping.tameGetName (tame node in map) -> node's
+         *     name in map
+         */
+        TameNamedNodeMap = function TameNamedNodeMap1_(feral, mapping) {
+          var visibleList = new NodeListFilter(feral);
+          definePropertiesAwesomely(this, {
+            length: {
+              get: cajaVM.def(visibleList.getLength.bind(visibleList))
+            },
+            item: {
+              value: cajaVM.def(function(i) {
+                return mapping.tame(visibleList.item(i));
+              })
+            }
+          });
+          Object.freeze(this);
+          var proxy = Proxy.create(
+              new NamedNodeMapProxyHandler(feral, mapping, visibleList, this),
+              this);
+          return proxy;
+        };
+        // TODO(kpreid): Reorder code so exporting the name works
+        inertCtor(TameNamedNodeMap, Object /*, 'NamedNodeMap' */);
+        cajaVM.def(TameNamedNodeMap);
+        var NamedNodeMapProxyHandler = function NamedNodeMapProxyHandler_(
+              feral, mapping, visibleList, target) {
+          this.feral = feral;
+          this.mapping = mapping;
+          this.visibleList = visibleList;
+          CollectionProxyHandler.call(this, target, true, {});
+        };
+        inherit(NamedNodeMapProxyHandler, CollectionProxyHandler);
+        NamedNodeMapProxyHandler.prototype.col_lookup = function(name) {
+          if (isNumericName(name)) {
+            return this.visibleList.item(+name);
+          } else {
+            var feral = makeDOMAccessible(this.feral.getNamedItem(
+                this.mapping.untameName(name)));
+            if (!isNodeToBeHidden(feral)) {
+              return feral;
+            } else {
+              return null;
+            }
+          }
+        };
+        NamedNodeMapProxyHandler.prototype.col_evaluate = function(feralNode) {
+          return this.mapping.tame(feralNode);
+        };
+        NamedNodeMapProxyHandler.prototype.col_names = function() {
+          // actual browsers don't expose the named properties here, so we don't
+          var array = [];
+          var n = this.visibleList.getLength();
+          for (var i = 0; i < n; i++) {
+            array.push(String(i));
+          }
+          return array;
+        };
+        cajaVM.def(NamedNodeMapProxyHandler);
+      } else {
+        namedNodeMapsAreLive = false;
+        /**
+         * See documentation for other implementation above.
+         */
+        TameNamedNodeMap = function TameNamedNodeMap2_(feral, mapping) {
+          // TODO(kpreid): NamedNodeMap is not normally a subtype of NodeList.
+          // I'm just reusing implementation here.
+          var self = TameNodeList.call(this, feral, mapping.tame.bind(mapping),
+              TameNamedNodeMap);
+          for (var i = self.length - 1; i >= 0; i--) {
+            var tameNode = self[i];
+            Object.defineProperty(self, mapping.tameGetName(tameNode), {
+              configurable: false,
+              enumerable: false,  // per browser behavior
+              writable: false,
+              value: tameNode
+            });
+          }
+          Object.freeze(self);
+          return self;
+        };
+        registerArrayLikeClass(TameNamedNodeMap, TameNodeList);
+      }
 
       function TameOptionsList(nodeList, opt_tameNodeCtor) {
         var visibleList = new NodeListFilter(nodeList);
@@ -3230,17 +3427,24 @@ var Domado = (function() {
             return fakeNodeList([]);
           }
         }),
-        attributes: NP.TameMemoIf(nodeListsAreLive, 'attributes', function(f) {
+        attributes: NP.TameMemoIf(namedNodeMapsAreLive, 'attributes',
+            function(feralMap) {
           var privates = np(this);
           if (privates.policy.attributesVisible) {
-            var thisNode = privates.feral;
-            var tameNodeCtor = function(node) {
-              return new TameBackedAttributeNode(node, thisNode);
-            };
-            // TODO(kpreid): There is no test which caught a previous
-            // editability policy failure here
-            return new TameNodeList(f, tameNodeCtor);
+            var feralOwnerElement = privates.feral;
+            return new TameNamedNodeMap(feralMap, {
+              tame: function(feralNode) {
+                return tameAttributeNode(feralNode, feralOwnerElement);
+              },
+              tameGetName: function(tameNode) {
+                return tameNode.name;
+              },
+              untameName: function(name) {
+                return rewriteAttributeName(feralOwnerElement, name);
+              }
+            });
           } else {
+            // TODO(kpreid): no namedItem interface
             return fakeNodeList([]);
           }
         })
@@ -3428,12 +3632,35 @@ var Domado = (function() {
       inertCtor(TameCommentNode, TameBackedNode, 'Comment');
       cajaVM.def(TameCommentNode);  // and its prototype
 
+      // Note that our tame attribute nodes bake in the notion of what element
+      // they belong to (in order to implement virtualization policy).
+      // Correspondingly, we do not implement createAttribute or
+      // setAttributeNode, so it is not possible to associate an attribute with
+      // a different element.
+      //
+      // In the event that we need to change this, note that not all browsers
+      // implement .ownerElement on attribute nodes, and that there is currently
+      // (2013-02-26) an effort to deprecate attributes-as-nodes, according to
+      // MDN <https://developer.mozilla.org/en-US/docs/DOM/Attr>.
+      function tameAttributeNode(node, ownerElement) {
+        if (node === null || node === undefined) {
+          return node;
+        } else if (taming.hasTameTwin(node)) {
+          return taming.tame(node);
+        } else {
+          var self = new TameBackedAttributeNode(node, ownerElement);
+          taming.tamesTo(node, self);
+          return self;
+        }
+      }
       /**
        * Plays the role of an Attr node for TameElement objects.
        */
       function TameBackedAttributeNode(node, ownerElement) {
-        if (ownerElement === undefined) throw new Error(
-            "ownerElement undefined");
+        node = makeDOMAccessible(node);
+        if ('ownerElement' in node && node.ownerElement !== ownerElement) {
+          throw new Error('Inconsistent ownerElement');
+        }
         TameBackedNode.call(this, node,
             np(defaultTameNode(ownerElement)).policy);
         np(this).ownerElement = ownerElement;
@@ -3443,7 +3670,7 @@ var Domado = (function() {
         var clone = bridal.cloneNode(np(this).feral, Boolean(deep));
         // From http://www.w3.org/TR/DOM-Level-2-Core/core.html#ID-3A0ED0A4
         //   "Note that cloning an immutable subtree results in a mutable copy"
-        return new TameBackedAttributeNode(clone, np(this).ownerElement);
+        return tameAttributeNode(clone, np(this).ownerElement);
       });
       var nameAccessor = {
         enumerable: true,
@@ -3592,20 +3819,14 @@ var Domado = (function() {
       TameElement.prototype.getAttributeNode = nodeMethod(function (name) {
         if (!np(this).policy.attributesVisible) { return null; }
         var feral = np(this).feral;
-        var hostDomNode = feral.getAttributeNode(name);
-        if (hostDomNode === null) { return null; }
-        return new TameBackedAttributeNode(hostDomNode, feral);
+        return tameAttributeNode(
+            feral.getAttributeNode(rewriteAttributeName(feral, name)),
+            feral);
       });
       TameElement.prototype.hasAttribute = nodeMethod(function (attribName) {
         var feral = np(this).feral;
-        attribName = String(attribName).toLowerCase();
-        var tagName = feral.tagName.toLowerCase();
-        var atype = htmlSchema.attribute(tagName, attribName).type;
-        if (atype === void 0) {
-          return bridal.hasAttribute(feral, cajaPrefix + attribName);
-        } else {
-          return bridal.hasAttribute(feral, attribName);
-        }
+        return bridal.hasAttribute(feral,
+            rewriteAttributeName(feral, attribName));
       });
       TameElement.prototype.setAttribute = nodeMethod(
           function (attribName, value) {
@@ -3648,17 +3869,7 @@ var Domado = (function() {
       TameElement.prototype.removeAttribute = nodeMethod(function (attribName) {
         var feral = np(this).feral;
         np(this).policy.requireEditable();
-        attribName = String(attribName).toLowerCase();
-        if (/__$/.test(attribName)) {
-          throw new TypeError('Attributes may not end with __');
-        }
-        var tagName = feral.tagName.toLowerCase();
-        var atype = htmlSchema.attribute(tagName, attribName).type;
-        if (atype === void 0) {
-          feral.removeAttribute(cajaPrefix + attribName);
-        } else {
-          feral.removeAttribute(attribName);
-        }
+        feral.removeAttribute(rewriteAttributeName(feral, attribName));
       });
       TameElement.prototype.getElementsByTagName = nodeMethod(
           function(tagName) {
@@ -4624,43 +4835,30 @@ var Domado = (function() {
       defineTrivialElement('HTMLDivElement');
 
       function FormElementAndExpandoProxyHandler(target, editable, storage) {
-        ExpandoProxyHandler.call(this, target, editable, storage);
+        CollectionProxyHandler.call(this, target, editable, storage);
       }
-      inherit(FormElementAndExpandoProxyHandler, ExpandoProxyHandler);
-      FormElementAndExpandoProxyHandler.prototype.getOwnPropertyDescriptor =
-          function (name) {
-        if (name !== 'ident___' &&
-            Object.prototype.hasOwnProperty.call(this.target.elements, name)) {
-          return Object.getOwnPropertyDescriptor(this.target.elements, name);
-        } else {
-          return ExpandoProxyHandler.prototype.getOwnPropertyDescriptor
-              .call(this, name);
-        }
+      inherit(FormElementAndExpandoProxyHandler, CollectionProxyHandler);
+      FormElementAndExpandoProxyHandler.prototype.col_lookup = function(name) {
+        return makeDOMAccessible(
+            makeDOMAccessible(np(this.target).feral.elements).namedItem(name));
       };
-      FormElementAndExpandoProxyHandler.prototype.get =
-          domitaModules.permuteProxyGetSet.getter(function(name) {
-        if (name !== 'ident___' &&
-            Object.prototype.hasOwnProperty.call(this.target.elements, name)) {
-          return this.target.elements[name];
+      FormElementAndExpandoProxyHandler.prototype.col_evaluate =
+          function(nodeOrList) {
+        if (taming.hasTameTwin(nodeOrList)) {
+          return taming.tame(nodeOrList);
+        } else if ('nodeType' in nodeOrList) {
+          return defaultTameNode(nodeOrList);
+        } else if ('length' in nodeOrList) {
+          var tameList = new TameNodeList(nodeOrList, defaultTameNode);
+          taming.tamesTo(nodeOrList, tameList);
+          return tameList;
         } else {
-          return ExpandoProxyHandler.prototype.get.unpermuted.call(this, name);
+          throw new Error('could not interpret form.elements result');
         }
-      });
-      FormElementAndExpandoProxyHandler.prototype.getOwnPropertyNames =
-          function() {
+      }
+      FormElementAndExpandoProxyHandler.prototype.col_names = function() {
         // TODO(kpreid): not quite right result set
         return Object.getOwnPropertyNames(this.target.elements);
-      };
-      FormElementAndExpandoProxyHandler.prototype['delete'] =
-          function(name) {
-        if (name === "ident___") {
-          return false;
-        } else if (Object.prototype.hasOwnProperty.call(
-                       this.target.elements, name)) {
-          return false;
-        } else {
-          return ExpandoProxyHandler.prototype['delete'].call(this, name);
-        }
       };
       cajaVM.def(FormElementAndExpandoProxyHandler);
 

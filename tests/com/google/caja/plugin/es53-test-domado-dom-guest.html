@@ -479,6 +479,57 @@ document.write(
   });
 </script>
 
+<div id="testAttributesList" class="testcontainer">
+  Test element.attributes
+</div>
+<script type="text/javascript">
+  jsunitRegister('testAttributesList',
+                 function testAttributesList() {
+    var el = document.getElementById('testAttributesList');
+    var attributes = el.attributes;
+
+    var name0 = 'id';
+    var name1 = 'class';
+    var attr0 = el.getAttributeNode('id');
+    var attr1 = el.getAttributeNode('class');
+    if (attributes[0] === attr1) {
+      var t = attr0;
+      attr0 = attr1;
+      attr1 = t;
+      t = name0;
+      name0 = name1;
+      name1 = t;
+    }
+
+    assertEquals('length', 2, attributes.length);
+    assertEquals('attr0 (num)', attr0, attributes[0]);
+    assertEquals('attr1 (num)', attr1, attributes[1]);
+    assertEquals('off end (num)', undefined, attributes[2]);
+    assertEquals('attr0 (item)', attr0, attributes.item(0));
+    assertEquals('attr1 (item)', attr1, attributes.item(1));
+    assertEquals('off end (item)', undefined, attributes.item(2));
+    assertEquals('attr0 (name)', attr0, attributes[name0]);
+    assertEquals('attr1 (name)', attr1, attributes[name1]);
+
+    // Testing both mutation and virtualized attribute names
+    var name2 = 'flibble';
+    el.setAttribute(name2, 'bar');
+    var attr2 = el.getAttributeNode(name2);
+
+    // We cannot always support live-updating lists; even where we can support
+    // them for numeric arrays, we can't for named entries. If that ever
+    // changes, replace this with an assertion that the object is the same.
+    attributes = el.attributes;
+
+    assertEquals('length after add', 3, attributes.length);
+    assertEquals('attr2 (num)', attr2, attributes[2]);
+    assertEquals('attr2 (item)', attr2, attributes.item(2));
+    assertEquals('attr2 (name)', attr2, attributes[name2]);
+
+    pass('testAttributesList');
+  });
+</script>
+
 <p id="testPropertyAttributeInteraction" class="testcontainer">
   <span id="testPropertyAttributeInteraction-label">
     Test property attribute interaction
@@ -2400,7 +2451,8 @@ After
 </script>
 
 <p id="testAttributeNodes" class="testcontainer">
-  <input id="testAttributeNodes-onclick" type="checkbox" onclick="return 0;">
+  <input id="testAttributeNodes-onclick" type="checkbox" onclick="return 0;"
+      aardvarks="yes">
   Test Attribute Nodes
 </p>
 <script type="text/javascript">
@@ -2415,6 +2467,11 @@ After
     assertEquals('id', attrNode.name);
 
     assertNoAttr(cb.getAttributeNode('name'));
+
+    var virtAttrNode = cb.getAttributeNode('aardvarks');
+    assertEquals('aardvarks', virtAttrNode.name);
+    assertEquals('yes', virtAttrNode.value);
+    assertNoAttr(cb.getAttributeNode('data-caja-aardvarks'));
 
     function assertNoAttr(attrNode) {
       if (attrNode === null) { return; }

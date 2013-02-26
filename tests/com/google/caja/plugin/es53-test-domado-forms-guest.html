@@ -76,12 +76,13 @@
     // form element. This access is HTMLCollection-like, but not
     // the full HTMLCollection API (it does not include the
     // namedItem() method).
+    // TODO(kpreid): Fix that.
 
     // If there exist multiple elements with the same name, the
     // result of this access must be a DOM NodeList.
 
-    assertEquals(3, f.a.length);
-    assertEquals(3, f.b.length);
+    assertEquals('testFormElements.a.length', 3, f.a.length);
+    assertEquals('testFormElements.b.length', 3, f.b.length);
     assertEquals('INPUT', f.a[0].tagName);
     assertEquals('BUTTON', f.b[0].tagName);
     assertEquals('INPUT', f.a.item(0).tagName);
