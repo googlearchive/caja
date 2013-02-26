@@ -397,7 +397,7 @@ function createExtraImportsForTesting(frameGroup, frame) {
 
   if (frame.div) {
     standardImports.$ = frame.tame(frame.markFunction(function(id) {
-      return frame.imports.document.getElementById(id);
+      return frame.untame(frame.imports.document.getElementById(id));
     }));
   }
   

@@ -174,3 +174,19 @@ jsunitRegister('testGuestConstructedObjectMethods',
   // This test is a placeholder in case we add support for the condition.
   pass('testGuestConstructedObjectMethods');
 });
+
+jsunitRegister('testMembraneViolation',
+               function testMembraneViolation() {
+  expectFailure(function() {
+    return tamedApi.tamedHostPureFunction('a ? "ok" : "absent";',
+        getFeralTestObject());
+  }, 'feral object on tame side', function(e) {
+    return /Feral object found on tame side/.test(e.message);
+  });
+  expectFailure(function() {
+    return tamedApi.tamedHostPureFunction('getTamedTestObject();');
+  }, 'tame object on feral side', function(e) {
+    return /Tame object found on feral side/.test(e.message);
+  });
+  pass('testMembraneViolation');
+});

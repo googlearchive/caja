@@ -40,21 +40,6 @@
     var api = {};
 
     ////////////////////////////////////////////////////////////////////////
-    // TEST OBJECT FOR PROBING THE TAMING
-
-    var testObject = {};
-
-    var getFeralTestObject = function() {
-      return testObject;
-    };
-    var getTamedTestObject = function() {
-      frame.tame(testObject);  // Ensure done if not already
-      return testObject.TAMED_TWIN___;
-    };
-    getFeralTestObject.i___ = getFeralTestObject;
-    getTamedTestObject.i___ = getTamedTestObject;
-
-    ////////////////////////////////////////////////////////////////////////
     // ACCESS TO OBJECTS IN TAMING FRAME
 
     var getTamingFrameObject = function(expr) {
@@ -375,9 +360,6 @@
 
     extraImports.tamingFrameUSELESS =
         frame.USELESS;
-
-    extraImports.getFeralTestObject = getFeralTestObject;
-    extraImports.getTamedTestObject = getTamedTestObject;
 
     extraImports.getTamingFrameObject = getTamingFrameObject;
 

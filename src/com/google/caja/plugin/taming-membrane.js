@@ -255,7 +255,10 @@ function TamingMembrane(privilegedAccess, schema) {
       return tameArray(f);
     }
     if (tameByFeral.has(f)) { return tameByFeral.get(f); }
-    if (privilegedAccess.isDefinedInCajaFrame(f)) { return f; }
+    if (feralByTame.has(f)) {
+      throw new TypeError('Tame object found on feral side of taming membrane: '
+          + f + '. The membrane has previously been compromised.');
+    }
     var t = void 0;
     if (ftype === 'object') {
       var ctor = privilegedAccess.directConstructor(f);
@@ -552,6 +555,10 @@ function TamingMembrane(privilegedAccess, schema) {
       return untameArray(t);
     }
     if (feralByTame.has(t)) { return feralByTame.get(t); }
+    if (tameByFeral.has(t)) {
+      throw new TypeError('Feral object found on tame side of taming membrane: '
+          + t + '. The membrane has previously been compromised.');
+    }
     if (!privilegedAccess.isDefinedInCajaFrame(t)) {
       throw new TypeError('Host object leaked without being tamed');
     }

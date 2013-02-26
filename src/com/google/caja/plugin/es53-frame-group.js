@@ -237,8 +237,16 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
     // and having side effects on our arguments is best avoided.
     var uriPolicyWrapper = ___.whitelistAll({
       rewrite: ___.markFunc(function (uri, uriEffect, loaderType, hints) {
+        if (uri) {
+          // Make URI (a constructed object) exported across the membrane.
+          // Paranoia: using our non-cajoled copy of uri.js in this frame
+          // (as opposed to just uri.clone()), so that we don't expose as much
+          // of es53 to the host.
+          frameTamingMembrane.tamesTo(URI.parse(uri.toString()), uri);
+        }
+
         return frameTamingMembrane.tame(uriPolicy.rewrite(
-          uri, uriEffect, loaderType, hints));
+          frameTamingMembrane.untame(uri), uriEffect, loaderType, hints));
       })
     });
 
