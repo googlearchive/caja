@@ -239,3 +239,22 @@ jsunitRegister('testErrorRecovery', function testErrorRecovery() {
       'font:1:2;color:red');
   jsunit.pass();
 });
+
+jsunitRegister("testAttributeSelectors",
+               function testAttributeSelectors() {
+  assertParsedCssStylesheet(
+      ['startStylesheet', [],
+       'startRuleset',    [['a', '[', 'href', ']']],
+       'declaration',     ['color', ['blue']],
+       'endRuleset',      [],
+       'endStylesheet',   []],
+      'a[href] { color: blue }');
+  assertParsedCssStylesheet(
+      ['startStylesheet', [],
+       'startRuleset',    [['input', '.', 'cl:ass',
+                            '[', 'xml:lang', ' ', '~=', ' ', '"en:us"', ']']],
+       'declaration',     ['color', ['blue']],
+       'endRuleset',      [],
+       'endStylesheet',   []],
+      'input.cl\\:ass[xml\\:lang ~= "en:us"] { color: blue }');
+});

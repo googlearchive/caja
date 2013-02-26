@@ -219,3 +219,16 @@ jsunitRegister('testBorder',
   assertEquals(expect, tokens.join(':'));
   jsunit.pass();
 });
+
+jsunitRegister('testColonsInSelectors',
+               function testColonsInSelectors() {
+  var source = 'input.cl\\:a\\3a ss[type = "text"], input#foo\\:bar';
+  var tokens = lexCss(source);
+  var sanitized = sanitizeCssSelectors(
+    tokens, 'sfx', function(el, args) { return { tagName: el }; });
+  assertArrayEquals(
+      [['.sfx input.cl\\:a\\:ss[type="text"]',
+        '.sfx input#foo\\:bar-sfx'], []],
+    sanitized);
+  jsunit.pass();
+});

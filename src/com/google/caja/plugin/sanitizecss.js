@@ -28,6 +28,7 @@
  * \@requires CSS_PROP_BIT_Z_INDEX
  * \@requires cssSchema
  * \@requires decodeCss
+ * \@requires html4
  * \@requires URI
  * \@overrides window
  * \@requires parseCssStylesheet
@@ -293,10 +294,16 @@ function sanitizeCssSelectors(selectors, suffix, tagPolicy) {
   var historyInsensitiveSelectors = [];
 
   // Remove any spaces that are not operators.
-  var k = 0, i;
+  var k = 0, i, inBrackets = 0, tok;
   for (i = 0; i < selectors.length; ++i) {
-    if (!(selectors[i] == ' '
-          && (selectors[i-1] == '>' || selectors[i+1] == '>'))) {
+    tok = selectors[i];
+
+    if (
+          (tok == '(' || tok == '[') ? (++inBrackets, true)
+        : (tok == ')' || tok == ']') ? (inBrackets && --inBrackets, true)
+        : !(selectors[i] == ' '
+            && (inBrackets || selectors[i-1] == '>' || selectors[i+1] == '>'))
+      ) {
       selectors[k++] = selectors[i];
     }
   }
@@ -307,7 +314,7 @@ function sanitizeCssSelectors(selectors, suffix, tagPolicy) {
   // affect others.
   var n = selectors.length, start = 0;
   for (i = 0; i < n; ++i) {
-    if (selectors[i] == ',') {
+    if (selectors[i] === ',') {  // TODO: ignore ',' inside brackets.
       processSelector(start, i);
       start = i+1;
     }
@@ -346,12 +353,11 @@ function sanitizeCssSelectors(selectors, suffix, tagPolicy) {
     out.push(elSelector);
 
     function processElementSelector(start, end, last) {
-      var debugStart = start, debugEnd = end;
-      // Split the element selector into three parts.
-      // DIV.foo#bar:hover
-      //    ^       ^
-      // el classes pseudo
-      var element, classId, pseudoSelector, tok;
+      // Split the element selector into four parts.
+      // DIV.foo#bar[href]:hover
+      //    ^       ^     ^
+      // el classes attrs pseudo
+      var element, classId, attrs, pseudoSelector, tok;
       element = '';
       if (start < end) {
         tok = selectors[start];
@@ -389,6 +395,37 @@ function sanitizeCssSelectors(selectors, suffix, tagPolicy) {
         }
         ++start;
       }
+      attrs = '';
+      while (start < end && selectors[start] === '[') {
+        ++start;
+        var attr = selectors[start++];
+        var atype = html4.ATTRIBS[element + '::' + attr];
+        if (atype !== +atype) { atype = html4.ATTRIBS['*::' + attr]; }
+        if (atype !== +atype) { return null; }
+
+        var op = '', value = '';
+        if (/^[~^$*|]?=$/.test(selectors[start])) {
+          op = selectors[start++];
+          value = selectors[start++];
+        }
+        if (selectors[start++] !== ']') { return null; }
+        // TODO: replace this with a lookup table that also provides a
+        // function from operator and value to testable value.
+        switch (atype) {
+          case html4.atype['NONE']:
+          case html4.atype['URI']:
+          case html4.atype['URI_FRAGMENT']:
+          case html4.atype['ID']:
+          case html4.atype['IDREF']:
+          case html4.atype['IDREFS']:
+          case html4.atype['GLOBAL_NAME']:
+          case html4.atype['LOCAL_NAME']:
+          case html4.atype['CLASSES']:
+            if (op && atype !== html4.atype['NONE']) { return null; }
+            attrs += '[' + attr + op + value + ']';
+            break;
+        }
+      }
       pseudoSelector = '';
       if (start < end && selectors[start] === ':') {
         tok = selectors[++start];
@@ -407,7 +444,11 @@ function sanitizeCssSelectors(selectors, suffix, tagPolicy) {
         }
       }
       if (start === end) {
-        return element + classId + pseudoSelector;
+        // ':' is allowed in identifiers, but is also the
+        // pseudo-selector separator, so ':' in preceding parts needs to
+        // be escaped.
+        return (element + classId).replace(/[^ .*#\w-]/g, '\\$&')
+            + attrs + pseudoSelector;
       }
       return null;
     }
@@ -468,15 +509,15 @@ var sanitizeStylesheet = (function () {
    *    If suffix is {@code "sfx"}, the selector
    *    {@code ["a", "#foo", " ", "b", ".bar"]} will be namespaced to
    *    {@code [".sfx", " ", "a", "#foo-sfx", " ", "b", ".bar"]}.
-   * @param {function(string, Array.<string>): ?Array.<string>} tagPolicy
-   *     As in html-sanitizer, used for rewriting element names.
-   * @param {function(string, string)} opt_naiveUriRewriter maps URLs of media
+   * @param {function(string, string)} naiveUriRewriter maps URLs of media
    *    (images, sounds) that appear as CSS property values to sanitized
    *    URLs or null if the URL should not be allowed as an external media
    *    file in sanitized CSS.
+   * @param {function(string, Array.<string>): ?Array.<string>} tagPolicy
+   *     As in html-sanitizer, used for rewriting element names.
    */
   return function /*sanitizeStylesheet*/(
-    baseUri, cssText, suffix, opt_naiveUriRewriter, tagPolicy) {
+    baseUri, cssText, suffix, naiveUriRewriter, tagPolicy) {
     var safeCss = void 0;
     // A stack describing the { ... } regions.
     // Null elements indicate blocks that should not be emitted.
@@ -607,7 +648,7 @@ var sanitizeStylesheet = (function () {
               var schema = cssSchema[property];
               if (schema) {
                 sanitizeCssProperty(property, schema, valueArray,
-                  opt_naiveUriRewriter, baseUri);
+                  naiveUriRewriter, baseUri);
                 if (valueArray.length) {
                   safeCss.push(property, ':', valueArray.join(' '), ';');
                 }
