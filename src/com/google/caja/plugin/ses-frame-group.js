@@ -14,6 +14,7 @@
 
 /**
  * @provides SESFrameGroup
+ * @requires cajaFrameTracker
  * @requires Domado
  * @requires GuestManager
  * @requires Q
@@ -42,7 +43,7 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
       getOwnPropertyNames: getOwnPropertyNames,
       directConstructor: directConstructor,
       getObjectCtorFor: getObjectCtorFor,
-      isDefinedInCajaFrame: isDefinedInCajaFrame,
+      isDefinedInCajaFrame: cajaFrameTracker.isDefinedInCajaFrame,
       isES5Browser: true,
       eviscerate: undefined,
       banNumerics: function() {},
@@ -179,40 +180,12 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
     return r;
   }
 
-  function inheritsFromPrototype(o, proto) {
-    var ot = typeof o;
-    if (ot !== 'object' && ot !== 'function') {
-      return false;  // primitive
-    }
-    while (o !== null) {
-      if (o === proto) { return true; }
-      o = Object.getPrototypeOf(o);
-    }
-    return false;
-  }
-
-  function isDefinedInCajaFrame(o) {
-    var result = false;
-    for (var i = 0; i < feralWin.frames.length; i++) {
-      var w = feralWin.frames[i];
-      var isCajaFrame = false;
-      try {
-        isCajaFrame =
-            (!!w.___ && !!w.cajaVM) ||   // ES53 frame
-            (!!w.ses && !!w.cajaVM);     // SES frame
-      } catch (e) {}
-      if (isCajaFrame && inheritsFromPrototype(o, w.Object.prototype)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   //----------------
 
   function makeES5Frame(div, uriPolicy, es5ready, domOpts) {
     var divs = cajaInt.prepareContainerDiv(div, feralWin, domOpts);
     guestMaker.make(function (guestWin) {
+      cajaFrameTracker.addGuestWindow(guestWin);
       var frameTamingSchema = TamingSchema(tamingHelper);
       var frameTamingMembrane =
           TamingMembrane(tamingHelper, frameTamingSchema.control);
@@ -353,14 +326,15 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
         opt_runDone(result);
       }
     }, function (failure) {
-      config.log('Failed to load guest content: ' + failure);
+      config.console.log('Failed to load guest content: ' + failure);
     });
   }
 
   function onerror(message, source, lineNum) {
-    config.log('Uncaught script error: ' + message +
-               ' in source: "' + source +
-               '" at line: ' + lineNum);
+    config.console.log(
+        'Uncaught script error: ' + message +
+        ' in source: "' + source +
+        '" at line: ' + lineNum);
   }
 
   /**

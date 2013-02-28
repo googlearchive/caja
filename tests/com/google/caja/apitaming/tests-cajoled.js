@@ -89,7 +89,7 @@
     caja.initialize({
       cajaServer: getUrlParam('cajaServer'),
       forceES5Mode: (getUrlParam('forceES5Mode') === 'true'),
-      debug: true
+      debug: (getUrlParam('debug') === 'true')
     });
 
     for (var i = 0; i < tests.length; i++) {

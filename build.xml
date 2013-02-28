@@ -936,6 +936,7 @@ For help on building and testing Caja, see:
       <input file="${src.caja}/plugin/taming-frame.js"/>
       <input file="${src.caja}/flash/caja-flash.js"/>
       <input file="${src.caja}/plugin/guest-manager.js"/>
+      <input file="${src.caja}/plugin/caja-frame-tracker.js"/>
       <input file="${src.caja}/plugin/es53-frame-group.js"/>
       <input file="${src.caja}/plugin/caja-iframe-done.js"/>
     </transform>
@@ -1053,6 +1054,7 @@ For help on building and testing Caja, see:
       <input file="${src.caja}/ses-promise.js"/>
       <input file="${src.caja}/plugin/cajoling-service-client.js"/>
       <input file="${src.caja}/plugin/guest-manager.js"/>
+      <input file="${src.caja}/plugin/caja-frame-tracker.js"/>
       <input file="${src.caja}/plugin/ses-frame-group.js"/>
       <input file="${src.caja}/plugin/caja-iframe-done.js"/>
     </transform>

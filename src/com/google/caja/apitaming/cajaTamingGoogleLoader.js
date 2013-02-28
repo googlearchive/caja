@@ -18,16 +18,10 @@
  * are in the namespace "google.*") for use by guest code.
  *
  * @author ihab.awad@gmail.com
- * @requires console, document, JSON
+ * @requires document, JSON
  * @overrides caja, google, window
  */
 caja.tamingGoogleLoader = (function() {
-
-  function log() {
-    var s = '';
-    for (var i = 0; i < arguments.length; i++) { s += arguments[i] + ' '; }
-    console.log(s);
-  }
 
   function StringMap() {
     var o;
@@ -81,7 +75,7 @@ caja.tamingGoogleLoader = (function() {
           try {
             cbs[i].call({});
           } catch (e) {
-            log('Event handler threw: ', e);
+            caja.console.log('Event handler threw: ', e);
           }
         }
       }
@@ -111,21 +105,21 @@ caja.tamingGoogleLoader = (function() {
     }
 
     function copyArray(o) {
-      log('copyArray(' + o + ')');
+      caja.console.log('copyArray(' + o + ')');
       var result = [];
       for (var i = 0; i < o.length; i++) {
-        log('   [' + i + ']');
+        caja.console.log('   [' + i + ']');
         result[i] = copyMixed(o[i]);
       }
       return result;
     }
 
     function copyObject(o) {
-      log('copyObject(' + o + ')');
+      caja.console.log('copyObject(' + o + ')');
       var result = {};
       for (var key in o) {
         if (o.hasOwnProperty(key) && !/__$/.test(key)) {
-          log('   .' + key);
+          caja.console.log('   .' + key);
           result[key] = copyMixed(o[key]);
         }
       }
@@ -133,7 +127,7 @@ caja.tamingGoogleLoader = (function() {
     }
 
     function copyMixed(o) {
-      log('copyMixed(' + o + ')');
+      caja.console.log('copyMixed(' + o + ')');
       switch (type(o)) {
         case 'primitive':
           return o;
@@ -147,11 +141,11 @@ caja.tamingGoogleLoader = (function() {
     }
 
     function copyOneLevel(o) {
-      log('copyOneLevel(' + o + ')');
+      caja.console.log('copyOneLevel(' + o + ')');
       var result = {};
       for (var key in o) {
         if (o.hasOwnProperty(key) && !/__$/.test(key)) {
-          log('   .' + key);
+          caja.console.log('   .' + key);
           result[key] = o[key];
         }
       }
@@ -262,14 +256,14 @@ caja.tamingGoogleLoader = (function() {
 
     function grantRead(o, k) {
       if (fGrantRead.has(o, k)) { return; }
-      log('  + grantRead');
+      caja.console.log('  + grantRead');
       frame.grantRead(o, k);
       fGrantRead.set(o, k);
     }
 
     function grantReadOverride(o, k) {
       if (fGrantReadOverride.has(o, k)) { return; }
-      log('  + grantReadOverride');
+      caja.console.log('  + grantReadOverride');
       frame.grantReadOverride(o, k);
       fGrantReadOverride.set(o, k);
     }
@@ -277,14 +271,14 @@ caja.tamingGoogleLoader = (function() {
     function grantMethod(o, k) {
       if (fGrantMethod.has(o, k)) { return; }
       frame.grantMethod(o, k);
-      log('  + grantMethod');
+      caja.console.log('  + grantMethod');
       fGrantMethod.set(o, k);
     }
 
     function markFunction(o) {
       if (fMarkFunction.has(o)) { return o; }
       var r = frame.markFunction(o);
-      log('  + markFunction');
+      caja.console.log('  + markFunction');
       fMarkFunction.set(o, true);
       return r;
     }
@@ -292,7 +286,7 @@ caja.tamingGoogleLoader = (function() {
     function markCtor(o, sup) {
       if (fMarkCtor.has(o)) { return o; }
       var r = frame.markCtor(o, sup);
-      log('  + markCtor');
+      caja.console.log('  + markCtor');
       fMarkCtor.set(o, true);
       return r;
     }
@@ -301,7 +295,7 @@ caja.tamingGoogleLoader = (function() {
       for (var i = 0; i < advices.length; i++) {
         frame.adviseFunctionBefore(o, advices[i]);
       }
-      log('  + adviseFunctionBefore');
+      caja.console.log('  + adviseFunctionBefore');
       return o;
     }
 
@@ -309,7 +303,7 @@ caja.tamingGoogleLoader = (function() {
       for (var i = 0; i < advices.length; i++) {
         frame.adviseFunctionAfter(o, advices[i]);
       }
-      log('  + adviseFunctionAfter');
+      caja.console.log('  + adviseFunctionAfter');
       return o;
     }
 
@@ -317,7 +311,7 @@ caja.tamingGoogleLoader = (function() {
       for (var i = 0; i < advices.length; i++) {
         frame.adviseFunctionAround(o, advices[i]);
       }
-      log('  + adviseFunctionAround');
+      caja.console.log('  + adviseFunctionAround');
       return o;
     }
 
@@ -330,16 +324,16 @@ caja.tamingGoogleLoader = (function() {
     }
 
     function defCtor(path, obj, policy) {
-      log(path + ' defCtor');
+      caja.console.log(path + ' defCtor');
 
       adviseFunction(obj, policy);
 
       tamingUtils.forallkeys(policy, function(name) {
         if (!obj[name]) {
-          log(path + '.' + name + ' skip');
+          caja.console.log(path + '.' + name + ' skip');
           return;
         }
-        log(path + '.' + name + ' grant static');
+        caja.console.log(path + '.' + name + ' grant static');
         grantRead(obj, name);
         if (typeof policy[name] === 'function') {
           markFunction(obj[name]);
@@ -348,17 +342,17 @@ caja.tamingGoogleLoader = (function() {
       tamingUtils.forallkeys(policy.prototype, function(name) {
         if (typeof policy.prototype[name] === 'function') {
           if (obj.prototype[name]) {
-            log(path + '.prototype.' + name + ' grant instance method');
+            caja.console.log(path + '.prototype.' + name + ' grant instance method');
             adviseFunction(obj.prototype[name], policy.prototype[name]);
             grantMethod(obj.prototype, name);
             if (policy.prototype['__' + name + '_OVERRIDE__']) {
               grantReadOverride(obj.prototype, name);
             }
           } else {
-            log(path + '.prototype.' + name + ' skip');
+            caja.console.log(path + '.prototype.' + name + ' skip');
           }
         } else {
-          log(path + '.prototype.' + name + ' grant instance field');
+          caja.console.log(path + '.prototype.' + name + ' grant instance field');
           grantRead(obj.prototype, name);
           if (policy.prototype['__' + name + '_OVERRIDE__']) {
             grantReadOverride(obj.prototype, name);
@@ -383,18 +377,18 @@ caja.tamingGoogleLoader = (function() {
     }
 
     function defFcn(path, obj, policy) {
-      log(path + ' defFcn');
+      caja.console.log(path + ' defFcn');
       adviseFunction(obj, policy);
       return markFunction(obj);
     }
 
     function defObj(path, obj, policy) {
-      log(path + ' defObj');
+      caja.console.log(path + ' defObj');
       var r = {};
       tamingUtils.forallkeys(policy, function(name) {
         var sub_obj = obj[name];
         if (!sub_obj) {
-          log(path + '.' + name + ' skip');
+          caja.console.log(path + '.' + name + ' skip');
           return;
         }
         var sub_policy = policy[name];
@@ -409,7 +403,7 @@ caja.tamingGoogleLoader = (function() {
         } else if (t_sub_policy === 'object'){
           r[name] = defObj(sub_path, targ(sub_obj, sub_policy), sub_policy);
         } else {
-          log(path + '.' + name + ' grant static');
+          caja.console.log(path + '.' + name + ' grant static');
           r[name] = targ(sub_obj, sub_policy);
           grantRead(r, name);
         }

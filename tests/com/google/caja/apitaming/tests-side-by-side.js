@@ -20,15 +20,20 @@
     document.getElementById(id).appendChild(ifr);
   }
 
-  var testSnippet = getUrlParam('test')
-      ? 'test=' + getUrlParam('test')
-      : 'testsList=' + getUrlParam('testsList');
-
   var cajaServer = getCajaServer();
 
-  addIfr('unc',  './tests-uncajoled.html?' + testSnippet);
-  addIfr('es53', './tests-cajoled.html?' + testSnippet + '&cajaServer=' + cajaServer + '&forceES5Mode=false');
-  addIfr('es5',  './tests-cajoled.html?' + testSnippet + '&cajaServer=' + cajaServer + '&forceES5Mode=true');
+  var commonSnippet =
+      (getUrlParam('test')
+          ? 'test=' + getUrlParam('test')
+          : 'testsList=' + getUrlParam('testsList')) +
+      '&' +
+      ('debug=' + (getUrlParam('debug') === 'true')) +
+      '&' +
+      ('cajaServer=' + cajaServer);
+
+  addIfr('unc',  './tests-uncajoled.html?' + commonSnippet);
+  addIfr('es53', './tests-cajoled.html?'   + commonSnippet + '&forceES5Mode=false');
+  addIfr('es5',  './tests-cajoled.html?'   + commonSnippet + '&forceES5Mode=true');
 })();
 
 

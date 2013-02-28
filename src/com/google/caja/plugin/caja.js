@@ -32,6 +32,7 @@ var caja = (function () {
 
   var UNREADY = 'UNREADY', PENDING = 'PENDING', READY = 'READY';
   var state = UNREADY;
+  var globalConfig = undefined;
 
   var GUESS = 'GUESS';
 
@@ -145,6 +146,16 @@ var caja = (function () {
     'disableSecurityForDebugger': disableSecurityForDebugger,
     'Q': premature,
 
+    // Used by related tools; not for users to call on a routine basis
+    // Initialized to helper functions because they may be called by external
+    // clients before caja.initialize() is called.
+    'console': {
+      'error': makeLogMethod('error'),
+      'info': makeLogMethod('info'),
+      'log': makeLogMethod('log'),
+      'warn': makeLogMethod('warn')
+    },
+
     // For use by the Caja test suite only. Should not be used for any other
     // purpose and is hard to use correctly.
     'testing_makeDomadoRuleBreaker': premature,
@@ -166,6 +177,13 @@ var caja = (function () {
   };
 
   //----------------
+
+  function makeLogMethod(m) {
+    return function() {
+      globalConfig &&
+        globalConfig.console[m].apply(globalConfig.console, arguments);
+    };
+  }
 
   function premature() {
     throw new Error('Calling taming function before Caja is ready');
@@ -303,7 +321,7 @@ var caja = (function () {
    */
   function makeFrameGroup(config, frameGroupReady, onFailure) {
     initFeralFrame(window);
-    config = resolveConfig(config);
+    globalConfig = config = resolveConfig(config);
     caja['server'] = config['server'];
     if (config['es5Mode'] === false || 
         (config['es5Mode'] !== true && unableToSES())) {
@@ -340,17 +358,31 @@ var caja = (function () {
     }
      
     if (partial['console']) {
+      // Client supplies full 'console' object, which we use
       full['console'] = partial['console'];
+    } else if (partial['log']) {
+      // Deprecated API: Client supplies 'log' function, from which we
+      // build a 'console' object of sorts
+      full['console'] = {
+        'log': partial['log'],
+        'warn': partial['log'],
+        'error': partial['log'],
+        'info': partial['log']
+      };
     } else if (window['console']
         && typeof(window['console']['log']) === 'function') {
+      // Platform supplies console object, which we use
       full['console'] = window['console'];
     } else {
-      full['console'] = undefined;
+      // Cannot find any logging functions; create no-op stubs
+      full['console'] = {
+        'log': function() {},
+        'warn': function() {},
+        'error': function() {},
+        'info': function() {}
+      };
     }
-    full['log'] = partial['log'] || function (varargs) {
-      full['console'] && full['console']['log']
-          .apply(full['console'], arguments);
-    };
+
     if (partial['targetAttributePresets']) {
       if (!partial['targetAttributePresets']['default']) {
         throw 'targetAttributePresets must contain a default';
@@ -403,7 +435,7 @@ var caja = (function () {
               { 'mitigateGotchas': mitigateGotchas });
           frameGroupReady(fg, true /* es5Mode */);
         } else if (!mustSES) {
-          config['log']('Unable to use SES.  Switching to ES53.');
+          config['console']['log']('Unable to use SES.  Switching to ES53.');
           // TODO(felix8a): set a cookie to remember this?
           initES53(config, frameGroupReady, onFailure);
         } else {
@@ -510,9 +542,9 @@ var caja = (function () {
         String(frameWin['cajaBuildVersion']).split(/[mM]/)[0];
       if (majorCajaVersion === majorWinVersion) {
         message += '  Continuing because major versions match.';
-        config['log'](message);
+        config['console']['log'](message);
       } else {
-        config['log'](message);
+        config['console']['log'](message);
         throw new Error(message);
       }
     }

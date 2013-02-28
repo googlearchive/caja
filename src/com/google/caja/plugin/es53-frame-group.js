@@ -408,9 +408,10 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
   }
 
   function onerror(message, source, lineNum) {
-    config.log('Uncaught script error: ' + message +
-               ' in source: "' + source +
-               '" at line: ' + lineNum);
+    config.console.log(
+        'Uncaught script error: ' + message +
+        ' in source: "' + source +
+        '" at line: ' + lineNum);
   }
 
   //----------------
