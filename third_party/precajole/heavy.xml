@@ -36,6 +36,16 @@
     <uri>http://caja.appspot.com/imaginary-2/canary2.js</uri>
   </precajole>
 
+  <!-- 2013-02-28: by request -->
+  <precajole file="jquery/1.5.2/jquery-1.5.2.js">
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.js</uri>
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js</uri>
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.js</uri>
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js</uri>
+    <uri>http://code.jquery.com/jquery-1.5.2.js</uri>
+    <uri>http://code.jquery.com/jquery-1.5.2.min.js</uri>
+  </precajole>
+
   <!-- 2013-02-01: by request -->
   <precajole file="jquery/1.6.0/jquery-1.6.0.js">
     <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.6.0/jquery.js</uri>
