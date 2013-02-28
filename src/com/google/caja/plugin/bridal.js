@@ -41,9 +41,8 @@ if ('I'.toLowerCase() !== 'i') { throw 'I/i problem'; }
  */
 var bridalMaker = function (makeDOMAccessible, document) {
   document = makeDOMAccessible(document);
-  var docEl = makeDOMAccessible(document.documentElement);
   var window = makeDOMAccessible(
-      bridalMaker.getWindow(docEl, makeDOMAccessible));
+      bridalMaker.getWindow(document, makeDOMAccessible));
   var navigator      = makeDOMAccessible(window.navigator);
   var XMLHttpRequest = makeDOMAccessible(window.XMLHttpRequest);
   var ActiveXObject  = makeDOMAccessible(window.ActiveXObject);

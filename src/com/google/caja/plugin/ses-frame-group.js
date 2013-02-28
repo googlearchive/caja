@@ -362,6 +362,12 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
         // TODO(kpreid): Make sure there's only one place (in JS)
         // where this big list of content-type synonyms is defined.
 
+        if (gman.htmlEmitter) {
+          // If we have a container but no HTML (only JS) then cause an empty
+          // document to exist, much like about:blank.
+          gman.htmlEmitter.finish();
+        }
+
         // TODO(kpreid): needs to return completion value unless we
         // deprecate that feature.
         return Q.ref(guestWin.cajaVM.compileExpr(

@@ -4975,7 +4975,7 @@ var Domado = (function() {
               optTargetAttributePresets, taming);
           privates.seenContentDocument = frameFeralDoc;
 
-          // Replace document structure with virtualized forms
+          // Delete non-virtualized form of document global structure
           // TODO(kpreid): Use an alternate HTML schema (requires refactoring)
           // which makes <html> <head> <body> permitted (in particular,
           // non-opaque) so that this is unnecessary.
@@ -4984,10 +4984,9 @@ var Domado = (function() {
           while ((child = tdoc.lastChild)) {
             tdoc.removeChild(child);
           }
-          var thtml = tdoc.appendChild(tdoc.createElement('html'));
-          thtml.appendChild(tdoc.createElement('head'));
-          thtml.appendChild(tdoc.createElement('body'));
-
+          // Creating HtmlEmitter hooks up document.write, and finish() (i.e.
+          // end-of-file, i.e. an empty-string input document) triggers
+          // construction of the virtualized global structure.
           var emitter = new HtmlEmitter(
               makeDOMAccessible, subDomicile.htmlEmitterTarget, subDomicile);
           emitter.finish();

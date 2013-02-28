@@ -72,7 +72,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
   var idMap = null;
 
   /** Hook from attach/detach to document.write logic. */
-  var updateInsertionMode;
+  var updateInsertionMode, notifyEOF;
 
   var arraySplice = Array.prototype.splice;
 
@@ -122,6 +122,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
           ' document finish()ed');
     }
     base.innerHTML += htmlString;
+    updateInsertionMode();
   }
 
   // Below we define the attach, detach, and finish operations.
@@ -287,10 +288,13 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
     placeholder.parentNode.removeChild(placeholder);
   }
   /**
-   * Reattach any remaining detached bits, free resources.
+   * Reattach any remaining detached bits, free resources. Corresponds to HTML5
+   * document.close(). May be called redundantly.
+   *
    * See also reopen() below.
    */
   function finish() {
+    notifyEOF();
     insertionPoint = null;
     if (detached) {
       for (var i = 0, n = detached.length; i < n; i += 2) {
@@ -379,7 +383,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
 
   (function (domicile) {
     if (!domicile || domicile.writeHook) {
-      updateInsertionMode = function () {};
+      updateInsertionMode = notifyEOF = function () {};
       return;
     }
 
@@ -594,6 +598,13 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
           html.unescapeEntities(text)));
     }
 
+    function stopParsing() {
+      // http://www.whatwg.org/specs/web-apps/current-work/multipage/the-end.html#stop-parsing
+      // Note: Most of the post-processing tasks are currently handled by the
+      // caller of finish(), not this code.
+      insertionPoint = null;
+    }
+
     // Per HTML5 spec
     function isHtml5NonWhitespace(text) {
       return !HTML5_WHITESPACE_RE.test(text);
@@ -614,6 +625,10 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
             insertionMode = insertionModes.beforeHtml;
             insertionMode.text.apply(undefined, arguments);
           }
+        },
+        endOfFile: function() {
+          insertionMode = insertionModes.beforeHtml;
+          insertionMode.endOfFile();
         }
       },
       beforeHtml: {
@@ -644,6 +659,11 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
             insertionMode = insertionModes.beforeHead;
             insertionMode.text.apply(undefined, arguments);
           }
+        },
+        endOfFile: function() {
+          normalInsert('html', []);
+          insertionMode = insertionModes.beforeHead;
+          insertionMode.endOfFile();
         }
       },
       beforeHead: {
@@ -673,6 +693,10 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
             insertionMode.startTag('head', []);
             insertionMode.text.apply(undefined, arguments);
           }
+        },
+        endOfFile: function() {
+          insertionMode.startTag('head', []);
+          insertionMode.endOfFile();
         }
       },
       inHead: {
@@ -714,6 +738,10 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
             insertionMode.endTag('head');
             insertionMode.text.apply(undefined, arguments);
           }
+        },
+        endOfFile: function() {
+          insertionMode.endTag('head');
+          insertionMode.endOfFile();
         }
       },
       afterHead: {
@@ -747,6 +775,10 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
           } else {
             normalText(text);
           }
+        },
+        endOfFile: function() {
+          insertionMode.startTag('body', []);
+          insertionMode.endOfFile();
         }
       },
       inBody: {
@@ -785,6 +817,16 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
         },
         text: function (text) {
           normalText(text);
+        },
+        endOfFile: function() {
+          // "If there is a node in the stack of open elements that is not
+          // either a dd element, a dt element, an li element, a p element, a
+          // tbody element, a td element, a tfoot element, a th element, a thead
+          // element, a tr element, the body element, or the html element, then
+          // this is a parse error.
+          //
+          // Stop parsing."
+          stopParsing();
         }
       },
       text: {
@@ -800,6 +842,21 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
         },
         text: function (text) {
           normalText(text);
+        },
+        endOfFile: function() {
+          // "Parse error."
+
+          // "If the current node is a script element, mark the script element
+          // as "already started"."
+          // TODO(kpreid): do this when we add integrated <script> handling
+
+          // "Pop the current node off the stack of open elements."
+          normalEndTag(insertionPoint.tagName);
+
+          // "Switch the insertion mode to the original insertion mode and
+          // reprocess the current token."
+          insertionMode = originalInsertionMode;
+          insertionMode.endOfFile();
         }
       },
       afterBody: {
@@ -827,6 +884,10 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
             insertionMode = insertionModes.inBody;
           }
           insertionModes.inBody.text.apply(undefined, arguments);
+        },
+        endOfFile: function() {
+          // "Stop parsing."
+          stopParsing();
         }
       },
       afterAfterBody: {
@@ -853,6 +914,10 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
           } else {
             insertionModes.inBody.text.apply(undefined, arguments);
           }
+        },
+        endOfFile: function() {
+          // "Stop parsing."
+          stopParsing();
         }
       }
     };
@@ -897,6 +962,13 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       }
     };
 
+    notifyEOF = function notifyEOF() {
+      if (insertionPoint) {
+        // Act on HTML5 "end-of-file token".
+        insertionMode.endOfFile();
+      }
+    };
+
     /**
      * This corresponds to document.open() and is an extremely incomplete
      * implementation thereof.
@@ -924,6 +996,13 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       endDoc: function () {
         depth--;
         if (depth == 0) {
+          // TODO(kpreid): I think this is wrong or at least simply unnecessary;
+          // we should hook everything document-load-done-related into finish()
+          // rather than bothering to 'guess' the end via nesting level here
+          // Unify/reconcile the following:
+          //   * this
+          //   * actions taken by stopParsing()
+          //   * actions taken by finish()
           documentLoaded.resolve(true);
         }
       },

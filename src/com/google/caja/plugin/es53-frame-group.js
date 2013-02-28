@@ -350,6 +350,15 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
   function es53run(gman, args, moreImports, opt_runDone) {
     function runModule(module) {
       var result = module.instantiate___(guestWin.___, gman.imports);
+
+      if (gman.htmlEmitter) {
+        // Ensure that if we have a DOM container but no HTML (only JS), in
+        // which case the cajoler gives us a module which does not touch
+        // HtmlEmitter, then there is still an empty document generated.
+        // htmlEmitter.finish() is robust against extra invocations.
+        gman.htmlEmitter.finish();
+      }
+
       if (opt_runDone) {
         opt_runDone(result);
       }

@@ -99,6 +99,26 @@
           'b$',
           '', 'b');
 
+      // Test that a completely empty document still produces structure.
+      // TODO(kpreid): refactor registerGuestTest so this can be shorter.
+      registerTest('testEmptyInput',
+          function testEmptyInput() {
+        var div = createDiv();
+        caja.load(div, undefined, function (frame) {
+          frame.code(
+              location.protocol + '//' + location.host + '/',
+              'text/html',
+              '')
+            .run(createExtraImportsForTesting(caja, frame),
+                jsunitCallback(function(result) {
+                  var guestHtml = ('<html><head></head><body></body></html>'
+                      .replace(/<\/?/g, function(m) { return m + 'caja-v-'; }));
+                  assertEquals(guestHtml, frame.innerContainer.innerHTML);
+                  jsunitPass('testEmptyInput');
+                }, 'testEmptyInput', frame));
+        });
+      });
+
       registerStructureTest('testEmptyVirtualizedElementInHead',
           // Regression test for <body> getting embedded in <head> due to
           // virtualized empty elements being misparsed as non-empty elements

@@ -60,6 +60,17 @@
     }
   }
 
+  /**
+   * Assert that a guest frame *without* a document has an about:blank-like
+   * trivial DOM.
+   */
+  function assertEmptyGuestHtmlCorrect(frame, div) {
+    var guestHtml = '<html><head></head><body></body></html>'.replace(
+        /<\/?/g, function(m) { return m + 'caja-v-'; });
+    assertEquals(guestHtml,
+        div.getElementsByClassName('caja-vdoc-inner')[0].innerHTML);
+  }
+
 
   // NOTE: Identity URI rewriter (as shown below) is for testing only; this
   // would be unsafe for production code because of HTTP AUTH based phishing.
@@ -492,6 +503,18 @@
         frame.url('es53-test-guest.js').run(extraImports, function (result) {
           assertGuestJsCorrect(frame, undefined, result);
           jsunitPass('testUrlJs');
+        });
+      });
+    });
+
+    registerTest('testUrlJsWithDiv', function testUrlJsWithDiv() {
+      var div = createDiv();
+      frameGroup.makeES5Frame(div, uriPolicy, function (frame) {
+        var extraImports = { x: 4, y: 3 };
+        frame.url('es53-test-guest.js').run(extraImports, function (result) {
+          assertEmptyGuestHtmlCorrect(frame, div);
+          assertGuestJsCorrect(frame, undefined, result);
+          jsunitPass('testUrlJsWithDiv');
         });
       });
     });

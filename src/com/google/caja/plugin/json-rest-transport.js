@@ -72,8 +72,8 @@ var jsonRestTransportMaker = function(opt_transportType) {
         }
       }
     };
-    request.open(content ? 'POST' : 'GET', url, true);
-    if (content) {
+    request.open(content !== undefined ? 'POST' : 'GET', url, true);
+    if (content !== undefined) {
       request.setRequestHeader('Content-Type', contentType);
       request.send(content);
     } else {
@@ -98,8 +98,8 @@ var jsonRestTransportMaker = function(opt_transportType) {
     xdr.onload = function() {
       result.resolve(JSON.parse(xdr.responseText));
     };
-    xdr.open(content ? 'post' : 'get', url);
-    if (content) {
+    xdr.open(content !== undefined ? 'post' : 'get', url);
+    if (content !== undefined) {
       xdr.send(content);
     } else {
       xdr.send();
@@ -115,7 +115,7 @@ var jsonRestTransportMaker = function(opt_transportType) {
     var jsonpCallbackCount = 0;
 
     return function(url, content, contentType) {
-      if (content) {
+      if (content !== undefined) {
         // TODO(ihab.awad): We might still be able to support a *limited* amount
         // of posted content if we encode it into the URL. Is this worth doing?
         throw 'Posted content not supported by this transport';

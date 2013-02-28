@@ -190,6 +190,9 @@ var window = this;
     addEventListener: window.addEventListener,
     removeEventListener: window.removeEventListener,
     dispatchEvent: window.dispatchEvent,
+    get nodeType() {
+      return 9; // patched by kpreid for Caja test suite
+    },
     get nodeName() {
       return "#document";
     },
