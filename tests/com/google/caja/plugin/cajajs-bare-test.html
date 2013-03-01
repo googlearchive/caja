@@ -16,7 +16,7 @@
 -->
 
 <!-- Test invocation of caja.js in a document without head or body -->
-
+<meta charset="utf-8">
 <script type="text/javascript" src="../console.js"></script>
 <script type="text/javascript" src="jsUnitCore.js"></script>
 <script type="text/javascript" src="jsunit.js"></script>
@@ -28,10 +28,12 @@
 
 <!--
   These are signals for test driver.  They're normally classes on divs,
-  but here we're using classes on scripts, to avoid creating a <body> node
+  but here we're using classes on scripts, to avoid creating a <body> node.
+  The // in testNoBody is because jsunitPass will append "passed" as text,
+  which the browser will try to eval.
   -->
 <script class="readytotest"></script>
-<script id="testNoBody" class="waiting"></script>
+<script id="testNoBody" class="waiting">//</script>
 
 <script>
 (function () {

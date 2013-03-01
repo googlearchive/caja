@@ -3145,7 +3145,10 @@ Test row cell
 <script type="text/javascript">
   jsunitRegister('testBaseURI', function testHash() {
     // http://www.w3.org/TR/DOM-Level-3-Core/core.html#Node3-baseURI
-    assertEquals('http://localhost:8000/ant-testlib/com/google/caja/plugin/' +
+    var loc = window.location;
+    assertEquals(
+        loc.protocol + '//' + loc.host +
+        '/ant-testlib/com/google/caja/plugin/' +
         'es53-test-domado-dom-guest.html',
         document.getElementById('testBaseURI').baseURI);
     pass('testBaseURI');
