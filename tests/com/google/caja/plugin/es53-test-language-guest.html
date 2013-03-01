@@ -666,3 +666,47 @@ testTopLevelVarsInCatch
     pass('testVarInitializer');
   });
 </script>
+
+<div class="testcontainer" id="testParseErrorSafety">
+  testParseErrorSafety
+</div>
+<script>
+  jsunitRegisterIf(inES5Mode,
+                   'testParseErrorSafety',
+                   function testParseErrorSafety() {
+
+    // Cannot use expectFailure because that lives on the other side of the
+    // membrane, which would muffle the problem we're looking for.
+    function check(fn, label) {
+      try {
+        fn();
+      } catch (e) {
+        for (var p = Object.getPrototypeOf(e);
+             p !== null;
+             p = Object.getPrototypeOf(p)) {
+          if (Object.isExtensible(p)) {
+            fail(label + ': error\'s prototype chain is extensible: ' + e);
+          }
+        }
+        if (!(e instanceof SyntaxError)) {
+          fail(label + ': error not a SyntaxError: ' + e);
+        }
+      }
+    }
+
+    check(function() {
+      cajaVM.eval('}');
+    }, 'eval failure');
+    check(function() {
+      cajaVM.compileModule('}');
+    }, 'compileModule failure');
+    check(function() {
+      cajaVM.compileExpr('}');
+    }, 'compileExpr failure');
+    expectFailure(function() {
+      new Function('}');
+    }, 'Function failure');
+
+    pass('testParseErrorSafety');
+  });
+</script>

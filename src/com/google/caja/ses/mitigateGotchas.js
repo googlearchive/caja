@@ -207,7 +207,7 @@
     return resolved;
   }
 
-  ses.mitigateGotchas = function(programSrc, options) {
+  ses.mitigateGotchas = function(programSrc, options, logger) {
     try {
       options = resolveOptions(options);
       var dirty = false;
@@ -259,12 +259,12 @@
         return programSrc;
       }
     } catch (e) {
-      ses.logger.warn('Failed to parse program', e);
+      logger.warn('Failed to parse program', e);
       // TODO(jasvir): Consider using the thrown exception to provide
       // a more useful descriptive error message.  Be aware of naively
       // interpolating error message strings.
       return '' +
-        '(function() { throw new Error("Failed to parse program"); })()';
+        '(function() { throw new SyntaxError("Failed to parse program"); })()';
     }
   };
 

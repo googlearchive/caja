@@ -260,7 +260,20 @@ ses.startSES = function(global,
    */
   function mitigateGotchas(programSrc, options) {
     if ('function' === typeof ses.mitigateGotchas) {
-      return ses.mitigateGotchas(programSrc, options);
+      try {
+        return ses.mitigateGotchas(programSrc, options, ses.logger);
+      } catch (error) {
+        // Shouldn't throw, but if it does, the exception is potentially from a
+        // different context with an undefended prototype chain; don't allow it
+        // to leak out.
+        var safeError;
+        try {
+          safeError = new Error(error.message);
+        } catch (metaerror) {
+          throw new Error('Could not safely obtain error from mitigateGotchas');
+        }
+        throw safeError;
+      }
     } else {
       return '' + programSrc;
     }
