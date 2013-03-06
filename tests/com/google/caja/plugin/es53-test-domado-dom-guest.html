@@ -2135,7 +2135,8 @@ After
       },
       {
         typenames: [/* TODO(kpreid): 'ImageData' */],
-        sample: document.createElement('canvas').getContext('2d').createImageData(1, 1)
+        sample: document.createElement('canvas').getContext('2d')
+            .createImageData(1, 1)
       },
       {
         typenames: [/* TODO(kpreid): 'NodeList', ??? */],
@@ -2156,6 +2157,11 @@ After
       {
         typenames: ['Text'],
         sample: document.createTextNode('foo')
+      },
+      {
+        typenames: [/* TODO(kpreid): 'TextMetrics' */],
+        sample: document.createElement('canvas').getContext('2d')
+            .measureText("foo")
       },
       {
         typenames: ['Window'],
