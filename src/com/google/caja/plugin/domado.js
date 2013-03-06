@@ -2313,6 +2313,11 @@ var Domado = (function() {
        *
        * Lowercase properties are property descriptors; uppercase ones are
        * constructors for parameterized property descriptors.
+       *
+       * The taming membrane is applied to values. This should not actually
+       * matter because these are intended to be used for primitive-valued
+       * properties; we tame as a shortcut to protect against unexpected
+       * behavior (or misuse) causing breaches.
        */
       function PropertyTaming(confidence) {
         var p = confidence.p;
@@ -2348,7 +2353,7 @@ var Domado = (function() {
             enumerable: true,
             extendedAccessors: true,
             get: method(function (prop) {
-              return p(this).feral[prop];
+              return taming.tame(p(this).feral[prop]);
             })
           },
 
@@ -2360,12 +2365,12 @@ var Domado = (function() {
             enumerable: true,
             extendedAccessors: true,
             get: method(function (prop) {
-              return p(this).feral[prop];
+              return taming.tame(p(this).feral[prop]);
             }),
             set: method(function (value, prop) {
               var privates = p(this);
               privates.policy.requireEditable();
-              privates.feral[prop] = value;
+              privates.feral[prop] = taming.untame(value);
             })
           },
 
@@ -2380,13 +2385,13 @@ var Domado = (function() {
               enumerable: true,
               extendedAccessors: true,
               get: method(function (prop) {
-                return p(this).feral[prop];
+                return taming.tame(p(this).feral[prop]);
               }),
               set: method(function (value, prop) {
                 var privates = p(this);
                 privates.policy.requireEditable();
                 if (predicate(value)) {
-                  privates.feral[prop] = value;
+                  privates.feral[prop] = taming.untame(value);
                 }
               })
             };
@@ -2463,7 +2468,8 @@ var Domado = (function() {
                       return toValue.call(this, this.getAttribute(name));
                     })
                   : method(function (name) {
-                      return toValue.call(this, p(this).feral[name]);
+                      return toValue.call(this,
+                          taming.tame(p(this).feral[name]));
                     })
             };
             if (fromValue) {
@@ -2474,7 +2480,8 @@ var Domado = (function() {
                   : method(function (value, name) {
                       var privates = p(this);
                       privates.policy.requireEditable();
-                      privates.feral[name] = fromValue.call(this, value);
+                      privates.feral[name] =
+                          taming.untame(fromValue.call(this, value));
                     });
             }
             return desc;
@@ -4025,13 +4032,17 @@ var Domado = (function() {
         // styles, per MDN. We do not implement this difference.
         nodeName: tagNameAttr,
         tagName: tagNameAttr,
-        style: NP.filter(
-            false,
-            nodeMethod(function (styleNode) {
-              TameStyle || buildTameStyle();
-              return new TameStyle(styleNode, np(this).policy.editable, this);
-            }),
-            true, identity),
+        style: {
+          enumerable: true,
+          get: nodeMethod(function() {
+            TameStyle || buildTameStyle();
+            return new TameStyle(np(this).feral.style,
+                np(this).policy.editable, this);
+          }),
+          set: cajaVM.def(function(value) {
+            this.setAttribute("style", value);
+          })
+        },
         innerHTML: {
           enumerable: true,
           get: nodeMethod(function () {
@@ -4855,7 +4866,7 @@ var Domado = (function() {
         } else {
           throw new Error('could not interpret form.elements result');
         }
-      }
+      };
       FormElementAndExpandoProxyHandler.prototype.col_names = function() {
         // TODO(kpreid): not quite right result set
         return Object.getOwnPropertyNames(this.target.elements);
