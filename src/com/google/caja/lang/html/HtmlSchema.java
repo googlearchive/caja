@@ -50,6 +50,12 @@ import java.util.Set;
  * @author mikesamuel@gmail.com
  */
 public final class HtmlSchema {
+  // Public for convenience of c.g.c.plugin.Config.
+  public static final URI defaultElementWhitelistURL = URI.create(
+      "resource:///com/google/caja/lang/html/htmlall-elements.json");
+  public static final URI defaultAttributeWhitelistURL = URI.create(
+      "resource:///com/google/caja/lang/html/htmlall-attributes.json");
+
   private static final String VIRTUALIZATION_PREFIX = "caja-v-";
   private static final ElKey SCRIPT = ElKey.forHtmlElement("script");
   private static final ElKey STYLE = ElKey.forHtmlElement("style");
@@ -70,19 +76,13 @@ public final class HtmlSchema {
   public static HtmlSchema getDefault(MessageQueue mq) {
     if (defaultSchema == null) {
       SimpleMessageQueue cacheMq = new SimpleMessageQueue();
-      URI elSrc = URI.create(
-              "resource:///com/google/caja/lang/html/"
-              + "htmlall-elements.json");
-      URI attrSrc = URI.create(
-              "resource:///com/google/caja/lang/html/"
-              + "htmlall-attributes.json");
       try {
         defaultSchema = Pair.pair(
             new HtmlSchema(
-                ConfigUtil.loadWhiteListFromJson(
-                    elSrc, ConfigUtil.RESOURCE_RESOLVER, cacheMq),
-                ConfigUtil.loadWhiteListFromJson(
-                    attrSrc, ConfigUtil.RESOURCE_RESOLVER, cacheMq)),
+                ConfigUtil.loadWhiteListFromJson(defaultElementWhitelistURL,
+                    ConfigUtil.RESOURCE_RESOLVER, cacheMq),
+                ConfigUtil.loadWhiteListFromJson(defaultAttributeWhitelistURL,
+                    ConfigUtil.RESOURCE_RESOLVER, cacheMq)),
             cacheMq.getMessages());
       // If the default schema is borked, there's not much we can do.
       } catch (IOException ex) {

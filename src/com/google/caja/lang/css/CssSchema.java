@@ -49,6 +49,12 @@ import java.util.regex.Pattern;
  * @author mikesamuel@gmail.com
  */
 public final class CssSchema {
+  // Public strings for convenience of c.g.c.plugin.Config.
+  public static final URI defaultPropWhitelistURL = URI.create(
+      "resource:///com/google/caja/lang/css/css-extensions.json");
+  public static final URI defaultFnWhitelistURL= URI.create(
+      "resource:///com/google/caja/lang/css/css-extensions-fns.json");
+
   private final Map<Name, CssPropertyInfo> properties =
     new HashMap<Name, CssPropertyInfo>();
   private final Map<Name, SymbolInfo> symbols =
@@ -61,16 +67,12 @@ public final class CssSchema {
   public static CssSchema getDefaultCss21Schema(MessageQueue mq) {
     if (defaultSchema == null) {
       SimpleMessageQueue cacheMq = new SimpleMessageQueue();
-      URI fnSrc = URI.create(
-              "resource:///com/google/caja/lang/css/css-extensions-fns.json"),
-          propSrc = URI.create(
-              "resource:///com/google/caja/lang/css/css-extensions.json");
       WhiteList propDefs, fnDefs;
       try {
         propDefs = ConfigUtil.loadWhiteListFromJson(
-            propSrc, ConfigUtil.RESOURCE_RESOLVER, cacheMq);
+            defaultPropWhitelistURL, ConfigUtil.RESOURCE_RESOLVER, cacheMq);
         fnDefs = ConfigUtil.loadWhiteListFromJson(
-            fnSrc, ConfigUtil.RESOURCE_RESOLVER, cacheMq);
+            defaultFnWhitelistURL, ConfigUtil.RESOURCE_RESOLVER, cacheMq);
       // If the default schema is borked, there's not much we can do.
       } catch (IOException ex) {
         mq.getMessages().addAll(cacheMq.getMessages());

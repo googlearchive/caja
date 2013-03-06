@@ -217,9 +217,7 @@ public final class Config {
   public CssSchema getCssSchema(MessageQueue mq) {
     return new CssSchema(
         whitelist(cssPropertyWhitelistUri, mq),
-        whitelist(URI.create(
-            "resource:///com/google/caja/lang/css/css-extensions-fns.json"),
-            mq));
+        whitelist(CssSchema.defaultFnWhitelistURL, mq));
   }
 
   public HtmlSchema getHtmlSchema(MessageQueue mq) {
@@ -328,15 +326,13 @@ public final class Config {
       try {
         cssPropertyWhitelistUri = new URI(cl.getOptionValue(
             CSS_PROPERTY_WHITELIST.getOpt(),
-            "resource:///com/google/caja/lang/css/css-extensions.json"));
+            CssSchema.defaultPropWhitelistURL.toString()));
         htmlAttributeWhitelistUri = new URI(cl.getOptionValue(
             HTML_ATTRIBUTE_WHITELIST.getOpt(),
-            "resource:///com/google/caja/lang/html"
-            + "/html4-attributes-extensions.json"));
+            HtmlSchema.defaultAttributeWhitelistURL.toString()));
         htmlElementWhitelistUri = new URI(cl.getOptionValue(
             HTML_ELEMENT_WHITELIST.getOpt(),
-            "resource:///com/google/caja/lang/html"
-            + "/html4-elements-extensions.json"));
+            HtmlSchema.defaultElementWhitelistURL.toString()));
 
         if (cl.getOptionValue(BASE_URI.getOpt()) != null) {
           baseUri = new URI(cl.getOptionValue(BASE_URI.getOpt()));

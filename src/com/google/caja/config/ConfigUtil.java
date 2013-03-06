@@ -71,11 +71,12 @@ public class ConfigUtil {
     public Pair<Reader, FilePosition> resolve(
         URI uri, URI base, FilePosition uriPos)
         throws IOException {
-      if (uri == null) { throw new NullPointerException(); }
+      if (uri == null) { throw new NullPointerException("uri"); }
 
       if (!uri.isAbsolute()) {
         if (base == null) {
-          throw new IllegalArgumentException("Missing base URI");
+          throw new IllegalArgumentException(
+              "Missing base URI to resolve relative URL: " + uri);
         }
         String scheme = base.getScheme();
         if (!(Strings.eqIgnoreCase("resource", scheme)
@@ -111,7 +112,7 @@ public class ConfigUtil {
           throw new FileNotFoundException(uri.toString());
         }
       } else {
-        throw new IllegalArgumentException("URI: " + uri);
+        throw new IllegalArgumentException("URI scheme not permitted: " + uri);
       }
 
       return Pair.pair(
