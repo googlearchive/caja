@@ -497,7 +497,11 @@ var ses;
           var desc = gopd(obj, name);
           if ('value' in desc) {
             value = desc.value;
-            if (desc.configurable) {
+            // On some engines, and perhaps to become standard in ES6,
+            // __proto__ already behaves as an accessor but is made to
+            // appear to be a data property, so we should not try to
+            // reconfigure it into another accessor.
+            if (desc.configurable && name !== '__proto__') {
               getter.prototype = null;
               setter.prototype = null;
               defProp(obj, name, {
@@ -1958,6 +1962,54 @@ var ses;
     return false;
   }
 
+  /**
+   * A strict getter is not supposed to coerce 'this'. However, some
+   * platforms coerce primitive types into their corresponding wrapper
+   * objects.
+   */
+  function test_STRICT_GETTER_BOXES() {
+    Object.defineProperty(Number.prototype, '___test_prop___', {
+      get: function() { return this; },
+      set: void 0,
+      enumerable: false,
+      configurable: true
+    });
+    var v = null;
+    try {
+      v = (3).___test_prop___;
+      if (v === 3) { return false; }
+      if (v instanceof Number) { return true; }
+      return 'unexpected boxing test result: ' + v;
+    } finally {
+      delete Number.prototype.___test_prop___;
+    }
+  }
+
+  /**
+   * A non-strict getter is supposed to coerce its 'this' in the same
+   * manner as non-strict functions. However, on some platforms, they
+   * fail to coerce primitive types into their corresponding wrapper
+   * objects.
+   */
+  function test_NON_STRICT_GETTER_DOESNT_BOX() {
+    Object.defineProperty(Number.prototype, '___test_prop___', {
+      get: new Function('return this;'),
+      set: void 0,
+      enumerable: false,
+      configurable: true
+    });
+    var v = null;
+    try {
+      v = (3).___test_prop___;
+      if (v instanceof Number) { return false; }
+      if (v === 3) { return true; }
+      return 'unexpected non-boxing test result: ' + v;
+    } finally {
+      delete Number.prototype.___test_prop___;
+    }
+  }
+
+
   ////////////////////// Repairs /////////////////////
   //
   // Each repair_NAME function exists primarily to repair the problem
@@ -2697,6 +2749,7 @@ var ses;
     });
   }
 
+
   ////////////////////// Kludge Records /////////////////////
   //
   // Each kludge record has a <dl>
@@ -3155,7 +3208,8 @@ var ses;
       repair: void 0,
       preSeverity: severities.NOT_OCAP_SAFE,
       canRepair: false,
-      urls: ['https://bugs.webkit.org/show_bug.cgi?id=65832'],
+      urls: ['https://bugs.webkit.org/show_bug.cgi?id=65832',
+             'https://bugs.webkit.org/show_bug.cgi?id=78438'],
       sections: ['8.6.2'],
       tests: ['S8.6.2_A8']
     },
@@ -3227,8 +3281,11 @@ var ses;
       preSeverity: severities.SAFE_SPEC_VIOLATION,
       canRepair: false,
       urls: ['http://code.google.com/p/v8/issues/detail?id=1169',
+             'http://code.google.com/p/v8/issues/detail?id=1475',
              'https://mail.mozilla.org/pipermail/es-discuss/' +
-               '2011-November/017997.html'],
+               '2011-November/017997.html',
+             'http://wiki.ecmascript.org/doku.php?id=strawman:' +
+               'fixing_override_mistake'],
       sections: ['8.12.4'],
       tests: ['15.2.3.6-4-405']
     },
@@ -3339,9 +3396,37 @@ var ses;
       repair: void 0,
       preSeverity: severities.NOT_ISOLATED,
       canRepair: false,
-      urls: [],  // TODO(felix8a): need bugs filed
+      urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=726477',
+             'https://bugzilla.mozilla.org/show_bug.cgi?id=724768'],
       sections: [],
       tests: []
+    },
+    {
+      description: 'Strict getter must not box this, but does',
+      test: test_STRICT_GETTER_BOXES,
+      repair: void 0,
+      preSeverity: severities.SAFE_SPEC_VIOLATION,
+      canRepair: false,
+      urls: ['https://bugs.ecmascript.org/show_bug.cgi?id=284',
+             'https://bugs.webkit.org/show_bug.cgi?id=79843',
+             'https://connect.microsoft.com/ie/feedback/details/727027',
+             'https://bugzilla.mozilla.org/show_bug.cgi?id=603201',
+             'https://bugzilla.mozilla.org/show_bug.cgi?id=732669'],
+             // Opera DSK-358415
+      sections: ['10.4.3'],
+      tests: ['10.4.3-1-59-s']
+    },
+    {
+      description: 'Non-strict getter must box this, but does not',
+      test: test_NON_STRICT_GETTER_DOESNT_BOX,
+      repair: void 0,
+      preSeverity: severities.SAFE_SPEC_VIOLATION,
+      canRepair: false,
+      urls: ['https://bugs.ecmascript.org/show_bug.cgi?id=284',
+             'http://code.google.com/p/v8/issues/detail?id=1977',
+             'https://bugzilla.mozilla.org/show_bug.cgi?id=732669'],
+      sections: ['10.4.3'],
+      tests: ['10.4.3-1-59-s']
     }
   ];
 

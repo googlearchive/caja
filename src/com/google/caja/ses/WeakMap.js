@@ -103,17 +103,7 @@ var WeakMap;
   var hop = Object.prototype.hasOwnProperty;
   var gopn = Object.getOwnPropertyNames;
   var defProp = Object.defineProperty;
-
-  /**
-   * Holds the orginal static properties of the Object constructor,
-   * after repairES5 fixes these if necessary to be a more complete
-   * secureable ES5 environment, but before installing the following
-   * WeakMap emulation overrides and before any untrusted code runs.
-   */
-  var originalProps = {};
-  gopn(Object).forEach(function(name) {
-    originalProps[name] = Object[name];
-  });
+  var isExtensible = Object.isExtensible;
 
   /**
    * Security depends on HIDDEN_NAME being both <i>unguessable</i> and
@@ -194,9 +184,10 @@ var WeakMap;
    * does appear in our whitelist, so we need to clean it too.
    */
   if ('getPropertyNames' in Object) {
+    var originalGetPropertyNames = Object.getPropertyNames;
     defProp(Object, 'getPropertyNames', {
       value: function fakeGetPropertyNames(obj) {
-        return originalProps.getPropertyNames(obj).filter(function(name) {
+        return originalGetPropertyNames(obj).filter(function(name) {
           return name !== HIDDEN_NAME;
         });
       }
@@ -248,7 +239,7 @@ var WeakMap;
     }
     var hiddenRecord = key[HIDDEN_NAME];
     if (hiddenRecord && hiddenRecord.key === key) { return hiddenRecord; }
-    if (!originalProps.isExtensible(key)) {
+    if (!isExtensible(key)) {
       // Weak map must brute force, as explained in doc-comment above.
       return void 0;
     }

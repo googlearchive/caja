@@ -34,7 +34,7 @@ var StringMap;
 
    function assertString(x) {
      if ('string' !== typeof(x)) {
-       throw new TypeError('Not a string: ' + String(x));
+       throw new TypeError('Not a string: ' + x);
      }
      return x;
    }

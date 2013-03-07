@@ -97,39 +97,38 @@ var ses;
          }
          xhr.open(OP, url);
 
-         var result = Q.defer();
-         xhr.onreadystatechange = function() {
-           if (this.readyState === 4) {
-             // TODO(erights): On the status codes, do what mzero
-             // suggests. Seek to interoperate not just with ourselves
-             // but at least with ref_send, qcomm, and bcap.
-             if (this.status === 200) {
-               result.resolve(unserialize(this.responseText));
-
-          // } else if... { // What about other success statuses besides 200?
-               // And do we deal with any redirects here, such as a
-               // permanent redirect?
-
-             } else if (this.status === 410) {
-               var broken = Q.reject(new Error('Resource Gone'));
-               nextSlot.resolve(freeze({value: broken}));
-               result.resolve(broken);
-
-             } else {
-               // TODO(erights): better diagnostics. Include
-               // responseText in Error?
-               result.resolve(Q.reject(new Error('xhr ' + OP +
-                                                 ' failed with status: ' +
-                                                 this.status)));
+         return Q.promise(function(resolve,reject) {
+           xhr.onreadystatechange = function() {
+             if (this.readyState === 4) {
+               // TODO(erights): On the status codes, do what mzero
+               // suggests. Seek to interoperate not just with ourselves
+               // but at least with ref_send, qcomm, and bcap.
+               if (this.status === 200) {
+                 resolve(unserialize(this.responseText));
+  
+            // } else if... { // What about other success statuses besides 200?
+                 // And do we deal with any redirects here, such as a
+                 // permanent redirect?
+  
+               } else if (this.status === 410) {
+                 var rejected = Q.reject(new Error('Resource Gone'));
+                 nextSlot.resolve(freeze({value: rejected}));
+                 resolve(rejected);
+  
+               } else {
+                 // TODO(erights): better diagnostics. Include
+                 // responseText in Error?
+                 reject(new Error('xhr ' + OP +
+                                  ' failed with status: ' + this.status));
+               }
              }
+           };
+           if (opt_entityBody === void 0) {
+             xhr.send();
+           } else {
+             xhr.send(opt_entityBody);
            }
-         };
-         if (opt_entityBody === void 0) {
-           xhr.send();
-         } else {
-           xhr.send(opt_entityBody);
-         }
-         return result.promise;
+         });
        }
 
        return Q.makeFar(farDispatch, nextSlot.promise);

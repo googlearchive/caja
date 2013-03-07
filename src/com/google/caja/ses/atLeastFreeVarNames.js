@@ -124,7 +124,7 @@ var ses;
   ses.DISABLE_SECURITY_FOR_DEBUGGER = false;
 
   ses.atLeastFreeVarNames = function atLeastFreeVarNames(programSrc) {
-    programSrc = String(programSrc);
+    programSrc = ''+programSrc;
     programSrc = LIMIT_SRC(programSrc);
     // Now that we've temporarily limited our attention to ascii...
     var regexp = SHOULD_MATCH_IDENTIFIER();

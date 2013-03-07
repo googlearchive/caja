@@ -122,7 +122,15 @@ function useHTMLLogger(reportsElement, consoleElement) {
       var getStack = ses.getStack;
 
       for (var i = 0, len = args.length; i < len; i++) {
-        var span = appendNew(p, 'span');
+        // The 'p' below used to be 'span', which is better use of HTML.
+        // However, on Chrome Version 27.0.1428.0 canary we are seeing
+        // a strange bug (TODO(erights) we have yet to isolate and
+        // report) where the resulting HTMLSpanElement does not
+        // inherit from the right prototype, and therefore fails to
+        // implement appendChild. This may be related to 
+        // https://code.google.com/p/v8/issues/detail?id=2565
+        // since it occurs after Object.prototype is frozen.
+        var span = appendNew(p, 'p');
         appendText(span, '' + args[i]);
 
         if (getStack) {

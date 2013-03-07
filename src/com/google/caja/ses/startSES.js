@@ -81,8 +81,9 @@ var Function;
  *
  * <p>Under server-side Caja translation for old pre-ES5 browsers, the
  * synchronous interface of the evaluation APIs (currently {@code
- * eval, Function, cajaVM.{compileExpr, compileModule, eval, Function}})
- * cannot reasonably be provided. Instead, under translation we expect
+ * eval, Function, cajaVM.{compileExpr, confine, compileModule, eval,
+ * Function}}) cannot reasonably be provided. Instead, under
+ * translation we expect
  * <ul>
  * <li>Not to have a binding for {@code "eval"} on
  *     {@code sharedImports}, just as we would not if
@@ -97,9 +98,9 @@ var Function;
  * <li>The {@code Q} API to always be available, to handle
  *     asynchronous, promise, and remote requests.
  * <li>The evaluating methods on {@code cajaVM} -- currently {@code
- *     compileExpr, compileModule, eval, and Function} -- to be remote
- *     promises for their normal interfaces, which therefore must be
- *     invoked with {@code Q.post}.
+ *     compileExpr, confine, compileModule, eval, and Function} -- to
+ *     be remote promises for their normal interfaces, which therefore
+ *     must be invoked with {@code Q.post}.
  * <li>Since {@code Q.post} can be used for asynchronously invoking
  *     non-promises, invocations like
  *     {@code Q.post(cajaVM, 'eval', ['2+3'])}, for example,
@@ -405,6 +406,19 @@ ses.startSES = function(global,
    */
   var sharedImports = create(null);
 
+  var MAX_NAT = Math.pow(2, 53);
+  function Nat(allegedNum) {
+    if (typeof allegedNum !== 'number') {
+      throw new RangeError('not a number');
+    }
+    if (allegedNum !== allegedNum) { throw new RangeError('NaN not natural'); }
+    if (allegedNum < 0)            { throw new RangeError('negative'); }
+    if (allegedNum % 1 !== 0)      { throw new RangeError('not integral'); }
+    if (allegedNum > MAX_NAT)      { throw new RangeError('too big'); }
+    return allegedNum;
+  }
+
+
   (function startSESPrelude() {
 
     /**
@@ -445,14 +459,15 @@ ses.startSES = function(global,
      * Expression production.
      *
      * <p>To verify that exprSrc parses as a strict Expression, we
-     * verify that (when followed by ";") it parses as a strict
-     * Program, and that when surrounded with parens it still parses
-     * as a strict Program. We place a newline before the terminal
-     * token so that a "//" comment cannot suppress the close paren.
+     * verify that, when surrounded by parens and followed by ";", it
+     * parses as a strict Program, and that when surrounded with
+     * double parens it still parses as a strict Program. We place a
+     * newline before the terminal token so that a "//" comment
+     * cannot suppress the close paren or parens.
      */
     function verifyStrictExpression(exprSrc) {
-      verifyStrictProgram(exprSrc + ';');
       verifyStrictProgram('( ' + exprSrc + '\n);');
+      verifyStrictProgram('(( ' + exprSrc + '\n));');
     }
 
     /**
@@ -472,7 +487,7 @@ ses.startSES = function(global,
      * traditional JavaScript intermodule linkage by side effects to a
      * shared (virtual) global object.
      *
-     * <p>See {@code copyToImports} for the precise semantic of the
+     * <p>See {@code copyToImports} for the precise semantics of the
      * property copying.
      */
     function makeImports() {
@@ -677,6 +692,26 @@ ses.startSES = function(global,
       var freeNames = atLeastFreeVarNames(exprSrc);
       var result = makeCompiledExpr(wrapper, freeNames);
       return freeze(result);
+    }
+
+    /**
+     * Evaluate an expression as confined to these endowments.
+     *
+     * <p>Evaluates {@code exprSrc} in a tamper proof ({@code
+     * def()}ed) environment consisting of a copy of the shared
+     * imports and the own properties of {@code opt_endowments} if
+     * provided. Return the value the expression evaluated to. Since
+     * the shared imports provide no abilities to cause effects, the
+     * endowments are the only source of eval-time abilities for the
+     * expr to cause effects.
+     */
+    function confine(exprSrc, opt_endowments, opt_sourcePosition) {
+      var imports = makeImports();
+      if (opt_endowments) {
+        copyToImports(imports, opt_endowments);
+      }
+      def(imports);
+      return compileExpr(exprSrc, opt_sourcePosition)(imports);
     }
 
 
@@ -1066,10 +1101,12 @@ ses.startSES = function(global,
       }),
       tamperProof: constFunc(tamperProof),
       constFunc: constFunc(constFunc),
+      Nat: constFunc(Nat),
       // def: see below
       is: constFunc(ses.is),
 
       compileExpr: constFunc(compileExpr),
+      confine: constFunc(confine),
       compileModule: constFunc(compileModule),
       // compileProgram: compileProgram, // Cannot be implemented in ES5.1.
       eval: fakeEval,               // don't freeze here
@@ -1127,7 +1164,9 @@ ses.startSES = function(global,
           value: global[name],
           writable: false,
           configurable: false,
-          enumerable: desc.enumerable // firefox bug 787262
+
+          // See https://bugzilla.mozilla.org/show_bug.cgi?id=787262
+          enumerable: desc.enumerable 
         };
         try {
           defProp(global, name, newDesc);
@@ -1239,6 +1278,23 @@ ses.startSES = function(global,
       }
     }
 
+    if (name === '__proto__') {
+      // At least Chrome Version 27.0.1428.0 canary, Safari Version
+      // 6.0.2 (8536.26.17), and Opera 12.14 include '__proto__' in the
+      // result of Object.getOwnPropertyNames. However, the meaning of
+      // deleting this isn't clear, so here we effectively whitelist
+      // it on all objects. 
+      //
+      // We do not whitelist it in whitelist.js, as that would involve
+      // creating a property {@code __proto__: '*'} which, on some
+      // engines (and perhaps as standard on ES6) attempt to make this
+      // portion of the whitelist inherit from {@code '*'}, which
+      // would fail in amusing ways.
+      reportProperty(ses.severities.SAFE_SPEC_VIOLATION,
+                     'Skipped', path);
+      return true;
+    }
+
     var deleted = void 0;
     var err = void 0;
     try {
@@ -1280,7 +1336,10 @@ ses.startSES = function(global,
         // should still be able to freeze it in a harmless state.
         var value = gopd(base, name).value;
         defProp(base, name, {
-          value: value === null ? null : void 0,
+          // If it's a primitive value, like IE10's non-standard,
+          // non-deletable, but harmless RegExp.prototype.options,
+          // then we allow it to retain its value.
+          value: value === Object(value) ? void 0 : value,
           writable: false,
           configurable: false
         });

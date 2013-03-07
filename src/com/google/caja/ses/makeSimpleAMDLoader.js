@@ -25,7 +25,7 @@
  */
 
 
-(function(imports){
+(function(pseudoGlobal){
    "use strict";
 
    var bind = Function.prototype.bind;
@@ -97,7 +97,7 @@
      var loader;
 
      function rawLoad(id) {
-       return Q(fetch(id)).when(function(src) {
+       return Q(fetch(id)).then(function(src) {
 
          var result = defineNotCalledPumpkin;
          function define(opt_id, deps, factory) {
@@ -111,9 +111,9 @@
              factory = deps;
              deps = opt_id;
            }
-           var importPs = mapFn(deps, loader);
-           result = applyFn(Q.all, void 0, importPs).when(function(imports) {
-             return applyFn(factory, void 0, imports);
+           var amdImportPs = mapFn(deps, loader);
+           result = Q.all(amdImportPs).then(function(amdImports) {
+             return applyFn(factory, void 0, amdImports);
            });
          }
          // TODO(erights): Once we're jQuery compatible, change
@@ -122,10 +122,11 @@
 
          var imports = cajaVM.makeImports();
          cajaVM.copyToImports(imports, {define: constFunc(define)});
+         cajaVM.def(imports);
 
          var compiledExprP = compileExprLater(
            '(function(){' + src + '})()', id);
-         return Q(compiledExprP).when(function(compiledExpr) {
+         return Q(compiledExprP).then(function(compiledExpr) {
 
            compiledExpr(imports);
            if (result === defineNotCalledPumpkin) {
@@ -138,6 +139,6 @@
      return loader = Q.memoize(rawLoad, moduleMap);
    }
 
-   imports.makeSimpleAMDLoader = constFunc(makeSimpleAMDLoader);
+   pseudoGlobal.makeSimpleAMDLoader = constFunc(makeSimpleAMDLoader);
 
  })(this);

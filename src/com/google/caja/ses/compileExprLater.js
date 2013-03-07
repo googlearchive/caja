@@ -30,7 +30,7 @@ http://webreflection.blogspot.com/2011/08/simulate-script-injection-via-data-uri
 
 var ses;
 
-(function() {
+(function(global) {
    "use strict";
 
    if (ses && !ses.ok()) { return; }
@@ -103,7 +103,8 @@ var ses;
        '["' + freeNames.join('", "') + '"])));';
 
      if (opt_sourceUrl) {
-       if (URI && URI.parse) {
+       // See http://code.google.com/p/google-caja/wiki/SES#typeof_variable
+       if (typeof global.URI !== 'undefined' && URI.parse) {
          var parsed = URI.parse(String(opt_sourceUrl));
          parsed = null === parsed ? null : parsed.toString();
 
@@ -129,11 +130,11 @@ var ses;
 
      function deleteScriptNode() { script.parentNode.removeChild(script); }
 
-     Q(result.promise).when(deleteScriptNode, deleteScriptNode).end();
+     Q(result.promise).then(deleteScriptNode, deleteScriptNode).end();
 
      return result.promise;
    }
 
    ses.compileExprLater = compileLaterInScript;
 
- })();
+ })(this);
