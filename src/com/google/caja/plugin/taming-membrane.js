@@ -122,8 +122,10 @@ function TamingMembrane(privilegedAccess, schema) {
         t = new String(privilegedAccess.getValueOf(o));
         break;
       case '[object Error]':
-        var msg = privilegedAccess.getProperty(o, 'message');
-        switch (privilegedAccess.getProperty(o, 'name')) {
+        // paranoia -- Error constructor is specified to stringify
+        var msg = '' + privilegedAccess.getProperty(o, 'message');
+        var name = privilegedAccess.getProperty(o, 'name');
+        switch (name) {
           case 'Error':
             t = new Error(msg);
             break;
@@ -144,6 +146,10 @@ function TamingMembrane(privilegedAccess, schema) {
             break;
           case 'URIError':
             t = new URIError(msg);
+            break;
+          default:
+            t = new Error(msg);
+            t.name = '' + name;
             break;
         }
     }

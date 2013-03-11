@@ -325,6 +325,24 @@
     frame.markFunction(api.evalInHostTamed, 'evalInHostTamed');
 
     ////////////////////////////////////////////////////////////////////////
+    // EXCEPTIONS
+
+    // For testing errors with nonstandard .name
+    // <https://code.google.com/p/google-caja/issues/detail?id=1671>
+    function TestCustomNamedError(message) {
+      var e = new Error(message);
+      e.name = 'TestCustomNamedError';
+      return e;
+    }
+
+    // Make sure e.message is not a hole in the membrane
+    function TestEvilMessageError() {
+      var e = new Error('');
+      e.message = {toString: function() { return 'mwahaha'; }};
+      return e;
+    }
+
+    ////////////////////////////////////////////////////////////////////////
     // Object with getters and setters that throw
 
     api.objWithThrowingAccessors = {};

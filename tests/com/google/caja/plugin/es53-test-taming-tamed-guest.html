@@ -1064,8 +1064,19 @@
       assertEquals(
           msg,
           e.message);
+      var tamingFrameCtor;
+      try {
+        tamingFrameCtor = getTamingFrameObject(name);
+      } catch (e) {
+        if (e.name === 'ReferenceError') {
+          // for CustomNamedError
+          tamingFrameCtor = getTamingFrameObject('Error');
+        } else {
+          throw e;
+        }
+      }
       assertTrue(
-          e instanceof getTamingFrameObject(name));
+          e instanceof tamingFrameCtor);
     }
 
     function getReturned(name) {
@@ -1092,8 +1103,14 @@
       'ReferenceError',
       'SyntaxError',
       'TypeError',
-      'URIError'
+      'URIError',
+      'TestCustomNamedError'
     ]).forEach(testException);
+
+    // Make sure e.message is not a hole in the membrane
+    var msgError = getReturned('TestEvilMessageError');
+    assertEquals('string', typeof msgError.message);
+    assertEquals('mwahaha', msgError.message);
 
     pass('testTamedExceptions');
   });
