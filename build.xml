@@ -215,8 +215,7 @@ For help on building and testing Caja, see:
         <isset property="test.debug"/>
       </condition>
       <mkdir dir="${reports}/tests"/>
-      <junit printsummary="yes" fork="yes" forkmode="once" maxmemory="512m"
-          haltonfailure="yes">
+      <junit printsummary="yes" fork="yes" forkmode="once" maxmemory="512m">
         <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
         <classpath refid="classpath.tests"/>
         <!-- usefile=false prints to stdout; we don't want to mix up these

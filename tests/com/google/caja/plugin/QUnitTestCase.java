@@ -2,8 +2,6 @@ package com.google.caja.plugin;
 
 import java.util.List;
 
-import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -58,11 +56,19 @@ public abstract class QUnitTestCase extends BrowserTestCase<Integer> {
       }
     }
 
-    String result = passCount != null
-        ? "\n" + passCount + " tests"
-        : "passed, 0 failed";
-    Assert.assertThat(currentStatus, Matchers.containsString(result));
+    int passed = numberByClass(statusElement, "passed");
+    int failed = numberByClass(statusElement, "failed");
+    if (passCount != null) {
+      assertEquals(currentStatus, (int)passCount, passed);
+    } else {
+      assertEquals(currentStatus, 0, failed);
+    }
     return currentStatus;
+  }
+
+  private int numberByClass(WebElement container, String className) {
+    return Integer.parseInt(
+        container.findElement(By.className(className)).getText());
   }
 
   /**
