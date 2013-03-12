@@ -120,7 +120,7 @@ For help on building and testing Caja, see:
     <pathelement path="${testlib}"/>
     <pathelement path="${third_party}/java/emma/emma.jar"/>
     <pathelement path="${third_party}/java/junit/junit.jar"/>
-    <pathelement path="${third_party}/java/webdriver/selenium-server-standalone-2.30.0.jar"/>
+    <pathelement path="${third_party}/java/webdriver/selenium-server-standalone-2.31.0.jar"/>
     <path refid="classpath.main"/>
     <path refid="classpath.gwt"/>
   </path>
