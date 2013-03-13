@@ -23,22 +23,13 @@ import com.google.caja.util.LocalServer;
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Joiner;
 import org.mortbay.jetty.servlet.Context;
 import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.UnsupportedCommandException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.remote.DesiredCapabilities;
-import org.openqa.selenium.remote.RemoteWebDriver;
 
 /**
  * Test case class with tools for controlling a web browser running pages from
@@ -81,40 +72,15 @@ import org.openqa.selenium.remote.RemoteWebDriver;
  * @author kpreid@switchb.org (Kevin Reid)
  */
 public abstract class BrowserTestCase<D> extends CajaTestCase {
-  private static final String BROWSER = "caja.test.browser";
-  private static final String BROWSER_PATH = "caja.test.browserPath";
-  private static final String HEADLESS = "caja.test.headless";
+  // TODO(felix8a): gather flags
   private static final String REMOTE = "caja.test.remote";
   private static final String SERVER_ONLY = "caja.test.serverOnly";
   private static final String START_AND_WAIT = "caja.test.startAndWait";
 
-  // This being static is a horrible kludge to be able to reuse the WebDriver
-  // instance between individual tests. There is no narrower scope we can use,
-  // unless we were to move to JUnit 4 style tests, which have per-class setup.
-  static WebDriver driver = null;
-
-  // We keep a blank window open so the browser stays running when we close
-  // a test window.
-  static String firstWindow = null;
-
-  private final static String browserType = System.getProperty(BROWSER,
-      "firefox");
-
-  static {
-    Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-      public void run() {
-        if (driver != null) {
-          // Close first window, which quits the browser if it's the only one.
-          if (firstWindow != null) {
-            driver.switchTo().window(firstWindow);
-          }
-          driver.close();
-          driver = null;
-        }
-      }
-    }));
-  }
-
+  // We acquire a WebDriverHandle on construction because the test runner
+  // constructs all the TestCase objects before running any of them, and
+  // we want WebDriverHandle's refcount to stay nonzero as long as possible.
+  private WebDriverHandle wdh = new WebDriverHandle();
 
   protected String testBuildVersion = null;
 
@@ -155,6 +121,8 @@ public abstract class BrowserTestCase<D> extends CajaTestCase {
 
   @Override
   public void tearDown() throws Exception {
+    // WebDriverHandle closes the browser after all tests call release.
+    wdh.release();
     setTestBuildVersion(null);
     super.tearDown();
   }
@@ -220,18 +188,7 @@ public abstract class BrowserTestCase<D> extends CajaTestCase {
       if (flag(SERVER_ONLY)) {
         Thread.currentThread().join();
       }
-
-      if (driver == null) {
-        driver = makeDriver();
-        firstWindow = driver.getWindowHandle();
-        try {
-          driver.manage().timeouts().pageLoadTimeout(15, TimeUnit.SECONDS);
-          driver.manage().timeouts().setScriptTimeout(5, TimeUnit.SECONDS);
-        } catch (UnsupportedCommandException e) {
-          // ignore
-        }
-      }
-      switchToNewWindow(driver);
+      WebDriver driver = wdh.makeWindow();
       driver.get(page);
       if (flag(START_AND_WAIT)) {
         Thread.currentThread().join();
@@ -241,27 +198,12 @@ public abstract class BrowserTestCase<D> extends CajaTestCase {
       passed = true;
     } finally {
       localServer.stop();
-      if (driver != null) {
-        // It's helpful for debugging to keep failed windows open.
-        if (passed || isKnownFailure()) {
-          driver.close();
-          driver.switchTo().window(firstWindow);
-        }
+      // It's helpful for debugging to keep failed windows open.
+      if (passed || isKnownFailure()) {
+        wdh.closeWindow();
       }
     }
     return result;
-  }
-
-  static int windowSeq = 1;
-
-  protected void switchToNewWindow(WebDriver driver) {
-    JavascriptExecutor jsexec = (JavascriptExecutor) driver;
-    String name = "btcwin" + (windowSeq++);
-    Boolean result = (Boolean) jsexec.executeScript(
-        "return !!window.open('', '" + name + "')");
-    if (result) {
-      driver.switchTo().window(name);
-    }
   }
 
   static protected boolean flag(String name) {
@@ -431,40 +373,16 @@ public abstract class BrowserTestCase<D> extends CajaTestCase {
     int run();
   }
 
-  private WebDriver makeDriver() throws MalformedURLException {
-    if (flag(HEADLESS)) {
-      return null;
-    }
-    String browserPath = System.getProperty(BROWSER_PATH);
-    String remote = System.getProperty(REMOTE, "");
-    DesiredCapabilities dc = new DesiredCapabilities();
-    if (!"".equals(remote)) {
-      dc.setBrowserName(browserType);
-      dc.setJavascriptEnabled(true);
-      return new RemoteWebDriver(new URL(remote), dc);
-    }
-    if ("chrome".equals(browserType)) {
-      if (browserPath != null) {
-        dc.setCapability("chrome.binary", browserPath);
-      }
-      return new ChromeDriver(dc);
-    } else if ("firefox".equals(browserType)) {
-      return new FirefoxDriver();
-    } else {
-      throw new RuntimeException("No local driver for browser type '"
-          + browserType + "'");
-    }
-  }
-
   /**
    * Helper to respond to browser differences.
    */
   D firefoxVsChrome(D firefox, D chrome) {
+    String type = wdh.getBrowserType();
     // In the event that we support testing on more browsers, this should be
     // redesigned appropriately, rather than being a long if-else.
-    if ("firefox".equals(browserType)) {
+    if ("firefox".equals(type)) {
       return firefox;
-    } else if ("chrome".equals(browserType)) {
+    } else if ("chrome".equals(type)) {
       return chrome;
     } else {
       return firefox;
