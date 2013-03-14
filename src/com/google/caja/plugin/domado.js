@@ -4878,7 +4878,8 @@ var Domado = (function() {
         proxyType: FormElementAndExpandoProxyHandler,
         properties: {
           action: NP.filterAttr(defaultToEmptyStr, String),
-          elements: NP.TameMemoIf(nodeListsAreLive, 'elements', function(f) {
+          elements: NP.TameMemoIf(false, 'elements', function(f) {
+            // TODO(kpreid): make tameHTMLCollection live-capable
             return tameHTMLCollection(f, defaultTameNode);
           }),
           enctype: NP.filterAttr(defaultToEmptyStr, String),

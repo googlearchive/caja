@@ -194,3 +194,27 @@
     pass('testForms');
   });
 </script>
+
+<div class="testcontainer" id="testDynamicForm">
+  <form id="testDynamicForm-form">
+    <input>
+  </form>
+</div>
+<script type="text/javascript">
+  jsunitRegister('testDynamicForm',
+                 function testDynamicForm() {
+
+    var form = document.getElementById('testDynamicForm-form');
+
+    form.elements;
+
+    var field = document.createElement('input');
+    form.appendChild(field);
+
+    // Regression test: form.elements updates with new elements
+    assertEquals(2, form.elements.length);
+    assertEquals(field, form.elements[1]);
+
+    pass('testDynamicForm');
+  });
+</script>
