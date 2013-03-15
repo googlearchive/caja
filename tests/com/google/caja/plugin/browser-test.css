@@ -17,6 +17,11 @@
 .testcontainer {
   background: yellow;
   border: 2px solid yellow;
+
+  /* uniform styles for even layout no matter whether the container is a
+     <p>, <div>, or <form> etc. */
+  margin: 2px 0;
+  padding: 1px;
 }
 
 .clickme {
@@ -50,4 +55,19 @@
 .skipped {
   background: #777;
   border: 2px solid #777;
+}
+
+/* test framework toolbar */
+#toolbar {
+   background: #ccf;
+   margin: -1em -1em 1em -1em;
+   padding: 1.5em 1.5em .12em 1.5em;
+}
+#toolbar .widget, #toolbar .nonwidget {
+  display: inline-block;
+  padding: 0 .12em;
+  margin: 0 1em;
+}
+#toolbar .widget {
+  background: #eef;
 }

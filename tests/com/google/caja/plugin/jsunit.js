@@ -233,7 +233,7 @@ function jsunitFinished(id, result, opt_idClass) {
   if (!node) {
     node = makeResultDiv(id);
   }
-  node.appendChild(document.createTextNode(' ' + result + ' ' + id));
+  node.appendChild(document.createTextNode(' \u2014 ' + result + ' ' + id));
   var cl = node.className || '';
   cl = cl.replace(/\b(clickme|waiting)\b\s*/g, '');
   node.className = cl + ' ' + result;
@@ -253,8 +253,11 @@ function makeResultDiv(id) {
   var el = document.createElement('div');
   el.id = id;
   el.className = 'testcontainer';
+
   var parent = document.body || document.documentElement;
-  parent.insertBefore(el, parent.firstChild);
+  var t = document.getElementById('toolbar');
+  parent.insertBefore(el, t ? t.nextSibling : parent.firstChild);
+
   return el;
 }
 

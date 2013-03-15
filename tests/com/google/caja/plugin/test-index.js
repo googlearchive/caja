@@ -31,10 +31,10 @@
 
   var test_drivers = [
     ['es53-test-apitaming.js'],
-    ['es53-test-automode-1.js'],
-    ['es53-test-automode-2.js'],
-    ['es53-test-automode-3.js'],
-    ['es53-test-automode-4.js'],
+    ['es53-test-automode1.js'],
+    ['es53-test-automode2.js'],
+    ['es53-test-automode3.js'],
+    ['es53-test-automode4.js'],
     ['es53-test-cajajs-invocation.js'],
     ['es53-test-cajajs-minor-version-skew-cajoler-response.js'
      + '&cajajs=/caja/testing/skew-mmm/caja.js', 'es53'],

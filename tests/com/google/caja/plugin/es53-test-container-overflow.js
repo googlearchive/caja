@@ -26,6 +26,10 @@
     debug: true,
     forceES5Mode: inES5Mode
   });
+  
+  // Remove test harness toolbar so it doesn't affect the layout
+  var toolbar = document.getElementById('toolbar');
+  toolbar.parentNode.removeChild(toolbar);
 
   // Remove whitespace around the document so we don't waste space
   document.body.style.margin = '0px';

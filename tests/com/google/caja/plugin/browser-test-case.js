@@ -108,12 +108,30 @@ var cajaBuildVersion = '%VERSION%';
 
 // URL parameter parsing code from blog at:
 // http://www.netlobo.com/url_query_string_javascript.html
-function getUrlParam(name) {
+function urlParamPattern(name) {
   name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
-  var regexS = "[\\?&]"+name+"=([^&#]*)";
-  var regex = new RegExp(regexS);
-  var results = regex.exec(window.location.href);
-  return decodeURIComponent((results == null) ? "" : results[1]);
+  return new RegExp("([\\?&]"+name+"=)([^&#]*)");
+}
+function getUrlParam(name) {
+  var results = urlParamPattern(name).exec(window.location.href);
+  return decodeURIComponent((results == null) ? "" : results[2]);
+}
+
+/**
+ * Construct the page URL with the specified parameter added/replaced.
+ */
+function withUrlParam(name, value) {
+  var pat = urlParamPattern(name);
+  var current = window.location.href;
+  if (!pat.test(current)) {
+    return current + '&' + encodeURIComponent(name) + '=' +
+        encodeURIComponent(value);
+  } else {
+    return current.replace(pat,
+        function(match, prefix) {
+          return prefix + encodeURIComponent(value);
+        });
+  }
 }
 
 function pageLoaded___() {
@@ -146,6 +164,61 @@ if (getUrlParam('es5') === 'true') {
 } else {
   throw new Error('es5 parameter is not "true" or "false"');
 }
+
+// Construct test case navigation toolbar
+window.addEventListener('load', function() {
+  var toolbar = document.getElementById('toolbar');
+  var put = toolbar.appendChild.bind(toolbar);
+
+  function link(label, state, link, opt_title) {
+    var el;
+    if (state) {
+      el = document.createElement('strong');
+    } else {
+      el = document.createElement('a');
+      el.href = link;
+    }
+    el.textContent = label;
+    el.title = opt_title !== undefined ? opt_title : '';
+    return el;
+  }
+  function widget() {
+    var el = document.createElement('span');
+    el.className = 'widget';
+    for (var i = 0; i < arguments.length; i++) {
+      if (i !== 0) { el.appendChild(document.createTextNode('\u00a0\u00a0')); }
+      el.appendChild(arguments[i]);
+    }
+    return el;
+  }
+
+  put(widget(
+      link('ES5/3', !inES5Mode, withUrlParam('es5', 'false')),
+      link('SES', inES5Mode, withUrlParam('es5', 'true'))));
+
+  var max = getUrlParam('minified') === 'false';
+  put(widget(
+      link('source', max, withUrlParam('minified', 'false')),
+      link('minified', !max, withUrlParam('minified', 'true'))));
+
+  var testModuleParam =
+      getUrlParam('test-driver') ? 'test-driver' : 'test-case';
+  var testModulePath = getUrlParam(testModuleParam);
+  var sourceMatch = (/^\/tests\/com\/google\/caja\/plugin\/(.*)$/
+      .exec(testModulePath));
+  var testModuleBare = sourceMatch ? sourceMatch[1] : testModulePath;
+  var sl;
+  put(widget(
+      link('built', !sourceMatch, withUrlParam(testModuleParam,
+          testModuleBare)),
+      link('from source tree', sourceMatch, withUrlParam(testModuleParam,
+              '/tests/com/google/caja/plugin/' + testModuleBare),
+          'does not work for all tests')));
+
+  put(document.createTextNode(testModuleParam + ': '));
+  put(link(testModuleBare, false, testModulePath,
+      'to verify text / force reload'));
+}, false);
 
 /**
  * Canonicalize innerHTML output:
@@ -498,19 +571,10 @@ function createExtraImportsForTesting(frameGroup, frame) {
     standardImports.directAccess = directAccess;
   }
 
-
   // Marks a container green to indicate that test passed
   standardImports.pass = frame.tame(frame.markFunction(function (id) {
     jsunit.pass(id);
-    if (!frame.imports.document) { return; }
-    var node = frame.imports.document.getElementById(id);
-    if (!node) return;
-    node = frame.domicile.feralNode(node);
-    node.appendChild(document.createTextNode('Passed ' + id));
-    var cl = node.className || '';
-    cl = cl.replace(/\b(clickme|waiting)\b\s*/g, '');
-    cl += ' passed';
-    node.className = cl;
+    jsunitFinished(id, 'passed', frame.idSuffix);
   }));
 
   /**
@@ -523,15 +587,7 @@ function createExtraImportsForTesting(frameGroup, frame) {
     if (okay) {
       jsunitRegister(testName, testFunc);
     } else {
-      if (!frame.imports.document) { return; }
-      var node = frame.imports.document.getElementById(testName);
-      if (!node) return;
-      node = frame.domicile.feralNode(node);
-      node.appendChild(document.createTextNode('Skipped ' + testName));
-      var cl = node.className || '';
-      cl = cl.replace(/\b(clickme|waiting)\b\s*/g, '');
-      cl += ' skipped';
-      node.className = cl;
+      jsunitFinished(testName, 'skipped', frame.idSuffix);
     }
   }));
 
