@@ -48,9 +48,6 @@ import org.openqa.selenium.WebElement;
  *   <dd>Override location of browser executable.  Currently only
  *   for Chrome (sets chrome.binary for webdriver).</dd>
  *
- *   <dt>caja.test.headless</dt>
- *   <dd>When true, skip browser tests</dd>
- *
  *   <dt>caja.test.remote</dt>
  *   <dd>URL of a remote webdriver, which should usually be something like
  *   "http://hostname:4444/wd/hub".  If unset, use a local webdriver.</dd>

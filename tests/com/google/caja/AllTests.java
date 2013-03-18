@@ -30,10 +30,24 @@ import junit.framework.TestSuite;
  */
 public class AllTests {
   private static FilenameFilter testClassFilter = new FilenameFilter() {
+    private Pattern testExclude = Pattern.compile(
+        "(?s)(?:" + globToPattern(
+            System.getProperty("test.exclude", "--none--") + ".java") + ")$");
+
+    private Pattern testFilter = Pattern.compile(
+        "(?s)(?:" + globToPattern(
+            System.getProperty("test.filter", "*Test") + ".java") + ")$");
+
+    private Pattern jqueryExclude = Pattern.compile(
+        "(?s)(?:JQuery.*Test[.]java)$");
+
     public boolean accept(File dir, String name) {
       File test = new File(dir, name);
       return !name.startsWith(".svn")
-          && (test.isDirectory() || name.endsWith("Test.java"));
+          && (test.isDirectory() ||
+              (!testExclude.matcher(name).matches() &&
+               !jqueryExclude.matcher(name).matches() &&
+               testFilter.matcher(name).matches()));
     }
   };
 
@@ -84,11 +98,7 @@ public class AllTests {
       return 0;
     }
 
-    Pattern testFilter = Pattern.compile(
-        "(?:" + globToPattern(System.getProperty("test.filter", "*")) + ")$",
-        Pattern.DOTALL);
-
-    if (testCase != null && testFilter.matcher(testCase.getName()).find()) {
+    if (testCase != null) {
       ts.addTestSuite(testCase);
     }
     return 1;

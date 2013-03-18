@@ -45,6 +45,7 @@ For help on building and testing Caja, see:
   <property name="src.caja"    location="${src}/com/google/caja"/>
   <property name="tests"       location="tests"/>
   <property name="tests.caja"  location="${tests}/com/google/caja"/>
+  <property name="test.exclude" value="--none--"/>
   <property name="test.filter" value="*Test"/>
   <property name="test.method.filter" value="*"/>
   <property name="third_party" location="third_party"/>
@@ -182,6 +183,13 @@ For help on building and testing Caja, see:
     <mkdir dir="${third_party}/java/htmlparser/lib"/>
   </target>
 
+  <target name="nobrtest"
+      description="Runs just non-browser tests.">
+    <antcall target="runtests">
+      <param name="test.exclude" value="*BrowserTest"/>
+    </antcall>
+  </target>
+
   <target name="brtest"
    description="Runs just browser tests.">
     <antcall target="runtests">
@@ -283,6 +291,7 @@ For help on building and testing Caja, see:
             <not><filename name="**/*BrowserTest.java"/></not>
             <not><filename name="**/JQueryTest.java"/></not>
             <not><filename name="**/JQueryUITest.java"/></not>
+            <not><filename name="**/${test.exclude}.java"/></not>
             <filename name="**/${test.filter}.java"/>
             <filename regex="/[A-M]"/>
           </and>
@@ -302,6 +311,7 @@ For help on building and testing Caja, see:
         <fileset dir="${tests}">
           <and>
             <not><filename name="**/*BrowserTest.java"/></not>
+            <not><filename name="**/${test.exclude}.java"/></not>
             <filename name="**/${test.filter}.java"/>
             <filename regex="/[N-Z]"/>
           </and>
@@ -321,6 +331,7 @@ For help on building and testing Caja, see:
         <fileset dir="${tests}">
           <and>
             <filename name="**/*BrowserTest.java"/>
+            <not><filename name="**/${test.exclude}.java"/></not>
             <filename name="**/${test.filter}.java"/>
           </and>
         </fileset>
@@ -401,9 +412,10 @@ For help on building and testing Caja, see:
     <condition property="runtests.shouldCache">
       <and>
         <istrue value="${runtests.success}"/>
+        <equals arg1="${test.exclude}" arg2="--none--"/>
         <equals arg1="${test.filter}" arg2="*Test"/>
         <equals arg1="${test.method.filter}" arg2="*"/>
-        <isfalse value="${caja.test.headless}"/>
+        <isfalse value="${caja.test.serverOnly}"/>
         <isfalse value="${caja.test.startAndWait}"/>
       </and>
     </condition>
