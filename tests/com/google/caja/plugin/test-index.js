@@ -63,6 +63,7 @@
     ['es53-test-taming-primitives.js'],
     ['es53-test-taming-tamed.js'],
     ['es53-test-taming-untamed.js'],
+    ['es53-test-target-attribute-presets.js'],
     ['es53-test-unicode.js']
   ];
 

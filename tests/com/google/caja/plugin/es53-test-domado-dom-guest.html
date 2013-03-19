@@ -632,11 +632,8 @@ document.write(
 <script type="text/javascript">
   jsunitRegister('testGetElementById',
                  function testGetElementById() {
-    assertEquals(null, document.getElementById('foo'));
-    assertEquals(null, document.getElementById('bar'));
     assertEquals(null, document.getElementById('no_such_node'));
     assertTrue(document.getElementById('testGetElementById') != null);
-
     pass('testGetElementById');
   });
 </script>
@@ -2527,7 +2524,6 @@ After
     var body = document.body;
     var container = document.getElementById('testShorthandCss');
     var el = document.createElement('DIV');
-    el.id = 'foo';
     el.innerHTML = 'style me shortly';
     container.appendChild(el);
     el.style.border = '5px dashed blue';

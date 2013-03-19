@@ -292,12 +292,18 @@
     assertEquals('CL5', 1, testInnerTextNode.childNodes.length);
     assertEquals('IT5', '42', testInnerTextNode.innerText);
 
+    pass('testInnerText');
+  });
+</script>
+
+<script type="text/javascript">
+  jsunitRegister('testOpaqueInnerText',
+                 function testOpaqueInnerText() {
     // Opaque nodes appear to be empty.
     assertEquals(
         'ITON', 'abc',
-        document.getElementById('testOpaqueNodes').innerText);
-
-    pass('testInnerText');
+        document.getElementById('testOpaqueInnerText').innerText);
+    pass('testOpaqueInnerText');
   });
 </script>
 
@@ -499,7 +505,7 @@ can test window.scrollBy with a positive x value with a visible effect.
   });
 </script>
 
-<div id="test-dynamic-style" class="testcontainer" style="color: blue;">
+<div id="test-dynamic-style" style="color: blue;">
 </div>
 <p id="testScriptLoading" class="testcontainer">Test script loading</p>
 <script type="text/javascript">

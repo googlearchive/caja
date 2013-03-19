@@ -361,7 +361,9 @@ var asyncRequirements = (function () {
             }
           } catch (e) {
             console.error(
-                'Asynchronous failure : ' + msgAndPredicate.message);
+                'Asynchronous failure : ' + msgAndPredicate.message, e);
+            req[i] = req[req.length - 1];
+            --req.length;
           }
         }
         if (req.length === 0 || (new Date).getTime() >= timeoutTime) {

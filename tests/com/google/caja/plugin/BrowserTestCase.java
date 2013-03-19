@@ -256,11 +256,11 @@ public abstract class BrowserTestCase<D> extends CajaTestCase {
           "data parameter is not used and should be null");
     }
 
-    // 40s because test-domado-dom startup is very very very slow in es53 mode,
+    // 20s because test-domado-dom startup is very very very slow in es53 mode,
     // and something we're doing is leading to huge unpredictable slowdowns
     // in random test startup; perhaps we're holding onto a lot of ram and
     // we're losing on swapping/gc time.  unclear.
-    countdown(40000, 200, new Countdown() {
+    countdown(20000, 200, new Countdown() {
       @Override public String toString() { return "startup"; }
       public int run() {
         List<WebElement> readyElements = driver.findElements(
@@ -269,7 +269,10 @@ public abstract class BrowserTestCase<D> extends CajaTestCase {
       }
     });
 
-    countdown(2000, 500, new Countdown() {
+    // 4s because test-domado-dom-events has non-click tests that can block
+    // for a nontrivial amount of time, so our clicks aren't necessarily
+    // processed right away.
+    countdown(4000, 200, new Countdown() {
       private List<WebElement> clickingList = null;
       @Override public String toString() {
         return "clicking done (Remaining elements = " +
@@ -279,23 +282,27 @@ public abstract class BrowserTestCase<D> extends CajaTestCase {
         clickingList = driver.findElements(By.xpath(
             "//*[contains(@class,'clickme')]/*"));
         for (WebElement e : clickingList) {
+          // TODO(felix8a): webdriver fails if e has been removed
           e.click();
         }
         return clickingList.size();
       }
     });
 
-    // TODO(felix8a): reduce this timeout.  the problem is that progress
-    // is very slow on test pages that do a lot of caja.load() calls.
-    countdown(40000, 200, new Countdown() {
+    // 10s because the es53 cajoler is slow the first time it runs.
+    countdown(10000, 200, new Countdown() {
       private List<WebElement> waitingList = null;
       @Override public String toString() {
         return "completion (Remaining elements = " +
             renderElements(waitingList) + ")";
       }
       public int run() {
-        waitingList =
-            driver.findElements(By.xpath("//*[contains(@class,'waiting')]"));
+        // TODO(felix8a): this used to check for just class "waiting", but now
+        // "waiting" is redundant and should be removed.
+        waitingList = driver.findElements(By.xpath(
+            "//*[contains(@class,'testcontainer')"
+            + " and not(contains(@class,'done'))"
+            + " and not(contains(@class,'manual'))]"));
         return waitingList.size();
       }
     });

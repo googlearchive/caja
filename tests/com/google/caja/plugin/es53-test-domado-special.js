@@ -129,8 +129,7 @@ fetch('es53-test-domado-special-initial-state.html', function(initialHtml) {
                body.insertBefore(content, body.firstChild);
 
                readyToTest();
-               jsunitRun();
-               asyncRequirements.evaluate();
+               jsunitRun(null, null, asyncRequirements.evaluate);
              });
      });
   });

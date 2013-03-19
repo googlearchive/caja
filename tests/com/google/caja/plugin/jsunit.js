@@ -28,6 +28,9 @@ jsunit.passCount = 0;
 jsunit.failCount = 0;
 jsunit.testIdStack = [];
 jsunit.originalTitle = '';
+jsunit.asyncPoll = 50;
+jsunit.asyncWait = 1000;
+jsunit.alreadyRan = false;
 
 jsunit.getCurrentTestId = function() {
   return jsunit.testIdStack.length
@@ -95,17 +98,6 @@ function arrayContains(anArray, anElement) {
   return false;
 }
 
-function logToConsole(e) {
-  if (e.isJsUnitException) {
-    console.error(
-        e.comment + '\n' + e.jsUnitMessage + '\n' + e.stackTrace);
-  } else if (e.description) {
-    console.error(e.description + '\n' + e.stackTrace);
-  } else {
-    console.error((e.message || '' + e) + '\n' + e.stack);
-  }
-}
-
 function isGroupLogMessages() {
   return (typeof console !== 'undefined'
       && 'group' in console);  // Not on Safari.
@@ -113,9 +105,11 @@ function isGroupLogMessages() {
 
 function startLogMessagesGroup(testName, opt_subTestName) {
   if (isGroupLogMessages()) {
-    opt_subTestName
-        ? console.group('running %s - %s', testName, opt_subTestName)
-        : console.group('running %s', testName);
+    if (opt_subTestName) {
+      console.group('running ' + testName + ' - ' + opt_subTestName)
+    } else {
+      console.group('running ' + testName);
+    }
     console.time(testName);
   }
   jsunit.pushTestId(testName);
@@ -133,12 +127,10 @@ function jsunitFilter(filter) {
   jsunitFilter.filter = filter;
 }
 
-var jsunitTestsRun = false;
-
 /** Run tests. */
-function jsunitRun(opt_testNames, opt_idClass) {
-  if (jsunitTestsRun) { return; }
-  jsunitTestsRun = true;
+function jsunitRun(opt_testNames, opt_idClass, opt_asyncEval) {
+  if (jsunit.alreadyRan) { return; }
+  jsunit.alreadyRan = true;
 
   document.title += ' (' + (navigator.appName
                             ? navigator.appName + ' ' + navigator.appVersion
@@ -156,44 +148,77 @@ function jsunitRun(opt_testNames, opt_idClass) {
       }
     }
   }
-  testNames.sort();
 
   jsunit.testCount = testNames.length;
-
   if (jsunit.testCount === 0) {
     document.title = 'No tests?';
     throw 'Error: no tests?';
   }
 
-  var firstFailure = null;
-  jsunit.failCount = 0;
-  for (var i = 0; i < testNames.length; ++i) {
-    var testName = testNames[i];
-    startLogMessagesGroup(testName);
-    try {
-      (typeof setUp === 'function') && setUp();
-      jsunit.tests[testName].call();
-      (typeof tearDown === 'function') && tearDown();
-    } catch (e) {
-      firstFailure = firstFailure || e;
-      jsunit.failCount++;
-      jsunit.updateStatus();
-      jsunitFinished(testName, 'failed', opt_idClass);
-      if (typeof console !== 'undefined') {
-        console.log('FAIL: ' + testName);
-        logToConsole(e);
-      }
-    } finally {
-      endLogMessagesGroup(testName);
+  testNames.sort();
+  // jsunitRunNext pops off testNames
+  testNames.reverse();
+  jsunitRunNext(testNames, opt_idClass, opt_asyncEval);
+}
+
+function jsunitRunNext(testNames, opt_idClass, opt_asyncEval) {
+  if (testNames.length === 0) {
+    if (opt_asyncEval) {
+      opt_asyncEval();
     }
+    return;
   }
 
-  jsunit.updateStatus();
-  if (firstFailure) {
-    throw firstFailure;
+  var testName = testNames.pop();
+  startLogMessagesGroup(testName);
+
+  var progress = jsunit.passCount + jsunit.failCount;
+  try {
+    (typeof setUp === 'function') && setUp();
+    jsunit.tests[testName].call();
+    (typeof tearDown === 'function') && tearDown();
+  } catch (e) {
+    jsunit.failCount++;
+    jsunit.updateStatus();
+    jsunitFinished(testName, 'failed', opt_idClass);
+    if (typeof console !== 'undefined') {
+      console.error('FAIL: ' + testName + ': ' + e);
+      console.error(e);
+    }
+    throw e;
+  } finally {
+    endLogMessagesGroup(testName);
+    jsunitWait(progress, new Date().getTime(), testNames, opt_idClass,
+               opt_asyncEval);
   }
-  (typeof console !== 'undefined' && 'group' in console)
-      && (console.group(document.title), console.groupEnd());
+}
+
+// Most of our async tests are basically waiting for a caja.load
+// to finish. Launching them in parallel doesn't really finish
+// much faster, and has the bad effect of making it look like the
+// browser is stalled for a long time (the browser processing
+// queue ends up setting up multiple guest frames before any
+// guest code gets run).  To avoid that, we wait up to
+// jsunit.asyncWait msec to see if a test passed or failed,
+// before starting the next test.
+
+function jsunitWait(progress, start, testNames, opt_idClass, opt_asyncEval) {
+  // have we made progress yet?
+  if (jsunit.passCount + jsunit.failCount === progress) {
+    var now = new Date().getTime();
+    // should we keep waiting?
+    if (now < start + jsunit.asyncWait) {
+      setTimeout(function() {
+        jsunitWait(progress, start, testNames, opt_idClass, opt_asyncEval);
+      }, jsunit.asyncPoll);
+      return;
+    }
+  }
+  // we made progress, or we timed out, so start the next test
+  setTimeout(function() {
+    jsunitRunNext(testNames, opt_idClass, opt_asyncEval);
+  }, 1);
+  // setTimeout 1 because RhinoExecutor doesn't support 0
 }
 
 /** Register a callback within a running test. */
@@ -212,7 +237,9 @@ function jsunitCallback(aFunction, opt_id, opt_frame) {
     try {
       result = aFunction.apply(undefined, arguments);
     } catch (e) {
-      logToConsole(e);
+      if (typeof console !== 'undefined') {
+        console.error(e);
+      }
     } finally {
       endLogMessagesGroup(id, callbackName);
     }
@@ -236,7 +263,7 @@ function jsunitFinished(id, result, opt_idClass) {
   node.appendChild(document.createTextNode(' \u2014 ' + result + ' ' + id));
   var cl = node.className || '';
   cl = cl.replace(/\b(clickme|waiting)\b\s*/g, '');
-  node.className = cl + ' ' + result;
+  node.className = cl + ' done ' + result;
 }
 
 function jsunitPass(id) {
