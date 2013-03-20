@@ -238,6 +238,9 @@ ses.startSES = function(global,
 
   //////////////// END KLUDGE SWITCHES ///////////
 
+  // A problem we can work around but repairES5 cannot repair.
+  var NONCONFIGURABLE_OWN_PROTO =
+      ses.es5ProblemReports.NONCONFIGURABLE_OWN_PROTO.afterFailure;
 
   var dirty = true;
 
@@ -585,6 +588,20 @@ ses.startSES = function(global,
           };
         }
         desc.enumerable = false;
+
+        var existing = gopd(scopeObject, name);
+        if (existing) {
+          if (name === '__proto__') {
+            if (NONCONFIGURABLE_OWN_PROTO) {
+              return;
+            } else {
+              // we should be able to override it
+            }
+          } else {
+            throw new Error('New symptom: ' + name + ' in null-proto object');
+          }
+        }
+        
         defProp(scopeObject, name, desc);
       });
       return freeze(scopeObject);
@@ -605,10 +622,11 @@ ses.startSES = function(global,
      * Notice that the source text placed around {@code exprSrc}
      * <ul>
      * <li>brings no variable names into scope, avoiding any
-     *     non-hygienic name capture issues, and
+     *     non-hygienic name capture issues (except as necessary to
+     *     work around the NONCONFIGURABLE_OWN_PROTO bug), and
      * <li>does not introduce any newlines preceding exprSrc, so
-     *     that all line number which a debugger might report are
-     *     accurate wrt the original source text. And except for the
+     *     that all line numbers which a debugger might report are
+     *     accurate wrt the original source text, and except for the
      *     first line, all the column numbers are accurate too.
      * </ul>
      *
@@ -622,16 +640,20 @@ ses.startSES = function(global,
 
       return '(function() { ' +
         // non-strict code, where this === scopeObject
-        '  with (this) { ' +
-        '    return function() { ' +
-        '      "use strict"; ' +
-        '      return ( ' +
-        // strict code, where this === imports
-        '        ' + exprSrc + '\n' +
-        '      );\n' +
-        '    };\n' +
-        '  }\n' +
-        '})';
+          'with (this) { ' +
+             'return function() { ' +
+               '"use strict"; ' +
+              // workaround for Chrome bug where makeScopeObject cannot
+              // intercept __proto__ -- make sure it doesn't also leak global
+              // access
+              (NONCONFIGURABLE_OWN_PROTO ? 'var __proto__; '  : '') +
+              'return (' +
+                // strict code, where this === imports
+                '' + exprSrc + '\n' +
+              '); ' +
+            '}; ' +
+          '} ' +
+        '})\n';
     }
     ses.securableWrapperSrc = securableWrapperSrc;
 
@@ -1117,7 +1139,9 @@ ses.startSES = function(global,
       copyToImports: constFunc(copyToImports),
 
       makeArrayLike: constFunc(makeArrayLike),
-      inES5Mode: true
+
+      inES5Mode: true,
+      es5ProblemReports: def(ses.es5ProblemReports)
     };
     var extensionsRecord = extensions();
     gopn(extensionsRecord).forEach(function (p) {
