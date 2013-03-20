@@ -232,3 +232,26 @@ jsunitRegister('testColonsInSelectors',
     sanitized);
   jsunit.pass();
 });
+
+jsunitRegister('testCssSelectors',
+               function testCssSelectors() {
+  function assertSelector(source, prefix, expected) {
+    var tokens = lexCss(source);
+    var sanitized = sanitizeCssSelectors(
+      tokens, prefix, function(el, args) { return { tagName: el }; });
+    assertArrayEquals(expected, sanitized);
+  }
+
+  assertSelector("#foo:visited", "sfx", [[], ".sfx #foo-sfx:visited"]);
+  assertSelector("#foo:link", "sfx", [[], ".sfx #foo-sfx:link"]);
+
+  assertSelector("#foo:active", "sfx", [".sfx #foo-sfx:active", []]);
+  assertSelector("#foo:after", "sfx", [".sfx #foo-sfx:after", []]);
+  assertSelector("#foo:before", "sfx", [".sfx #foo-sfx:before", []]);
+  assertSelector("#foo:first-child", "sfx", [".sfx #foo-sfx:first-child", []]);
+  assertSelector("#foo:first-letter", "sfx", [".sfx #foo-sfx:first-leter", []]);
+  assertSelector("#foo:focus", "sfx", [".sfx #foo-sfx:focus", []]);
+  assertSelector("#foo:hover", "sfx", [".sfx #foo-sfx:hover", []]);
+  assertSelector("#foo:bogus", "sfx", [".sfx #foo-sfx", []]);
+  jsunit.pass();
+});

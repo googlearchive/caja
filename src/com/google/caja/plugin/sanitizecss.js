@@ -293,6 +293,14 @@ function sanitizeCssSelectors(selectors, suffix, tagPolicy) {
   var historySensitiveSelectors = [];
   var historyInsensitiveSelectors = [];
 
+  var HISTORY_NON_SENSITIVE_PSEUDO_SELECTOR_WHITELIST =
+    /^(active|after|before|first-child|first-letter|focus|hover)$/;
+  
+  // TODO: This should be removed now as modern browsers no longer require this
+  // special handling
+  var HISTORY_SENSITIVE_PSEUDO_SELECTOR_WHITELIST = 
+    /^(link|visited)$/;
+
   // Remove any spaces that are not operators.
   var k = 0, i, inBrackets = 0, tok;
   for (i = 0; i < selectors.length; ++i) {
@@ -429,7 +437,7 @@ function sanitizeCssSelectors(selectors, suffix, tagPolicy) {
       pseudoSelector = '';
       if (start < end && selectors[start] === ':') {
         tok = selectors[++start];
-        if (tok === 'visited' || tok === 'link') {
+        if (HISTORY_SENSITIVE_PSEUDO_SELECTOR_WHITELIST.test(tok)) {
           if (!/^[a*]?$/.test(element)) {
             return null;
           }
@@ -437,7 +445,7 @@ function sanitizeCssSelectors(selectors, suffix, tagPolicy) {
           pseudoSelector = ':' + tok;
           ++start;
           element = 'a';
-        } else if (tok === 'before' || tok === 'after') {
+        } else if (HISTORY_NON_SENSITIVE_PSEUDO_SELECTOR_WHITELIST.test(tok)) {
           historySensitive = false;
           pseudoSelector = ':' + tok;
           ++start;
