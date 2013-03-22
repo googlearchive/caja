@@ -427,6 +427,10 @@ function createExtraImportsForTesting(frameGroup, frame) {
         return jsunitCallback(cb, opt_id, frame);
       }));
   frame.markCtor(JsUnitException);
+  frame.grantMethod(JsUnitException.prototype, 'toString');
+  frame.grantRead(JsUnitException.prototype, 'isJsUnitException');
+  frame.grantRead(JsUnitException.prototype, 'comment');
+  frame.grantRead(JsUnitException.prototype, 'jsUnitMessage');
   standardImports.JsUnitException = frame.tame(JsUnitException);
 
   standardImports.canonInnerHtml =
