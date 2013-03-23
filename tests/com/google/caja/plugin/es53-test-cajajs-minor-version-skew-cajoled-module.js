@@ -23,7 +23,7 @@
  * @requires caja, jsunitRun, readyToTest
  */
 
-registerTest('testMinorVersionSkew', function testMinorVersionSkew() {
+jsunitRegister('testMinorVersionSkew', function testMinorVersionSkew() {
   fetch('es53-test-guest.out.js', function(script) {
     script = script.replace(
         new RegExp(cajaBuildVersion, 'g'),

@@ -85,10 +85,16 @@ jsunit.updateStatus = function() {
   document.title = status + ' - ' + jsunit.originalTitle;
 };
 
-/** Register a test that can be run later. */
-function jsunitRegister(testName, test) {
+/**
+ * Register a test that can be run later.
+ *
+ * Note: opt_idClass is not usually explicitly written; if needed it is inserted
+ * by the taming wrapper in browser-test-case.js.
+ */
+function jsunitRegister(testName, test, opt_idClass) {
   if (testName in jsunit.tests) { throw new Error('dupe test ' + testName); }
   jsunit.tests[testName] = test;
+  obtainResultDiv(testName, opt_idClass);
 }
 
 function arrayContains(anArray, anElement) {
@@ -253,22 +259,18 @@ function jsunitCallback(aFunction, opt_id, opt_frame) {
 }
 
 function jsunitFinished(id, result, opt_idClass) {
-  var node = document.getElementById(id);
-  if (!node && opt_idClass) {
-    node = document.getElementById(id + '-' + opt_idClass);
-  }
-  if (!node) {
-    node = makeResultDiv(id);
-  }
+  var node = obtainResultDiv(id, opt_idClass);
   node.appendChild(document.createTextNode(' \u2014 ' + result + ' ' + id));
   var cl = node.className || '';
+  // TODO(kpreid): Confirm 'waiting' is obsolete and remove this;
   cl = cl.replace(/\b(clickme|waiting)\b\s*/g, '');
   node.className = cl + ' done ' + result;
 }
 
-function jsunitPass(id) {
-  jsunitFinished(id, 'passed');
+function jsunitPass(id, opt_idClass) {
+  // Note jsunit.pass does validation of the test id, so should occur first
   jsunit.pass(id);
+  jsunitFinished(id, 'passed', opt_idClass);
 }
 
 function jsunitFail(id) {
@@ -276,15 +278,23 @@ function jsunitFail(id) {
   fail(id);
 }
 
-function makeResultDiv(id) {
-  var el = document.createElement('div');
-  el.id = id;
-  el.className = 'testcontainer';
+function obtainResultDiv(id, opt_idClass) {
+  var el;
+  if (opt_idClass) {
+    el = document.getElementById(id + '-' + opt_idClass);
+  }
+  if (!el) {
+    el = document.getElementById(id);
+    if (!el) {
+      el = document.createElement('div');
+      el.setAttribute('id', id);
+      el.setAttribute('class', 'testcontainer');
+      el.textContent = id;
 
-  var parent = document.body || document.documentElement;
-  var t = document.getElementById('toolbar');
-  parent.insertBefore(el, t ? t.nextSibling : parent.firstChild);
-
+      var parent = document.body || document.documentElement;
+      parent.appendChild(el);
+    }
+  }
   return el;
 }
 

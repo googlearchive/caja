@@ -73,7 +73,7 @@
     cajolingServiceClient: cajolingServiceClient
   });
 
-  registerTest('testCajoleUrl', function testCajoleUrl() {
+  jsunitRegister('testCajoleUrl', function testCajoleUrl() {
     caja.load(undefined, undefined, function (frame) {
       frame
           .code(
@@ -87,7 +87,7 @@
     });
   });
 
-  registerTest('testCajoleContent', function testCajoleContent() {
+  jsunitRegister('testCajoleContent', function testCajoleContent() {
     caja.load(undefined, undefined, function (frame) {
       frame
           .code(

@@ -22,7 +22,7 @@
  * @requires caja, jsunitRun, readyToTest
  */
 
-registerTest('testVersionSkew', function testVersionSkew() {
+jsunitRegister('testVersionSkew', function testVersionSkew() {
   fetch('es53-test-guest.out.js', function(script) {
     script = script.replace(
         new RegExp(cajaBuildVersion, 'g'),

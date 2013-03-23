@@ -68,7 +68,7 @@ jsunitRegister('testRegressParser', function() {
   for (var k = 0; k < tests.length; k++) {
     regressParser(tests[k]);
   }
-  jsunitPass();
+  jsunitPass('testRegressParser');
 });
 
 jsunitRegister('testRegressSanitizer', function() {
@@ -76,7 +76,7 @@ jsunitRegister('testRegressSanitizer', function() {
   for (var k = 0; k < tests.length; k++) {
     regressSanitizer(tests[k]);
   }
-  jsunitPass();
+  jsunitPass('testRegressSanitizer');
 });
 
 

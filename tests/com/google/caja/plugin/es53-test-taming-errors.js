@@ -37,7 +37,7 @@
       assertTrue(!!win.Object.FERAL_FRAME_OBJECT___);
       assertEquals(win.Object, win.Object.FERAL_FRAME_OBJECT___);
 
-      jsunit.pass('testInitFeralFrameOther');
+      jsunitPass('testInitFeralFrameOther');
     }, 0);
   });
 
@@ -52,7 +52,7 @@
       assertTrue(!!window.___);
       assertTrue(!!window.Object.FERAL_FRAME_OBJECT___);
       assertEquals(window.Object, window.Object.FERAL_FRAME_OBJECT___);
-      jsunit.pass('testInitFeralFrameSelf');
+      jsunitPass('testInitFeralFrameSelf');
     });
 
     jsunitRegister('testToxicSuperCtorFails',
@@ -65,7 +65,7 @@
       expectFailure(function() {
         frame.tame(SubCtor);
       });
-      jsunit.pass('testToxicSuperCtorFails');
+      jsunitPass('testToxicSuperCtorFails');
     });
 
     readyToTest();

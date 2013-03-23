@@ -59,15 +59,15 @@
     }));
   }
 
-  registerTest('testUnicode1', function () { basicPassingTest('testUnicode1', 
+  jsunitRegister('testUnicode1', function () { basicPassingTest('testUnicode1', 
     // Only ascii
     'ipc.result = 42;', 42); 
   });
-  registerTest('testUnicode2', function () { basicPassingTest('testUnicode2', 
+  jsunitRegister('testUnicode2', function () { basicPassingTest('testUnicode2', 
     // Identifier with encoded character
     'var \\u0061 = 43; ipc.result = a;', 43);
   });
-  registerTest('testUnicode3', function () { basicPassingTest('testUnicode3',
+  jsunitRegister('testUnicode3', function () { basicPassingTest('testUnicode3',
     // Reserved keyword as identifier with encoded character
     'var a = {}; a.wit\\u0068 = 44; ipc.result = a.wit\\u0068;', 44);
   });
@@ -76,7 +76,7 @@
   // is supported.  Just this test is commented out rather than marking the entire
   // test with FailureIsAnOption to avoid spurious test failures being masked.
   if (!inES5Mode) {
-    registerTest('testUnicode4', function () { basicPassingTest('testUnicode4',
+    jsunitRegister('testUnicode4', function () { basicPassingTest('testUnicode4',
       // Regex containing encoded characters (from jquery)
       ''
       + 'var ID = /#((?:[\\w\\u00c0-\\uFFFF\\-]|\\\\.)+)/;'
@@ -84,17 +84,17 @@
       , "a0b\u0200");
     });
   }
-  registerTest('testUnicode5', function () { basicPassingTest('testUnicode5',
+  jsunitRegister('testUnicode5', function () { basicPassingTest('testUnicode5',
     // Identifier with unencoded unicode character
     'var \u0100 = 46; ipc.result = \u0100;', 46);
   });
-  registerTest('testUnicode6', function () { basicPassingTest('testUnicode6',
+  jsunitRegister('testUnicode6', function () { basicPassingTest('testUnicode6',
     // Identifier with unencoded unicode character
     'var \u00A0w = 47; ipc.result = w;', 47);
   });
 
   // Encoded spaces are not allowed in identifiers
-  registerTest('testUnicode7',
+  jsunitRegister('testUnicode7',
     function testUnicode7() {
       basicFailingTest('testUnicode7',
         'var a\\u2009z = 48; ipc.result = a\\u2009z;');
@@ -102,7 +102,7 @@
   });
 
   // Unencoded spaces are not allowed in identifiers
-  registerTest('testUnicode8',
+  jsunitRegister('testUnicode8',
     function testUnicode8() {
       basicFailingTest('testUnicode8',
         'var a\u2009z = 49; ipc.result = a\u2009z;');
@@ -110,7 +110,7 @@
 
   // Issue1637 Parse breaks on unicode escapes if they consist of more than 4
   // hex characters 
-  registerTest('testUnicode9', function () { basicPassingTest('testUnicode9',
+  jsunitRegister('testUnicode9', function () { basicPassingTest('testUnicode9',
     'ipc.result = "\u003c123"', "\u003c123");
   });
 

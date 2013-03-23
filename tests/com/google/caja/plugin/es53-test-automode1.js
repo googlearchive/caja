@@ -40,7 +40,7 @@
   },
   function() { fail('Unexpectedly failed to switch to es53'); });
 
-  registerTest('testES5FailsoverToES53', function testES5FailsoverToES53() {
+  jsunitRegister('testES5FailsoverToES53', function testES5FailsoverToES53() {
     caja.load(undefined, uriPolicy, function (frame) {
       var extraImports = createExtraImportsForTesting(caja, frame);
       extraImports.inES5Mode = inES5Mode;

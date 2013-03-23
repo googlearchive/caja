@@ -29,7 +29,7 @@
   function registerGuestTest(testName, html, varargs) {
     var guestTestArgs = Array.prototype.slice.call(arguments, 2);
 
-    registerTest(testName,
+    jsunitRegister(testName,
         function guestTestWrapper() {
       var div = createDiv();
       caja.load(div, undefined, function (frame) {
@@ -101,7 +101,7 @@
 
       // Test that a completely empty document still produces structure.
       // TODO(kpreid): refactor registerGuestTest so this can be shorter.
-      registerTest('testEmptyInput',
+      jsunitRegister('testEmptyInput',
           function testEmptyInput() {
         var div = createDiv();
         caja.load(div, undefined, function (frame) {

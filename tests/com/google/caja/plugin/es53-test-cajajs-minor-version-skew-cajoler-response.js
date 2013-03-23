@@ -44,7 +44,7 @@ var testConsole = {
 
 var clientSideLoaded = false;
 
-registerTest('testMinorVersionSkew', function testMinorVersionSkew() {
+jsunitRegister('testMinorVersionSkew', function testMinorVersionSkew() {
   caja.initialize({
     server: '/caja',
     resources: '/caja/testing/skew-mmm',

@@ -47,7 +47,7 @@
     function() { fail('Unexpectedly failed to ES55'); });
   });
 
-  registerTest('testES5ExplicitFailoverToES53', 
+  jsunitRegister('testES5ExplicitFailoverToES53', 
       function testES5ExplicitFailoverToES53() {
     caja.load(undefined, uriPolicy, function (frame) {
       frame.code('es53-test-assert-es53mode.js', 'text/javascript')

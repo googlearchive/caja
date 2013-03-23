@@ -148,15 +148,6 @@ function readyToTest() {
       .className = 'readytotest';
 }
 
-function registerTest(name, f) {
-  var e = document.createElement('div');
-  e.innerHTML = 'Test ' + name;
-  e.setAttribute('id', name);
-  e.setAttribute('class', 'testcontainer waiting');
-  document.body.appendChild(e);
-  jsunitRegister(name, f);
-}
-
 if (getUrlParam('es5') === 'true') {
   var inES5Mode = true;
 } else if (getUrlParam('es5') === 'false') {
@@ -419,7 +410,9 @@ function createExtraImportsForTesting(frameGroup, frame) {
   standardImports.jsunitRun =
       frame.tame(frame.markFunction(jsunitRun));
   standardImports.jsunitRegister =
-      frame.tame(frame.markFunction(jsunitRegister));
+      frame.tame(frame.markFunction(function(name, test) {
+        jsunitRegister(name, test, frame.idClass);
+      }));
   standardImports.jsunitPass =
       frame.tame(frame.markFunction(jsunitPass));
   standardImports.jsunitCallback =
@@ -579,8 +572,7 @@ function createExtraImportsForTesting(frameGroup, frame) {
 
   // Marks a container green to indicate that test passed
   standardImports.pass = frame.tame(frame.markFunction(function (id) {
-    jsunit.pass(id);
-    jsunitFinished(id, 'passed', frame.idSuffix);
+    jsunitPass(id, frame.idClass);
   }));
 
   /**
@@ -591,7 +583,7 @@ function createExtraImportsForTesting(frameGroup, frame) {
   standardImports.jsunitRegisterIf = frame.tame(frame.markFunction(
       function (okay, testName, testFunc) {
     if (okay) {
-      jsunitRegister(testName, testFunc);
+      jsunitRegister(testName, testFunc, frame.idSuffix);
     } else {
       jsunitFinished(testName, 'skipped', frame.idSuffix);
     }

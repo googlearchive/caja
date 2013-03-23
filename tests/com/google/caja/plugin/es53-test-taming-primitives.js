@@ -45,13 +45,13 @@
       assertEquals('abc', f('abc'));
     }
 
-    registerTest('testPrimitivesTaming',
+    jsunitRegister('testPrimitivesTaming',
                    function testPrimitivesTaming() {
       assertPrimitives(frame.tame);                   
       jsunitPass('testPrimitivesTaming');
     });
     
-    registerTest('testPrimitivesUntaming',
+    jsunitRegister('testPrimitivesUntaming',
                    function testPrimitivesUntaming() {
       assertPrimitives(frame.untame);
       jsunitPass('testPrimitivesUntaming');

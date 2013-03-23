@@ -55,7 +55,7 @@
     forceES5Mode: inES5Mode
   });
   
-  registerTest('testUriInAttr', function testUriInAttr() {
+  jsunitRegister('testUriInAttr', function testUriInAttr() {
     var div = createDiv();
     caja.load(div, uriCallback, function (frame) {
       frame.code('es53-test-client-uri-rewriting-guest.html')
@@ -87,7 +87,7 @@
     });
   });
 
-  registerTest('testUriInCss', function testUriInCss() {
+  jsunitRegister('testUriInCss', function testUriInCss() {
     var div = createDiv();
     caja.load(div, uriCallback, jsunitCallback(function frameCb(frame) {
       var capture = patchEmitCss(frame);
@@ -110,7 +110,7 @@
     }));
   });
 
-  registerTest('testDynamicUriPolicy', function testDynamicUriPolicy() {
+  jsunitRegister('testDynamicUriPolicy', function testDynamicUriPolicy() {
     var div = createDiv();
     var dynamicPolicy = {
         rewrite: function (uri, effects, ltype, hints) {
@@ -168,7 +168,7 @@
   });
 
   function registerUriCbTest(name, html, cb) {
-    registerTest(name, function() {
+    jsunitRegister(name, function() {
         cb = jsunitCallback(cb);
         var div = createDiv();
         var alreadyPassed;
@@ -228,7 +228,7 @@
         assertEquals('href', hints.XML_ATTR);
       });
 
-  registerTest(
+  jsunitRegister(
       'testStylesheetCompiled',
       function() {
         var calledPolicy = false;

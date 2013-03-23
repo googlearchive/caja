@@ -48,7 +48,7 @@
   function registerTargetTest(name, html /*, expected... */) {
     var expected = [].slice.call(arguments, 2);
     assertTrue(expected.length > 0);
-    registerTest(name + 'Compiled', function() {
+    jsunitRegister(name + 'Compiled', function() {
       var div = createDiv();
       caja.load(div, null, function(frame) {
         frame.code('http://a.com/', 'text/html', html)
@@ -60,7 +60,7 @@
             });
       });
     });
-    registerTest(name + 'Dynamic', function() {
+    jsunitRegister(name + 'Dynamic', function() {
       var div = createDiv();
       caja.load(div, null, function(frame) {
         frame.code('http://a.com/', 'text/html',
@@ -113,7 +113,7 @@
       '<a target="baz">a</a>',
       'target="foo"');
 
-  registerTest('testAnchorTargetSetAttribute', function() {
+  jsunitRegister('testAnchorTargetSetAttribute', function() {
     var div = createDiv();
     caja.load(div, null, function(frame) {
       frame.code('http://a.com/', 'text/html',
@@ -149,7 +149,7 @@
       '<a href="#foo">a</a>',
       'href="#foo-caja-guest-');
 
-  registerTest('testUriFragTargetSetAttribute', function() {
+  jsunitRegister('testUriFragTargetSetAttribute', function() {
     var div = createDiv();
     caja.load(div, null, function(frame) {
       frame.code('http://a.com/', 'text/html',
@@ -165,7 +165,7 @@
     });
   });
 
-  registerTest('testUriFragTargetReSetAttribute', function() {
+  jsunitRegister('testUriFragTargetReSetAttribute', function() {
     var div = createDiv();
     caja.load(div, caja.policy.net.ALL, function(frame) {
       frame.code('http://b.com/', 'text/html',
@@ -201,7 +201,7 @@
       '<a href="#">a</a>',
       'href="#-caja-guest-');
 
-  registerTest('testTrivialUriFragTargetSetAttribute', function() {
+  jsunitRegister('testTrivialUriFragTargetSetAttribute', function() {
     var div = createDiv();
     caja.load(div, null, function(frame) {
       frame.code('http://a.com/', 'text/html',

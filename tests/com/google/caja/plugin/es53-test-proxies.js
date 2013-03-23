@@ -32,7 +32,7 @@
   });
   
 
-  registerTest('testProxies', function testProxies() {
+  jsunitRegister('testProxies', function testProxies() {
     var div = createDiv();
     caja.load(div, uriPolicy, function (frame) {
       frame.code('proxies/proxytests.html')

@@ -37,7 +37,7 @@ var testConsole = {
 
 // Register the test case.
 
-registerTest('testVersionSkew', function testVersionSkew() {
+jsunitRegister('testVersionSkew', function testVersionSkew() {
   caja.initialize({
     server: '/caja',
     resources: '/caja/testing/skew-0000',

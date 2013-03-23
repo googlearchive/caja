@@ -86,7 +86,7 @@
     forceES5Mode: inES5Mode
   });
 
-  registerTest('testReinitialization', function testReinitialization() {
+  jsunitRegister('testReinitialization', function testReinitialization() {
     try {
       caja.initialize({
         cajaServer: '/caja',
@@ -99,7 +99,7 @@
     }
   });
 
-  registerTest('testDefaultHeight', function testDefaultHeight() {
+  jsunitRegister('testDefaultHeight', function testDefaultHeight() {
     var hostPageDiv = createDiv();
 
     var div = document.createElement('div');
@@ -120,7 +120,7 @@
     });
   });
 
-  registerTest('testFullHeight', function testFullHeight() {
+  jsunitRegister('testFullHeight', function testFullHeight() {
     var hostPageDiv = createDiv();
     hostPageDiv.style.height = "100px";
 
@@ -152,7 +152,7 @@
     });
   });
 
-  registerTest('testTightHeight', function testTightHeight() {
+  jsunitRegister('testTightHeight', function testTightHeight() {
     var hostPageDiv = createDiv();
     hostPageDiv.style.height = "100px";
 
@@ -183,7 +183,7 @@
       return obj[name];
     }
   }
-  registerTest('testVdocWrapperInterface', function testVdocWrapperInterface() {
+  jsunitRegister('testVdocWrapperInterface', function testVdocWrapperInterface() {
     var div = createDiv();
     caja.load(div, uriPolicy, function (frame) {
       frame.code(
@@ -209,7 +209,7 @@
     });
   });
 
-  registerTest('testBuilderApiHtml', function testBuilderApiHtml() {
+  jsunitRegister('testBuilderApiHtml', function testBuilderApiHtml() {
     var div = createDiv();
     caja.load(div, uriPolicy, function (frame) {
       frame.code('es53-test-guest.html', 'text/html')
@@ -221,7 +221,7 @@
   });
 
   if (inES5Mode)
-  registerTest('testBuilderApiXhr', function testBuilderApiXhr() {
+  jsunitRegister('testBuilderApiXhr', function testBuilderApiXhr() {
     var div = createDiv();
     caja.load(div, xhrUriPolicy, function (frame) {
       frame.code('es53-test-guest.html', 'text/html')
@@ -232,7 +232,7 @@
     });
   });
 
-  registerTest('testBuilderApiJsNoDom', function testBuilderApiJsNoDom() {
+  jsunitRegister('testBuilderApiJsNoDom', function testBuilderApiJsNoDom() {
     caja.load(undefined, uriPolicy, function (frame) {
       var extraImports = { x: 4, y: 3 };
       frame.code('es53-test-guest.js', 'text/javascript')
@@ -244,7 +244,7 @@
     });
   });
 
-  registerTest('testBuilderApiNetUndefined', 
+  jsunitRegister('testBuilderApiNetUndefined', 
       function testBuilderApiNetUndefined() {
     var div = createDiv();
     caja.load(div, undefined, function (frame) {
@@ -262,7 +262,7 @@
     });
   });
 
-  registerTest('testBuilderApiNetNone', function testBuilderApiNetNone() {
+  jsunitRegister('testBuilderApiNetNone', function testBuilderApiNetNone() {
     var div = createDiv();
     caja.load(div, caja.policy.net.NO_NETWORK, function (frame) {
       frame.code(
@@ -279,7 +279,7 @@
     });
   });
 
-  registerTest('testBuilderApiNetAll', function testBuilderApiNetAll() {
+  jsunitRegister('testBuilderApiNetAll', function testBuilderApiNetAll() {
     var div = createDiv();
     caja.load(div, caja.policy.net.ALL, function (frame) {
       frame.code(
@@ -296,7 +296,7 @@
     });
   });
 
-  registerTest('testBuilderApiNetHost', function testBuilderApiNetHost() {
+  jsunitRegister('testBuilderApiNetHost', function testBuilderApiNetHost() {
     var div = createDiv();
     caja.load(div,
         caja.policy.net.only("http://fake1.url/foo"), function (frame) {
@@ -314,7 +314,7 @@
     });
   });
 
-  registerTest('testBuilderApiContentHtml',
+  jsunitRegister('testBuilderApiContentHtml',
       function testBuilderApiContentHtml() {
     var div = createDiv();
     caja.load(div, uriPolicy, function (frame) {
@@ -330,7 +330,7 @@
     });
   });
 
-  registerTest('testBuilderApiContentJs', function testBuilderApiContentJs() {
+  jsunitRegister('testBuilderApiContentJs', function testBuilderApiContentJs() {
     caja.load(undefined, uriPolicy, function (frame) {
       var extraImports = { x: 4, y: 3 };
       fetch('es53-test-guest.js', function(resp) {
@@ -347,7 +347,7 @@
   });
 
   if (!inES5Mode)
-  registerTest('testBuilderApiContentCajoledHtml',
+  jsunitRegister('testBuilderApiContentCajoledHtml',
       function testBuilderApiContentCajoledHtml() {
     var div = createDiv();
     caja.load(div, uriPolicy, function (frame) {
@@ -364,7 +364,7 @@
   });
 
   if (!inES5Mode)
-  registerTest('testBuilderApiContentCajoledJs',
+  jsunitRegister('testBuilderApiContentCajoledJs',
       function testBuilderApiContentCajoledJs() {
     caja.load(undefined, uriPolicy, function (frame) {
       var extraImports = { x: 4, y: 3 };
@@ -380,7 +380,7 @@
   });
 
   // When given both cajoled and uncajoled code, use the right one.
-  registerTest('testCajoledAndUncajoled', function testCajoledAndUncajoled() {
+  jsunitRegister('testCajoledAndUncajoled', function testCajoledAndUncajoled() {
     caja.load(undefined, uriPolicy, function (frame) {
       var status = "unknown";
       var imports = {
@@ -412,7 +412,7 @@
 
     // TODO(ihab.awad): Test 'base url' functionality, esp. for "content" cases
     if (!inES5Mode)
-    registerTest('testContentCajoledHtml', function testContentCajoledHtml() {
+    jsunitRegister('testContentCajoledHtml', function testContentCajoledHtml() {
       fetch('es53-test-guest.out.html', function(resp) {
         var htmlAndScript = splitHtmlAndScript(resp);
         var div = createDiv();
@@ -427,7 +427,7 @@
     });
 
     if (!inES5Mode)
-    registerTest('testContentCajoledJs', function testContentCajoledJs() {
+    jsunitRegister('testContentCajoledJs', function testContentCajoledJs() {
       fetch('es53-test-guest.out.js', function(script) {
         frameGroup.makeES5Frame(undefined, uriPolicy, function (frame) {
           var extraImports = { x: 4, y: 3 };
@@ -441,7 +441,7 @@
     });
 
     if (!inES5Mode)
-    registerTest('testNoImports', function testNoImports() {
+    jsunitRegister('testNoImports', function testNoImports() {
       fetch('es53-test-guest.out.html', function(resp) {
         var htmlAndScript = splitHtmlAndScript(resp);
         var div = createDiv();
@@ -456,10 +456,10 @@
     });
 
     // TODO(ihab.awad): Implement 'urlCajoled' case and enable the below.
-    // registerTest('testUrlCajoledHtml', function testUrlCajoledHtml() { });
-    // registerTest('testUrlCajoledJs', function testUrlCajoledJs() { });
+    // jsunitRegister('testUrlCajoledHtml', function testUrlCajoledHtml() { });
+    // jsunitRegister('testUrlCajoledJs', function testUrlCajoledJs() { });
 
-    registerTest('testContentHtml', function testContentHtml() {
+    jsunitRegister('testContentHtml', function testContentHtml() {
       fetch('es53-test-guest.html', function(resp) {
         var div = createDiv();
         frameGroup.makeES5Frame(div, uriPolicy, function (frame) {
@@ -473,7 +473,7 @@
       });
     });
 
-    registerTest('testContentJs', function testContentJs() {
+    jsunitRegister('testContentJs', function testContentJs() {
       fetch('es53-test-guest.js', function(resp) {
         frameGroup.makeES5Frame(undefined, uriPolicy, function (frame) {
           var extraImports = { x: 4, y: 3 };
@@ -487,7 +487,7 @@
       });
     });
 
-    registerTest('testUrlHtml', function testUrlHtml() {
+    jsunitRegister('testUrlHtml', function testUrlHtml() {
       var div = createDiv();
       frameGroup.makeES5Frame(div, uriPolicy, function (frame) {
         frame.url('es53-test-guest.html').run({}, function (result) {
@@ -497,7 +497,7 @@
       });
     });
     
-    registerTest('testUrlJs', function testUrlJs() {
+    jsunitRegister('testUrlJs', function testUrlJs() {
       frameGroup.makeES5Frame(undefined, uriPolicy, function (frame) {
         var extraImports = { x: 4, y: 3 };
         frame.url('es53-test-guest.js').run(extraImports, function (result) {
@@ -507,7 +507,7 @@
       });
     });
 
-    registerTest('testUrlJsWithDiv', function testUrlJsWithDiv() {
+    jsunitRegister('testUrlJsWithDiv', function testUrlJsWithDiv() {
       var div = createDiv();
       frameGroup.makeES5Frame(div, uriPolicy, function (frame) {
         var extraImports = { x: 4, y: 3 };
@@ -519,7 +519,7 @@
       });
     });
 
-    registerTest('testUrlHtmlWithMimeType', function testUrlHtml() {
+    jsunitRegister('testUrlHtmlWithMimeType', function testUrlHtml() {
       var div = createDiv();
       frameGroup.makeES5Frame(div, uriPolicy, function (frame) {
         frame.url('es53-test-guest.html', 'text/html').run({},

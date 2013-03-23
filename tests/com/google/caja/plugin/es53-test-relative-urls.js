@@ -26,7 +26,7 @@
   });
 
   fetch('es53-test-relative-urls.html', function(testHtml) {
-    registerTest('testRelativeUrls', function testRelativeUrls () {
+    jsunitRegister('testRelativeUrls', function testRelativeUrls () {
       var div = createDiv();
       caja.load(div, caja.policy.net.ALL, function (frame) {
         frame.code('http://www.example.com/', 'text/html', testHtml)

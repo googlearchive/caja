@@ -85,7 +85,7 @@ jsunitRegister(
       document.body.appendChild(s);
       assertTrue(checkGlobalSideEffect());
       assertFalse(checkGlobalSideEffect());
-      jsunit.pass('_testSideEffectTestFramework');
+      jsunitPass('_testSideEffectTestFramework');
     });
 
 var testDiv = document.createElement('div');
@@ -110,9 +110,16 @@ fetch('es53-test-domado-special-initial-state.html', function(initialHtml) {
     rewriteIdSuffixes(content, frame.idSuffix);
     var extraImports = createExtraImportsForTesting(frameGroup, frame);
 
+    extraImports.insertSpecialInitialState = frame.tame(frame.markFunction(
+        function() {
+      // reinsert previously removed special content
+      var body = document.getElementsByTagName('caja-v-body')[0];
+      body.insertBefore(content, body.firstChild);
+    }));
+
     extraImports.checkGlobalSideEffect =
       frame.tame(frame.markFunction(checkGlobalSideEffect));
-      
+
     frame.grantRead(externalScript, 'loaded');
     extraImports.externalScript = frame.tame(externalScript);
 
@@ -124,10 +131,6 @@ fetch('es53-test-domado-special-initial-state.html', function(initialHtml) {
     frame.code('es53-test-domado-special-guest.html')
          .api(extraImports)
          .run(function(result) {
-               // reinsert special content
-               var body = document.getElementsByTagName('caja-v-body')[0];
-               body.insertBefore(content, body.firstChild);
-
                readyToTest();
                jsunitRun(null, null, asyncRequirements.evaluate);
              });

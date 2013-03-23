@@ -39,7 +39,7 @@
     jsunitPass('testES5Fails');
   });
 
-  registerTest('testES5Fails', function testES5Fails() {
+  jsunitRegister('testES5Fails', function testES5Fails() {
     caja.load(undefined, uriPolicy, function (frame) {
       frame.code('https://fake.url/', 'text/javascript',
            'throw "Should not have run"')

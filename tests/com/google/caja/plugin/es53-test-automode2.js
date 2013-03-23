@@ -41,7 +41,7 @@
   },
   function() { fail('Unexpectedly failed to switch to run es5'); });
 
-  registerTest('testES5Autodetected', function testES5Autodetected() {
+  jsunitRegister('testES5Autodetected', function testES5Autodetected() {
     caja.load(undefined, uriPolicy, function (frame) {
       var extraImports = createExtraImportsForTesting(caja, frame);
       extraImports.inES5Mode = inES5Mode;
