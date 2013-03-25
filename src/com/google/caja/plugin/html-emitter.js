@@ -55,6 +55,9 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
         'Host page error: Virtual document element was not provided');
   }
   base = makeDOMAccessible(base);
+  // TODO(kpreid): Fix our terminology: HTML5 spec contains something called the
+  // 'insertion point', which is not this; this is the 'current node' and
+  // implicitly the 'stack of open elements' via parents.
   var insertionPoint = base;
   var bridal = bridalMaker(makeDOMAccessible,
       base.nodeType === 9  // Document node
@@ -1009,7 +1012,6 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       startTag: function (tagName, attribs, params, marker, continuation) {
         var schemaElem = htmlSchema.element(tagName);
         if (!schemaElem.allowed) {
-          // TODO(kpreid): Define the policy in a client-side HTML schema object
           if (tagName === 'script') {
             var scriptSrc = lookupAttr(attribs, 'src');
             if (!scriptSrc) {

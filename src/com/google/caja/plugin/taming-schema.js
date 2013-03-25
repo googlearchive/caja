@@ -185,7 +185,7 @@ function TamingSchema(privilegedAccess) {
 
   function initAdvice(f) {
     if (!functionAdvice.has(f)) {
-      functionAdvice.set(f, function(self, args) {
+      functionAdvice.set(f, function tamingNullAdvice(self, args) {
         return privilegedAccess.applyFunction(f, self, args);
       });
     }
@@ -194,7 +194,7 @@ function TamingSchema(privilegedAccess) {
 
   function adviseFunctionBefore(f, advice) {
     var p = initAdvice(f);
-    functionAdvice.set(f, function(self, args) {
+    functionAdvice.set(f, function tamingBeforeAdvice(self, args) {
       return p(
           self,
           privilegedAccess.applyFunction(
@@ -206,7 +206,7 @@ function TamingSchema(privilegedAccess) {
   
   function adviseFunctionAfter(f, advice) {
     var p = initAdvice(f);
-    functionAdvice.set(f, function(self, args) {
+    functionAdvice.set(f, function tamingAfterAdvice(self, args) {
       return privilegedAccess.applyFunction(
           advice,
           privilegedAccess.USELESS,
@@ -216,7 +216,7 @@ function TamingSchema(privilegedAccess) {
 
   function adviseFunctionAround(f, advice) {
     var p = initAdvice(f);
-    functionAdvice.set(f, function(self, args) {
+    functionAdvice.set(f, function tamingAroundAdvice(self, args) {
       return privilegedAccess.applyFunction(
           advice,
           privilegedAccess.USELESS,

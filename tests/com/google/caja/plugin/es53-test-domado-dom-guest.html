@@ -559,36 +559,6 @@ document.write(
   });
 </script>
 
-<p id="testPseudoElements" class="testcontainer">
-  Test pseudo-elements
-</p>
-<script type="text/javascript">
-  jsunitRegister('testPseudoElements',
-                 function testPseudoElements() {
-    var body = document.getElementsByTagName('body')[0];
-    var head = document.getElementsByTagName('head')[0];
-    var title = document.getElementsByTagName('title')[0];
-    var html = document.getElementsByTagName('html')[0];
-    var all = document.getElementsByTagName('*');
-
-    assertEquals('BODY', body.tagName);
-    assertEquals(null, body.getAttribute('foo'));
-    assertEquals('HEAD', head.tagName);
-    assertEquals(null, head.getAttribute('foo'));
-    assertEquals('TITLE', title.tagName);
-    assertEquals(null, title.getAttribute('foo'));
-    assertEquals('HTML', html.tagName);
-    assertEquals(null, html.getAttribute('foo'));
-    assertEquals(html.parentNode, document);
-    assertEquals(html, all[0]);
-    assertEquals(head, all[1]);
-    assertEquals(title, all[2]);
-    assertEquals(body, all[3]);
-
-    pass('testPseudoElements');
-  });
-</script>
-
 <p id="testEditabilityInNodeLists" class="testcontainer">
   editability in node lists<br>
 </p>

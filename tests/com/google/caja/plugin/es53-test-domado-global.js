@@ -43,8 +43,10 @@
                 // so we have to delay globalGuestTest to make sure
                 // it's run after all the onloads fire.
                 window.setTimeout(function() {
-                  frame.untame(frame.imports.globalGuestTest).apply(undefined,
-                      guestTestArgs);
+                  var tameGT = frame.imports.globalGuestTest;
+                  assertEquals('typeof globalGuestTest', 'function',
+                      typeof tameGT);
+                  frame.untame(tameGT).apply(undefined, guestTestArgs);
                   jsunitPass(testName);
                 }, 0);
               }, testName, frame));
