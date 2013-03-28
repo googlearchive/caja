@@ -1140,9 +1140,11 @@ ses.startSES = function(global,
       makeImports: constFunc(makeImports),
       copyToImports: constFunc(copyToImports),
 
-      makeArrayLike: constFunc(makeArrayLike),
+      makeArrayLike: constFunc(makeArrayLike)
 
-      es5ProblemReports: ses.es5ProblemReports
+      // Not defined here because it cannot be whitelisted; see assignment and
+      // comments below.
+      //es5ProblemReports: ses.es5ProblemReports
     };
     var extensionsRecord = extensions();
     gopn(extensionsRecord).forEach(function (p) {
