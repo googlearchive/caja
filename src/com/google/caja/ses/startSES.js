@@ -1104,6 +1104,8 @@ ses.startSES = function(global,
     })();
 
     global.cajaVM = { // don't freeze here
+      // Note that properties defined on cajaVM must also be added to
+      // whitelist.js, or they will be deleted.
 
       /**
        * This is about to be deprecated once we expose ses.logger.
@@ -1140,8 +1142,7 @@ ses.startSES = function(global,
 
       makeArrayLike: constFunc(makeArrayLike),
 
-      inES5Mode: true,
-      es5ProblemReports: def(ses.es5ProblemReports)
+      es5ProblemReports: ses.es5ProblemReports
     };
     var extensionsRecord = extensions();
     gopn(extensionsRecord).forEach(function (p) {
@@ -1423,6 +1424,14 @@ ses.startSES = function(global,
     });
   }
   clean(sharedImports, '');
+
+  // es5ProblemReports has a 'dynamic' set of keys, and the whitelist mechanism
+  // does not support this (it only has 'skip', which is intended as a
+  // workaround and logged as such), so as a kludge we insert it after cleaning
+  // and before defending. TODO(kpreid): Figure out a proper workaround. Perhaps
+  // add another type of whitelisting (say a wildcard property name, or
+  // 'recursively JSON', or a non-warning 'skip')?
+  cajaVM.es5ProblemReports = ses.es5ProblemReports;
 
   /**
    * This protection is now gathered here, so that a future version
