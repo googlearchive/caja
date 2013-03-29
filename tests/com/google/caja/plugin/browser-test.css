@@ -57,11 +57,14 @@
   border: 2px solid #777;
 }
 
-/* test framework toolbar */
+/* test framework toolbar and page layout */
+html { margin: 0; }
+body { margin: 0.5em; }  /* known margin to negate for toolbar */
 #toolbar {
    background: #ccf;
-   margin: -1em -1em 1em -1em;
-   padding: 1.5em 1.5em .12em 1.5em;
+   margin: -0.5em -0.5em 0.5em;
+   padding: 1em 1em .12em 1em;
+   overflow-x: hidden;
 }
 #toolbar .widget, #toolbar .nonwidget {
   display: inline-block;
