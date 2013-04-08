@@ -549,7 +549,7 @@ var sanitizeStylesheet = (function () {
                   return cssMediaTypeWhitelist[mediaType] == allowed;
                 });
               if (headerArray.length) {
-                safeCss.push(atIdent, headerArray.join(','), '{');
+                safeCss.push(atIdent, ' ', headerArray.join(','));
               } else {
                 atIdent = null;
               }
@@ -666,7 +666,8 @@ var sanitizeStylesheet = (function () {
         });
     function checkElide() {
       elide = blockStack.length !== 0
-          && blockStack[blockStack.length-1] !== null;
+          && blockStack[blockStack.length-1] !== null
+          && blockStack[blockStack.length-1][0] !== '@';
     }
     return safeCss.join('');
   };

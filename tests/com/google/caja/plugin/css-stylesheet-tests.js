@@ -22,6 +22,15 @@
 
 runCssSelectorTests([
   {
+    "test_name": "AtRules",
+    "tests": [
+      {
+        "cssText": "@media print { th { font-weight: bolder } }",
+        "golden": "@media print{.namespace__ th{font-weight:bolder}}"
+      }
+    ]
+  },
+  {
     "test_name": "UnknownTagsVirtualized",
     "tests": [
       {
