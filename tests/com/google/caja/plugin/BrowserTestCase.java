@@ -48,6 +48,11 @@ import org.openqa.selenium.WebElement;
  *   <dd>Override location of browser executable.  Currently only
  *   for Chrome (sets chrome.binary for webdriver).</dd>
  *
+ *   <dt>caja.test.closeBrowser</dt>
+ *   <dd>When true, always close browser when done. Normally when a browser
+ *   test fails, we try to keep the browser open so the error can be
+ *   manually inspected. This flag disables that.</dd>
+ *
  *   <dt>caja.test.remote</dt>
  *   <dd>URL of a remote webdriver, which should usually be something like
  *   "http://hostname:4444/wd/hub".  If unset, use a local webdriver.</dd>
@@ -70,6 +75,7 @@ import org.openqa.selenium.WebElement;
  */
 public abstract class BrowserTestCase<D> extends CajaTestCase {
   // TODO(felix8a): gather flags
+  private static final String CLOSE_BROWSER = "caja.test.closeBrowser";
   private static final String REMOTE = "caja.test.remote";
   private static final String SERVER_ONLY = "caja.test.serverOnly";
   private static final String START_AND_WAIT = "caja.test.startAndWait";
@@ -196,7 +202,7 @@ public abstract class BrowserTestCase<D> extends CajaTestCase {
     } finally {
       localServer.stop();
       // It's helpful for debugging to keep failed windows open.
-      if (passed || isKnownFailure()) {
+      if (passed || isKnownFailure() || flag(CLOSE_BROWSER)) {
         wdh.closeWindow();
       }
     }
