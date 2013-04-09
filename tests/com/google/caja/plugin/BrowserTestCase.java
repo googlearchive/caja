@@ -60,6 +60,11 @@ import org.openqa.selenium.WebElement;
  *   <dt>caja.test.serverOnly</dt>
  *   <dd>When true, start server and wait</dd>
  *
+ *   <dt>caja.test.serverPort</dt>
+ *   <dd>What port to use for the localhost webserver. Default is 8000 when
+ *   using one of the manual testing options (serverOnly or startAndWait).
+ *   Otherwise, default is 0 (which chooses any available port).</dd>
+ *
  *   <dt>caja.test.startAndWait</dt>
  *   <dd>When true, start server and browser and wait</dd>
  *
@@ -78,6 +83,7 @@ public abstract class BrowserTestCase<D> extends CajaTestCase {
   private static final String CLOSE_BROWSER = "caja.test.closeBrowser";
   private static final String REMOTE = "caja.test.remote";
   private static final String SERVER_ONLY = "caja.test.serverOnly";
+  private static final String SERVER_PORT = "caja.test.serverPort";
   private static final String START_AND_WAIT = "caja.test.startAndWait";
 
   // We acquire a WebDriverHandle on construction because the test runner
@@ -107,10 +113,7 @@ public abstract class BrowserTestCase<D> extends CajaTestCase {
     }
   };
 
-  private final int portNumber = 8000;
-
   private final LocalServer localServer = new LocalServer(
-      portNumber,
       new LocalServer.ConfigureContextCallback() {
         @Override public void configureContext(Context ctx) {
           addServlets(ctx);
@@ -164,29 +167,34 @@ public abstract class BrowserTestCase<D> extends CajaTestCase {
 
   protected String runBrowserTest(String pageName, D data,
       String... params) throws Exception {
+    int serverPort = intProp(SERVER_PORT, 0);
+
     if (flag(SERVER_ONLY) || flag(START_AND_WAIT)) {
       pageName = "test-index.html";
       params = null;
+      serverPort = intProp(SERVER_PORT, 8000);
     }
-    String localhost = "localhost";
-    if (System.getProperty(REMOTE) != null) {
-      localhost = localServer.hostname();
-    }
-    String page = "http://" + localhost + ":" + portNumber
-        + "/ant-testlib/com/google/caja/plugin/" + pageName;
-    if (params != null && params.length > 0) {
-      page += "?" + Joiner.on("&").join(params);
-    }
-    getErr().println("- Try " + page);
+
     String result = "";
     boolean passed = false;
     try {
       try {
-        localServer.start();
+        localServer.start(serverPort);
       } catch (Exception e) {
         getErr().println(e);
         throw e;
       }
+
+      String localhost = "localhost";
+      if (System.getProperty(REMOTE) != null) {
+        localhost = localServer.hostname();
+      }
+      String page = "http://" + localhost + ":" + localServer.getPort()
+              + "/ant-testlib/com/google/caja/plugin/" + pageName;
+      if (params != null && params.length > 0) {
+        page += "?" + Joiner.on("&").join(params);
+      }
+      getErr().println("- Try " + page);
 
       if (flag(SERVER_ONLY)) {
         Thread.currentThread().join();
@@ -213,6 +221,19 @@ public abstract class BrowserTestCase<D> extends CajaTestCase {
     String value = System.getProperty(name);
     return value != null && !"".equals(value) && !"0".equals(value)
         && !"false".equalsIgnoreCase(value);
+  }
+
+  static protected int intProp(String name, int dflt) {
+    String value = System.getProperty(name);
+    if (value == null || "".equals(value)) {
+      return dflt;
+    }
+    try {
+      return Integer.parseInt(value);
+    } catch (NumberFormatException e) {
+      getErr().println("Invalid value " + value + " for " + name);
+      throw e;
+    }
   }
 
   protected String runTestDriver(

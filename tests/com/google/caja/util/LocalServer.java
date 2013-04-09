@@ -29,11 +29,10 @@ import com.google.caja.service.CajolingServlet;
 import com.google.caja.reporting.BuildInfo;
 
 /**
- * Encapsulates the management of a localhost Web server running on a specified
- * port, serving up the Caja resources and servlets, to be used for testing.
+ * Encapsulates the management of a localhost Web server running on an
+ * arbitrary port, serving up the Caja resources and servlets, for testing.
  */
 public class LocalServer {
-  private final int portNumber;
   private final ConfigureContextCallback contextCallback;
   private Server server;
 
@@ -41,8 +40,7 @@ public class LocalServer {
     void configureContext(Context ctx);
   }
 
-  public LocalServer(int portNumber, ConfigureContextCallback contextCallback) {
-    this.portNumber = portNumber;
+  public LocalServer(ConfigureContextCallback contextCallback) {
     this.contextCallback = contextCallback;
   }
 
@@ -50,11 +48,16 @@ public class LocalServer {
     return ThisHostName.value();
   }
 
+  public int getPort() {
+    return server.getConnectors()[0].getLocalPort();
+  }
+
   /**
-   * Start a local web server on the port specified by portNumber().
+   * Start a local web server listening at the given TCP port.  port==0 will
+   * choose an arbitrary unused port.
    */
-  public void start() throws Exception {
-    server = new Server(portNumber);
+  public void start(int port) throws Exception {
+    server = new Server(port);
 
     final ResourceHandler cajaStatic = new ResourceHandler();
     cajaStatic.setResourceBase("./ant-war/");

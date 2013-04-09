@@ -1309,7 +1309,7 @@ document.write(
         '\n' +
         '    <a href="http://example.com/?effect=NEW_DOCUMENT&amp;loader=' +
         'UNSANDBOXED&amp;uri=http%3A%2F%2F' + location.hostname +
-        '%3A8000%2Fant-testlib%2F' +
+        '%3A' + location.port + '%2Fant-testlib%2F' +
         'com%2Fgoogle%2Fcaja%2Fplugin%2Ffoo">bar</a>\n' +
         '    <span>Hello world</span>\n' +
         '  ',
@@ -2940,7 +2940,8 @@ Test row cell
         + ':' + window.location.port + window.location.pathname
         + window.location.search + window.location.hash);
     assertEquals(
-        'http://' + window.location.hostname + ':8000'
+        'http://' + window.location.hostname
+        + ':' + window.location.port
         + '/ant-testlib/com/google/caja/plugin/'
         + 'es53-test-domado-dom-guest.html',
         window.location.href);
@@ -2948,15 +2949,14 @@ Test row cell
         '',
         window.location.hash);
     assertEquals(
-        window.location.hostname + ':8000',
+        window.location.hostname + ':' + window.location.port,
         window.location.host);
     assertEquals(''
         + '/ant-testlib/com/google/caja/plugin/'
         + 'es53-test-domado-dom-guest.html',
         window.location.pathname);
-    assertEquals(
-        '8000',
-        window.location.port);
+    assertTrue(
+        /^[1-9][0-9]+$/.test(window.location.port));
     assertEquals(
         'http:',
         window.location.protocol);
