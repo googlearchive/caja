@@ -238,9 +238,10 @@ var cajaFlash = {};
   }
 
   // Setup functions and callbacks for tamed Flash.
-  cajaFlash.init = function init(feralWin, tamingWin, domicile) {
+  cajaFlash.init = function init(feralWin, tamingWin, domicile,
+      opt_flashbridge) {
     initCallbacks(feralWin, tamingWin, domicile);
-    initSwfobject(feralWin, tamingWin, domicile);
+    initSwfobject(feralWin, tamingWin, domicile, opt_flashbridge);
 
     // Called from html-emitter
     function cajaHandleEmbed(params) {
@@ -252,8 +253,9 @@ var cajaFlash = {};
           params.src, params.id, params.width, params.height);
       }
     }
-    domicile.window.cajaHandleEmbed = cajaHandleEmbed;
-    tamingWin.___.grantFunc(domicile.window, 'cajaHandleEmbed');
+    domicile.window.DefineOwnProperty___('cajaHandleEmbed', {
+      value: tamingWin.___.markFuncFreeze(cajaHandleEmbed)
+    });
   };
 })();
 
