@@ -762,6 +762,19 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   function markFuncFreeze(fn, name) {
     return freeze(markFunc(fn, name));
   }
+  
+  /**
+   * For use by cajoled code (fn should be already marked); same as SES utility
+   * of the same name.
+   *
+   * Use to tamper proof a function which is not intended to ever be
+   * used as a constructor, since it nulls out the function's
+   * prototype first.
+   */
+  function constFunc(fn) {
+    fn.w___('prototype', null);
+    return freeze(fn);
+  }
 
   /**
    * Is the property {@code name} whitelisted as a value on {@code obj}?
@@ -5390,6 +5403,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       makeSealerUnsealerPair: makeSealerUnsealerPair,
 
       // Defensible objects
+      constFunc: constFunc,
       def: def,
 
       // Other

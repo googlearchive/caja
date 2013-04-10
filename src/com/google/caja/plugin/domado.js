@@ -343,8 +343,8 @@ var Domado = (function() {
       desc = {
         configurable: desc.configurable,
         enumerable: desc.enumerable,
-        get: cajaVM.def(function setOwnGetter() { return value; }),
-        set: cajaVM.def(function setOwnSetter(newValue) {
+        get: cajaVM.constFunc(function setOwnGetter() { return value; }),
+        set: cajaVM.constFunc(function setOwnSetter(newValue) {
           if (obj === this) {
             throw new TypeError('Cannot set virtually frozen property: ' +
                                 name);
@@ -464,7 +464,7 @@ var Domado = (function() {
        * @param {Object} opt_sameAs If provided, an existing object whose
        *     private state will be reused for {@code object}.
        */
-      this.confide = cajaVM.def(function (object, taming, opt_sameAs) {
+      this.confide = cajaVM.constFunc(function(object, taming, opt_sameAs) {
         //console.debug("Confiding:", object);
         if (table.get(object) !== undefined) {
           if (table.get(object)._obj !== object) {
@@ -516,7 +516,7 @@ var Domado = (function() {
             throw 'can\'t happen';
           }
         }
-        setOwn(amplifierMethod, 'toString', cajaVM.def(function() {
+        setOwn(amplifierMethod, 'toString', cajaVM.constFunc(function() {
           return '[' + typename + ']' + method.toString();
         }));
         return cajaVM.def(amplifierMethod);
@@ -555,7 +555,7 @@ var Domado = (function() {
   // no other wrapping.
   // TODO(kpreid): Verify this in tests, e.g. by adding a property and checking
   function innocuous(f) {
-    return cajaVM.def(f);
+    return cajaVM.constFunc(f);
   }
 
   var ExpandoProxyHandler = domitaModules.ExpandoProxyHandler = (function() {
@@ -1118,7 +1118,7 @@ var Domado = (function() {
    * @return A record of functions attachDocument, dispatchEvent, and
    *     dispatchToHandler.
    */
-  return cajaVM.def(function Domado(opt_rulebreaker) {
+  return cajaVM.constFunc(function Domado(opt_rulebreaker) {
     // Everything in this scope but not in function attachDocument() below
     // does not contain lexical references to a particular DOM instance, but
     // may have some kind of privileged access to Domado internals.
@@ -1195,12 +1195,12 @@ var Domado = (function() {
           delete desc.extendedAccessors;
           (function (prop, extGet, extSet) {  // @*$#*;%#<$ non-lexical scoping
             if (extGet) {
-              desc.get = cajaVM.def(function () {
+              desc.get = cajaVM.constFunc(function() {
                 return extGet.call(this, prop);
               });
             }
             if (desc.set) {
-              desc.set = cajaVM.def(function (value) {
+              desc.set = cajaVM.constFunc(function(value) {
                 return extSet.call(this, value, prop);
               });
             }
@@ -1211,14 +1211,14 @@ var Domado = (function() {
             console.warn("Getter for ", prop, " of ", object,
                 " is not frozen; fixing.");
           }
-          cajaVM.def(desc.get);
+          cajaVM.constFunc(desc.get);
         }
         if (desc.set && !Object.isFrozen(desc.set)) {
           if (typeof console !== 'undefined') {
             console.warn("Setter for ", prop, " of ", object,
                 " is not frozen; fixing.");
           }
-          cajaVM.def(desc.set);
+          cajaVM.constFunc(desc.set);
         }
         Object.defineProperty(object, prop, desc);
       }
@@ -2341,7 +2341,7 @@ var Domado = (function() {
        */
       var P_UNIMPLEMENTED = {
         enumerable: true,
-        get: cajaVM.def(function () {
+        get: cajaVM.constFunc(function () {
           throw new Error('Not implemented');
         })
       };
@@ -2800,7 +2800,8 @@ var Domado = (function() {
             }
           }
         }
-        return cajaVM.def({
+        // result is not defended, for performance; used only internally.
+        return {
           getLength: function() {
             try {
               if (vdocContainsForeignNodes) {
@@ -2825,7 +2826,7 @@ var Domado = (function() {
               throw tameException(e);
             }
           }
-        });
+        };
       }
 
       /**
@@ -2862,7 +2863,7 @@ var Domado = (function() {
         // Guard against accidental leakage of untamed nodes
         nodeList = visibleList = null;
 
-        tamed.item = cajaVM.def(function (k) {
+        tamed.item = cajaVM.constFunc(function(k) {
           k &= 0x7fffffff;
           if (k !== k) { throw new Error(); }
           return tamed[+k] || null;
@@ -2893,7 +2894,7 @@ var Domado = (function() {
           arrayLikeCtorUpdaters.forEach(function(f) { f(ArrayLike); });
         }
         var instance = ArrayLike(ctor.prototype, getItem, getLength);
-        setOwn(instance, 'item', cajaVM.def(getItem));
+        setOwn(instance, 'item', cajaVM.constFunc(getItem));
         return instance;
       }
 
@@ -2932,10 +2933,10 @@ var Domado = (function() {
           var visibleList = new NodeListFilter(feral);
           definePropertiesAwesomely(this, {
             length: {
-              get: cajaVM.def(visibleList.getLength.bind(visibleList))
+              get: cajaVM.constFunc(visibleList.getLength.bind(visibleList))
             },
             item: {
-              value: cajaVM.def(function(i) {
+              value: cajaVM.constFunc(function(i) {
                 return mapping.tame(visibleList.item(i));
               })
             }
@@ -3018,7 +3019,7 @@ var Domado = (function() {
         var getLength = visibleList.getLength.bind(visibleList);
         var result = constructArrayLike(TameOptionsList, getItem, getLength);
         Object.defineProperty(result, 'selectedIndex', {
-            get: cajaVM.def(function() { return +nodeList.selectedIndex; })
+            get: cajaVM.constFunc(function() { return +nodeList.selectedIndex; })
           });
         return result;
       }
@@ -3031,7 +3032,7 @@ var Domado = (function() {
        * @return an array that duck types to a node list.
        */
       function fakeNodeList(array) {
-        array.item = cajaVM.def(function(i) { return array[+i]; });
+        array.item = cajaVM.constFunc(function(i) { return array[+i]; });
         return Object.freeze(array);
       }
 
@@ -3076,7 +3077,7 @@ var Domado = (function() {
           }
         }
 
-        tamed.namedItem = cajaVM.def(function(name) {
+        tamed.namedItem = cajaVM.constFunc(function(name) {
           name = String(name);
           if (name.charAt(name.length - 1) === '_') {
             return null;
@@ -3315,7 +3316,7 @@ var Domado = (function() {
         };
         var string = opt_name ? '[domado inert constructor ' + opt_name + ']'
                               : '[domado inert constructor]';
-        inert.toString = cajaVM.def(function inertCtorToString() {
+        inert.toString = cajaVM.constFunc(function inertCtorToString() {
           return string;
         });
         inert.prototype = tamedCtor.prototype;
@@ -3372,7 +3373,7 @@ var Domado = (function() {
        * Print this object according to its tamed class name; also note for
        * debugging purposes if it is actually the prototype instance.
        */
-      setOwn(TameNode.prototype, "toString", cajaVM.def(function() {
+      setOwn(TameNode.prototype, "toString", cajaVM.constFunc(function() {
         return nodeToStringSearch(this, this);
       }));
       function nodeToStringSearch(self, prototype) {
@@ -4121,13 +4122,13 @@ var Domado = (function() {
             return new TameStyle(privates.feral.style, privates.policy.editable,
                 this);
           }),
-          set: cajaVM.def(function(value) {
+          set: cajaVM.constFunc(function(value) {
             this.setAttribute("style", value);
           })
         },
         innerHTML: {
           enumerable: true,
-          get: cajaVM.def(function() {
+          get: cajaVM.constFunc(function() {
             return htmlFragmentSerialization(this);
           }),
           set: nodeAmp(function(privates, htmlFragment) {
@@ -4388,7 +4389,7 @@ var Domado = (function() {
           for (var i = strings.length; --i >= 0;) {
             table[strings[+i]] = table;
           }
-          return cajaVM.def(function (string) {
+          return cajaVM.constFunc(function(string) {
             return typeof string === 'string' && table[string] === table;
           });
         }
@@ -4410,7 +4411,7 @@ var Domado = (function() {
           // controls
           // liveness of node lists.
           var tameImageData = {
-            toString: cajaVM.def(function () {
+            toString: cajaVM.constFunc(function() {
                 return "[Domita Canvas ImageData]"; }),
             width: Number(imageData.width),
             height: Number(imageData.height)
@@ -4432,7 +4433,7 @@ var Domado = (function() {
                 // Accessor used so we don't need to copy if the client is just
                 // blitting (getImageData -> putImageData) rather than
                 // inspecting the pixels.
-                get: cajaVM.def(function() {
+                get: cajaVM.constFunc(function() {
                   if (!privates.tamePixelArray) {
 
                     var bareArray = imageData.data;
@@ -4448,9 +4449,9 @@ var Domado = (function() {
                     var tamePixelArray = { // not frozen, user-modifiable
                       // TODO: Investigate whether it would be an optimization
                       // to make this an array with properties added.
-                      toString: cajaVM.def(function() {
+                      toString: cajaVM.constFunc(function() {
                           return "[Domita CanvasPixelArray]"; }),
-                      _d_canvas_writeback: cajaVM.def(function() {
+                      _d_canvas_writeback: cajaVM.constFunc(function() {
                         // This is invoked just before each putImageData
 
                         // TODO(kpreid): shouldn't be a public method (but is
@@ -4475,9 +4476,9 @@ var Domado = (function() {
         function TameGradient(gradient) {
           gradient = makeDOMAccessible(gradient);
           var tameGradient = {
-            toString: cajaVM.def(function () {
+            toString: cajaVM.constFunc(function() {
                 return "[Domita CanvasGradient]"; }),
-            addColorStop: cajaVM.def(function (offset, color) {
+            addColorStop: cajaVM.constFunc(function(offset, color) {
               try {
                 enforceType(offset, 'number', 'color stop offset');
                 if (!(0 <= offset && offset <= 1)) {
@@ -4534,7 +4535,7 @@ var Domado = (function() {
           var context = makeDOMAccessible(node.getContext('2d'));
           function tameFloatsOp(count, verb) {
             var m = makeFunctionAccessible(context[verb]);
-            return cajaVM.def(function () {
+            return cajaVM.constFunc(function() {
               if (arguments.length !== count) {
                 throw new Error(verb + ' takes ' + count + ' args, not ' +
                                 arguments.length);
@@ -4551,7 +4552,7 @@ var Domado = (function() {
           }
           function tameRectMethod(m, hasResult) {
             makeFunctionAccessible(m);
-            return cajaVM.def(function (x, y, w, h) {
+            return cajaVM.constFunc(function(x, y, w, h) {
               if (arguments.length !== 4) {
                 throw new Error(m + ' takes 4 args, not ' +
                                 arguments.length);
@@ -4571,7 +4572,7 @@ var Domado = (function() {
           }
           function tameDrawText(m) {
             makeFunctionAccessible(m);
-            return cajaVM.def(function (text, x, y, maxWidth) {
+            return cajaVM.constFunc(function(text, x, y, maxWidth) {
               enforceType(text, 'string', 'text');
               enforceType(x, 'number', 'x');
               enforceType(y, 'number', 'y');
@@ -4592,14 +4593,14 @@ var Domado = (function() {
             });
           }
           function tameGetMethod(prop) {
-            return cajaVM.def(function() {
+            return cajaVM.constFunc(function() {
               try {
                 return context[prop];
               } catch (e) { throw tameException(e); }
             });
           }
           function tameSetMethod(prop, validator) {
-            return cajaVM.def(function(newValue) {
+            return cajaVM.constFunc(function(newValue) {
               try {
                 if (validator(newValue)) {
                   context[prop] = newValue;
@@ -4611,7 +4612,7 @@ var Domado = (function() {
           var CP_STYLE = {
             enumerable: true,
             extendedAccessors: true,
-            get: cajaVM.def(function(prop) {
+            get: cajaVM.constFunc(function(prop) {
               try {
                 var value = context[prop];
                 if (typeof(value) === 'string') {
@@ -4625,7 +4626,7 @@ var Domado = (function() {
                 }
               } catch (e) { throw tameException(e); }
             }),
-            set: cajaVM.def(function(newValue, prop) {
+            set: cajaVM.constFunc(function(newValue, prop) {
               try {
                 if (isColor(newValue)) {
                   context[prop] = newValue;
@@ -4639,7 +4640,7 @@ var Domado = (function() {
           };
           function tameSimpleOp(m) {  // no return value
             makeFunctionAccessible(m);
-            return cajaVM.def(function() {
+            return cajaVM.constFunc(function() {
               if (arguments.length !== 0) {
                 throw new Error(m + ' takes no args, not ' + arguments.length);
               }
@@ -4661,7 +4662,7 @@ var Domado = (function() {
           // http://dev.w3.org/html5/2dcontext/
           // TODO(kpreid): Review this for converting to prototypical objects
           var tameContext2d = {
-            toString: cajaVM.def(function () {
+            toString: cajaVM.constFunc(function() {
                 return "[Domita CanvasRenderingContext2D]"; }),
 
             save: tameSimpleOp(context.save),
@@ -5096,13 +5097,13 @@ var Domado = (function() {
           name: NP.filterAttr(identity, identity), // rejection handled for attr
           contentDocument: {
             enumerable: true,
-            get: cajaVM.def(function() {
+            get: cajaVM.constFunc(function() {
               return contentDomicile(this).document;
             })
           },
           contentWindow: {
             enumerable: true,
-            get: cajaVM.def(function() {
+            get: cajaVM.constFunc(function() {
               return contentDomicile(this).window;
             })
           }
@@ -6019,7 +6020,7 @@ var Domado = (function() {
         return domicile.writeHook.close();
       });
       cajaVM.def(TameHTMLDocument);  // and its prototype
-      domicile.setBaseUri = cajaVM.def(function(base) {
+      domicile.setBaseUri = cajaVM.constFunc(function(base) {
         var parsed = URI.parse(base);
         var host = null;
         if (parsed.hasDomain()) {
@@ -6051,7 +6052,7 @@ var Domado = (function() {
       }
 
       // Called by the html-emitter when the virtual document has been loaded.
-      domicile.signalLoaded = cajaVM.def(function() {
+      domicile.signalLoaded = cajaVM.constFunc(function() {
         nodeAmplify(tameDocument, function(privates) {
           dispatchToListeners(
               'Event',
@@ -6076,7 +6077,7 @@ var Domado = (function() {
               function(privates) { return privates.feral; });
         }
       }
-      cajaVM.def(toFeralNode);
+      cajaVM.constFunc(toFeralNode);
 
       // For JavaScript handlers.  See function dispatchEvent below
       domicile.handlers = [];
@@ -6084,21 +6085,21 @@ var Domado = (function() {
       domicile.feralNode = cajaVM.def(toFeralNode);
       domicile.tameEvent = cajaVM.def(tameEvent);
       domicile.blessHtml = cajaVM.def(blessHtml);
-      domicile.blessCss = cajaVM.def(function (var_args) {
+      domicile.blessCss = cajaVM.constFunc(function(var_args) {
         var arr = [];
         for (var i = 0, n = arguments.length; i < n; ++i) {
           arr[+i] = arguments[+i];
         }
         return cssSealerUnsealerPair.seal(arr);
       });
-      domicile.htmlAttr = cajaVM.def(function (s) {
+      domicile.htmlAttr = cajaVM.constFunc(function(s) {
         return html.escapeAttrib(String(s || ''));
       });
       domicile.html = cajaVM.def(safeHtml);
-      domicile.fetchUri = cajaVM.def(function(uri, mime, callback) {
+      domicile.fetchUri = cajaVM.constFunc(function(uri, mime, callback) {
         uriFetch(naiveUriPolicy, uri, mime, callback);
       });
-      domicile.rewriteUri = cajaVM.def(function (uri, mimeType, opt_hints) {
+      domicile.rewriteUri = cajaVM.constFunc(function(uri, mimeType, opt_hints) {
         // (SAME_DOCUMENT, SANDBOXED) is chosen as the "reasonable" set of
         // defaults for this function, which is only used by TCB components
         // to rewrite URIs for sources of data. We assume these sources of
@@ -6112,7 +6113,7 @@ var Domado = (function() {
             html4.ltypes.SANDBOXED,
             opt_hints || {});
       });
-      domicile.suffix = cajaVM.def(function (nmtokens) {
+      domicile.suffix = cajaVM.constFunc(function(nmtokens) {
         var p = String(nmtokens).replace(/^\s+|\s+$/g, '').split(/\s+/g);
         var out = [];
         for (var i = 0; i < p.length; ++i) {
@@ -6123,7 +6124,7 @@ var Domado = (function() {
         return out.join(' ');
       });
       domicile.suffixStr = idSuffix;
-      domicile.ident = cajaVM.def(function (nmtokens) {
+      domicile.ident = cajaVM.constFunc(function(nmtokens) {
         var p = String(nmtokens).replace(/^\s+|\s+$/g, '').split(/\s+/g);
         var out = [];
         for (var i = 0; i < p.length; ++i) {
@@ -6133,7 +6134,7 @@ var Domado = (function() {
         }
         return out.join(' ');
       });
-      domicile.rewriteUriInCss = cajaVM.def(function (value, propName) {
+      domicile.rewriteUriInCss = cajaVM.constFunc(function(value, propName) {
         return value
           ? uriRewrite(naiveUriPolicy, value, html4.ueffects.SAME_DOCUMENT,
                 html4.ltypes.SANDBOXED,
@@ -6143,8 +6144,8 @@ var Domado = (function() {
                 })
           : void 0;
       });
-      domicile.rewriteUriInAttribute = cajaVM.def(
-          function (value, tagName, attribName) {
+      domicile.rewriteUriInAttribute = cajaVM.constFunc(
+          function(value, tagName, attribName) {
         if (isValidFragment(value)) {
           return value + idSuffix;
         }
@@ -6158,8 +6159,8 @@ var Domado = (function() {
                 })
           : void 0;
       });
-      domicile.rewriteTargetAttribute = cajaVM.def(
-          function (value, tagName, attribName) {
+      domicile.rewriteTargetAttribute = cajaVM.constFunc(
+          function(value, tagName, attribName) {
         // TODO(ihab.awad): Parrots much of the code in sanitizeAttrs; refactor
         var atype = null, attribKey;
         if ((attribKey = tagName + '::' + attribName,
@@ -6363,7 +6364,7 @@ var Domado = (function() {
        * @return {string} an CSS representation of a number suitable for both html
        *    attribs and plain text.
        */
-      domicile.cssNumber = cajaVM.def(function (num) {
+      domicile.cssNumber = cajaVM.constFunc(function(num) {
         if ('number' === typeof num && isFinite(num) && !isNaN(num)) {
           return '' + num;
         }
@@ -6376,7 +6377,7 @@ var Domado = (function() {
        * @return {string} a CSS representation of num suitable for both html
        *    attribs and plain text.
        */
-      domicile.cssColor = cajaVM.def(function (color) {
+      domicile.cssColor = cajaVM.constFunc(function(color) {
         // TODO: maybe whitelist the color names defined for CSS if the arg is a
         // string.
         if ('number' !== typeof color || (color != (color | 0))) {
@@ -6390,7 +6391,7 @@ var Domado = (function() {
             + hex.charAt((color >> 4) & 0xf)
             + hex.charAt(color & 0xf);
       });
-      domicile.cssUri = cajaVM.def(function (uri, mimeType, prop) {
+      domicile.cssUri = cajaVM.constFunc(function(uri, mimeType, prop) {
         uri = String(uri);
         if (!naiveUriPolicy) { return null; }
         return uriRewrite(
@@ -6408,12 +6409,12 @@ var Domado = (function() {
        * Create a CSS stylesheet with the given text and append it to the DOM.
        * @param {string} cssText a well-formed stylesheet production.
        */
-      domicile.emitCss = cajaVM.def(function (cssText) {
+      domicile.emitCss = cajaVM.constFunc(function(cssText) {
         this.getCssContainer().appendChild(
             bridal.createStylesheet(document, cssText));
       });
       /** The node to which gadget stylesheets should be added. */
-      domicile.getCssContainer = cajaVM.def(function () {
+      domicile.getCssContainer = cajaVM.constFunc(function() {
         var e = document.getElementsByTagName('head')[0];
         e = makeDOMAccessible(e);
         return e;
@@ -6440,7 +6441,7 @@ var Domado = (function() {
              idClassPattern.test(node.className));
       }
       /** A per-gadget class used to separate style rules. */
-      domicile.getIdClass = cajaVM.def(function () {
+      domicile.getIdClass = cajaVM.constFunc(function() {
         return idClass;
       });
       // enforce id class on container
@@ -6453,11 +6454,11 @@ var Domado = (function() {
       // bitmask of trace points
       //    0x0001 plugin_dispatchEvent
       domicile.domitaTrace = 0;
-      domicile.getDomitaTrace = cajaVM.def(
-          function () { return domicile.domitaTrace; }
+      domicile.getDomitaTrace = cajaVM.constFunc(
+          function() { return domicile.domitaTrace; }
       );
-      domicile.setDomitaTrace = cajaVM.def(
-          function (x) { domicile.domitaTrace = x; }
+      domicile.setDomitaTrace = cajaVM.constFunc(
+          function(x) { domicile.domitaTrace = x; }
       );
 
       var TameWindowConf = new Confidence('TameWindow');
@@ -6487,7 +6488,7 @@ var Domado = (function() {
       }
       inertCtor(TameWindow, Object, 'Window');
       // Methods of TameWindow are established later.
-      setOwn(TameWindow.prototype, "toString", cajaVM.def(function() {
+      setOwn(TameWindow.prototype, 'toString', cajaVM.constFunc(function() {
         return "[domado object Window]";
       }));
 
@@ -6523,7 +6524,7 @@ var Domado = (function() {
         defineLocationField('protocol', 'http:');
         defineLocationField('search', '');
         setOwn(tameLocation, 'toString',
-          cajaVM.def(function() { return tameLocation.href; }));
+          cajaVM.constFunc(function() { return tameLocation.href; }));
       }
       inertCtor(TameLocation, Object);
       var tameLocation = new TameLocation();
@@ -6635,7 +6636,7 @@ var Domado = (function() {
         tameResizeBy(privates.feralContainerNode, dw, dh);
       });
         /** A partial implementation of getComputedStyle. */
-      TameWindow.prototype.getComputedStyle = cajaVM.def(
+      TameWindow.prototype.getComputedStyle = cajaVM.constFunc(
           // Pseudo elements are suffixes like :first-line which constrain to
           // a portion of the element's content as defined at
           // http://www.w3.org/TR/CSS2/selector.html#q20
