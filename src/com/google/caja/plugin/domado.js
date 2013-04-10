@@ -1395,7 +1395,10 @@ var Domado = (function() {
         }
         var tamed = {};
         ids.set(tamed, id);
-        return tamed;
+        // Freezing is not *necessary*, but it makes testing/reasoning simpler
+        // and removes a degree of freedom actual browsers don't provide (they
+        // return numbers).
+        return Object.freeze(tamed);
       }
       function tameClear(id) {
         // From https://developer.mozilla.org/en/DOM/window.clearTimeout says:
@@ -6526,7 +6529,7 @@ var Domado = (function() {
         setOwn(tameLocation, 'toString',
           cajaVM.constFunc(function() { return tameLocation.href; }));
       }
-      inertCtor(TameLocation, Object);
+      inertCtor(TameLocation, Object, 'Location');
       var tameLocation = new TameLocation();
       function installLocation(obj) {
         Object.defineProperty(obj, "location", {
@@ -6537,6 +6540,7 @@ var Domado = (function() {
                            // which we don't implement.
         });
       }
+      cajaVM.def(TameLocation);  // and its prototype
 
       // See spec at http://www.whatwg.org/specs/web-apps/current-work/multipage/browsers.html#navigator
       // We don't attempt to hide or abstract userAgent details since
