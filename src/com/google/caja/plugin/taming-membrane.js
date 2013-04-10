@@ -650,7 +650,13 @@ function TamingMembrane(privilegedAccess, schema) {
     tamesTo: tamesTo,
     reTamesTo: reTamesTo,
     hasTameTwin: hasTameTwin,
-    hasFeralTwin: hasFeralTwin
+    hasFeralTwin: hasFeralTwin,
+    
+    // Any code which bypasses the membrane (e.g. in order to provide its own
+    // tame twins, as Domado does) must also filter exceptions resulting from
+    // control flow crossing the membrane.
+    tameException: tameException,
+    untameException: untameException
   });
 }
 

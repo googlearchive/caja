@@ -293,7 +293,9 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
         'tamesTo', frameTamingMembrane.tamesTo,
         'reTamesTo', frameTamingMembrane.reTamesTo,
         'hasTameTwin', frameTamingMembrane.hasTameTwin,
-        'hasFeralTwin', frameTamingMembrane.hasFeralTwin));
+        'hasFeralTwin', frameTamingMembrane.hasFeralTwin,
+        'tameException', frameTamingMembrane.tameException,
+        'untameException', frameTamingMembrane.untameException));
     var imports = domicile.window;
 
     // Add JavaScript globals to the DOM window object.

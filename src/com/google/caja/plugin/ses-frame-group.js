@@ -18,6 +18,7 @@
  * @requires Domado
  * @requires GuestManager
  * @requires Q
+ * @requires URI
  * @requires TamingSchema
  * @requires TamingMembrane
  * @requires bridalMaker
@@ -219,8 +220,40 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
       } // else let primitives go normally
     }
 
+    // Needs to be membraned for exception safety in Domado. But we do not want
+    // to have side effects on our arguments, so we construct a wrapper.
+    // TODO(kpreid): Instead of reimplementing the taming membrane here, have
+    // the host-side code generate a fresh host-side function wrapper which can
+    // be tamed. Then neither SES nor ES5/3 frame group code need do this.
+    var uriPolicyWrapper = {};
+    ['rewrite', 'fetch'].forEach(function(name) {
+      if (name in uriPolicy) {
+        var f = uriPolicy[name];
+        uriPolicyWrapper[name] = function() {
+          var args = Array.prototype.slice.call(arguments);
+          // Argument 0 of both rewrite and fetch is the URI object, which we
+          // need to make sure can be untamed but the taming membrane doesn't
+          // natively support. TODO(kpreid): Do this more cleanly, such as by
+          // the taming membrane being able to be told about untaming of tame
+          // constructed objects, or by having a tame-side advice mechanism.
+          var uriArg = arguments[0];
+          if (uriArg) {
+            if (!uriArg instanceof URI) { throw new Error('oops, not URI'); }
+            frameTamingMembrane.tamesTo(uriArg.clone(), uriArg);
+          }
+          try {
+            return frameTamingMembrane.tame(
+                f.apply(uriPolicy, Array.prototype.map.call(arguments,
+                    frameTamingMembrane.untame)));
+          } catch (e) {
+            throw frameTamingMembrane.tameException(e);
+          }
+        };
+      }
+    });
+
     var domicile = domado.attachDocument(
-      '-' + divs.idClass, uriPolicy, divs.inner,
+      '-' + divs.idClass, uriPolicyWrapper, divs.inner,
       config.targetAttributePresets,
       Object.freeze({
         permitUntaming: permitUntaming,
@@ -229,7 +262,9 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
         tamesTo: frameTamingMembrane.tamesTo,
         reTamesTo: frameTamingMembrane.reTamesTo,
         hasTameTwin: frameTamingMembrane.hasTameTwin,
-        hasFeralTwin: frameTamingMembrane.hasFeralTwin
+        hasFeralTwin: frameTamingMembrane.hasFeralTwin,
+        tameException: frameTamingMembrane.tameException,
+        untameException: frameTamingMembrane.untameException
       }));
     var imports = domicile.window;
 
