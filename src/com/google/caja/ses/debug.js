@@ -22,8 +22,8 @@
  * settled. This module is currently in an exploratory phase.
  *
  * <p>Meant to be run sometime after repairs are done and a working
- * WeakMap is available, but before startSES.js. initSES.js includes
- * this. initSESPlus.js does not.
+ * WeakMap is available, but before startSES.js. initSESPlus.js includes
+ * this. initSES.js does not.
  *
  * //provides ses.UnsafeError,
  * //provides ses.getCWStack ses.stackString ses.getStack
@@ -38,6 +38,10 @@ var ses;
 (function debugModule(global) {
    "use strict";
 
+   if (typeof ses !== 'undefined' && ses.ok && !ses.ok()) {
+     // already too broken, so give up
+     return;
+   }
 
    /**
     * Save away the original Error constructor as ses.UnsafeError and

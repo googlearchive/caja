@@ -607,6 +607,42 @@ var ses;
     return !('getOwnPropertyNames' in Object);
   }
 
+  function inTestFrame(callback) {
+    if (!document || !document.createElement) { return undefined; }
+    var iframe = document.createElement('iframe');
+    document.body.appendChild(iframe);
+    try {
+      return callback(iframe.contentWindow);
+    } finally {
+      iframe.parentNode.removeChild(iframe);
+    }
+  }
+
+  /**
+   * Problem visible in Chrome 27.0.1428.0 canary and 27.0.1453.15 beta:
+   * freezing Object.prototype breaks Object.create inheritance.
+   * https://code.google.com/p/v8/issues/detail?id=2565
+   */
+  function test_FREEZING_BREAKS_CREATE() {
+    // This problem is sufficiently problematic that testing for it breaks the
+    // frame, so we create another frame to test in.
+    var otherObject = inTestFrame(function(window) { return window.Object; });
+    if (!otherObject) { return false; }
+
+    var a = new otherObject();
+    otherObject.freeze(otherObject.prototype);
+    var b = otherObject.create(a);  // will fail to set [[Prototype]] to a
+    var proto = Object.getPrototypeOf(b);
+    if (proto === a) {
+      return false;
+    } else if (proto === otherObject.prototype) {
+      return true;
+    } else {
+      return 'Prototype of created object is neither specified prototype nor ' +
+          'Object.prototype';
+    }
+  }
+
   /**
    * Detects https://bugs.webkit.org/show_bug.cgi?id=64250
    *
@@ -1804,12 +1840,9 @@ var ses;
    * descendents of that same Object.
    */
   function test_FIREFOX_15_FREEZE_PROBLEM() {
-    if (!document || !document.createElement) { return false; }
-    var iframe = document.createElement('iframe');
-    var where = document.getElementsByTagName('script')[0];
-    where.parentNode.insertBefore(iframe, where);
-    var otherObject = iframe.contentWindow.Object;
-    where.parentNode.removeChild(iframe);
+    var otherObject = inTestFrame(function(window) { return window.Object; });
+    if (!otherObject) { return false; }
+
     var obj = {};
     otherObject.freeze(obj);
     return !Object.isFrozen(obj);
@@ -2817,6 +2850,17 @@ var ses;
       urls: [],
       sections: ['15.2.3.4'],
       tests: ['15.2.3.4-0-1']
+    },
+    {
+      id: 'FREEZING_BREAKS_CREATE',
+      description: 'Freezing Object.prototype breaks Object.create',
+      test: test_FREEZING_BREAKS_CREATE,
+      repair: void 0,
+      preSeverity: severities.NOT_SUPPORTED,
+      canRepair: false,
+      urls: ['https://code.google.com/p/v8/issues/detail?id=2565'],
+      sections: ['15.2.3.5'],
+      tests: []  // TODO(kpreid): find test242
     }
   ];
 

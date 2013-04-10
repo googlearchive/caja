@@ -1046,6 +1046,7 @@ For help on building and testing Caja, see:
       <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
       <input file="${src.caja}/plugin/ses-iframe-init.js"/>
       <input file="${lib.caja}/ses/initSESPlus.js" jslint="false"/>
+      <input file="${src.caja}/plugin/ses-iframe-earlyfail.js"/>
 
       <input file="${src.caja}/plugin/unicode.js"/>
       <input file="${lib.caja}/plugin/css-defs.js"/>
