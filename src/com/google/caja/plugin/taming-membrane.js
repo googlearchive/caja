@@ -193,7 +193,12 @@ function TamingMembrane(privilegedAccess, schema) {
    */
   function tamesTo(f, t) {
     if ((f && tameByFeral.has(f)) || (t && feralByTame.has(t))) {
-      throw new TypeError('Attempt to multiply tame: ' + f + ', ' + t);
+      var et = tameByFeral.get(f);
+      var ef = feralByTame.get(t);
+      throw new TypeError('Attempt to multiply tame: ' + f + 
+          (ef ? ' (already ' + (ef === f ? 'same' : ef) + ')' : '') +
+          ' <-> ' + t +
+          (et ? ' (already ' + (et === t ? 'same' : et) + ')' : ''));
     }
     reTamesTo(f, t);
   }
