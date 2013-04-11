@@ -263,6 +263,7 @@ ses.startSES = function(global,
    * Passing no option performs no mitigation.
    */
   function mitigateGotchas(programSrc, options) {
+    var safeError;
     if ('function' === typeof ses.mitigateGotchas) {
       try {
         return ses.mitigateGotchas(programSrc, options, ses.logger);
@@ -270,7 +271,6 @@ ses.startSES = function(global,
         // Shouldn't throw, but if it does, the exception is potentially from a
         // different context with an undefended prototype chain; don't allow it
         // to leak out.
-        var safeError;
         try {
           safeError = new Error(error.message);
         } catch (metaerror) {
