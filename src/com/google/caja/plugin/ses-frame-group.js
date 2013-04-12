@@ -30,9 +30,6 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
   if (tamingWin !== window) {
     throw new Error('wrong frame');
   }
-  if (!tamingWin.___) {
-    tamingWin.___ = {};
-  }
 
   var USELESS = Object.freeze({ USELESS: 'USELESS' });
   var BASE_OBJECT_CONSTRUCTOR = Object.freeze({});
@@ -60,9 +57,6 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
   var domado = Domado(null);
 
   var bridal = bridalMaker(identity, feralWin.document);
-
-  tamingWin.___.plugin_dispatchToHandler___ =
-      domado.plugin_dispatchToHandler;
 
   var unsafe = false;
 
@@ -268,54 +262,20 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
       }));
     var imports = domicile.window;
 
-    // The following code copied from the ES5/3 mode is mostly
-    // commented out because the features it supports are not yet
-    // available in the extremely incomplete ES5 mode. It is left in
-    // as a reminder to implement the corresponding features.
-    // In the ES5/SES/CES world, there is no ___ suffix to hide
-    // properties, so all such things must be protected by other
-    // means.
-    //
-    // TODO(kpreid): All of this code should disappear as the missing
-    // features are implemented, but if it doesn't, remove it or check
-    // for what we lost.
-
     guestWin.cajaVM.copyToImports(imports, guestWin.cajaVM.sharedImports);
 
     var htmlEmitter = new tamingWin.HtmlEmitter(
       identity, domicile.htmlEmitterTarget, domicile, guestWin);
-    //imports.rewriteUriInCss___ = domicile.rewriteUriInCss.bind(domicile);
-    //imports.rewriteUriInAttribute___ =
-    //  domicile.rewriteUriInAttribute.bind(domicile);
-    //imports.getIdClass___ = domicile.getIdClass.bind(domicile);
-    //imports.emitCss___ = domicile.emitCss.bind(domicile);
-
-    //___.getId = cajaInt.getId;
-    //___.getImports = cajaInt.getImports;
-    //___.unregister = cajaInt.unregister;
-    //
-    //feralWin.___.getId = cajaInt.getId;
-    //feralWin.___.getImports = cajaInt.getImports;
-    //feralWin.___.unregister = cajaInt.unregister;
-    //
-    //guestWin.___.getId = cajaInt.getId;
-    //guestWin.___.getImports = cajaInt.getImports;
-    //guestWin.___.unregister = cajaInt.unregister;
-    //
-    //cajaInt.getId(imports);
 
     if (!feralWin.___.tamingWindows) {
       feralWin.___.tamingWindows = {};
     }
     feralWin.___.tamingWindows[imports.id___] = tamingWin;
 
+    // Invoked by textual event handlers emitted by Domado.
+    // TODO(kpreid): Use a name other than ___ for this purpose; perhaps some
+    // property of the 'caja' object.
     feralWin.___.plugin_dispatchEvent___ = domado.plugin_dispatchEvent;
-    feralWin.___.plugin_dispatchToHandler___ =
-      function (pluginId, handler, args) {
-        var tamingWin = feralWin.___.tamingWindows[pluginId];
-        return tamingWin.___.plugin_dispatchToHandler___(
-          pluginId, handler, args);
-      };
 
     return [domicile, htmlEmitter];
   }
