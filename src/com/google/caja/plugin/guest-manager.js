@@ -74,7 +74,10 @@ function GuestManager(frameTamingSchema, frameTamingMembrane, divs, hostBaseUrl,
     // idClass property instead.
     idSuffix: divs.idClass,
 
+    // TODO(kpreid): rename/move to make sure this is used only for testing
+    // as SES now doesn't have a distinct guestWin which could cause confusion.
     iframe: guestWin.frameElement,
+
     imports: (domicile
               ? domicile.window
               : (guestWin.___

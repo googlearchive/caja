@@ -14,6 +14,7 @@
 
 /**
  * @provides SESFrameGroup
+ * @requires cajaVM
  * @requires cajaFrameTracker
  * @requires Domado
  * @requires GuestManager
@@ -25,11 +26,14 @@
  * @overrides window
  */
 
-function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
+function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
     additionalParams) {
   if (tamingWin !== window) {
     throw new Error('wrong frame');
   }
+
+  // TODO(kpreid): make sure mitigator is applied to guest code only
+  tamingWin.ses.mitigateGotchas = additionalParams.mitigateGotchas;
 
   var USELESS = Object.freeze({ USELESS: 'USELESS' });
   var BASE_OBJECT_CONSTRUCTOR = Object.freeze({});
@@ -179,28 +183,24 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
 
   function makeES5Frame(div, uriPolicy, es5ready, domOpts) {
     var divs = cajaInt.prepareContainerDiv(div, feralWin, domOpts);
-    guestMaker.make(function (guestWin) {
-      cajaFrameTracker.addGuestWindow(guestWin);
-      var frameTamingSchema = TamingSchema(tamingHelper);
-      var frameTamingMembrane =
-          TamingMembrane(tamingHelper, frameTamingSchema.control);
-      var domicileAndEmitter = makeDomicileAndEmitter(
-          frameTamingMembrane, divs, uriPolicy, guestWin);
-      var domicile = domicileAndEmitter && domicileAndEmitter[0];
-      var htmlEmitter = domicileAndEmitter && domicileAndEmitter[1];
-      var gman = GuestManager(frameTamingSchema, frameTamingMembrane, divs,
-          cajaInt.documentBaseUrl(), domicile, htmlEmitter, guestWin, USELESS,
-          uriPolicy, sesRun);
-      guestWin.ses.DISABLE_SECURITY_FOR_DEBUGGER = unsafe;
-      guestWin.ses.mitigateGotchas = additionalParams.mitigateGotchas;
-      es5ready(gman);
-    });
+
+    var frameTamingSchema = TamingSchema(tamingHelper);
+    var frameTamingMembrane =
+        TamingMembrane(tamingHelper, frameTamingSchema.control);
+    var domicileAndEmitter = makeDomicileAndEmitter(
+        frameTamingMembrane, divs, uriPolicy);
+    var domicile = domicileAndEmitter && domicileAndEmitter[0];
+    var htmlEmitter = domicileAndEmitter && domicileAndEmitter[1];
+    var gman = GuestManager(frameTamingSchema, frameTamingMembrane, divs,
+        cajaInt.documentBaseUrl(), domicile, htmlEmitter, window, USELESS,
+        uriPolicy, sesRun);
+    es5ready(gman);
   }
 
   //----------------
 
   function makeDomicileAndEmitter(
-      frameTamingMembrane, divs, uriPolicy, guestWin) {
+      frameTamingMembrane, divs, uriPolicy) {
     if (!divs.inner) { return null; }
 
     function FeralTwinStub() {}
@@ -262,10 +262,10 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
       }));
     var imports = domicile.window;
 
-    guestWin.cajaVM.copyToImports(imports, guestWin.cajaVM.sharedImports);
+    cajaVM.copyToImports(imports, cajaVM.sharedImports);
 
     var htmlEmitter = new tamingWin.HtmlEmitter(
-      identity, domicile.htmlEmitterTarget, domicile, guestWin);
+      identity, domicile.htmlEmitterTarget, domicile, window);
 
     if (!feralWin.___.tamingWindows) {
       feralWin.___.tamingWindows = {};
@@ -337,8 +337,6 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
    * for its Caja interpretation, a function of (extraImports).
    */
   function loadContent(gman, contentPromise, opt_expectedContentType) {
-    var guestWin = gman.iframe.contentWindow;
-
     return Q.when(contentPromise, function (xhrRecord) {
       // TODO(kpreid): Is this safe? Does this match the cajoling
       // service's behavior? Should we reject if these two do not
@@ -365,7 +363,7 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
 
         // TODO(kpreid): needs to return completion value unless we
         // deprecate that feature.
-        return Q.ref(guestWin.cajaVM.compileExpr(
+        return Q.ref(cajaVM.compileExpr(
           // End of line required to ensure linecomments in theContent
           // do not escape away the closing curlies in the expression
           '(function () {' + theContent + '\n})()'));

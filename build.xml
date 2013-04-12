@@ -1030,17 +1030,17 @@ For help on building and testing Caja, see:
       <input file="${src.caja}/plugin/caja-iframe-done.js"/>
     </transform>
     <transform>
-      <!-- ses-taming-frame: Used by caja.js when the browser is SES-capable.
+      <!-- ses-single-frame: Used by caja.js when the browser is SES-capable.
       -->
-      <output file="${lib}/ses-taming-frame.jslint.stamp"
+      <output file="${lib}/ses-single-frame.jslint.stamp"
        language="jslint"/>
       <!-- TODO(felix8a): closure cleanup
-      <output file="${lib.caja}/plugin/ses-taming-frame.clo.js"
+      <output file="${lib.caja}/plugin/ses-single-frame.clo.js"
        language="closure"/>
       -->
-      <output file="${lib.caja}/plugin/ses-taming-frame.opt.js"
+      <output file="${lib.caja}/plugin/ses-single-frame.opt.js"
        language="javascript" renderer="minify"/>
-      <output file="${lib.caja}/plugin/ses-taming-frame.js"
+      <output file="${lib.caja}/plugin/ses-single-frame.js"
        language="javascript" renderer="concat"/>
       <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
       <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
@@ -1068,24 +1068,6 @@ For help on building and testing Caja, see:
       <input file="${src.caja}/plugin/guest-manager.js"/>
       <input file="${src.caja}/plugin/caja-frame-tracker.js"/>
       <input file="${src.caja}/plugin/ses-frame-group.js"/>
-      <input file="${src.caja}/plugin/caja-iframe-done.js"/>
-    </transform>
-    <transform>
-      <!-- ses-guest-frame: Used by caja.js when the browser is SES-capable.
-      -->
-      <output file="${lib}/ses-guest-frame.jslint.stamp"
-       language="jslint"/>
-      <!-- TODO(felix8a): closure cleanup
-      <output file="${lib.caja}/plugin/ses-guest-frame.clo.js"
-       language="closure"/>
-      -->
-      <output file="${lib.caja}/plugin/ses-guest-frame.opt.js"
-       language="javascript" renderer="minify"/>
-      <output file="${lib.caja}/plugin/ses-guest-frame.js"
-       language="javascript" renderer="concat"/>
-      <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
-      <input file="${src.caja}/plugin/ses-iframe-init.js"/>
-      <input file="${lib.caja}/ses/initSESPlus.js" jslint="false"/>
       <input file="${src.caja}/plugin/caja-iframe-done.js"/>
     </transform>
     <transform>
@@ -1129,10 +1111,8 @@ For help on building and testing Caja, see:
       <include name="es53-taming-frame.js" />
       <include name="es53-guest-frame.opt.js" />
       <include name="es53-guest-frame.js" />
-      <include name="ses-guest-frame.opt.js" />
-      <include name="ses-guest-frame.js" />
-      <include name="ses-taming-frame.opt.js" />
-      <include name="ses-taming-frame.js" />
+      <include name="ses-single-frame.opt.js" />
+      <include name="ses-single-frame.js" />
       <include name="utility-frame.opt.js" />
       <include name="utility-frame.js" />
     </replace>
@@ -1483,10 +1463,8 @@ For help on building and testing Caja, see:
         <include name="es53-guest-frame.opt.js"/>
         <include name="es53-taming-frame.js"/>
         <include name="es53-taming-frame.opt.js"/>
-        <include name="ses-taming-frame.js"/>
-        <include name="ses-taming-frame.opt.js"/>
-        <include name="ses-guest-frame.js"/>
-        <include name="ses-guest-frame.opt.js"/>
+        <include name="ses-single-frame.js"/>
+        <include name="ses-single-frame.opt.js"/>
         <include name="utility-frame.js"/>
         <include name="utility-frame.opt.js"/>
       </fileset>

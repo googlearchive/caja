@@ -422,16 +422,15 @@ var caja = (function () {
   }
 
   function trySES(config, frameGroupReady, onFailure) {
-    var guestMaker = makeFrameMaker(config, 'ses-guest-frame');
-    var sesMaker = makeFrameMaker(config, 'ses-taming-frame');
-    
+    var sesMaker = makeFrameMaker(config, 'ses-single-frame');
+
     loadCajaFrame(config, 'utility-frame', function (mitigateWin) {
       var mitigateGotchas = mitigateWin['ses']['mitigateGotchas'];
       sesMaker['make'](function (tamingWin) {
         var mustSES = config['es5Mode'] === true;
         if (canSES(tamingWin['ses'], config['maxAcceptableSeverity'])) {
           var fg = tamingWin['SESFrameGroup'](
-              cajaInt, config, tamingWin, window, guestMaker,
+              cajaInt, config, tamingWin, window,
               { 'mitigateGotchas': mitigateGotchas });
           frameGroupReady(fg, true /* es5Mode */);
         } else if (!mustSES) {
