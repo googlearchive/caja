@@ -435,6 +435,12 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
         return markCallableWithoutMembrane(f);
       }),
       writeToPixelArray: ___.markFunc(writeToPixelArray),
+      copyLengthPropertyIfUninterceptable: ___.markFunc(
+          function(source, target) {
+        if (source.GetOwnProperty___('length')) {
+          target.length = source.v___('length');
+        }
+      }),
       getId: ___.markFunc(function () {
         return cajaInt.getId.apply(undefined, arguments);
       }),

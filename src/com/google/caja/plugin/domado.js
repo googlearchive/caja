@@ -635,7 +635,7 @@ var Domado = (function() {
       if (name === "ident___") {
         if (descriptor.set === null) descriptor.set = undefined;
         Object.defineProperty(this, "ident", descriptor);
-      } else if (name in this.target) {
+      } else if (Object.prototype.hasOwnProperty(this.target, name)) {
         // Forwards everything already defined (not expando).
         return ProxyHandler.prototype.defineProperty.call(this, name,
             descriptor);
@@ -649,7 +649,7 @@ var Domado = (function() {
     ExpandoProxyHandler.prototype['delete'] = function (name) {
       if (name === "ident___") {
         return false;
-      } else if (name in this.target) {
+      } else if (Object.prototype.hasOwnProperty(this.target, name)) {
         // Forwards everything already defined (not expando).
         return ProxyHandler.prototype['delete'].call(this, name);
       } else {
@@ -1136,6 +1136,7 @@ var Domado = (function() {
       // These are the stub versions used when in ES5+SES.
       makeDOMAccessible: function (o) {return o;},
       makeFunctionAccessible: function (o) {return o;},
+      copyLengthPropertyIfUninterceptable: function (source, target) {},
       writeToPixelArray: function (source, target, length) {
         // See the use below for why this exists.
         for (var i = length-1; i >= 0; i--) {
@@ -1827,12 +1828,16 @@ var Domado = (function() {
             // The proxy construction is deferred until now because the ES5/3
             // implementation of proxies requires that the proxy's prototype is
             // frozen.
-            var proxiedNode = Proxy.create(privates.proxyHandler, node);
+            var proxiedNode = Proxy.create(privates.proxyHandler,
+                Object.getPrototypeOf(node));
             delete privates.proxyHandler;  // no longer needed
 
             ExpandoProxyHandler.register(proxiedNode, node);
             TameNodeConf.confide(proxiedNode, taming, node);
             tamingProxies.set(node, proxiedNode);
+
+            // special case for ES5/3 lack of interposition on 'length'
+            rulebreaker.copyLengthPropertyIfUninterceptable(node, proxiedNode);
 
             node = proxiedNode;
           }
@@ -2947,7 +2952,7 @@ var Domado = (function() {
           Object.freeze(this);
           var proxy = Proxy.create(
               new NamedNodeMapProxyHandler(feral, mapping, visibleList, this),
-              this);
+              Object.getPrototypeOf(this));
           return proxy;
         };
         // TODO(kpreid): Reorder code so exporting the name works
@@ -3421,8 +3426,8 @@ var Domado = (function() {
       /**
        * A tame node that is backed by a real node.
        *
-       * Note that the constructor returns a proxy which delegates to 'this';
-       * subclasses should apply properties to 'this' but return the proxy.
+       * All results of this constructor should be finishNode()d before being
+       * revealed.
        *
        * @param {Function} opt_proxyType The constructor of the proxy handler
        *     to use, defaulting to ExpandoProxyHandler.
@@ -3857,7 +3862,6 @@ var Domado = (function() {
       // Elements in general and specific elements:
 
       /**
-       * See comments on TameBackedNode regarding return value.
        * @constructor
        */
       function TameElement(node, opt_policy, opt_proxyType) {
@@ -5650,7 +5654,8 @@ var Domado = (function() {
         if (domitaModules.proxiesAvailable) {
           Object.preventExtensions(this);  // required by ES5/3 proxy emulation
           var proxy = Proxy.create(
-              new ExpandoProxyHandler(self, true, {}), self);
+              new ExpandoProxyHandler(self, true, {}),
+              Object.getPrototypeOf(self));
           ExpandoProxyHandler.register(proxy, self);
           TameEventConf.confide(proxy, taming, self);
           self = proxy;
