@@ -55,6 +55,7 @@ public class ReservedNames {
   /**
    * Applies the class policy at runtime, making sure the argument is a valid
    * value for a node's class attribute.
+   * TODO(kpreid): Pretty sure this comment is false or obsolete.
    */
   public static final String IDENT = "ident___";
   /** Coerces the argument to a CSS number. */

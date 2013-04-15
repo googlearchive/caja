@@ -752,3 +752,90 @@ testTopLevelVarsInCatch
     test(env);
   });
 </script>
+
+<!-- WeakMap tests:
+
+We have several different ways of implementing WeakMap (whitelisted browser
+provided, emulated ES5/3, emulated SES, 'double' maps for working around
+problems with browser provided WeakMap), so we have these end-to-end tests.
+
+-->
+
+<script type="text/javascript">
+  jsunitRegister('testWeakMapType', function testWeakMapType() {
+    assertEquals('function', typeof WeakMap);
+
+    var w = new WeakMap();
+
+    // TODO(kpreid): arrange so that w.constructor === WeakMap for all impls
+    // Right now we're just testing that it's not a _wrong_ constructor.
+    assertTrue('constructor', w.constructor === WeakMap ||
+        w.constructor === Object || w.constructor === undefined);
+
+    if (w.constructor === WeakMap) {
+      assertTrue('prototype', WeakMap.prototype === Object.getPrototypeOf(w));
+    }
+
+    pass('testWeakMapType');
+  });
+</script>
+
+<script type="text/javascript">
+  jsunitRegister('testWeakMapAccess', function testWeakMapAccess() {
+    var w = new WeakMap();
+
+    var k1 = {};
+    var k2 = Object.create(k1);
+    var k3 = document.createEvent('HTMLEvents'); // problematic in Firefox
+
+    w.set(k1, 'a');
+    assertEquals('a', w.get(k1));
+    assertTrue('a', w.has(k1));
+    assertEquals(undefined, w.get(k2));  // don't inherit membership
+    assertFalse('early has', w.has(k2));
+
+    w.set(k2, 'b');
+    w.set(k3, 'c');
+    assertEquals('b', w.get(k2));
+    assertEquals('c', w.get(k3));
+    assertTrue('b', w.has(k2));
+    assertTrue('c', w.has(k3));
+
+    // failed lookups
+    assertFalse('no obj', w.has({}));
+    assertFalse('no event', w.has(document.createEvent('HTMLEvents')));
+    assertEquals(undefined, w.get({}));
+    assertEquals(undefined, w.get(document.createEvent('HTMLEvents')));
+
+    // defaulted failed lookups
+    // TODO(kpreid): Not supported by Chrome native WeakMap.
+    if (false) {
+      assertEquals('oops', w.get({}, 'oops'));
+    }
+
+    // primitives should not be silently accepted
+    expectFailure(function() {
+      w.set(1, 'nope');
+    }, 'WeakMap on primitive', function(e) {
+      return e.name === 'TypeError';
+    });
+
+    // deletion
+    // TODO(kpreid): not all of our implementations support .delete or .clear;
+    // fix that and enable these tests
+    if (false) {
+      w.delete(k2);
+      w.delete(k3);
+      assertFalse('deleted k2', w.has(k2));
+      assertFalse('deleted k3', w.has(k3));
+      assertEquals('deleted k2', undefined, w.get(k2));
+      assertEquals('deleted k3', undefined, w.get(k3));
+
+      w.clear();
+      assertFalse('deleted k1', w.has(k1));
+      assertEquals('deleted k1', undefined, w.get(k1));
+    }
+
+    pass('testWeakMapAccess');
+  });
+</script>

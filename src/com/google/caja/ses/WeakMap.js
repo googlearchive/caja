@@ -23,7 +23,7 @@
  * quite conform, run <code>repairES5.js</code> first.
  *
  * @author Mark S. Miller
- * @requires ses, crypto, ArrayBuffer, Uint8Array
+ * @requires ses, crypto, ArrayBuffer, Uint8Array, document
  * @overrides WeakMap, WeakMapModule
  */
 
@@ -81,6 +81,9 @@ var WeakMap;
  * >secureable ES5</a> platform and the ES-Harmony {@code WeakMap} is
  * absent, install an approximate emulation.
  *
+ * <p>If WeakMap is present but cannot store some objects, use our approximate
+ * emulation as a wrapper.
+ *
  * <p>If this is almost a secureable ES5 platform, then WeakMap.js
  * should be run after repairES5.js.
  *
@@ -95,9 +98,23 @@ var WeakMap;
     return;
   }
 
-  if (typeof WeakMap === 'function') {
-    // assumed fine, so we're done.
-    return;
+  // Check if there is already a good-enough WeakMap implementation, and if so
+  // exit without replacing it.
+  var HostWeakMap = WeakMap;
+  if (typeof HostWeakMap === 'function') {
+    // There is a WeakMap -- is it good enough?
+    if (typeof document !== 'undefined') {
+      var problematic = document.createEvent('HTMLEvents');
+      var testHostMap = new HostWeakMap();
+      try {
+        testHostMap.set(problematic, 1);  // Firefox 20 will throw here
+        if (testHostMap.get(problematic) === 1) {
+          return;
+        }
+      } catch (e) {}
+    } else {
+      return;
+    }
   }
 
   var hop = Object.prototype.hasOwnProperty;
@@ -305,7 +322,7 @@ var WeakMap;
   // constant time representation is easy.
   // var histogram = [];
 
-  WeakMap = function() {
+  var OurWeakMap = function() {
     // We are currently (12/25/2012) never encountering any prematurely
     // non-extensible keys.
     var keys = []; // brute force for prematurely non-extensible keys.
@@ -378,14 +395,14 @@ var WeakMap;
       return true;
     }
 
-    return Object.create(WeakMap.prototype, {
+    return Object.create(OurWeakMap.prototype, {
       get___:    { value: constFunc(get___) },
       has___:    { value: constFunc(has___) },
       set___:    { value: constFunc(set___) },
       delete___: { value: constFunc(delete___) }
     });
   };
-  WeakMap.prototype = Object.create(Object.prototype, {
+  OurWeakMap.prototype = Object.create(Object.prototype, {
     get: {
       /**
        * Return the value most recently associated with key, or
@@ -442,4 +459,49 @@ var WeakMap;
     }
   });
 
+  if (typeof HostWeakMap === 'function') {
+    (function() {
+      // If we got here, then the platform has a WeakMap but it refuses to store
+      // some key types. Therefore, make a map implementation which makes use of
+      // both as possible.
+
+      function DoubleWeakMap() {
+        var hmap = new HostWeakMap();
+        var omap = new OurWeakMap();
+
+        function dget(key, opt_default) {
+          return hmap.has(key) ? hmap.get(key) : omap.get___(key, opt_default);
+        }
+
+        function dhas(key) {
+          return hmap.has(key) || omap.has___(key);
+        }
+
+        function dset(key, value) {
+          try {
+            hmap.set(key, value);
+          } catch (e) {
+            omap.set___(key, value);
+          }
+        }
+
+        function ddelete(key) {
+          hmap['delete'](key);
+          omap.delete___(key);
+        }
+
+        return Object.create(OurWeakMap.prototype, {
+          get___:    { value: constFunc(dget) },
+          has___:    { value: constFunc(dhas) },
+          set___:    { value: constFunc(dset) },
+          delete___: { value: constFunc(ddelete) }
+        });
+      }
+      DoubleWeakMap.prototype = OurWeakMap.prototype;
+      WeakMap = DoubleWeakMap;
+      WeakMap.prototype.constructor = WeakMap;  // hides OurWeakMap
+    })();
+  } else {
+    WeakMap = OurWeakMap;
+  }
 })();

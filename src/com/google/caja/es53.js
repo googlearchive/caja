@@ -26,7 +26,7 @@
  * </ul>
  *
  * @author metaweta@gmail.com
- * @requires json_sans_eval, cajaBuildVersion, taming, this
+ * @requires json_sans_eval, cajaBuildVersion, taming, this, document
  * @provides ___, safeJSON, WeakMap, cajaVM
  * @overrides Error, EvalError, RangeError, ReferenceError, SyntaxError,
  *   TypeError, URIError, ArrayLike, window
@@ -1415,44 +1415,88 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       });
   }
 
-  WeakMap = WeakMap ?
-      (function (WeakMap) {
-        return markFunc(function () {
-          var result = WeakMap();
-          // DefineOwnProperty___ may not be defined yet.
-          markFunc(result.get);
-          result.get_v___ = result;
-          result.get_c___ = false;
-          result.get_w___ = false;
-          result.get_gw___ = result;
-          result.get_e___ = result;
-          result.get_m___ = false;
-          result.get_g___ = false;
-          result.get_s___ = false;
+  var HostWeakMap = WeakMap;
+  if (typeof HostWeakMap === 'function') {
+    var hostWeakMapOK;
+    // There is a WeakMap -- is it good enough?
+    if (typeof document !== 'undefined') {
+      hostWeakMapOK = false;
+      var problematic = document.createEvent('HTMLEvents');
+      var testHostMap = new HostWeakMap();
+      try {
+        testHostMap.set(problematic, 1);  // Firefox 20 will throw here
+        if (testHostMap.get(problematic) === 1) {
+          hostWeakMapOK = true;
+        }
+      } catch (e) {}
+    } else {
+      hostWeakMapOK = true;
+    }
+    
+    if (hostWeakMapOK) {
+      // Whitelist WeakMap methods.
+      WeakMap = markFunc(function() {
+        var result = HostWeakMap();
+        // DefineOwnProperty___ may not be defined yet.
+        markFunc(result.get);
+        result.get_v___ = result;
+        result.get_c___ = false;
+        result.get_w___ = false;
+        result.get_gw___ = result;
+        result.get_e___ = result;
+        result.get_m___ = false;
+        result.get_g___ = false;
+        result.get_s___ = false;
 
-          markFunc(result.set);
-          result.set_v___ = result;
-          result.set_c___ = false;
-          result.set_w___ = false;
-          result.set_gw___ = result;
-          result.set_e___ = result;
-          result.set_m___ = false;
-          result.set_g___ = false;
-          result.set_s___ = false;
+        markFunc(result.set);
+        result.set_v___ = result;
+        result.set_c___ = false;
+        result.set_w___ = false;
+        result.set_gw___ = result;
+        result.set_e___ = result;
+        result.set_m___ = false;
+        result.set_g___ = false;
+        result.set_s___ = false;
 
-          markFunc(result.has);
-          result.has_v___ = result;
-          result.has_c___ = false;
-          result.has_w___ = false;
-          result.has_gw___ = result;
-          result.has_e___ = result;
-          result.has_m___ = false;
-          result.has_g___ = false;
-          result.has_s___ = false;
-          return result;
+        markFunc(result.has);
+        result.has_v___ = result;
+        result.has_c___ = false;
+        result.has_w___ = false;
+        result.has_gw___ = result;
+        result.has_e___ = result;
+        result.has_m___ = false;
+        result.has_g___ = false;
+        result.has_s___ = false;
+        return result;
+      });
+    } else {
+      // Take advantage of both implementations.
+      WeakMap = markFunc(function DoubleWeakMap() {
+        var hmap = HostWeakMap();
+        var omap = newTable(true);
+        
+        return snowWhite({
+          get: markFuncFreeze(function(key, opt_default) {
+            return hmap.has(key) ? hmap.get(key) :
+                   omap.has(key) ? omap.get(key) : opt_default;
+          }),
+          set: markFuncFreeze(function(key, value) {
+            try {
+              hmap.set(key, value);
+            } catch (e) {
+              omap.set(key, value);
+            }
+          }),
+          has: markFuncFreeze(function(key) {
+            return hmap.has(key) || omap.has(key);
+          })
         });
-      })(WeakMap) :
-      markFunc(function () { return newTable(true); });
+      });
+    }
+  } else {
+    // No platform WeakMap; build our own.
+    WeakMap = markFunc(function () { return newTable(true); });
+  }
 
   var registeredImports = [];
 

@@ -233,6 +233,8 @@ var Domado = (function() {
     this.target = target;
   };
   domitaModules.ProxyHandler.prototype = {
+    constructor: domitaModules.ProxyHandler,
+
     // == fundamental traps ==
 
     // Object.getOwnPropertyDescriptor(proxy, name) -> pd | undefined
@@ -558,6 +560,50 @@ var Domado = (function() {
     return cajaVM.constFunc(f);
   }
 
+  /**
+   * The Caja WeakMap emulation magic property name.
+   *
+   * This name can only be seen by using a proxy handler, but we need our proxy
+   * handlers to permit it even on frozen-seeming proxies, so we have to obtain
+   * it here, which we do by using a proxy to observe it.
+   *
+   * If proxies are unavailable or if WeakMaps do not use a magic property, then
+   * weakMapMagicName will be a value unequal to any string.
+   */
+  var weakMapMagicName = {};
+  (function() {
+    if (!domitaModules.proxiesAvailable) {
+      // unobservable so doesn't matter
+      return;
+    }
+
+    var ProxyHandler = domitaModules.ProxyHandler;
+
+    // Create a proxy whose handler will stash away the magic name.
+    var handler = new ProxyHandler({});
+    handler.getOwnPropertyDescriptor = function(name) {
+      if (/^weakmap:/.test(name)) { weakMapMagicName = name; }
+      return ProxyHandler.prototype.getOwnPropertyDescriptor.call(this, name);
+    };
+    handler.get = domitaModules.permuteProxyGetSet.getter(function(name) {
+      if (/^weakmap:/.test(name)) { weakMapMagicName = name; }
+      return ProxyHandler.prototype.get.call(this, name);
+    });
+    var proxy = Proxy.create(handler);
+
+    // Cause the proxy to be used as a key.
+    var w = new WeakMap();
+    try {
+      w.get(proxy);
+    } catch (e) {
+      console.error('Domado internal error: failed in WeakMap name setup:', e);
+    }
+    
+    // At this point, we have either obtained the magic name, or there is no
+    // observable magic name, in which case weakMapMagicName is left at its
+    // initial {} value which is not === to any property name.
+  })();
+
   var ExpandoProxyHandler = domitaModules.ExpandoProxyHandler = (function() {
     var getPropertyDescriptor = domitaModules.getPropertyDescriptor;
     var ProxyHandler = domitaModules.ProxyHandler;
@@ -615,9 +661,9 @@ var Domado = (function() {
     };
 
     ExpandoProxyHandler.prototype.getOwnPropertyDescriptor = function (name) {
-      if (name === "ident___") {
+      if (name === weakMapMagicName) {
         // Caja WeakMap emulation internal property
-        return Object.getOwnPropertyDescriptor(this, "ident");
+        return Object.getOwnPropertyDescriptor(this, 'weakMapMagic');
       } else {
         return Object.getOwnPropertyDescriptor(this.storage, name);
       }
@@ -632,9 +678,9 @@ var Domado = (function() {
           this.storage || {});
     };
     ExpandoProxyHandler.prototype.defineProperty = function (name, descriptor) {
-      if (name === "ident___") {
+      if (name === weakMapMagicName) {
         if (descriptor.set === null) descriptor.set = undefined;
-        Object.defineProperty(this, "ident", descriptor);
+        Object.defineProperty(this, 'weakMapMagic', descriptor);
       } else if (Object.prototype.hasOwnProperty(this.target, name)) {
         // Forwards everything already defined (not expando).
         return ProxyHandler.prototype.defineProperty.call(this, name,
@@ -647,7 +693,7 @@ var Domado = (function() {
       return false;
     };
     ExpandoProxyHandler.prototype['delete'] = function (name) {
-      if (name === "ident___") {
+      if (name === weakMapMagicName) {
         return false;
       } else if (Object.prototype.hasOwnProperty(this.target, name)) {
         // Forwards everything already defined (not expando).
@@ -668,9 +714,9 @@ var Domado = (function() {
     ExpandoProxyHandler.prototype.get = domitaModules.permuteProxyGetSet.getter(
         function (name) {
       // Written for an ES5/3 bug, but probably useful for efficiency too.
-      if (name === "ident___") {
+      if (name === weakMapMagicName) {
         // Caja WeakMap emulation internal property
-        return this.ident;
+        return this.weakMapMagic;
       } else if (Object.prototype.hasOwnProperty.call(this.storage, name)) {
         return this.storage[name];
       } else {
@@ -755,7 +801,7 @@ var Domado = (function() {
     CollectionProxyHandler.prototype.getOwnPropertyDescriptor =
         function (name) {
       var lookup;
-      if (name !== 'ident___' && (lookup = this.col_lookup(name))) {
+      if (name !== weakMapMagicName && (lookup = this.col_lookup(name))) {
         return {
           configurable: true,  // proxy invariant check
           enumerable: true,  // TODO(kpreid): may vary
@@ -770,7 +816,7 @@ var Domado = (function() {
     CollectionProxyHandler.prototype.get =
         domitaModules.permuteProxyGetSet.getter(function(name) {
       var lookup;
-      if (name !== 'ident___' && (lookup = this.col_lookup(name))) {
+      if (name !== weakMapMagicName && (lookup = this.col_lookup(name))) {
         return this.col_evaluate(lookup);
       } else {
         return ExpandoProxyHandler.prototype.get.unpermuted.call(this, name);
@@ -784,7 +830,7 @@ var Domado = (function() {
     };
     CollectionProxyHandler.prototype['delete'] = function(name) {
       var lookup;
-      if (name === 'ident___') {
+      if (name === weakMapMagicName) {
         return false;
       } else if ((lookup = this.col_lookup(name))) {
         return false;
