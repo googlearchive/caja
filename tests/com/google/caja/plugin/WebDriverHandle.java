@@ -14,10 +14,14 @@
 
 package com.google.caja.plugin;
 
+import java.io.FileDescriptor;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
+import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.UnsupportedCommandException;
 import org.openqa.selenium.WebDriver;
@@ -51,7 +55,7 @@ class WebDriverHandle {
   private static final String BROWSER_PATH = "caja.test.browserPath";
   private static final String REMOTE = "caja.test.remote";
 
-  private static WebDriver driver = null;
+  private static RemoteWebDriver driver = null;
   private static int refCount = 0;
   private static String firstWindow = null;
   private static int windowSeq = 1;
@@ -67,6 +71,7 @@ class WebDriverHandle {
   WebDriver makeWindow() {
     if (driver == null) {
       driver = makeDriver();
+      reportVersion(driver);
       firstWindow = driver.getWindowHandle();
       try {
         driver.manage().timeouts().pageLoadTimeout(15, TimeUnit.SECONDS);
@@ -83,6 +88,27 @@ class WebDriverHandle {
       driver.switchTo().window(name);
     }
     return driver;
+  }
+
+  void reportVersion(RemoteWebDriver driver) {
+    Capabilities caps = driver.getCapabilities();
+    String name = caps.getBrowserName();
+    if (name == null) { name = "unknown"; }
+    String version = caps.getVersion();
+    if (version == null) { version = "unknown"; }
+    log("- webdriver browser " + name + " version " + version);
+  }
+
+  void log(String s) {
+    // System.err is captured by junit and goes into ant-reports
+    System.err.println(s);
+
+    // FileDescriptor.err is captured by ant and goes to stdout.
+    // We don't close err since that would close FileDescriptor.err
+    @SuppressWarnings("resource")
+    PrintStream err = new PrintStream(
+        new FileOutputStream(FileDescriptor.err), true);
+    err.println(s);
   }
 
   String getBrowserType() {
@@ -119,7 +145,7 @@ class WebDriverHandle {
     }
   }
 
-  private WebDriver makeDriver() {
+  private RemoteWebDriver makeDriver() {
     String browserPath = System.getProperty(BROWSER_PATH);
     String remote = System.getProperty(REMOTE, "");
     DesiredCapabilities dc = new DesiredCapabilities();
