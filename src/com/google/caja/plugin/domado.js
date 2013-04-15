@@ -372,9 +372,6 @@ var Domado = (function() {
    *
    * The property's enumerability is inherited from the ancestor's property's
    * descriptor. The property is not writable or configurable.
-   *
-   * TODO(kpreid): Attempt to eliminate the need for uses of this. Some may be
-   * due to a fixed bug in ES5/3.
    */
   function setOwn(object, propName, value) {
     propName += '';
@@ -382,6 +379,17 @@ var Domado = (function() {
     var desc = domitaModules.getPropertyDescriptor(object, propName);
     definePropertyAllowOverride(object, propName, {
       enumerable: desc ? desc.enumerable : false,
+      value: value
+    });
+  }
+
+  /**
+   * Shortcut for an unmodifiable property. Currently used only where
+   * overriding is not of interest, so doesn't do definePropertyAllowOverride.
+   */
+  function setFinal(object, propName, value) {
+    Object.defineProperty(object, propName, {
+      enumerable: true,
       value: value
     });
   }
@@ -1143,6 +1151,98 @@ var Domado = (function() {
     };
   };
 
+  function TamingClassTable() {
+    var hop = Object.prototype.hasOwnProperty;
+
+    // would be Object.create(null) but not supported by ES5/3
+    var tamingCtors = {};
+    var safeCtors = {};
+
+    var prototypeNames = new WeakMap();
+
+    /**
+     * This does three things:
+     *
+     * Replace tamingCtor's prototype with one whose prototype is someSuper.
+     *
+     * Hide the constructor of the products of tamingCtor, replacing it with a
+     * function which just throws (but can still be used for instanceof
+     * checks).
+     *
+     * Register the inert ctor under the given name if not undefined.
+     */
+    this.inertCtor = function inertCtor(
+        tamingCtor, someSuper, opt_name, opt_writableProto) {
+      inherit(tamingCtor, someSuper, opt_writableProto);
+
+      var inert = function domadoInertConstructor() {
+        throw new TypeError('This constructor cannot be called directly.');
+      };
+      var string = opt_name ? '[domado inert constructor ' + opt_name + ']'
+                            : '[domado inert constructor]';
+      inert.toString = cajaVM.constFunc(function inertCtorToString() {
+        return string;
+      });
+      inert.prototype = tamingCtor.prototype;
+      Object.freeze(inert);  // not def, because inert.prototype must remain
+      setOwn(tamingCtor.prototype, "constructor", inert);
+
+      if (opt_name !== undefined) {
+        setFinal(tamingCtors, opt_name, tamingCtor);
+        setFinal(safeCtors, opt_name, inert);
+        prototypeNames.set(inert.prototype, opt_name);
+      }
+
+      return inert;
+    };
+
+    this.registerSafeCtor = function registerSafeCtor(name, safeCtor) {
+      setFinal(tamingCtors, name, undefined);  // prohibit inconsistency
+      setFinal(safeCtors, name, safeCtor);
+      // Registering multiple names is allowed. However, if we ever stop having
+      // multiple names (HTMLElement vs. Element, HTMLDocument vs. Document),
+      // which would be technically correct, this should become a failure case.
+      if (!prototypeNames.has(safeCtor.prototype)) {
+        prototypeNames.set(safeCtor.prototype, name);
+      }
+    }
+
+    this.defAllAndFinish = function defAllAndFinish() {
+      for (var name in safeCtors) {
+        var ctor = safeCtors[name];
+        cajaVM.def(ctor);
+      }
+
+      // prohibit late additions
+      Object.freeze(tamingCtors);
+      Object.freeze(safeCtors);
+    };
+
+    this.exportTo = function exportTo(imports) {
+      if (Object.isExtensible(safeCtors)) {
+        throw new Error(
+            'TamingClassTable: exportTo called before defAllAndFinish');
+      }
+      for (var name in safeCtors) {
+        var ctor = safeCtors[name];
+        Object.defineProperty(imports, name, {
+          enumerable: true,
+          configurable: true,
+          writable: true,
+          value: ctor
+        });
+      }
+    };
+
+    this.getTamingCtor = function(name) {
+      return hop.call(tamingCtors, name) ? tamingCtors[name] : undefined;
+    };
+
+    this.getNameOfPrototype = function(prototype) {
+      return prototypeNames.get(prototype);
+    };
+  }
+
   cajaVM.def(domitaModules);
 
   var NOT_EDITABLE = "Node not editable.";
@@ -1830,6 +1930,9 @@ var Domado = (function() {
       // On IE, turn <canvas> tags into canvas elements that explorercanvas
       // will recognize
       bridal.initCanvasElements(containerNode);
+
+      var tamingClassTable = new TamingClassTable();
+      var inertCtor = tamingClassTable.inertCtor.bind(tamingClassTable);
 
       // The private properties used in TameNodeConf are:
       //    feral (feral node)
@@ -2637,8 +2740,10 @@ var Domado = (function() {
               // <script> is specifically allowed because we make provisions
               // for controlling its content and src.
               var domInterfaceName = schemaElem.domInterface;
-              if (nodeTamers.hasOwnProperty(domInterfaceName)) {
-                return new nodeTamers[domInterfaceName](node);
+              var specificTamer =
+                  tamingClassTable.getTamingCtor(domInterfaceName);
+              if (specificTamer) {
+                return new specificTamer(node);
               } else {
                 if (!nodeClassNoImplWarnings[domInterfaceName]) {
                   nodeClassNoImplWarnings[domInterfaceName] = true;
@@ -3345,46 +3450,6 @@ var Domado = (function() {
         return null;
       }
 
-      // A map of tamed node classes, keyed by DOM Level 2 standard name, which
-      // will be exposed to the client (and are not usable as constructors).
-      var nodeClasses = {};
-      // Ditto, but the taming constructors instead of the useless ones.
-      var nodeTamers = {};
-
-      /**
-       * This does three things:
-       *
-       * Replace tamedCtor's prototype with one whose prototype is someSuper.
-       *
-       * Hide the constructor of the products of tamedCtor, replacing it with a
-       * function which just throws (but can still be used for instanceof
-       * checks).
-       *
-       * Register the inert ctor under the given name if specified.
-       */
-      function inertCtor(tamedCtor, someSuper, opt_name, opt_writableProto) {
-        inherit(tamedCtor, someSuper, opt_writableProto);
-
-        var inert = function() {
-          throw new TypeError('This constructor cannot be called directly.');
-        };
-        var string = opt_name ? '[domado inert constructor ' + opt_name + ']'
-                              : '[domado inert constructor]';
-        inert.toString = cajaVM.constFunc(function inertCtorToString() {
-          return string;
-        });
-        inert.prototype = tamedCtor.prototype;
-        Object.freeze(inert);  // not def, because inert.prototype must remain
-        setOwn(tamedCtor.prototype, "constructor", inert);
-
-        if (opt_name !== undefined) {
-          nodeClasses[opt_name] = inert;
-          nodeTamers[opt_name] = tamedCtor;
-        }
-
-        return inert;
-      }
-
       // We have now set up most of the 'support' facilities and are starting to
       // define node taming classes.
 
@@ -3436,19 +3501,15 @@ var Domado = (function() {
           return Object.prototype.toString.call(self);
         }
 
-        var ctor = prototype.constructor;
-        for (var name in nodeClasses) { // TODO(kpreid): less O(n)
-          if (nodeClasses[name] === ctor) {
-            if (ctor.prototype === self) {
-              return "[domado PROTOTYPE OF " + name + "]";
-            } else {
-              return "[domado object " + name + ' ' + self.nodeName + "]";
-            }
-          }
+        var name = tamingClassTable.getNameOfPrototype(prototype);
+        if (!name) {
+          // try next ancestor
+          return nodeToStringSearch(self, Object.getPrototypeOf(prototype));
+        } else if (prototype === self) {
+          return '[domado PROTOTYPE OF ' + name + ']';
+        } else {
+          return '[domado object ' + name + ' ' + self.nodeName + ']';
         }
-
-        // try next ancestor
-        return nodeToStringSearch(self, Object.getPrototypeOf(prototype));
       }
       // abstract TameNode.prototype.nodeType
       // abstract TameNode.prototype.nodeName
@@ -3917,8 +3978,9 @@ var Domado = (function() {
           privates.geometryDelegate = node;
         });
       }
-      nodeClasses.Element = inertCtor(TameElement, TameBackedNode,
-          'HTMLElement');
+      var defaultNodeClassCtor =
+          tamingClassTable.registerSafeCtor('Element',
+              inertCtor(TameElement, TameBackedNode, 'HTMLElement'));
       registerElementScriptAttributeHandlers(TameElement.prototype);
       TameElement.prototype.blur = nodeAmp(function(privates) {
         privates.feral.blur();
@@ -5813,8 +5875,8 @@ var Domado = (function() {
 
         installLocation(this);
       }
-      nodeClasses.Document =
-          inertCtor(TameHTMLDocument, TameNode, 'HTMLDocument');
+      tamingClassTable.registerSafeCtor('Document',
+          inertCtor(TameHTMLDocument, TameNode, 'HTMLDocument'));
       definePropertiesAwesomely(TameHTMLDocument.prototype, {
         nodeType: P_constant(9),
         nodeName: P_constant('#document'),
@@ -6398,19 +6460,19 @@ var Domado = (function() {
         cajaVM.def(TameComputedStyle);  // and its prototype
       }
 
-      // Note: nodeClasses.XMLHttpRequest is a ctor that *can* be directly
+      // Note: XMLHttpRequest is a ctor that *can* be directly
       // called by cajoled code, so we do not use inertCtor().
-      nodeClasses.XMLHttpRequest = domitaModules.TameXMLHttpRequest(
-          taming,
-          rulebreaker,
-          domitaModules.XMLHttpRequestCtor(
-              makeDOMAccessible,
-              makeFunctionAccessible(window.XMLHttpRequest),
-              makeFunctionAccessible(window.ActiveXObject),
-              makeFunctionAccessible(window.XDomainRequest)),
-          naiveUriPolicy,
-          function () { return domicile.pseudoLocation.href; });
-      cajaVM.def(nodeClasses.XMLHttpRequest);
+      tamingClassTable.registerSafeCtor('XMLHttpRequest',
+          cajaVM.def(domitaModules.TameXMLHttpRequest(
+              taming,
+              rulebreaker,
+              domitaModules.XMLHttpRequestCtor(
+                  makeDOMAccessible,
+                  makeFunctionAccessible(window.XMLHttpRequest),
+                  makeFunctionAccessible(window.ActiveXObject),
+                  makeFunctionAccessible(window.XDomainRequest)),
+              naiveUriPolicy,
+              function () { return domicile.pseudoLocation.href; })));
 
       /**
        * given a number, outputs the equivalent css text.
@@ -6787,12 +6849,7 @@ var Domado = (function() {
 
       // Freeze exported classes. Must occur before TameHTMLDocument is
       // instantiated.
-      for (var name in nodeClasses) {
-        var ctor = nodeClasses[name];
-        cajaVM.def(ctor);  // and its prototype
-      }
-      Object.freeze(nodeClasses);
-          // fail hard if late-added item wouldn't be frozen
+      tamingClassTable.defAllAndFinish();
 
       var tameDocument = new TameHTMLDocument(
           document,
@@ -6826,15 +6883,7 @@ var Domado = (function() {
 
       // Iterate over all node classes, assigning them to the Window object
       // under their DOM Level 2 standard name. They have been frozen above.
-      for (var name in nodeClasses) {
-        var ctor = nodeClasses[name];
-        Object.defineProperty(tameWindow, name, {
-          enumerable: true,
-          configurable: true,
-          writable: true,
-          value: ctor
-        });
-      }
+      tamingClassTable.exportTo(tameWindow);
 
       // TODO(ihab.awad): Build a more sophisticated virtual class hierarchy by
       // having a table of subclass relationships and implementing them.
@@ -6842,7 +6891,6 @@ var Domado = (function() {
       // If a node class name in this list is not defined using defineElement or
       // inertCtor above, then it will now be bound to the HTMLElement class.
       var allDomNodeClasses = htmlSchema.getAllKnownScriptInterfaces();
-      var defaultNodeClassCtor = nodeClasses.HTMLElement;
       for (var i = 0; i < allDomNodeClasses.length; i++) {
         var className = allDomNodeClasses[+i];
         if (!(className in tameWindow)) {
