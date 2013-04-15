@@ -1836,16 +1836,65 @@ var ses;
   }
 
   /**
-   * In Firefox 15+, Object.freeze and Object.isFrozen only work for
-   * descendents of that same Object.
+   * In Firefox 15+, the [[Extensible]] flag is not correctly readable or
+   * settable from code originating from a different frame than the object.
+   *
+   * This test is written in terms of Object.freeze because that's what we care
+   * about the correct operation of.
    */
-  function test_FIREFOX_15_FREEZE_PROBLEM() {
-    var otherObject = inTestFrame(function(window) { return window.Object; });
-    if (!otherObject) { return false; }
+  function test_FREEZE_IS_FRAME_DEPENDENT() {
+    // This test is extensive because it needs to verify not just the behavior
+    // of the known problem, but that our repair for it was adequate.
 
-    var obj = {};
-    otherObject.freeze(obj);
-    return !Object.isFrozen(obj);
+    var other = inTestFrame(function(window) { return {
+      Object: window.Object,
+      mutator: window.Function('o', 'o.x = 1;')
+    }; });
+    if (!other) { return false; }
+
+    var frozenInOtherFrame = other.Object();
+    var freezeSucceeded;
+    try {
+      Object.freeze(frozenInOtherFrame);
+      freezeSucceeded = true;
+    } catch (e) {
+      freezeSucceeded = false;
+    }
+    if (Object.isFrozen(frozenInOtherFrame) &&
+        other.Object.isFrozen(frozenInOtherFrame) &&
+        freezeSucceeded) {
+      // desired behavior
+    } else if (!Object.isFrozen(frozenInOtherFrame) &&
+        !other.Object.isFrozen(frozenInOtherFrame) &&
+        !freezeSucceeded) {
+      // adequate repair
+    } else if (Object.isFrozen(frozenInOtherFrame) &&
+        !other.Object.isFrozen(frozenInOtherFrame) &&
+        freezeSucceeded) {
+      // expected problem
+      return true;
+    } else {
+      return 'Other freeze failure: ' + Object.isFrozen(frozenInOtherFrame) +
+          other.Object.isFrozen(frozenInOtherFrame) + freezeSucceeded;
+    }
+
+    var frozenInThisFrame = Object.freeze({});
+    // This is another sign of the problem, but we can't repair it and will live
+    // with it.
+    //if (Object.isFrozen(frozenInThisFrame) &&
+    //    other.Object.isFrozen(frozenInThisFrame)) {
+    //  // desired behavior
+    //} else if (!Object.isFrozen(frozenInThisFrame)) {
+    //  return 'Object.isFrozen is broken in this frame';
+    //} else if (!other.Object.isFrozen(frozenInThisFrame)) {
+    //  return true;
+    //}
+    other.mutator(frozenInThisFrame);
+    if (frozenInThisFrame.x !== undefined) {
+      return 'mutable in other frame';
+    }
+
+    return false;  // all tests passed
   }
 
   /**
@@ -2765,6 +2814,35 @@ var ses;
     });
   }
 
+  function repair_FREEZE_IS_FRAME_DEPENDENT() {
+    // Every operation which sets an object's [[Extensible]] to false.
+    fix('preventExtensions');
+    fix('freeze');
+    fix('seal');
+
+    function fix(prop) {
+      var base = Object[prop];
+      Object.defineProperty(Object, prop, {
+        configurable: true,  // attributes per ES5.1 section 15
+        writable: true,
+        value: function frameCheckWrapper(obj) {
+          var parent = obj;
+          while (Object.getPrototypeOf(parent) !== null) {
+            parent = Object.getPrototypeOf(parent);
+          }
+          if (parent === obj || parent === Object.prototype) {
+            // Unsoundly assuming this object is from this frame; we're trying
+            // to catch mistakes here, not to do a 100% repair.
+            return base(obj);
+          } else {
+            throw new Error(
+                'Cannot reliably ' + prop + ' object from other frame.');
+          }
+        }
+      });
+    }
+  }
+
   function repair_POP_IGNORES_FROZEN() {
     var pop = Array.prototype.pop;
     var frozen = Object.isFrozen;
@@ -3484,12 +3562,13 @@ var ses;
       tests: [] // TODO(erights): Add to test262
     },
     {
-      id: 'FIREFOX_15_FREEZE_PROBLEM',
-      description: 'Firefox 15 cross-frame freeze problem',
-      test: test_FIREFOX_15_FREEZE_PROBLEM,
-      repair: void 0,
-      preSeverity: severities.NOT_ISOLATED,
-      canRepair: false,
+      id: 'FREEZE_IS_FRAME_DEPENDENT',
+      description: 'Object.freeze falsely succeeds on other-frame objects',
+      test: test_FREEZE_IS_FRAME_DEPENDENT,
+      repair: repair_FREEZE_IS_FRAME_DEPENDENT,
+      // NO_KNOWN_EXPLOITness depends on using exactly one SES frame
+      preSeverity: severities.NO_KNOWN_EXPLOIT_SPEC_VIOLATION,
+      canRepair: false,  // repair is useful but inadequate
       urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=784892',
              'https://bugzilla.mozilla.org/show_bug.cgi?id=674195'],
       sections: [],

@@ -2192,9 +2192,6 @@ After
 <script type="text/javascript">
   jsunitRegister('testInterfaceGlobals',
                 function testInterfaceGlobals() {
-    var freezeBug = ((cajaVM.es5ProblemReports || {})
-          .FIREFOX_15_FREEZE_PROBLEM || {}).afterFailure;
-
     function assertInstanceof(className, object) {
       assertTrue('Class ' + className + ' exists',
           className in window);
@@ -2213,10 +2210,8 @@ After
       record.typenames.forEach(function(typename) {
         assertInstanceof(typename, record.sample);
 
-        if (!freezeBug) {
-          assertTrue(typename + ' prototype frozen',
-              Object.isFrozen(window[typename].prototype));
-        }
+        assertTrue(typename + ' prototype frozen',
+            Object.isFrozen(window[typename].prototype));
       });
     });
 
