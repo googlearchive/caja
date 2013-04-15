@@ -210,7 +210,9 @@ public abstract class BrowserTestCase<D> extends CajaTestCase {
     } finally {
       localServer.stop();
       // It's helpful for debugging to keep failed windows open.
-      if (passed || isKnownFailure() || flag(CLOSE_BROWSER)) {
+      if (!passed && !isKnownFailure() && !flag(CLOSE_BROWSER)) {
+        wdh.keepOpen();
+      } else {
         wdh.closeWindow();
       }
     }

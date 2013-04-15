@@ -55,6 +55,7 @@ class WebDriverHandle {
   private static int refCount = 0;
   private static String firstWindow = null;
   private static int windowSeq = 1;
+  private static int keptWindows = 0;
 
   private final static String browserType =
       System.getProperty(BROWSER, "firefox");
@@ -93,6 +94,10 @@ class WebDriverHandle {
     driver.switchTo().window(firstWindow);
   }
 
+  void keepOpen() {
+    keptWindows++;
+  }
+
   void release() {
     refCount -= 1;
     if (refCount <= 0) {
@@ -102,7 +107,13 @@ class WebDriverHandle {
           driver.switchTo().window(firstWindow);
           firstWindow = null;
         }
-        driver.close();
+        if (0 < keptWindows) {
+          // .close() quits the browser if there are no more windows, but
+          // helpers like chromedriver stay running.
+          driver.close();
+        } else {
+          driver.quit();
+        }
         driver = null;
       }
     }
