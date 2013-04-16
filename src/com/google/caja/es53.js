@@ -383,79 +383,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   }
 
   /**
-   * Initialize argument constructor <i>feralCtor</i> so that it
-   * represents a "subclass" of argument constructor <i>someSuper</i>,
-   * and return a non-invokable taming of <i>feralCtor</i>.
-   *
-   * Given:
-   *
-   *   function FeralFoo() { ... some uncajoled constructor ... }
-   *   var Foo = extend(FeralFoo, FeralSuper, 'Foo');
-   *
-   * it will be the case that:
-   *
-   *   new FeralFoo() instanceof Foo
-   *
-   * however -- and this is the crucial property -- cajoled code will get an
-   * error if it invokes either of:
-   *
-   *   new Foo()
-   *   Foo()
-   *
-   * This allows us to expose the tame Foo to cajoled code, allowing
-   * it to sense that all the FeralFoo instances we give it are
-   * instanceof Foo, without granting to cajoled code the means to
-   * create any new such instances.
-   *
-   * extend() also sets <i>feralCtor</i>.prototype to set up the
-   * prototype chain so that
-   *
-   *   new FeralFoo() instanceof FeralSuper
-   * and
-   *   new FeralFoo() instanceof Super
-   *
-   * @param feralCtor An feral-only uncajoled constructor. This must
-   *        NOT be exposed to cajoled code by any other mechanism.
-   * @param someSuper Some constructor representing the
-   *        superclass. This can be <ul>
-   *        <li>a feralCtor that had been provided as a first argument
-   *            in a previous call to extend(),
-   *        <li>an inertCtor as returned by a previous call to
-   *            extend(), or
-   *        <li>a constructor that has been marked as such by ___.markCtor().
-   *        </ul>
-   *        In all cases, someSuper.prototype.constructor must be
-   *        a constructor that has been marked as such by
-   *        ___.markCtor().
-   * @param opt_name If the returned inert constructor is made
-   *        available this should be the property name used.
-   *
-   * @return a tame inert class constructor as described above.
-   */
-  function extend(feralCtor, someSuper, opt_name) {
-    if ('function' !== typeof feralCtor) {
-      notFunction(feralCtor, 'feral constructor');
-    }
-    someSuper = someSuper.prototype.constructor;
-    var noop = function () {};
-    if (someSuper.new___ === noop.new___) {
-      throw new TypeError('Internal: toxic function encountered!');
-    }
-    noop.prototype = someSuper.prototype;
-    feralCtor.prototype = new noop();
-    feralCtor.prototype.Prototype___ = someSuper.prototype;
-
-    var inert = function() {
-        throw new TypeError('This constructor cannot be called directly.');
-      };
-
-    inert.prototype = feralCtor.prototype;
-    feralCtor.prototype.constructor = inert;
-    taming.tamesTo(feralCtor, inert);
-    return markFuncFreeze(inert);
-  }
-
-  /**
    * A marker for all objects created within a Caja frame.
    */
   Object.prototype.CAJA_FRAME_OBJECT___ = Object;
@@ -5610,7 +5537,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       // Defensible objects
       def: def,
       // Taming
-      extend: extend,
       isDefinedInCajaFrame: isDefinedInCajaFrame,
       rawDelete: rawDelete,
       getter: getter,
