@@ -301,6 +301,8 @@ document.write(
           ''
           + '<div>'
             + '<p>Before <code>document.write</code></p>'
+            + '<script type=\"text/javascript\">caja_dynamic_script0___();'
+            +     '</scr'+'ipt>'
             + '<p id="testDocumentWrite-foo">Document written</p>'
           + '</div>'
           + '<div>'
@@ -2302,6 +2304,9 @@ After
     // used to confirm that the emulation was correct.
     jsunitRegister('testDocumentElement',
                    function testDocumentElement() {
+      var junkScriptText = 'caja_dynamic_script0___();';
+      var junkScript = inES5Mode ? '<scr'+'ipt>' + junkScriptText + '</scr' +
+        'ipt>' : '';
       assertDomTree({
           nodeType: 9,
           nodeName: '#document',
@@ -2320,9 +2325,12 @@ After
                   nodeValue: null,
                   attributes: [],
                   // TODO(kpreid): single space is a bug?
-                  innerHTML: '<title>this title is &amp; test </title>',
-                  childrenExceptWhitespace: [
-                    {
+                  innerHTML: inES5Mode
+                      ? '<title>this title is &amp; test </title>' +
+                          '<scr'+'ipt>'+junkScriptText+'</scr'+'ipt>'
+                      : '<title>this title is &amp; test </title>',
+                  childrenExceptWhitespace: (function() {
+                    var title = {
                       nodeType: 1,
                       tagName: 'TITLE',
                       nodeValue: null,
@@ -2332,8 +2340,21 @@ After
                         nodeType: 3,
                         nodeValue: 'this title is & test   '
                       } ]
-                    }
-                  ]
+                    };
+                    return !inES5Mode ? [title] : [title, 
+                      {
+                        nodeType: 1,
+                        tagName: 'SCRIPT',
+                        nodeValue: null,
+                        attributes: [],
+                        innerHTML: junkScriptText,
+                        children: [ {
+                          nodeType: 3,
+                          nodeValue: junkScriptText
+                        } ]
+                      }
+                    ];
+                  }())
                 },
                 {
                   nodeType: 1,
@@ -2353,8 +2374,9 @@ After
         }, document);
 
       var html = canonInnerHtml(document.documentElement.innerHTML);
-      assertTrue('Wrong prefix of ' + html.substring(0, 100), !!html.match(
-          '<head><title>this title is &amp; test </title></head><body'));
+      assertTrue('Wrong prefix of ' + html.substring(0, 100), html.indexOf(
+          '<head><title>this title is &amp; test </title>' + junkScript +
+          '</head><body') === 0);
 
       pass('testDocumentElement');
     });
@@ -3176,9 +3198,11 @@ Test row cell
     }
 
     var body = document.body;
-    var container = document.getElementById('testDocumentBodyAppendChild');
+    var expectedLast = inES5Mode  // supports actual <script> nodes
+        ? document.getElementById('realLastScriptEl')
+        : document.getElementById('testDocumentBodyAppendChild');
     var last = getPrevNonWhitespace(document.body.lastChild);
-    assertEquals('container is not last', container, last);
+    assertEquals('expected last is not last', expectedLast, last);
 
     var lastest = document.createElement('DIV');
     lastest.innerHTML = 'lastest';
@@ -3193,7 +3217,7 @@ Test row cell
   });
 </script>
 
-<script type="text/javascript">
+<script type="text/javascript" id="realLastScriptEl">
 //  jsunitRun('testPropertyAttributeInteraction');
 </script>
 

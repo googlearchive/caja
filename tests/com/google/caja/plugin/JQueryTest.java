@@ -64,7 +64,7 @@ public class JQueryTest extends QUnitTestCase {
   }
 
   public final void testAttributes() throws Exception {
-    runQUnitTestCase("attributes", firefoxVsChrome(420, 409));
+    runQUnitTestCase("attributes", firefoxVsChrome(422, 411));
     // Current failure categories:
     //   * URI rewriting is visible to the guest.
     //   * Simple event handler rewriting is visible to the guest.
@@ -78,7 +78,7 @@ public class JQueryTest extends QUnitTestCase {
   }
 
   public final void testEvent() throws Exception {
-    runQUnitTestCase("event", 383);
+    runQUnitTestCase("event", 481);
     // Current failure categories:
     //   * Various lost-signal failures:
     //        in 'bind(),live(),delegate() with non-null,defined data'
@@ -104,7 +104,7 @@ public class JQueryTest extends QUnitTestCase {
   }
 
   public final void testManipulation() throws Exception {
-    runQUnitTestCase("manipulation", firefoxVsChrome(474, 488));
+    runQUnitTestCase("manipulation", 488);
     // Current modifications made to test suite:
     //   * Removed SES-incompatible Array.prototype modification; was only for
     //     testing jQuery robustness.
@@ -122,7 +122,7 @@ public class JQueryTest extends QUnitTestCase {
   }
 
   public final void testCSS() throws Exception {
-    runQUnitTestCase("css", firefoxVsChrome(199, 202) /* of 203 */);
+    runQUnitTestCase("css", 202 /* of 203 */);
     // Current failure categories:
     //   * We don't implement SVG (fill-opacity CSS property).
     //   * defaultDisplay() doesn't get the intended answer on Firefox, but
@@ -145,7 +145,7 @@ public class JQueryTest extends QUnitTestCase {
   }
 
   public final void testOffset() throws Exception {
-    runQUnitTestCase("offset", 18);
+    runQUnitTestCase("offset", firefoxVsChrome(17, 18));
     // Current failure categories:
     //   * We don't implement src= iframes yet.
   }

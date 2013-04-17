@@ -2073,6 +2073,7 @@ var Domado = (function() {
         htmlSanitizer(htmlText, out);
         return out.join('');
       }
+      /** Sanitize the array of attributes (side effect) */
       function sanitizeAttrs(tagName, attribs) {
         var n = attribs.length;
         var needsTargetAttrib =

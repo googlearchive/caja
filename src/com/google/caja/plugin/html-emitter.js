@@ -514,6 +514,34 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
         'throw new Error("not loaded")');
     }
 
+    // TODO(kpreid): This is separated into a function as part of an incomplete
+    // refactoring to use exact HTML5 algorithms. Once <style> is also handled
+    // inside of insertion modes rather than outside, this function should
+    // no longer exist, and cdataContentType should be subsumed by insertion
+    // modes.
+    function handleExternal(marker, continuation) {
+      var isScript = cdataContentType === CDATA_SCRIPT;
+      cdataContentType = 0;
+      if (pendingExternal) {
+        if (isScript) {
+          var res = resolveUriRelativeToDocument(pendingExternal);
+          evaluateUntrustedExternalScript(
+              res, marker, continuation, pendingDelayed);
+        }
+        pendingExternal = undefined;
+      } else {
+        var content = cdataContent.join("");
+        cdataContent.length = 0;
+        if (isScript) {
+          evaluateUntrustedScript(
+              domicile.pseudoLocation.href, content, pendingDelayed);
+        } else {
+          defineUntrustedStylesheet(domicile.pseudoLocation.href, content);
+        }
+      }
+      pendingDelayed = false;
+    }
+
     function lookupAttr(attribs, attr) {
       var srcIndex = 0;
       do {
@@ -544,6 +572,9 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
     var documentLoaded = undefined;
     var depth = 0;
 
+    /**
+     * Note: mutates attribs to virtualized form.
+     */
     function normalInsert(virtualTagName, attribs) {
       var realTagName = htmlSchema.virtualToRealElementName(virtualTagName);
 
@@ -563,7 +594,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
 
       domicile.sanitizeAttrs(realTagName, attribs);
 
-      if (!rSchemaEl.allowed) {
+      if (!rSchemaEl.allowed && realTagName !== 'script') {
         throw new Error('HtmlEmitter internal: unsafe element ' + realTagName +
             ' slipped through virtualization!');
       }
@@ -597,6 +628,9 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
     }
 
     function normalText(text) {
+      if (insertionPoint.tagName === 'SCRIPT') {
+        throw new Error('Internal: Attempt to insert text in SCRIPT node');
+      }
       insertionPoint.appendChild(insertionPoint.ownerDocument.createTextNode(
           html.unescapeEntities(text)));
     }
@@ -711,12 +745,50 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
               tagName === 'bgsound'  || tagName === 'command' ||
               tagName === 'link'     || tagName === 'meta' ||
               tagName === 'noscript' || tagName === 'noframes' ||
-              tagName === 'style'    || tagName === 'script') {
+              tagName === 'style') {
             normalInsert(tagName, attribs);
           } else if (tagName === 'title') {
             normalInsert(tagName, attribs);
             originalInsertionMode = insertionMode;
             insertionMode = insertionModes.text;
+          } else if (tagName === 'script') {
+            // "Create an element for the token in the HTML namespace."
+            // "Mark the element as being "parser-inserted" and unset the
+            // element's "force-async" flag."
+            // "If the parser was originally created for the HTML fragment
+            // parsing algorithm, then mark the script element as "already
+            // started". (fragment case)"
+            // "Append the new element to the current node and push it onto the 
+            // stack of open elements."
+            // Note: We don't implement the mentioned flags so we can just merge
+            // the steps into a normalInsert.
+            // Note: src= will be filtered out by the whitelist.
+            // Note: normalInsert mutates attribs, so we copy in this case.
+            normalInsert(tagName, attribs.slice());
+
+            // "Switch the tokenizer to the script data state."
+            // This is internally done by the SAX parser.
+
+            // "Let the original insertion mode be the current insertion mode."
+            originalInsertionMode = insertionMode;
+
+            // TODO(kpreid): Where in HTML5 is this side effect supposed to
+            // occur, if at all? Should this actually be read out of the stashed
+            // src attribute? Can we make this another "slow path attribute"
+            // thing like normalInsert does for event handlers?
+            var scriptSrc = lookupAttr(attribs, 'src');
+            if (!scriptSrc) {
+              // A script tag without a script src - use child node for source
+              pendingExternal = undefined;
+            } else {
+              pendingExternal = scriptSrc;
+            }
+            pendingDelayed = (lookupAttr(attribs, 'defer') !== undefined
+                || lookupAttr(attribs, 'async') !== undefined);
+
+            // "Switch the insertion mode to "text"."
+            cdataContentType = CDATA_SCRIPT;
+            insertionMode = insertionModes.cajaScriptText;
           } else if (tagName === 'head') {
             // "Parse error. Ignore the token."
           } else {
@@ -843,7 +915,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
           normalEndTag(tagName);
           insertionMode = originalInsertionMode;
         },
-        text: function (text) {
+        text: function(text) {
           normalText(text);
         },
         endOfFile: function() {
@@ -851,7 +923,59 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
 
           // "If the current node is a script element, mark the script element
           // as "already started"."
-          // TODO(kpreid): do this when we add integrated <script> handling
+          // no-op because we use the special cajaScriptText mode for <script>
+          // so we never see a <script> in this mode.
+
+          // "Pop the current node off the stack of open elements."
+          normalEndTag(insertionPoint.tagName);
+
+          // "Switch the insertion mode to the original insertion mode and
+          // reprocess the current token."
+          insertionMode = originalInsertionMode;
+          insertionMode.endOfFile();
+        }
+      },
+      cajaScriptText: {
+        // Used when a <script> element is open. This is identical to the HTML5
+        // 'text' mode except that it does not actually insert text content, to
+        // prevent unsandboxed script execution.
+        toString: function() { return 'cajaScriptText'; },
+        startTag: function(tagName, attribs) {
+          throw new Error('shouldn\'t happen: start tag <' + tagName +
+              '...> while in text insertion mode for ' +
+              insertionPoint.tagName);
+        },
+        endTag: function(tagName, marker, continuation) {
+          if (tagName === 'script') {
+            // ...
+
+            // "Pop the current node off the stack of open elements."
+            normalEndTag(tagName);
+
+            // "Switch the insertion mode to the original insertion mode."
+            insertionMode = originalInsertionMode;
+
+            // ...
+
+            // "Execute the script."
+            handleExternal(marker, continuation);
+          } else {
+            // "Pop the current node off the stack of open elements."
+            normalEndTag(tagName);
+
+            // "Switch the insertion mode to the original insertion mode."
+            insertionMode = originalInsertionMode;
+          }
+        },
+        text: function(text) {
+          cdataContent.push(text);
+        },
+        endOfFile: function() {
+          // "Parse error."
+
+          // "If the current node is a script element, mark the script element
+          // as "already started"."
+          // TODO(kpreid): Implement said flag.
 
           // "Pop the current node off the stack of open elements."
           normalEndTag(insertionPoint.tagName);
@@ -1013,18 +1137,10 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
         var schemaElem = htmlSchema.element(tagName);
         if (!schemaElem.allowed) {
           if (tagName === 'script') {
-            var scriptSrc = lookupAttr(attribs, 'src');
-            if (!scriptSrc) {
-              // A script tag without a script src - use child node for source
-              cdataContentType = CDATA_SCRIPT;
-              pendingExternal = undefined;
-            } else {
-              cdataContentType = CDATA_SCRIPT;
-              pendingExternal = scriptSrc;
-            }
-            pendingDelayed = (lookupAttr(attribs, 'defer') !== undefined
-                || lookupAttr(attribs, 'async') !== undefined);
-            return; // TODO(kpreid): Remove, allo virtualized element
+            // Continue, let element be inserted. (Script elements are marked as
+            // disallowed in the schema because their text content is powerful,
+            // so they are explicitly special-cased in any code prepared to deal
+            // with them.)
           } else if (tagName === 'style') {
             cdataContentType = CDATA_STYLE;
             pendingExternal = undefined;
@@ -1059,39 +1175,19 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       endTag: function (tagName, optional, marker, continuation) {
         // Close any open script or style element element.
         // TODO(kpreid): Move this stuff into the insertion mode logic
-        if (cdataContentType) {
-          var isScript = cdataContentType === CDATA_SCRIPT;
-          cdataContentType = 0;
-          if (pendingExternal) {
-            if (isScript) {
-              var res = resolveUriRelativeToDocument(pendingExternal);
-              evaluateUntrustedExternalScript(
-                res, marker, continuation, pendingDelayed);
-            }
-            pendingExternal = undefined;
-          } else {
-            var content = cdataContent.join("");
-            cdataContent.length = 0;
-            if (isScript) {
-              // TODO: create a script node that does not execute the untrusted
-              // script, but that has any ID attribute properly rewritten.
-              // It is not horribly uncommon for scripts to look for the last
-              // script element as a proxy for the insertion cursor.
-              evaluateUntrustedScript(
-                domicile.pseudoLocation.href, content, pendingDelayed);
-            } else {
-              defineUntrustedStylesheet(domicile.pseudoLocation.href, content);
-            }
-          }
-          pendingDelayed = false;
+        if (cdataContentType && cdataContentType !== CDATA_SCRIPT) {
+          handleExternal(marker, continuation);
         }
-        insertionMode.endTag(tagName);
+        insertionMode.endTag(tagName, marker, continuation);
       },
       pcdata: function (text) {
         insertionMode.text(text);
       },
       cdata: function (text) {
-        if (cdataContentType) {
+        // Script content is handled by the insertion mode.
+        // TODO(kpreid): Eventually all text content will be and
+        // cdataContentType should go away.
+        if (cdataContentType && cdataContentType !== CDATA_SCRIPT) {
           cdataContent.push(text);
         } else {
           documentWriter.pcdata(text);

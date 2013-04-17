@@ -61,7 +61,7 @@ public class JQueryUITest extends QUnitTestCase {
   }
 
   public final void testDialog() throws Exception {
-    runQUnitTestCase("dialog", firefoxVsChrome(226, 230));
+    runQUnitTestCase("dialog", firefoxVsChrome(220, 227));
     // Current failure categories:
     //   * What may be event simulation failures
     //   * Some numeric discrepancies
@@ -80,7 +80,7 @@ public class JQueryUITest extends QUnitTestCase {
   }
 
   public final void testPosition() throws Exception {
-    runQUnitTestCase("position", null);
+    runQUnitTestCase("position", firefoxVsChrome(78, null));
   }
 
   public final void testProgressbar() throws Exception {
@@ -100,7 +100,7 @@ public class JQueryUITest extends QUnitTestCase {
   }
 
   public final void testTabs() throws Exception {
-    runQUnitTestCase("tabs", firefoxVsChrome(488, 519));
+    runQUnitTestCase("tabs", firefoxVsChrome(487, 519));
     // Current modifications made to test suite:
     //   * Work around lost-signal problems due to lack of event simulation
     // Current failure categories:

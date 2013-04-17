@@ -63,43 +63,40 @@
       function ti(text) {
         return '<title>' + text + '</title>';
       }
-      
-      function assertGuestHtmlCorrect(frame, div) {
-        var vdocContainer = div.getElementsByClassName("vdoc-container___")[0];
-        debugger;
-        assertEquals('<html><head><title>t</title></head><body>b</body>',
-            vdocContainer.innerHTML);
-      }
 
       function registerStructureTest(testName, html, expectHead, expectBody) {
+        var expectHtml = '<head>' + expectHead + '</head><body>' + expectBody +
+            '</body>';
         registerGuestTest(testName,
             html.replace('$', '<script>' + htmlGuestJs + '</script>'),
-            '<head>' + expectHead + '</head><body>' + expectBody + '</body>');
+            expectHtml.replace('$',
+                inES5Mode ? '<script>caja_dynamic_script0___();</script>'
+                          : ''));
       }
 
       registerStructureTest('testFullyExplicit',
           '<html><head><title>t</title></head>' + 
           '<body>b$</body></html>',
-          ti('t'), 'b');
+          ti('t'), 'b$');
 
       registerStructureTest('testStartBody',
           '<title>t</title><body>' + 
           'b$',
-          ti('t'), 'b');
+          ti('t'), 'b$');
 
       registerStructureTest('testStopHead',
           '<title>t</title></head>' + 
           'b$',
-          ti('t'), 'b');
+          ti('t'), 'b$');
 
       registerStructureTest('testFullyImplicit',
           '<title>t</title>' + 
           'b$',
-          ti('t'), 'b');
+          ti('t'), 'b$');
 
       registerStructureTest('testJustText',
           'b$',
-          '', 'b');
+          '', 'b$');
 
       // Test that a completely empty document still produces structure.
       // TODO(kpreid): refactor registerGuestTest so this can be shorter.
@@ -124,12 +121,26 @@
       registerStructureTest('testEmptyVirtualizedElementInHead',
           // Regression test for <body> getting embedded in <head> due to
           // virtualized empty elements being misparsed as non-empty elements
-          '<html><head><title>t</title><meta></head>' + 
-          '<body>b$</body></html>',
+          '<html><head><title>t</title><meta></head>' +
+              '<body>b$</body></html>',
           ti('t') + '<meta>',
-          'b');
+          'b$');
 
     }());
+
+    // Is the expected structure generated if a <script> element occurs without
+    // any preceding <html> or <head>?
+    if (inES5Mode)
+    registerGuestTest('testScriptAsFirstThing',
+        '<script>' +
+        'assertEvaluatesToTrue("documentElement exists",' +
+        '    document.documentElement);' +
+        'assertEquals("structure",' +
+        '    "<head><script ELIDED/></head>",' +
+        '    document.documentElement.innerHTML.replace(' +
+        '        /<scr()ipt>.*<\\/scr()ipt>/, "<script ELIDED/>"));' +
+        'window.globalGuestTest = function() {};' +
+        '</script>');
 
     /**
       * Tests of global structure-referencing property behavior.
