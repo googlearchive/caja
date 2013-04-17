@@ -255,6 +255,20 @@ ses.startSES = function(global,
   var create = Object.create;
 
   /**
+   * repairES5 repair_FREEZING_BREAKS_PROTOTYPES causes Object.create(null) to
+   * be impossible. This falls back to a regular object. Each use of it
+   * should be accompanied by an explanation of why it is sufficiently
+   * safe.
+   */
+  function createNullIfPossible() {
+    try {
+      return create(null);
+    } catch (e) {
+      return {};
+    }
+  }
+
+  /**
    * The function ses.mitigateGotchas, if defined, is a function which
    * given the sourceText for a strict Program, returns rewritten
    * program with the same semantics as the original but with as
@@ -407,7 +421,11 @@ ses.startSES = function(global,
    * this {@code imports} should first be initialized with a copy of the
    * properties of {@code sharedImports}, but nothing enforces this.
    */
-  var sharedImports = create(null);
+  var sharedImports = createNullIfPossible();
+  // createNullIfPossible safety: If not possible, the imports will include
+  // Object.prototype's properties. This has no effect on Caja use, because
+  // we make the global object be the Window which inherits Object.prototype,
+  // and is not a security risk since the properties are ambiently available.
 
   var MAX_NAT = Math.pow(2, 53);
   function Nat(allegedNum) {
@@ -494,7 +512,8 @@ ses.startSES = function(global,
      * property copying.
      */
     function makeImports() {
-      var imports = create(null);
+      var imports = createNullIfPossible();
+      // createNullIfPossible safety: similar to comments about sharedImports.
       copyToImports(imports, sharedImports);
       return imports;
     }
@@ -539,7 +558,11 @@ ses.startSES = function(global,
      * {@code imports}.
      */
     function makeScopeObject(imports, freeNames) {
-      var scopeObject = create(null);
+      var scopeObject = createNullIfPossible();
+      // createNullIfPossible safety: The inherited properties should
+      // always be shadowed by defined properties if they are relevant
+      // (that is, if they occur in freeNames).
+
       // Note: Although this loop is a bottleneck on some platforms,
       // it does not help to turn it into a for(;;) loop, since we
       // still need an enclosing function per accessor property

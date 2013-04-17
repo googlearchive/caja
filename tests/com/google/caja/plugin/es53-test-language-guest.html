@@ -718,38 +718,56 @@ testTopLevelVarsInCatch
   jsunitRegisterIf(inES5Mode,
                    'testProtoMention',
                    function testProtoMention() {
-    // Buried in an eval to avoid causing static failures in ES5/3
-    // Split identifier to avoid causing the same failure in this block
-    var test = cajaVM.compileModule(
-        // Specifically is a 'global' variable
-        'var __pr'+'oto__;' +
+    function doProtoTest(global) {
+      // Buried in an eval to avoid causing static failures in ES5/3
+      // Split identifier to avoid causing the same failure in this block
+      var test = cajaVM.compileModule(
+          (global ? '' : '(function() {') +
+          'var __pr'+'oto__;' +
 
-        'var a = __pr'+'oto__;' + 
-        '__pr'+'oto__ = 1;' +  // If __proto__ magic exists then this fails
-            // silently since the value isn't an object.
-        'var b = __pr'+'oto__;' +
-        'testProtoMention_callback(a, b);');
-    var envProto = {};
-    var env = Object.create(envProto);
-    envProto.toString = function() { return '<envProto>'; };
-    env.toString = function() { return '<env>'; };
-    env.testProtoMention_callback = jsunitCallback(function(a, b) {
-      // Two different permissible behaviors: either __proto__ is consistently
-      // the prototype property of the supplied environment object,
-      var looksLikeProto = a === envProto;
-      // or it is consistently just a declared variable.
-      var looksLikeVar = a === undefined;
-      assertTrue('initial value is not leaky: ' + a,
-          looksLikeProto || looksLikeVar);
-      if (looksLikeProto) {
-        // not using assertEquals so as to not get the taming membrane involved
-        assertTrue('assignment is consistently ignored: ' + b, b === envProto);
+          'var a = __pr'+'oto__;' + 
+          '__pr'+'oto__ = 1;' +  // If you-know-what magic exists then this
+              // fails silently since the value isn't an object.
+          'var b = __pr'+'oto__;' +
+          'testProtoMention_callback(a, b);' +
+          (global ? '' : '}());'));
+      var envProto = {};
+      var env = Object.create(envProto);
+      envProto.toString = function() { return '<envProto>'; };
+      env.toString = function() { return '<env>'; };
+      env.testProtoMention_callback = jsunitCallback(function(a, b) {
+        // Two different permissible behaviors: either you-know-what is
+        // consistently the prototype property of the supplied environment
+        // object,
+        var looksLikeProto = a === envProto;
+        // or it is consistently just a declared variable.
+        var looksLikeVar = a === undefined;
+        assertTrue('initial value is not leaky: ' + a,
+            looksLikeProto || looksLikeVar);
+        if (looksLikeProto) {
+          // not using assertEquals so as to not get the taming membrane
+          // involved
+          assertTrue('assignment is consistently ignored: ' + b, b === envProto);
+        } else {
+          assertTrue('assignment works: ' + b, b === 1);
+        }
+        pass('testProtoMention');
+      });
+      test(env);
+    }
+    doProtoTest(false);
+    try {
+      doProtoTest(true);
+    } catch (e) {
+      if (/Cannot assign to read only property '__proto__'/.test(e.message)) {
+        // Other permissible behavior: __proto__ fails loudly at being a global
+        // but it should still work as a lexical var. TODO(kpreid): Quick kludge
+        // to deal with FREEZING_BREAKS_PROTOTYPES. Refactor this test for
+        // cleaner control flow and no error-wording-dependency.
       } else {
-        assertTrue('assignment works: ' + b, b === 1);
+        throw e;
       }
-      pass('testProtoMention');
-    });
-    test(env);
+    }
   });
 </script>
 

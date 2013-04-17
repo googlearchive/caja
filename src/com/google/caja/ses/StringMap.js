@@ -17,6 +17,7 @@
  *
  * @author Mark S. Miller
  * @author Jasvir Nagra
+ * @requires ses
  * @overrides StringMap
  */
 
@@ -39,9 +40,18 @@ var StringMap;
      return x;
    }
 
+   var createNull;
+   if (ses.es5ProblemReports.FREEZING_BREAKS_PROTOTYPES.beforeFailure) {
+     // Object.create(null) is broken; fall back to ES3-style implementation
+     // (safe because we suffix keys anyway).
+     createNull = function() { return {}; }
+   } else {
+     createNull = function() { return Object.create(null); }
+   }
+
    StringMap = function StringMap() {
 
-     var objAsMap = create(null);
+     var objAsMap = createNull();
 
      return freeze({
        get: constFunc(function(key) {

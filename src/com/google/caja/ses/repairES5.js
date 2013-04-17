@@ -259,6 +259,30 @@ var ses;
     }
   };
 
+  /**
+   * Several test/repair routines want string-keyed maps. Unfortunately,
+   * our exported StringMap is not yet available, and our repairs
+   * include one which breaks Object.create(null). So, an ultra-minimal,
+   * ES3-compatible implementation.
+   */
+  function EarlyStringMap() {
+    var objAsMap = {};
+    return {
+      get: function(key) {
+        return objAsMap[key + '$'];
+      },
+      set: function(key, value) {
+        objAsMap[key + '$'] = value;
+      },
+      has: function(key) {
+        return (key + '$') in objAsMap;
+      },
+      'delete': function(key) {
+        return delete objAsMap[key + '$'];
+      }
+    };
+  }
+
   //////// Prepare for "caller" and "argument" testing and repair /////////
 
   /**
@@ -623,9 +647,9 @@ var ses;
    * freezing Object.prototype breaks Object.create inheritance.
    * https://code.google.com/p/v8/issues/detail?id=2565
    */
-  function test_FREEZING_BREAKS_CREATE() {
+  function test_FREEZING_BREAKS_PROTOTYPES() {
     // This problem is sufficiently problematic that testing for it breaks the
-    // frame, so we create another frame to test in.
+    // frame under some circumstances, so we create another frame to test in.
     var otherObject = inTestFrame(function(window) { return window.Object; });
     if (!otherObject) { return false; }
 
@@ -1952,6 +1976,10 @@ var ses;
     'stack',
     'stacktrace'
   ];
+  var errorInstanceWhiteMap = new EarlyStringMap();
+  strictForEachFn(errorInstanceWhitelist, function(name) {
+    errorInstanceWhiteMap.set(name, true);
+  });
 
   var errorInstanceBlacklist = [
     // seen in a Firebug on FF
@@ -1967,18 +1995,6 @@ var ses;
     'getSourceLine',
     'resetSource'
   ];
-
-  /** Return a fresh one so client can mutate freely */
-  function freshErrorInstanceWhiteMap() {
-    var result = Object.create(null);
-    strictForEachFn(errorInstanceWhitelist, function(name) {
-      // We cannot yet use StringMap so do it manually
-      // We do this naively here assuming we don't need to worry about
-      // __proto__
-      result[name] = true;
-    });
-    return result;
-  }
 
   /**
    * Do Error instances on those platform carry own properties that we
@@ -1996,11 +2012,9 @@ var ses;
     try { null.foo = 3; } catch (err) { errs.push(err); }
     var result = false;
 
-    var approvedNames = freshErrorInstanceWhiteMap();
-
     strictForEachFn(errs, function(err) {
       strictForEachFn(Object.getOwnPropertyNames(err), function(name) {
-         if (!(name in approvedNames)) {
+         if (!errorInstanceWhiteMap.has(name)) {
            result = 'Unexpected error instance property: ' + name;
            // would be good to terminate early
          }
@@ -2023,20 +2037,20 @@ var ses;
     try { null.foo = 3; } catch (err) { errors.push(err); }
     for (var i = 0; i < errors.length; i++) {
       var err = errors[i];
-      var found = Object.create(null);
+      var found = new EarlyStringMap();
       strictForEachFn(gopn(err), function (prop) {
-        found[prop] = true;
+        found.set(prop, true);
       });
       var j, prop;
       for (j = 0; j < errorInstanceWhitelist.length; j++) {
         prop = errorInstanceWhitelist[j];
-        if (gopd(err, prop) && !found[prop]) {
+        if (gopd(err, prop) && !found.get(prop)) {
           return true;
         }
       }
       for (j = 0; j < errorInstanceBlacklist.length; j++) {
         prop = errorInstanceBlacklist[j];
-        if (gopd(err, prop) && !found[prop]) {
+        if (gopd(err, prop) && !found.get(prop)) {
           return true;
         }
       }
@@ -2097,7 +2111,16 @@ var ses;
    * we only care about the case where we cannot replace it.
    */
   function test_NONCONFIGURABLE_OWN_PROTO() {
-    var o = Object.create(null);
+    try {
+      var o = Object.create(null);
+    } catch (e) {
+      if (e.message === NO_CREATE_NULL) {
+        // result of repair_FREEZING_BREAKS_PROTOTYPES
+        return false;
+      } else {
+        throw e;
+      }
+    }
     var desc = Object.getOwnPropertyDescriptor(o, '__proto__');
     if (desc === undefined) { return false; }
     if (desc.configurable) { return false; }
@@ -2877,6 +2900,86 @@ var ses;
     });
   }
 
+  // error message is matched elsewhere (for tighter bounds on catch)
+  var NO_CREATE_NULL =
+      'Repaired Object.create can not support Object.create(null)';
+  function repair_FREEZING_BREAKS_PROTOTYPES() {
+    var baseObject = Object;
+    var baseDefProp = Object.defineProperties;
+
+    // Object.create fails to override [[Prototype]]; reimplement it.
+    Object.defineProperty(Object, 'create', {
+      configurable: true,  // attributes per ES5.1 section 15
+      writable: true,
+      value: function repairedObjectCreate(O, Properties) {
+        if (O === null) {
+          // Not ES5 conformant, but hopefully adequate for Caja as ES5/3 also
+          // does not support Object.create(null).
+          throw new TypeError(NO_CREATE_NULL);
+        }
+        // "1. If Type(O) is not Object or Null throw a TypeError exception."
+        if (O !== Object(O)) {
+          throw new TypeError('Object.create: prototype must be an object');
+        }
+        // "2. Let obj be the result of creating a new object as if by the
+        // expression new Object() where Object is the standard built-in
+        // constructor with that name"
+        // "3. Set the [[Prototype]] internal property of obj to O."
+        // Cannot redefine [[Prototype]], so we use the .prototype trick instead
+        function temporaryConstructor() {}
+        temporaryConstructor.prototype = O;
+        var obj = new temporaryConstructor();
+        // "4. If the argument Properties is present and not undefined, add own
+        // properties to obj as if by calling the standard built-in function
+        // Object.defineProperties with arguments obj and Properties."
+        if (Properties !== void 0) {
+          baseDefProp(obj, Properties);
+        }
+        // "5. Return obj."
+        return obj;
+      }
+    });
+
+    var baseErrorToString = Error.prototype.toString;
+
+    // Error.prototype.toString fails to use the .name and .message.
+    // This is being repaired not because it is a critical issue but because
+    // it is more direct than disabling the tests of error taming which fail.
+    Object.defineProperty(Error.prototype, 'toString', {
+      configurable: true,  // attributes per ES5.1 section 15
+      writable: true,
+      value: function repairedErrorToString() {
+        // "1. Let O be the this value."
+        var O = this;
+        // "2. If Type(O) is not Object, throw a TypeError exception."
+        if (O !== Object(O)) {
+          throw new TypeError('Error.prototype.toString: this not an object');
+        }
+        // "3. Let name be the result of calling the [[Get]] internal method of
+        // O with argument "name"."
+        var name = O.name;
+        // "4. If name is undefined, then let name be "Error"; else let name be
+        // ToString(name)."
+        name = name === void 0 ? 'Error' : '' + name;
+        // "5. Let msg be the result of calling the [[Get]] internal method of O
+        // with argument "message"."
+        var msg = O.message;
+        // "6. If msg is undefined, then let msg be the empty String; else let
+        // msg be ToString(msg)."
+        msg = msg === void 0 ? '' : '' + msg;
+        // "7. If msg is undefined, then let msg be the empty String; else let
+        // msg be ToString(msg)."
+        msg = msg === void 0 ? '' : '' + msg;
+        // "8. If name is the empty String, return msg."
+        if (name === '') { return msg; }
+        // "9. If msg is the empty String, return name."
+        if (msg === '') { return name; }
+        // "10. Return the result of concatenating name, ":", a single space
+        // character, and msg."
+        return name + ': ' + msg;
+      }
+    });
+  }
 
   ////////////////////// Kludge Records /////////////////////
   //
@@ -2929,17 +3032,6 @@ var ses;
       sections: ['15.2.3.4'],
       tests: ['15.2.3.4-0-1']
     },
-    {
-      id: 'FREEZING_BREAKS_CREATE',
-      description: 'Freezing Object.prototype breaks Object.create',
-      test: test_FREEZING_BREAKS_CREATE,
-      repair: void 0,
-      preSeverity: severities.NOT_SUPPORTED,
-      canRepair: false,
-      urls: ['https://code.google.com/p/v8/issues/detail?id=2565'],
-      sections: ['15.2.3.5'],
-      tests: []  // TODO(kpreid): find test242
-    }
   ];
 
   /**
@@ -3638,7 +3730,18 @@ var ses;
       sections: [],  // Not spelled out in spec, according to Brendan Eich (see
                      // es-discuss link)
       tests: []  // TODO(kpreid): add to test262 once we have a section to cite
-    }
+    },
+    {
+      id: 'FREEZING_BREAKS_PROTOTYPES',
+      description: 'Freezing Object.prototype breaks prototype setting',
+      test: test_FREEZING_BREAKS_PROTOTYPES,
+      repair: repair_FREEZING_BREAKS_PROTOTYPES,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      canRepair: true,
+      urls: ['https://code.google.com/p/v8/issues/detail?id=2565'],
+      sections: ['15.2.3.5'],
+      tests: []  // TODO(kpreid): find/add test262
+    },
   ];
 
   ////////////////////// Testing, Repairing, Reporting ///////////
@@ -3758,7 +3861,13 @@ var ses;
     // Made available to allow for later code reusing our diagnoses to work
     // around non-repairable problems in application-specific ways. startSES
     // will also expose this on cajaVM for unprivileged code.
-    var indexedReports = Object.create(null);
+    var indexedReports;
+    try {
+      indexedReports = Object.create(null);
+    } catch (e) {
+      // repair_FREEZING_BREAKS_PROTOTYPES does not support null
+      indexedReports = {};
+    }
     reports.forEach(function (report) {
       indexedReports[report.id] = report;
     });
