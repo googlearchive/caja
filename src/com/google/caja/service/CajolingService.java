@@ -123,7 +123,7 @@ public class CajolingService {
       }
       result = FetchedData.fromBytes(
           intermediateResponse.toByteArray(),
-          ContentType.JSON.mimeType,
+          contentParams.a.mimeType,
           "UTF-8",
           InputSource.UNKNOWN);
     }

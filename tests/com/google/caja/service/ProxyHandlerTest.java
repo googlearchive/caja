@@ -44,4 +44,28 @@ public class ProxyHandlerTest extends ServiceTestCase {
         "application/json");
     assertSubstringsInJson(s, "html", "body {}");
   }
+
+  public final void testJsonpAbsent() throws Exception {
+    // no registerUri; we want a failure
+    requestGet("?url=http://foo/bar"
+        + "&input-mime-type=text/css"
+        + "&alt=json-in-script"
+        + "&callback=foo"
+        + "&transform=PROXY"
+        + "&build-version=" + BuildInfo.getInstance().getBuildVersion(),
+        "text/javascript");
+    // TODO(kpreid): assertions about content, not just mime type
+  }
+
+  public final void testJsonAbsent() throws Exception {
+    // no registerUri; we want a failure
+    requestGet("?url=http://foo/bar"
+        + "&input-mime-type=text/css"
+        + "&alt=json"
+        + "&callback=foo"
+        + "&transform=PROXY"
+        + "&build-version=" + BuildInfo.getInstance().getBuildVersion(),
+        "application/json");
+    // TODO(kpreid): assertions about content, not just mime type
+  }
 }
