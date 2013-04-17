@@ -1469,6 +1469,23 @@ ses.startSES = function(global,
     ses.logger.reportDiagnosis(group.severity, status, group.list);
   });
 
+  // This repair cannot be fully tested until after Object.prototype is frozen.
+  // TODO(kpreid): Less one-off kludge for this one problem -- or, once the
+  // problem is obsolete, delete all this code.
+  // (We cannot reuse any infrastructure from repairES5 because it is not
+  // exported.)
+  var result;
+  try {
+    result = ses.kludge_test_FREEZING_BREAKS_PROTOTYPES();
+  } catch (e) { result = e; }
+  if (result !== false) {
+    ses.logger.error(
+        'FREEZING_BREAKS_PROTOTYPES repair not actually successful (' +
+        result + ')');
+    ses.updateMaxSeverity(
+        ses.es5ProblemReports.FREEZING_BREAKS_PROTOTYPES.preSeverity);
+  }
+
   ses.logger.reportMax();
 
   if (ses.ok(ses['severities'][ses.maxAcceptableSeverityName])) {

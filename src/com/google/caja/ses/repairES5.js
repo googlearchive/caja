@@ -650,22 +650,39 @@ var ses;
   function test_FREEZING_BREAKS_PROTOTYPES() {
     // This problem is sufficiently problematic that testing for it breaks the
     // frame under some circumstances, so we create another frame to test in.
-    var otherObject = inTestFrame(function(window) { return window.Object; });
-    if (!otherObject) { return false; }
+    // (However, if we've already frozen Object.prototype, we can test in this
+    // frame without side effects.)
+    var testObject;
+    if (Object.isFrozen(Object.prototype)) {
+      testObject = Object;
+    } else {
+      testObject = inTestFrame(function(window) { return window.Object; });
+      if (!testObject) { return false; }  // not in a web browser
 
-    var a = new otherObject();
-    otherObject.freeze(otherObject.prototype);
-    var b = otherObject.create(a);  // will fail to set [[Prototype]] to a
+      // Apply the repair which should fix the problem to the testing frame.
+      // TODO(kpreid): Design a better architecture to handle cases like this
+      // than one-off state flags.
+      if (repair_FREEZING_BREAKS_PROTOTYPES_wasApplied) {
+        // optional argument not supplied by normal repair process
+        repair_FREEZING_BREAKS_PROTOTYPES(testObject);
+      }
+    }
+
+    var a = new testObject();
+    testObject.freeze(testObject.prototype);
+    var b = testObject.create(a);  // will fail to set [[Prototype]] to a
     var proto = Object.getPrototypeOf(b);
     if (proto === a) {
       return false;
-    } else if (proto === otherObject.prototype) {
+    } else if (proto === testObject.prototype) {
       return true;
     } else {
       return 'Prototype of created object is neither specified prototype nor ' +
           'Object.prototype';
     }
   }
+  // exported so we can test post-freeze
+  ses.kludge_test_FREEZING_BREAKS_PROTOTYPES = test_FREEZING_BREAKS_PROTOTYPES;
 
   /**
    * Detects https://bugs.webkit.org/show_bug.cgi?id=64250
@@ -2903,12 +2920,15 @@ var ses;
   // error message is matched elsewhere (for tighter bounds on catch)
   var NO_CREATE_NULL =
       'Repaired Object.create can not support Object.create(null)';
-  function repair_FREEZING_BREAKS_PROTOTYPES() {
-    var baseObject = Object;
-    var baseDefProp = Object.defineProperties;
+  // flag used for the test-of-repair which cannot operate normally.
+  var repair_FREEZING_BREAKS_PROTOTYPES_wasApplied = false;
+  // optional argument is used for the test-of-repair
+  function repair_FREEZING_BREAKS_PROTOTYPES(opt_Object) {
+    var baseObject = opt_Object || Object;
+    var baseDefProp = baseObject.defineProperties;
 
     // Object.create fails to override [[Prototype]]; reimplement it.
-    Object.defineProperty(Object, 'create', {
+    baseObject.defineProperty(baseObject, 'create', {
       configurable: true,  // attributes per ES5.1 section 15
       writable: true,
       value: function repairedObjectCreate(O, Properties) {
@@ -2945,14 +2965,14 @@ var ses;
     // Error.prototype.toString fails to use the .name and .message.
     // This is being repaired not because it is a critical issue but because
     // it is more direct than disabling the tests of error taming which fail.
-    Object.defineProperty(Error.prototype, 'toString', {
+    baseObject.defineProperty(Error.prototype, 'toString', {
       configurable: true,  // attributes per ES5.1 section 15
       writable: true,
       value: function repairedErrorToString() {
         // "1. Let O be the this value."
         var O = this;
         // "2. If Type(O) is not Object, throw a TypeError exception."
-        if (O !== Object(O)) {
+        if (O !== baseObject(O)) {
           throw new TypeError('Error.prototype.toString: this not an object');
         }
         // "3. Let name be the result of calling the [[Get]] internal method of
@@ -2979,6 +2999,10 @@ var ses;
         return name + ': ' + msg;
       }
     });
+
+    if (baseObject === Object) {
+      repair_FREEZING_BREAKS_PROTOTYPES_wasApplied = true;
+    }
   }
 
   ////////////////////// Kludge Records /////////////////////
