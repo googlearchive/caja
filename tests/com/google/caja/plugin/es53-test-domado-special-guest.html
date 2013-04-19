@@ -512,10 +512,12 @@ can test window.scrollBy with a positive x value with a visible effect.
 
 <div id="test-dynamic-style" style="color: blue;">
 </div>
-<p id="testScriptLoading" class="testcontainer">Test script loading</p>
+<p id="testCantLoadScript" class="testcontainer">
+  testCantLoadScript -- test defense against unsandboxed script injection
+</p>
 <script type="text/javascript">
-  jsunitRegister('testScriptLoading',
-                 function testScriptLoading() {
+  jsunitRegister('testCantLoadScript',
+                 function testCantLoadScript() {
     // Test that we block ways scripts can be used to executed code in strings.
     expectFailure(
         function () {
@@ -583,27 +585,7 @@ can test window.scrollBy with a positive x value with a visible effect.
           assertColor("blue", directAccess.getComputedStyle(s, 'color'));
         }, 'style injection via innerHTML');
 
-    // Test that an arbitrary external script cannot be loaded by setting the
-    // "src" attribute of a newly created script element.
-    var s = document.createElement('script');
-    assertAsynchronousRequirement(
-        'non-whitelisted script ran',
-        jsunitCallback(function () {
-          return externalScript.loaded !== true;
-        }));
-    s.src = 'unproxied_nonwhitelisted_script.js';
-    document.getElementById('testScriptLoading').appendChild(s);
-
-    // Test that an external script *can* be loaded by setting the "src"
-    // attribute of a newly created script element if the URI policy permits it.
-    var s = document.createElement('script');
-    assertAsynchronousRequirement(
-        'whitelisted script never ran',
-        jsunitCallback(function () { return externalScript.loaded === true; }));
-    s.src = 'unproxied_whitelisted_script.js';
-    document.getElementById('testScriptLoading').appendChild(s);
-
-    pass('testScriptLoading');
+    pass('testCantLoadScript');
   });
 </script>
 

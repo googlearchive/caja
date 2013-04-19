@@ -91,9 +91,6 @@ jsunitRegister(
 var testDiv = document.createElement('div');
 document.body.appendChild(testDiv);
 
-// modified by whitelisted_script.js
-var externalScript = { loaded: false };
-
 fetch('es53-test-domado-special-initial-state.html', function(initialHtml) {
   testDiv.innerHTML = initialHtml;
   var virtualDoc = document.getElementById('untrusted_content');
@@ -119,9 +116,6 @@ fetch('es53-test-domado-special-initial-state.html', function(initialHtml) {
 
     extraImports.checkGlobalSideEffect =
       frame.tame(frame.markFunction(checkGlobalSideEffect));
-
-    frame.grantRead(externalScript, 'loaded');
-    extraImports.externalScript = frame.tame(externalScript);
 
     if (frameGroup.testing_makeDomadoRuleBreaker) {
       var rulebreaker = frameGroup.testing_makeDomadoRuleBreaker();
