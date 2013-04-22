@@ -27,9 +27,6 @@ public class ThisHostName {
   /**
    * Try to return a non-loopback hostname for this host,
    * which other hosts can use to contact it.
-   *
-   * System property "caja.test.thishostname" will override
-   * the auto-discovery.
    */
   public static String value() {
     if (_value == null) {
@@ -39,11 +36,6 @@ public class ThisHostName {
   }
 
   private static String computeValue() {
-    String prop = System.getProperty("caja.test.thishostname");
-    if (prop != null) {
-      return prop;
-    }
-
     InetAddress localhost;
     try {
       localhost = InetAddress.getLocalHost();

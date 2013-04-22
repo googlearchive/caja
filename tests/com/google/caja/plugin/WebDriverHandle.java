@@ -30,6 +30,8 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
 
+import com.google.caja.util.TestFlag;
+
 /**
  * Manages WebDriver instances.
  *
@@ -50,19 +52,11 @@ import org.openqa.selenium.remote.RemoteWebDriver;
  */
 
 class WebDriverHandle {
-  // TODO(felix8a): gather flags
-  private static final String BROWSER = "caja.test.browser";
-  private static final String BROWSER_PATH = "caja.test.browserPath";
-  private static final String REMOTE = "caja.test.remote";
-
   private static RemoteWebDriver driver = null;
   private static int refCount = 0;
   private static String firstWindow = null;
   private static int windowSeq = 1;
   private static int keptWindows = 0;
-
-  private final static String browserType =
-      System.getProperty(BROWSER, "firefox");
 
   WebDriverHandle() {
     refCount += 1;
@@ -80,7 +74,7 @@ class WebDriverHandle {
         // ignore
       }
     }
-    JavascriptExecutor jsexec = (JavascriptExecutor) driver;
+    JavascriptExecutor jsexec = driver;
     String name = "cajatestwin" + (windowSeq++);
     Boolean result = (Boolean) jsexec.executeScript(
         "return !!window.open('', '" + name + "')");
@@ -112,7 +106,7 @@ class WebDriverHandle {
   }
 
   String getBrowserType() {
-    return browserType;
+    return TestFlag.BROWSER.getString("firefox");
   }
 
   void closeWindow() {
@@ -146,22 +140,24 @@ class WebDriverHandle {
   }
 
   private RemoteWebDriver makeDriver() {
-    String browserPath = System.getProperty(BROWSER_PATH);
-    String remote = System.getProperty(REMOTE, "");
     DesiredCapabilities dc = new DesiredCapabilities();
-    if (!"".equals(remote)) {
+
+    String chrome = TestFlag.CHROME_BINARY.getString(null);
+    if (chrome != null) {
+      dc.setCapability("chrome.binary", chrome);
+    }
+
+    String browserType = getBrowserType();
+    String webdriver = TestFlag.WEBDRIVER_URL.getString("");
+    if (!"".equals(webdriver)) {
       dc.setBrowserName(browserType);
       dc.setJavascriptEnabled(true);
       try {
-        return new RemoteWebDriver(new URL(remote), dc);
+        return new RemoteWebDriver(new URL(webdriver), dc);
       } catch (MalformedURLException e) {
         throw new RuntimeException(e);
       }
-    }
-    if ("chrome".equals(browserType)) {
-      if (browserPath != null) {
-        dc.setCapability("chrome.binary", browserPath);
-      }
+    } else if ("chrome".equals(browserType)) {
       return new ChromeDriver(dc);
     } else if ("firefox".equals(browserType)) {
       return new FirefoxDriver();

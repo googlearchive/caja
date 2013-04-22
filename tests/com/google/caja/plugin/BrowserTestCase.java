@@ -19,6 +19,8 @@ import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.LocalServer;
+import com.google.caja.util.TestFlag;
+import com.google.caja.util.ThisHostName;
 
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
@@ -39,57 +41,16 @@ import org.openqa.selenium.WebElement;
  * <a href="http://code.google.com/p/google-caja/wiki/CajaTesting"
  *   >CajaTesting wiki page</a>
  * <p>
- * Useful system properties:
- * <dl>
- *   <dt>caja.test.browser</dt>
- *   <dd>Which browser driver to use. Default is "firefox".</dd>
- *
- *   <dt>caja.test.browserPath</dt>
- *   <dd>Override location of browser executable.  Currently only
- *   for Chrome (sets chrome.binary for webdriver).</dd>
- *
- *   <dt>caja.test.closeBrowser</dt>
- *   <dd>When true, always close browser when done. Normally when a browser
- *   test fails, we try to keep the browser open so the error can be
- *   manually inspected. This flag disables that.</dd>
- *
- *   <dt>caja.test.remote</dt>
- *   <dd>URL of a remote webdriver, which should usually be something like
- *   "http://hostname:4444/wd/hub".  If unset, use a local webdriver.</dd>
- *
- *   <dt>caja.test.serverOnly</dt>
- *   <dd>When true, start server and wait</dd>
- *
- *   <dt>caja.test.serverPort</dt>
- *   <dd>What port to use for the localhost webserver. Default is 8000 when
- *   using one of the manual testing options (serverOnly or startAndWait).
- *   Otherwise, default is 0 (which chooses any available port).</dd>
- *
- *   <dt>caja.test.startAndWait</dt>
- *   <dd>When true, start server and browser and wait</dd>
- *
- *   <dt>caja.test.thishostname</dt>
- *   <dd>Hostname that a remote browser should use to contact the
- *   localhost server. If unset, guesses a non-loopback hostname.</dd>
- * </dl>
- * <p>
  * Type parameter D is for data passed in to subclass overrides of driveBrowser.
  *
  * @author maoziqing@gmail.com (Ziqing Mao)
  * @author kpreid@switchb.org (Kevin Reid)
  */
 public abstract class BrowserTestCase<D> extends CajaTestCase {
-  // TODO(felix8a): gather flags
-  private static final String CLOSE_BROWSER = "caja.test.closeBrowser";
-  private static final String REMOTE = "caja.test.remote";
-  private static final String SERVER_ONLY = "caja.test.serverOnly";
-  private static final String SERVER_PORT = "caja.test.serverPort";
-  private static final String START_AND_WAIT = "caja.test.startAndWait";
-
   // We acquire a WebDriverHandle on construction because the test runner
   // constructs all the TestCase objects before running any of them, and
   // we want WebDriverHandle's refcount to stay nonzero as long as possible.
-  private WebDriverHandle wdh = new WebDriverHandle();
+  private final WebDriverHandle wdh = new WebDriverHandle();
 
   protected String testBuildVersion = null;
 
@@ -167,12 +128,12 @@ public abstract class BrowserTestCase<D> extends CajaTestCase {
 
   protected String runBrowserTest(String pageName, D data,
       String... params) throws Exception {
-    int serverPort = intProp(SERVER_PORT, 0);
+    int serverPort = TestFlag.SERVER_PORT.getInt(0);
 
-    if (flag(SERVER_ONLY) || flag(START_AND_WAIT)) {
+    if (TestFlag.DEBUG_BROWSER.truthy() || TestFlag.DEBUG_SERVER.truthy()) {
       pageName = "test-index.html";
       params = null;
-      serverPort = intProp(SERVER_PORT, 8000);
+      serverPort = TestFlag.SERVER_PORT.getInt(8000);
     }
 
     String result = "";
@@ -185,9 +146,13 @@ public abstract class BrowserTestCase<D> extends CajaTestCase {
         throw e;
       }
 
-      String localhost = "localhost";
-      if (System.getProperty(REMOTE) != null) {
-        localhost = localServer.hostname();
+      String localhost = TestFlag.SERVER_HOSTNAME.getString(null);
+      if (localhost == null) {
+        if (TestFlag.WEBDRIVER_URL.truthy()) {
+          localhost = ThisHostName.value();
+        } else {
+          localhost = "localhost";
+        }
       }
       String page = "http://" + localhost + ":" + localServer.getPort()
               + "/ant-testlib/com/google/caja/plugin/" + pageName;
@@ -196,12 +161,12 @@ public abstract class BrowserTestCase<D> extends CajaTestCase {
       }
       getErr().println("- Try " + page);
 
-      if (flag(SERVER_ONLY)) {
+      if (TestFlag.DEBUG_SERVER.truthy()) {
         Thread.currentThread().join();
       }
       WebDriver driver = wdh.makeWindow();
       driver.get(page);
-      if (flag(START_AND_WAIT)) {
+      if (TestFlag.DEBUG_BROWSER.truthy()) {
         Thread.currentThread().join();
       }
 
@@ -210,32 +175,13 @@ public abstract class BrowserTestCase<D> extends CajaTestCase {
     } finally {
       localServer.stop();
       // It's helpful for debugging to keep failed windows open.
-      if (!passed && !isKnownFailure() && !flag(CLOSE_BROWSER)) {
+      if (!passed && !isKnownFailure() && !TestFlag.BROWSER_CLOSE.truthy()) {
         wdh.keepOpen();
       } else {
         wdh.closeWindow();
       }
     }
     return result;
-  }
-
-  static protected boolean flag(String name) {
-    String value = System.getProperty(name);
-    return value != null && !"".equals(value) && !"0".equals(value)
-        && !"false".equalsIgnoreCase(value);
-  }
-
-  static protected int intProp(String name, int dflt) {
-    String value = System.getProperty(name);
-    if (value == null || "".equals(value)) {
-      return dflt;
-    }
-    try {
-      return Integer.parseInt(value);
-    } catch (NumberFormatException e) {
-      getErr().println("Invalid value " + value + " for " + name);
-      throw e;
-    }
   }
 
   protected String runTestDriver(

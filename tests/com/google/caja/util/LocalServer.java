@@ -44,10 +44,6 @@ public class LocalServer {
     this.contextCallback = contextCallback;
   }
 
-  public String hostname() {
-    return ThisHostName.value();
-  }
-
   public int getPort() {
     return server.getConnectors()[0].getLocalPort();
   }

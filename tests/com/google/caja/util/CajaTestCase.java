@@ -496,14 +496,14 @@ public abstract class CajaTestCase extends TestCase {
   @Override
   protected void runTest() throws Throwable {
   // Support filtering of test methods via the Java system property
-  // "test.method.filter".  This can be used in conjunction with
+  // "test.filter.method".  This can be used in conjunction with
   // "test.filter".
-    String filterGlob = System.getProperty("test.method.filter");
+    String filterGlob = System.getProperty("test.filter.method");
     if (filterGlob != null) {
       // TODO: Maybe move globToPattern into util.
       Pattern methodFilter = Pattern.compile(
           AllTests.globToPattern(filterGlob), Pattern.DOTALL);
-      if (!methodFilter.matcher(getName()).find()) {
+      if (!methodFilter.matcher(getName()).matches()) {
         System.err.println("Skipping " + getName());
         return;
       }
