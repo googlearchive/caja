@@ -689,8 +689,8 @@ var Domado = (function() {
       if (name === weakMapMagicName) {
         if (descriptor.set === null) descriptor.set = undefined;
         Object.defineProperty(this, 'weakMapMagic', descriptor);
-      } else if (Object.prototype.hasOwnProperty(this.target, name)) {
-        // Forwards everything already defined (not expando).
+      } else if (Object.prototype.hasOwnProperty.call(this.target, name)) {
+        // Forward attempted redefinitions of own properties to the target.
         return ProxyHandler.prototype.defineProperty.call(this, name,
             descriptor);
       } else {
@@ -703,8 +703,8 @@ var Domado = (function() {
     ExpandoProxyHandler.prototype['delete'] = function (name) {
       if (name === weakMapMagicName) {
         return false;
-      } else if (Object.prototype.hasOwnProperty(this.target, name)) {
-        // Forwards everything already defined (not expando).
+      } else if (Object.prototype.hasOwnProperty.call(this.target, name)) {
+        // Forward attempted deletions of own properties to the target.
         return ProxyHandler.prototype['delete'].call(this, name);
       } else {
         if (!this.editable) { throw new Error(NOT_EDITABLE); }
@@ -769,11 +769,22 @@ var Domado = (function() {
       desc = this.getPropertyDescriptor(name);
       if (desc) {
         if ('writable' in desc) {
-          if (desc.writable) {
-            // fall through
-          } else {
-            return false;
-          }
+          // The commenting-out of the below code corresponds to "fixing the
+          // override mistake". For further information, see
+          // Object.prototype.w___ in ES5/3 and makeTamperProof in SES.
+          //
+          // We need to do the 'fix' here because this proxy trap is a
+          // reimplementation of what otherwise would be JS runtime internal
+          // algorithms, and so not doing the fix would break code which
+          // optimizes on the knowledge that the platform has the fix.
+          // (In particular, cajaVM.def uses nonwritable data properties instead
+          // of accessor properties whenever possible.)
+          //
+          // if (desc.writable) {
+          //   // fall through
+          // } else {
+          //   return false;
+          // }
         } else { // accessor
           if (desc.set) {
             desc.set.call(receiver, val);

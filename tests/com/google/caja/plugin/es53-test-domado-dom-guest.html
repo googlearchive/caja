@@ -561,6 +561,26 @@ document.write(
   });
 </script>
 
+<p id="testExpandoOverride" class="testcontainer">
+  testExpandoOverride: can replace methods on instances
+</p>
+<script type="text/javascript">
+  jsunitRegister('testExpandoOverride',
+                 function testExpandoOverride() {
+    // Example from Angular -- happens to be an event
+    var obj = document.createEvent('HTMLEvents');
+    obj.preventDefault = function() { return 'boo'; };
+    assertEquals('boo', obj.preventDefault());
+
+    // similarly for nodes
+    var obj = document.createElement('span');
+    obj.blur = function() { return 'boo'; };
+    assertEquals('boo', obj.blur());
+
+    pass('testExpandoOverride');
+  });
+</script>
+
 <p id="testEditabilityInNodeLists" class="testcontainer">
   editability in node lists<br>
 </p>
