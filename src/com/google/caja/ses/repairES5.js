@@ -2149,6 +2149,33 @@ var ses;
       desc.enumerable + ', value: ' + desc.value;
   }
 
+  function getThrowTypeError() {
+    "use strict";
+    return Object.getOwnPropertyDescriptor(getThrowTypeError, "arguments").get;
+  }
+
+  /**
+   * [[ThrowTypeError]] is extensible or has modifiable properties.
+   */
+  function test_THROWTYPEERROR_UNFROZEN() {
+    return !Object.isFrozen(getThrowTypeError());
+  }
+
+  /**
+   * [[ThrowTypeError]] has properties which the spec gives to other function
+   * objects but not [[ThrowTypeError]].
+   *
+   * We don't check for arbitrary properties because they might be extensions
+   * for all function objects, which we don't particularly want to complain
+   * about (and will delete via whitelisting).
+   */
+  function test_THROWTYPEERROR_PROPERTIES() {
+    var tte = getThrowTypeError();
+    return !!Object.getOwnPropertyDescriptor(tte, 'prototype') ||
+        !!Object.getOwnPropertyDescriptor(tte, 'arguments') ||
+        !!Object.getOwnPropertyDescriptor(tte, 'caller');
+  }
+
   ////////////////////// Repairs /////////////////////
   //
   // Each repair_NAME function exists primarily to repair the problem
@@ -3766,6 +3793,35 @@ var ses;
       sections: ['15.2.3.5'],
       tests: []  // TODO(kpreid): find/add test262
     },
+    {
+      id: 'THROWTYPEERROR_UNFROZEN',
+      description: '[[ThrowTypeError]] is not frozen',
+      test: test_THROWTYPEERROR_UNFROZEN,
+      repair: void 0,
+      preSeverity: severities.SAFE_SPEC_VIOLATION,  // Note: Safe only because
+          // startSES will do whitelist and defense; per spec intent it's an
+          // undesired communication channel.
+      canRepair: false,  // will be repaired by whitelist
+      urls: ['https://bugs.webkit.org/show_bug.cgi?id=108873'],
+             // TODO(kpreid): find or file Firefox bug (writable props)
+             // TODO(kpreid): find or file Chrome bug (has a .prototype)
+      sections: ['13.2.3'],
+      tests: []  // TODO(kpreid): add to test262
+    },
+    {
+      id: 'THROWTYPEERROR_PROPERTIES',
+      description: '[[ThrowTypeError]] has normal function properties',
+      test: test_THROWTYPEERROR_PROPERTIES,
+      repair: void 0,
+      preSeverity: severities.SAFE_SPEC_VIOLATION,
+      canRepair: false,  // will be repaired by whitelist
+      urls: [],
+             // WebKit is OK
+             // TODO(kpreid): find or file Firefox bug (has writable props)
+             // TODO(kpreid): find or file Chrome bug (has a .prototype!)
+      sections: ['13.2.3'],
+      tests: []  // TODO(kpreid): add to test262
+    }
   ];
 
   ////////////////////// Testing, Repairing, Reporting ///////////
