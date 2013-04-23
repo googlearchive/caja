@@ -37,4 +37,20 @@ public class SESBrowserTest extends BrowserTestCase<Void> {
   public final void testPlusMin() throws Exception {
     runBrowserTest("../ses/test-ses.html?load=initSESPlus-minified.js");
   }
+
+  // Testing failure cases with initSESPlus because it has more code which could
+  // cause problems.
+
+  public final void testPlusFail0() throws Exception {
+    runBrowserTest("../ses/test-ses.html?load=initSESPlus.js&failAtStage=0");
+  }
+
+  public final void testPlusFail1() throws Exception {
+    runBrowserTest("../ses/test-ses.html?load=initSESPlus.js&failAtStage=1");
+  }
+
+  public final void testPlusFail2() throws Exception {
+    runBrowserTest("../ses/test-ses.html?load=initSESPlus.js&failAtStage=2");
+  }
+
 }

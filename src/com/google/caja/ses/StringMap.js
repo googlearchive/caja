@@ -41,7 +41,8 @@ var StringMap;
    }
 
    var createNull;
-   if (ses.es5ProblemReports.FREEZING_BREAKS_PROTOTYPES.beforeFailure) {
+   if (((ses.es5ProblemReports || {}).FREEZING_BREAKS_PROTOTYPES || {})
+       .beforeFailure) {
      // Object.create(null) is broken; fall back to ES3-style implementation
      // (safe because we suffix keys anyway).
      createNull = function() { return {}; }

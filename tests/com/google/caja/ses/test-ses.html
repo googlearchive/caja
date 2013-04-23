@@ -28,6 +28,32 @@
         return decodeURIComponent((results == null) ? "" : results[1]);
       }
 
+      var failAtStage = JSON.parse(getUrlParam('failAtStage') || 'false');
+      switch (failAtStage) {
+        // Deliberately break SES compatibility so we can verify that initSES
+        // does not crash.
+        // Note: If another stage is added here, add it to SESBrowserTest.java
+        // too.
+        case false:
+          break;
+        case 0:
+          // repairES5 baseKludges
+          delete Object.getOwnPropertyNames;
+          break;
+        case 1:
+          // repairES5 supportedKludges
+          delete Object.freeze;
+          break;
+        case 2:
+          // Property whitelisting
+          Object.defineProperty(Object, 'testSesDummy', {
+            value: {}
+          });
+          break;
+        default:
+          throw new Error('Unrecognized failAtStage: ' + failAtStage);
+      }
+
       // Note: We are deliberately not using the ses.logger or
       // ses.maxAcceptableSeverity interfaces to manage startup. This test is
       // intended to test that SES "just works", in the absence of supporting
@@ -48,6 +74,10 @@
       doBefore(console, 'groupCollapsed', function() { groups++; });
       doBefore(console, 'groupEnd', function() { groups--; });
 
+      if (!getUrlParam('load')) {
+        throw new Error('No SES file specified as ?ses=foo.js');
+      }
+
       document.write('<script type="text/javascript" src="' +
           getUrlParam('load') + '"></'+'script>');
     </script>
@@ -59,6 +89,11 @@
       // "all tests passed" is the keyword our test automation looks for
       if (groups !== 0) {
         console.error('test-ses: console not balanced');
+        success = false;
+      }
+      
+      if (failAtStage !== false && ses.ok()) {
+        console.error('test-ses: SES was supposed to fail, but did not');
         success = false;
       }
       
