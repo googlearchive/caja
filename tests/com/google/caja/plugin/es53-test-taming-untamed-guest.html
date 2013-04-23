@@ -78,7 +78,9 @@
     if (inES5Mode) {
       assertEquals(23, r[3]);
       assertEquals(undefined, tameEval('a[3]', r));
-      expectFailure(tameEval('a[3] = 99', r));
+      expectFailure(function() {
+        tameEval('a[3] = 99', r);
+      }, 'assign to host', function(e) { return e.name === 'TypeError'; });
     } else {
       // Un-taming the record eviscerates, so the guest-side getter now
       // sees nothing due to the numeric-index optimization.
@@ -106,7 +108,16 @@
     tameEval('assertEquals("bar", a[1]);', a)
     tameEval('assertEquals(2, a.length);', a)
     // Array un-taming is pass-by-copy
-    tameEval('a[2] = "bee"', a);
+    if (inES5Mode) {
+      // host side is known to support strict mode and freezing, membrane will
+      // freeze the array
+      expectFailure(function() {
+        tameEval('a[2] = "bee"', a);
+      }, 'assign to host', function(e) { return e.name === 'TypeError'; });
+    } else {
+      // host side is mutable but does not affect guest
+      tameEval('a[2] = "bee"', a);
+    }
     assertEquals(2, a.length);
     assertEquals(undefined, a[2]);
     pass('testArray');
