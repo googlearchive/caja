@@ -1,0 +1,70 @@
+<!--
+ - Copyright (C) 2013 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<div class="testcontainer waiting" id="testCssImports">
+  <link href="es53-test-css-imports-1.css" rel="stylesheet">
+  <style>
+    @import url("es53-test-css-imports-2.css");
+    .shouldbezero { background-color: #000000; }
+
+    .overrideinorder { background-color: #000004; }
+  </style>
+  <div class="shouldbezero">zeroth</div>
+  <div class="shouldbeone">first</div>
+  <div class="shouldbetwo">second</div>
+  <div class="shouldbethree">third</div>
+
+  <div class="overrideinorder">override ordering</div>
+  <div class="overriderecurse">override recursively</div>
+  <div class="overridesequential">override sequentially</div>
+<br>
+<script type="text/javascript">
+  jsunitRegister('testCssImports',
+                 function testCssImports() {
+    function assertExpectedColor(expected, clazz) {
+      var candidate = document.getElementsByClassName(clazz)[0];
+
+      // Using directAccess to ensure the actual style got applied
+      // by the browser
+      var color = directAccess.getComputedStyle(candidate, 'background-color');
+      assertColor(expected, color);
+    }
+  
+    assertAsynchronousRequirement(
+      'external css',
+      jsunitCallback(
+        function checkStyles() {
+          assertExpectedColor({rgb: 0x000000}, 'shouldbezero');
+          assertExpectedColor({rgb: 0x000001}, 'shouldbeone');
+          assertExpectedColor({rgb: 0x000002}, 'shouldbetwo');
+          assertExpectedColor({rgb: 0x000003}, 'shouldbethree');
+
+          assertExpectedColor({rgb: 0x000004}, 'overrideinorder');
+          assertExpectedColor({rgb: 0x000005}, 'overriderecurse');
+          assertExpectedColor({rgb: 0x000006}, 'overridesequential');
+          pass('testCssImports');
+
+          // TODO(kpreid): Move this pass() into the main line of the test once
+          // we have fixed assertAsynchronousRequirement.
+          return true;
+       })
+    );
+  });
+
+  // jsunit complains if there are zero tests
+  jsunitRegister('testNop', function testNop() { pass('testNop'); });
+</script>
+</div>
