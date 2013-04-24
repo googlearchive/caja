@@ -111,6 +111,10 @@ var ses;
   var t = true;
   ses.whitelist = {
     cajaVM: {                        // Caja support
+      // This object is present here only to make it itself processed by the
+      // whitelist, not to make it accessible by this path.
+      '[[ThrowTypeError]]': t,
+
       log: t,
       tamperProof: t,
       constFunc: t,

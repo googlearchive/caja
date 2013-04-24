@@ -2155,18 +2155,22 @@ After
         constructorCallable: true
       },
       {
+        note: 'setTimeout',
         typenames: [],
         sample: setTimeout
       },
       {
+        note: 'clearTimeout',
         typenames: [],
         sample: clearTimeout
       },
       {
+        note: 'setInterval',
         typenames: [],
         sample: setInterval
       },
       {
+        note: 'clearInterval',
         typenames: [],
         sample: clearInterval
       },
@@ -2189,7 +2193,8 @@ After
       // TODO(kpreid): Add opaque and foreign nodes as test cases here.
     ].forEach(function(record, index) {
       Object.freeze(record.typenames);
-      var note = record.note = String(record.typenames) ||
+      var note = record.note = record.note ||
+          String(record.typenames) ||
           String('(' + index + ') ' + record.sample);
       assertTrue(note + ' sample is present', !!record.sample);
       record.constructorCallable = record.constructorCallable || false;

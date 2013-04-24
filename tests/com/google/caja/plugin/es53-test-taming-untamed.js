@@ -59,7 +59,7 @@
     // This function untames/tames its args/return value
     extraImports.tameEval =
         frame.tame(frame.markFunction(function(s, a, b, c) {
-          return eval(String(s));
+          return eval('"use strict"; ' + String(s));
         }));
 
     function assertException(e, name, msg) {

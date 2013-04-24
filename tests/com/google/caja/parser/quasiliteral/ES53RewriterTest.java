@@ -1895,6 +1895,69 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "'' + unique;");
   }
 
+  /**
+   * Properties on any object with certain protected names such as 'toString'
+   * are virtualized. Virtualized properties are implemented as accessors even
+   * if they are data.
+   * 
+   * Test that they appear as data or accessor properties when defined so, and
+   * that the writable flag is preserved.
+   */
+  public final void testVirtualizedPropertyView() throws Exception {
+    rewriteAndExecute(
+        "function f() { return 'x'; }" +
+        "function gsd(o) {" +
+        "  return Object.getOwnPropertyDescriptor(o, 'toString');" +
+        "}" +
+        "function check(note, k, o) {" +
+        "  var keys = Object.keys(gsd(o))" +
+        "      .filter(function(x) { return x === 'value' || x === 'get';});" +
+        "  assertEquals(note, k, keys.toString());" +
+        "}" +
+        "var o1 = {toString: f};" +
+        "var o2 = {get toString() { return f; }};" +
+        "check('Object.prototype', 'value', Object.prototype);" +
+        "check('o1', 'value', o1);" +
+        "check('o2', 'get', o2);" +
+        "assertEquals(true, gsd(o1).writable);" +
+        "assertEquals(undefined, gsd(o2).writable);" +
+        "Object.defineProperty(o2, 'toString', {value: f});" +
+        "check('o2 redefine', 'value', o2);" +
+        "assertEquals(false, gsd(o2).writable);" +
+        "");
+  }
+
+  /**
+   * Properties on any object with certain protected names such as 'toString'
+   * are virtualized. Virtualized properties are implemented as accessors even
+   * if they are data.
+   *
+   * Test that reads/writes of virtualized properties behave correctly.
+   */
+  public final void testVirtualizedPropertyOperation() throws Exception {
+    rewriteAndExecute(
+        "function f() { return 'x'; }" +
+        "function g() { return 'y'; }" +
+        "var o1 = {toString: f};" +
+        "var o2 = Object.create(o1);" +
+        "assertFalse('hop before write', o2.hasOwnProperty('toString'));" +
+        "o2.toString = g;  // accessor write should create own property" +
+        "assertTrue('hop after write', o2.hasOwnProperty('toString'));" +
+        "assertEquals('inherited write', g, o2.toString);" +
+        "assertEquals('inherited write nop', f, o1.toString);" +
+        "o2.toString = f;  // second write should also work" +
+        "assertEquals('direct write', f, o2.toString);" +
+        "delete o2.toString;" +
+        "Object.freeze(o1);" +
+        "o2.toString = g;" +
+        "assertEquals('write while frozen', g, o2.toString);" +
+        "assertEquals('write while frozen nop', f, o1.toString);" +
+        "var fail = false;" +
+        "try { o1.toString = g; } catch (e) { fail = true; }" +
+        "assertEquals('write fail', f, o1.toString);" +
+        "assertTrue('write threw', fail);");
+  }
+
   @Override
   public void setUp() throws Exception {
     super.setUp();
@@ -1938,6 +2001,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "assertEquals",
         "assertTrue",
         "assertFalse",
+        "assertContains",
         "assertLessThan",
         "assertNull",
         "assertThrows",
