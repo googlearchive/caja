@@ -92,9 +92,4 @@ public class Es53BrowserTest extends UniversalBrowserTests {
   public void testUnicode() throws Exception {
     runTestDriver("es53-test-unicode.js", es5Mode);
   }
-
-  @FailureIsAnOption("Cajoler fails to handle relative urls in external CSS")
-  public void testCssImports() throws Exception {
-    runTestCase("es53-test-css-imports-guest.html", true);
-  }
 }

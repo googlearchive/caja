@@ -112,13 +112,25 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
         "<a onclick=\"foo(this)\">hi</a>",
 
         // Handler is attached separately.
-        // TODO(kpreid): The fact that the actual output has an XML style <.../> 
+        // TODO(kpreid): The fact that the actual output has an XML style <.../>
         // tag means the DOM implementation is wrong here, though this doesn't
         // matter for what we're testing.
         ""
         + "assertEquals('<caja-v-html><caja-v-head/><caja-v-body>'"
         + "+ '<a target=\"rewritten-null\">hi</a></caja-v-body></caja-v-html>',"
         + "             document.getElementById('test-test').innerHTML);");
+  }
+
+  /*
+   * https://code.google.com/p/google-caja/issues/detail?id=1717
+   * Inappropriate hoisting of a var declaration caused an attempt
+   * to append to the var declaration after it was marked immutable.
+   */
+  public final void testHandlerVarHoistingBug() throws Exception {
+    execGadget(
+        "<a onclick='var x, y'>a</a>\n"
+        +"<a onclick='var z'>b</a>\n",
+        "");
   }
 
   public final void testECMAScript31Scoping() {

@@ -14,31 +14,6 @@
  - limitations under the License.
 -->
 
-<p id="testPrototypeDefense" class="testcontainer">
-  testPrototypeDefense -- taming frame proto methods are frozen
-</p>
-<script type="text/javascript">
-  jsunitRegisterIf(
-      !((cajaVM.es5ProblemReports || {}).FIREFOX_15_FREEZE_PROBLEM || {})
-          .afterFailure,
-      'testPrototypeDefense',
-      function testPrototypeDefense() {
-
-    assertTrue('Object.prototype method frozen',
-        Object.isFrozen(document.propertyIsEnumerable));
-
-    var tamingFrameArray = document.attributes;
-    // If this assertion fails, we're not necessarily broken, but this test
-    // needs to find a different specimen object.
-    assertTrue('array thing is array', Array.isArray(tamingFrameArray));
-
-    assertTrue('Array.prototype method frozen',
-        Object.isFrozen(tamingFrameArray.forEach));
-
-    pass('testPrototypeDefense');
-});
-</script>
-
 <p id="testGlobalAssignmentReturnValue" class="testcontainer"
 >test-global-assignment-return-value</p>
 <script type="text/javascript">

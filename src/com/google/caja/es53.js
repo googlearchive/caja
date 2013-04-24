@@ -104,8 +104,8 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    * {writable:true, configurable:true, enumerable:true, get:void 0, set:void 0}
    *
    * Note that each of the six attributes starts with a different letter.
-   * Each property has nine associated properties: six for the attributes
-   * and two for writable and callable fastpath flags.
+   * Each property has eight associated properties: six for the attributes
+   * and two for writable and callable fastpath flags
    *
    * {@code obj[name + '_v___'] === obj}  means that {@code name} is
    *                                      a data property on {@code obj}.
@@ -126,26 +126,24 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    *                                      {@code name} on {@code obj}.
    * {@code obj[name + '_m___'] truthy}   means that {@code name} is
    *                                      callable as a method (fastpath).
-   * {@code obj[name + '_av___'] === obj} means that {@code name} should appear
-   *                                      as a data property even though it
-   *                                      is stored as an accessor (for special
-   *                                      cases only).
    *
    * To prevent accidental misinterpretation of the above inherited
    * attribute descriptors, whenever any are defined for a given
-   * {@code obj} and {@code name}, all nine must be. If {@code name}
+   * {@code obj} and {@code name}, all eight must be. If {@code name}
    * is a string encoding of a number (i.e., where {@code name ===
    * String(+name)}), then all of the above attributes must not be
    * defined directly for {@code name}. Instead, the effective
    * attributes of {@code name} are covered by the actual attributes
    * of {@code 'NUM___'}.
    *
-   * The _av___ flag is for virtualized methods; since innocent code and
-   * the ES5/3 runtime itself rely on the original bindings of primordial
-   * methods, guest code should not be allowed to change the original bindings;
-   * {@code virtualize} installs ES5 getters and setters that store the guest
-   * view of the property, but sets the _av___ flag so that they do not affect
-   * the semantics (especially, so that def() will traverse them).
+   * Another property suffix commonly used in the code is for virtualized
+   * methods; since innocent code and existing host code like domita rely
+   * on the original bindings of primordial methods, guest code should not
+   * be allowed to change the original bindings; {@code virtualize} installs
+   * ES5 getters and setters that store the guest view of the property.
+   *
+   * {@code obj[name + '_virt___']}       is the virtual version of a primordial
+   *                                      method that's exposed to guest code.
    *
    * Per-object properties:
    *
@@ -268,7 +266,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         this.NUM____e___ = this;
         this.NUM____g___ = void 0;
         this.NUM____s___ = void 0;
-        this.NUM____av___ = false;
       }
       this.NUM____c___ = false;
       this.NUM____w___ = false;
@@ -405,7 +402,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   Object.prototype.NUM____e___ = Object.prototype;
   Object.prototype.NUM____g___ = void 0;
   Object.prototype.NUM____s___ = void 0;
-  Object.prototype.NUM____av___ = false;
   Object.prototype.hasNumerics___ = function () {
       return this.NUM____v___ === this;
     };
@@ -424,7 +420,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   Array.prototype.length_m___ = false;
   Array.prototype.length_c___ = false;
   Array.prototype.length_e___ = false;
-  Array.prototype.length_av___ = false;
 
   /**
    * Setter for {@code length}.  This is necessary because
@@ -578,7 +573,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     f.prototype_g___ = void 0;
     f.prototype_s___ = void 0;
     f.prototype_m___ = false;
-    f.prototype_av___ = false;
     f.length_v___ = f;
     f.length_w___ = false;
     f.length_gw___ = false;
@@ -587,10 +581,8 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     f.length_g___ = void 0;
     f.length_s___ = void 0;
     f.length_m___ = false;
-    f.length_av___ = false;
     // Rhino prohibits setting the name property of function instances,
-    // so we install a getter instead. Use accessor-virtualization flag to hide
-    // this.
+    // so we install a getter instead.
     f.name_v___ = false;
     f.name_w___ = false;
     f.name_gw___ = false;
@@ -601,7 +593,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         : markFuncFreeze(function() {return name;}));
     f.name_s___ = void 0;
     f.name_m___ = false;
-    f.name_av___ = f;
     f.caller_v___ = false;
     f.caller_w___ = false;
     f.caller_gw___ = false;
@@ -610,7 +601,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     f.caller_g___ = poisonFuncCaller;
     f.caller_s___ = void 0;
     f.caller_m___ = false;
-    f.caller_av___ = false;
     f.arguments_v___ = false;
     f.arguments_w___ = false;
     f.arguments_gw___ = false;
@@ -619,7 +609,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     f.arguments_g___ = poisonFuncArgs;
     f.arguments_s___ = void 0;
     f.arguments_m___ = false;
-    f.arguments_av___ = false;
   }
 
   function deferredV(name) {
@@ -680,7 +669,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       p.constructor_g___ = void 0;
       p.constructor_s___ = void 0;
       p.constructor_m___ = false;
-      p.constructor_av___ = false;
     }
     return fn;
   }
@@ -756,10 +744,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    * called, on this object itself as an own (non-inherited) attribute.
    * Determines the value of the writable: attribute of property descriptors.
    *
-   * Note that if the property has the _av___ flag, i.e. is an accessor
-   * emulating a data property, this may return true even though fastpath writes
-   * are not correct.
-   *
    * Preconditions:
    * {@code obj} must not be {@code null} or {@code undefined}.
    * {@code name} must be a string that is not the string encoding
@@ -768,13 +752,8 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   function isWritable(obj, name) {
     if (obj[name + '_w___'] === obj) { return true; }
     if (obj[name + '_gw___'] === obj) {
-      if (obj[name + '_av___'] !== obj) {
-        // Convert grant writable to fastpath writable if it's a true data
-        // property (not a virtualization accessor, which is incompatible with
-        // fastpath).
-        obj[name + '_m___'] = false;
-        obj[name + '_w___'] = obj;
-      }
+      obj[name + '_m___'] = false;
+      obj[name + '_w___'] = obj;
       return true;
     }
     // Frozen and preventExtensions implies hasNumerics
@@ -787,7 +766,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       obj.NUM____g___ = void 0;
       obj.NUM____s___ = void 0;
       obj.NUM____m___ = false;
-      obj.NUM____av___ = false;
       return true;
     }
     return false;
@@ -1396,7 +1374,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         result.get_m___ = false;
         result.get_g___ = false;
         result.get_s___ = false;
-        result.get_av___ = false;
 
         markFunc(result.set);
         result.set_v___ = result;
@@ -1407,7 +1384,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         result.set_m___ = false;
         result.set_g___ = false;
         result.set_s___ = false;
-        result.set_av___ = false;
 
         markFunc(result.has);
         result.has_v___ = result;
@@ -1418,7 +1394,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         result.has_m___ = false;
         result.has_g___ = false;
         result.has_s___ = false;
-        result.has_av___ = false;
         return result;
       });
     } else {
@@ -2156,13 +2131,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         D.value = O[P];
         // b. Set D.[[Writable]] to the value of X's [[Writable]] attribute
         D.writable = isWritable(O, P);
-      } else if (O[P + '_av___'] === O) {
-        // X is an accessor property pretending to be a data property.
-        // This should be observably indistinguishable from case 4 above.
-        // a. Set D.[[Value]] to the value of X's [[Value]] attribute.
-        D.value = O.v___(P);
-        // b. Set D.[[Writable]] to the value of X's [[Writable]] attribute
-        D.writable = isWritable(O, P);
       } else {
         // 5. Else X is an accessor property, so
         // a. Set D.[[Get]] to the value of X's [[Get]] attribute.
@@ -2277,8 +2245,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         && delete O[P + '_s___']
         && delete O[P + '_c___']
         && delete O[P + '_e___']
-        && delete O[P + '_m___']
-        && delete O[P + '_av___'];
+        && delete O[P + '_m___'];
   }
 
   // 8.12.7
@@ -2349,22 +2316,14 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
           //    Desc. If the value of an attribute field of Desc is
           //    absent, the attribute of the newly created property is
           //    set to its default value.
-          if (lookupVirtualizedProperty(P)) {
-            // P is a virtualized property; install an accessor which emulates
-            // a data property but protects O[P] from modification.
-            installVirtualizedPropertyParts(O, P, Desc);
-          } else {
-            // Non-virtualized true data property.
-            O[P] = Desc.value;
-            O[P + '_v___'] = O;
-            O[P + '_g___'] = void 0;
-            O[P + '_s___'] = void 0;
-            O[P + '_av___'] = false;
-          }
+          O[P] = Desc.value;
+          O[P + '_v___'] = O;
           O[P + '_w___'] = false;
           O[P + '_gw___'] = Desc.writable ? O : false;
           O[P + '_e___'] = Desc.enumerable ? O : false;
           O[P + '_c___'] = Desc.configurable ? O : false;
+          O[P + '_g___'] = void 0;
+          O[P + '_s___'] = void 0;
           O[P + '_m___'] = false;
         }
         // b. Else, Desc must be an accessor Property Descriptor so,
@@ -2383,7 +2342,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
           O[P + '_g___'] = Desc.get;
           O[P + '_s___'] = Desc.set;
           O[P + '_m___'] = false;
-          O[P + '_av___'] = false;
         }
         // c. Return true.
         return true;
@@ -2455,7 +2413,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
           O[P + '_g___'] = void 0;
           O[P + '_s___'] = void 0;
           O[P + '_m___'] = false;
-          O[P + '_av___'] = false;  // Not virtualized, whether or not it was
         }
         // c. Else,
         else {
@@ -2465,19 +2422,14 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
           //    [[Configurable]] and [[Enumerable]] attributes and set
           //    the rest of the property's attributes to their default
           //    values.
-          if (lookupVirtualizedProperty(P)) {
-            installVirtualizedPropertyParts(O, P, Desc);
-          } else {
-            O[P] = Desc.value;
-            O[P + '_v___'] = O;
-            O[P + '_g___'] = void 0;
-            O[P + '_s___'] = void 0;
-            O[P + '_m___'] = false;
-            O[P + '_av___'] = false;
-          }
+          O[P] = Desc.value;
+          O[P + '_v___'] = O;
           O[P + '_w___'] = O[P + '_gw___'] = false;
           // O[P + '_e___'] = O[P + '_e___'];
           // O[P + '_c___'] = O[P + '_c___'];
+          O[P + '_g___'] = void 0;
+          O[P + '_s___'] = void 0;
+          O[P + '_m___'] = false;
         }
       }
       // 10. Else, if IsDataDescriptor(current) and
@@ -2524,15 +2476,10 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       //     set the correspondingly named attribute of the property
       //     named P of object O to the value of the field.
       if (iddDesc) {
-        if (lookupVirtualizedProperty(P)) {
-          installVirtualizedPropertyParts(O, P, Desc);
-        } else {
-          O[P] = Desc.value;
-          O[P + '_v___'] = O;
-          O[P + '_g___'] = O[P + '_s___'] = void 0;
-          O[P + '_av___'] = false;
-        }
+        O[P] = Desc.value;
+        O[P + '_v___'] = O;
         O[P + '_gw___'] = Desc.writable ? O : false;
+        O[P + '_g___'] = O[P + '_s___'] = void 0;
       } else {
         // Create the property if it's not there so that JSON.stringify
         // can see the property.
@@ -2541,7 +2488,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         O[P + '_gw___'] = false;
         O[P + '_g___'] = Desc.get;
         O[P + '_s___'] = Desc.set;
-        O[P + '_av___'] = false;
       }
       O[P + '_e___'] = Desc.enumerable ? O : false;
       O[P + '_c___'] = Desc.configurable ? O : false;
@@ -2550,65 +2496,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       // 13. Return true.
       return true;
     };
-
-  /**
-   * Initialize _v___, _w___, _g___, _s___, _m___ and _av___ for a virtualized
-   * accessor. Does not touch _e___, _c___, or _gw___.
-   *
-   * May throw if the value is invalid. Therefore, invoke this before any other
-   * mutations of internal properties.
-   *
-   * Helper for DefineOwnProperty___.
-   */
-  function installVirtualizedPropertyParts(O, P, Desc) {
-    var value = Desc.value;
-    var hook = lookupVirtualizedProperty(P).opt_setterHook || identity;
-
-    function preSet(obj, newValue) {
-      newValue = asFirstClass(newValue);
-
-      hook.call(obj, newValue);
-      return newValue;
-    }
-
-    // doNotApplySetterHook___ is a magic flag for initialization of explicitly
-    // virtualized properties (see virtualize()). Normal internal property
-    // descriptors do not have this property and get preSet treatment.
-    if (!Desc.doNotApplySetterHook___) {
-      value = preSet(O, value);
-    }
-
-    O[P + '_v___'] = false;
-    O[P + '_w___'] = false;
-    O[P + '_g___'] = markFuncFreeze(function virtualizedPropertyGetter() {
-      return value;
-    });
-    O[P + '_s___'] = markFuncFreeze(
-          function virtualizedPropertySetter(newValue) {
-      if (this === O) {
-        // Fastpath: avoid generating a new accessor
-        if (isWritable(O, P)) {
-          value = preSet(O, newValue);
-        } else {
-          throw new TypeError(
-              "The property '" + P + "' is not writable.");
-        }
-      } else {
-        // Generate a new virtualized property on the assignment target.
-        // Note that this is consistent with the rest of ES5/3 in
-        // "fixing the override mistake" by not failing if the property on O
-        // is nonwritable.
-        ToObject(this).DefineOwnProperty___(P, {
-          configurable: true,
-          enumerable: true,
-          writable: true,
-          value: newValue
-        });
-      }
-    });
-    O[P + '_m___'] = false;
-    O[P + '_av___'] = O;
-  }
 
   /**
    * 9 Type Conversion and Testing
@@ -2658,7 +2545,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       }
       // webkit js debuggers rely on ambient Function.bind
       // http://code.google.com/p/chromium/issues/detail?id=145871
-      // TODO(kpreid): fixed since October 2012, try removing kludge
       if (!___.DISABLE_SECURITY_FOR_DEBUGGER) {
         throw new Error('Internal: toxic function encountered!\n' + value);
       }
@@ -2823,66 +2709,33 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    * 15 Standard Built-in ECMAScript Objects
    */
 
-  // In order to prevent guest code from messing with expectations of the ES5/3
-  // runtime and innocent code in the same frame, certain property names are
-  // globally prohibited from being modified by guest code; in order to emulate
-  // them, we define them as accessor properties, which are magically caused to
-  // resemble data properties using the _av___ flag.
-  var virtualizedProperties = {};
-  var virtualizedPropertiesFrozen = false;
-  function lookupVirtualizedProperty(name) {
-    var key = name + '$';
-    if (virtualizedProperties.hasOwnProperty(key)) {
-      return virtualizedProperties[key];
-    } else if (!virtualizedPropertiesFrozen) {
-      // Mark as not-virtualized-but-accessed so we know if we have bad
-      // bootstrap order.
-      virtualizedProperties[key] = false;
-      return undefined;
-    } else {
-      return undefined;
-    }
-  }
-
-  function virtualize(obj, name, opt_initialMethod, opt_setterHook) {
-    if (virtualizedPropertiesFrozen) {
-      throw new Error('Internal: virtualize() called late');
-    }
-
-    // Register globally as virtualized, and register the setter hook.
-    // TODO(kpreid): Might be worth a consistency check that we never create a
-    // non-virtualized property with a name later registered.
-    var key = name + '$';
-    if (virtualizedProperties.hasOwnProperty(key)) {
-      if (!virtualizedProperties[key]) {
-        throw new Error('Internal: virtualize() called after first mention ('
-            + obj + '.' + name + ')');
-      } else if (opt_setterHook) {
-        throw new Error('Internal: Only the first virtualize() may set a hook ('
-            + obj + '.' + name + ')');
-      } else {
-        // things are consistent; just don't overwrite the existing hook
-      }
-    } else {
-      virtualizedProperties[key] = {
-        opt_setterHook: opt_setterHook
-      };
-    }
-
-    // Now that the property is registered as virtualized, DefineOwnProperty___
-    // will create the necessary magic property format.
+  // Sets up a per-object getter and setter.  Necessary to prevent
+  // guest code from messing with expectations of host and innocent code.
+  // If innocent code needs access to the guest properties, explicitly tame
+  // it that way.
+  function virtualize(obj, name, fun) {
+    var vname = name + '_virt___';
+    obj[vname] = fun ? markFunc(fun) : obj[name] ? markFunc(obj[name]) : void 0;
     obj.DefineOwnProperty___(name, {
+        get: markFunc(function () {
+            return this[vname];
+          }),
+        set: markFunc(function (val) {
+            if (!isFunction(val)) {
+              notFunction(val);
+            }
+            if (isFrozen(this)) {
+              throw new TypeError('This object is frozen.');
+            }
+            if (!isExtensible(this) &&
+                !this.hasOwnProperty(vname)) {
+              throw new TypeError('This object is not extensible.');
+            }
+            this[vname] = asFirstClass(val);
+          }),
         enumerable: false,
-        configurable: false,
-        value: opt_initialMethod ? markFunc(opt_initialMethod) :
-            obj[name] ? markFunc(obj[name]) :
-            void 0,
-        doNotApplySetterHook___: true
+        configurable: false
       });
-  }
-
-  function virtualizeDone() {
-    virtualizedPropertiesFrozen = true;
   }
 
   // 15.1.3.1--4
@@ -3129,7 +2982,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         this.NUM____e___ = this;
         this.NUM____g___ = void 0;
         this.NUM____s___ = void 0;
-        this.NUM____av___ = false;
       }
       this.NUM____c___ = false;
       // 3. Set the [[Extensible]] internal property of this to false.
@@ -3161,7 +3013,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         obj[i + '_g___'] = void 0;
         obj[i + '_s___'] = void 0;
         obj[i + '_m___'] = false;
-        obj[i + '_av___'] = false;
         if (val && val.f___ === Function.prototype.f___) {
           // inline isFunction(val)
           if (classProp.call(val) === '[object Function]') {
@@ -3230,7 +3081,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         this.NUM____gw___ = this;
         this.NUM____w___ = this;
         this.NUM____m___ = false;
-        this.NUM____av___ = false;
       }
       this.ne___ = this;
       return this;
@@ -3311,33 +3161,49 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       if (this.CLASS___) { return '[object ' + this.CLASS___ + ']'; }
       return classProp.call(this);
     });
-  virtualize(Object.prototype, 'toString', undefined,
-      function toStringSetterHook(val) {
-        // TODO(kpreid): What invariants rest on ensuring the value is a
-        // function? I just copied this from the old virtualization
-        // implementation.
+  Object.prototype.DefineOwnProperty___('toString', {
+      get: markFunc(function () {
+        return this.toString.orig___ ? this.toString.orig___ : this.toString;
+      }),
+      set: markFunc(function (val) {
         if (!isFunction(val)) {
           notFunction(val);
         }
+        if (isFrozen(this)) {
+          throw new TypeError("Won't set toString on a frozen object.");
+        }
+        val = asFirstClass(val);
         this.toString = markFunc(function (var_args) {
             return val.f___(safeDis(this), arguments);
           });
-      });
+        this.toString.orig___ = val;
+      }),
+      enumerable: false,
+      configurable: false
+    });
 
   // 15.2.4.4
   markFunc(Object.prototype.valueOf);
-  virtualize(Object.prototype, 'valueOf', undefined,
-      function valueOfSetterHook(val) {
-        // TODO(kpreid): What invariants rest on ensuring the value is a
-        // function? I just copied this from the old virtualization
-        // implementation.
-        if (!isFunction(val)) {
-          notFunction(val);
-        }
-        this.valueOf = markFunc(function (var_args) {
-            return val.f___(safeDis(this), arguments);
-          });
-      });
+  Object.prototype.DefineOwnProperty___('valueOf', {
+      get: markFunc(function () {
+          return this.valueOf.orig___ ? this.valueOf.orig___ : this.valueOf;
+        }),
+      set: markFunc(function (val) {
+          if (!isFunction(val)) {
+            notFunction(val);
+          }
+          if (isFrozen(this)) {
+            throw new TypeError("Won't set valueOf on a frozen object.");
+          }
+          val = asFirstClass(val);
+          this.valueOf = markFunc(function (var_args) {
+              return val.f___(safeDis(this), arguments);
+            });
+          this.valueOf.orig___ = val;
+        }),
+      enumerable: false,
+      configurable: false
+    });
 
   // 15.2.4.5
   virtualize(Object.prototype, 'hasOwnProperty', function (P) {
@@ -3369,7 +3235,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
           return str;
         });
     })(Function.toString());
-  virtualize(FakeFunction, 'toString');
 
   // 15.3.1
   Function.f___ = FakeFunction.f___ = markFunc(function() {
@@ -3400,16 +3265,11 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   // 15.3.4.2
   (function () {
     var orig = Function.prototype.toString;
-    // TODO(kpreid): What purpose does this hook serve? toString___ does not
-    // occur elsewhere.
     Function.prototype.toString = markFunc(function () {
         if (this.toString___) { return this.toString___(); };
         return orig.call(this);
       });
-
-    // Cause to be visible as own property.
-    virtualize(Function.prototype, 'toString');
-  })();
+    })();
 
   // 15.3.4.3--5
   virtualize(Function.prototype, 'call', function (dis, var_args) {
@@ -3478,7 +3338,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
 
   // 15.4.4.2
   markFunc(Array.prototype.toString);
-  virtualize(Array.prototype, 'toString');
 
   // 15.4.4.3--6
   (function () {
@@ -3510,7 +3369,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
 
   function guardedVirtualize(obj, name) {
     var orig = obj[name];
-    virtualize(obj, name, function guardedArrayMethod(var_args) {
+    virtualize(obj, name, function (var_args) {
         if (!isExtensible(this)) {
           throw new TypeError("This object is not extensible.");
         }
@@ -3611,13 +3470,14 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   // - an optional object {@code thisp} to use as {@code this}
   // It wraps {@code block} in a function that invokes its taming.
   function createOrWrap(obj, name, fun) {
-    var implementation;
+    virtualize(obj, name);
+    var vname = name + '_virt___';
     if (!obj[name]) {
       // Create
-      implementation = fun;
+      obj[vname] = fun;
     } else {
       // Wrap
-      implementation = (function (orig) {
+      obj[vname] = (function (orig) {
           return function (block) { //, thisp
               // We have to create a copy of arguments because
               // modifying arguments[0] breaks lexical scoping.
@@ -3632,8 +3492,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
             };
         })(obj[name]);
     }
-    markFunc(implementation);
-    virtualize(obj, name, implementation);
+    markFunc(obj[vname]);
   }
 
   // 15.4.4.16
@@ -3790,11 +3649,9 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
 
   // 15.5.4.2
   markFunc(String.prototype.toString);
-  virtualize(String.prototype, 'toString');
 
   // 15.5.4.3
   markFunc(String.prototype.valueOf);
-  virtualize(String.prototype, 'valueOf');
 
   // 15.5.4.4--9, 13, 15--20
   // and the nonstandard but universally implemented substr.
@@ -3915,11 +3772,9 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
 
     // 15.6.4.2
     markFunc(Boolean.prototype.toString);
-    virtualize(Boolean.prototype, 'toString');
 
     // 15.6.4.3
     markFunc(Boolean.prototype.valueOf);
-    virtualize(Boolean.prototype, 'valueOf');
 
   // 15.7 Number
 
@@ -3957,11 +3812,9 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
 
   // 15.7.4.2
   markFunc(Number.prototype.toString);
-  virtualize(Number.prototype, 'toString');
 
   // 15.7.4.4
   markFunc(Number.prototype.valueOf);
-  virtualize(Number.prototype, 'valueOf');
 
   // 15.7.4.3, 5--7
   (function (){
@@ -4066,11 +3919,9 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
 
   // 15.9.5.2
   markFunc(Date.prototype.toString);
-  virtualize(Date.prototype, 'toString');
 
   // 15.9.5.8
   markFunc(Date.prototype.valueOf);
-  virtualize(Date.prototype, 'valueOf');
 
   // 15.9.5.3--7, 9--44
   (function () {
@@ -4270,7 +4121,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
 
   // 15.11.4.4
   markFunc(Error.prototype.toString);
-  virtualize(Error.prototype, 'toString');
 
   // 15.11.6
   markFunc(EvalError);
@@ -4279,9 +4129,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   markFunc(SyntaxError);
   markFunc(TypeError);
   markFunc(URIError);
-
-  // Indicate that we are done mutating the set of virtualized property names.
-  virtualizeDone();
 
   ////////////////////////////////////////////////////////////////////////
   // ArrayLike
@@ -4984,7 +4831,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
               proxy[P + '_m___'] = false;
               proxy[P + '_g___'] = void 0;
               proxy[P + '_s___'] = void 0;
-              proxy[P + '_av___'] = false;
             }
           }
           prepareProxy(proxy, handler);
@@ -5032,7 +4878,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
             proxy[P + '_m___'] = false;
             proxy[P + '_g___'] = void 0;
             proxy[P + '_s___'] = void 0;
-            proxy[P + '_av___'] = false;
           }
           prepareProxy(proxy, handler);
           proxy.new___ = function (var_args) {
@@ -5265,8 +5110,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         || /_e___$/ .test(name)
         || /_g___$/ .test(name)
         || /_s___$/ .test(name)
-        || /_m___$/ .test(name)
-        || /_av___$/.test(name);
+        || /_m___$/ .test(name);
   }
 
   function copyToImports(imports, source) {
@@ -5274,8 +5118,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       if (source.hasOwnProperty(p)) {
         if (/__$/.test(p)) {
           if (!isFlag(p)) {
-            // Caja hidden property on IMPORTS -- these are used by the
-            // interface from cajoled HTML modules to Domado.
+            // Caja hidden property on IMPORTS -- these are used by Domita
             imports[p] = source[p];
           }
         } else if (isNumericName(p)) {
@@ -5368,8 +5211,8 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
 
   // *********************************************************************
   // * Cajita Taming API
-  // * Reproduced here for Shindig's use; new tamings should be done with
-  // * the ES5 API.
+  // * Reproduced here for Domita's and Shindig's use; new
+  // * tamings should be done with the ES5 API.
   // *********************************************************************
 
   function grantFunc(obj, name) {

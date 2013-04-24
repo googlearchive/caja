@@ -14,7 +14,9 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.js.CatchStmt;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
@@ -29,7 +31,6 @@ import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.TryStmt;
-
 import java.util.Map;
 
 /**
@@ -226,23 +227,62 @@ class SyntheticRuleSet {
     new Rule() {
       @Override
       @RuleDescription(
-          name="syntheticFnDeclaration",
-          synopsis="Allow declaration of synthetic functions.",
-          reason="Synthetic functions allow generated code to avoid introducing"
-              + " unnecessary scopes.",
-          matches="/* synthetic */ function @i?(@actuals*) { @body* }",
-          substitutes="<expanded>")
+          name="syntheticFnConstructor",
+          synopsis="Allow synthetic function constructors.",
+          reason="Used by the HTML event handler rewriter."
+          + "All this does is avoid a redundant call to ___.f()",
+          // TODO(felix8a): synthetic func annotation is hazardous and useless,
+          // we should just get rid of it.
+          matches="/* synthetic */ function (@args*) { @body* }",
+          matchNode=FunctionConstructor.class,
+          substitutes="function (@args*) { @fh*; @ss*; @bs*; }")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
-        FunctionConstructor ctor = node instanceof FunctionDeclaration
-            ? ((FunctionDeclaration) node).getInitializer()
-            : (FunctionConstructor) node;
-        if (isSynthetic(ctor)) {
-          Scope newScope = Scope.fromFunctionConstructor(scope, ctor);
-          ParseTreeNode result = expandAll(node, newScope);
-          for (Statement s : newScope.getStartStatements()) {
-            scope.addStartStatement(s);
+        if (node instanceof FunctionConstructor) {
+          FunctionConstructor ctor = (FunctionConstructor) node;
+          if (isSynthetic(ctor)) {
+            Scope s2 = Scope.fromFunctionConstructor(scope, ctor);
+            ParseTreeNodeContainer args = new ParseTreeNodeContainer(
+                ctor.getParams());
+            checkFormals(args);
+            ParseTreeNode result = substV(
+                "args", rw.noexpandParams(args),
+                // It's important to expand bs before computing fh and ss
+                "bs", withoutNoops(expandAll(ctor.getBody(), s2)),
+                "fh", ES53Rewriter.getFunctionHeadDeclarations(s2),
+                "ss", new ParseTreeNodeContainer(s2.getStartStatements()));
+            return result;
           }
-          return result;
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="syntheticFnDeclaration",
+          synopsis="Disallow synthetic function declarations.",
+          reason="Not used",
+          matches="/* synthetic */ function @fn(@args*) { @body* }",
+          matchNode=FunctionDeclaration.class,
+          substitutes="function @fn(@args*) { @fh*; @ss*; @bs*; }")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
+        if (node instanceof FunctionDeclaration) {
+          FunctionDeclaration decl = (FunctionDeclaration) node;
+          FunctionConstructor ctor = decl.getInitializer();
+          if (isSynthetic(ctor)) {
+            throw new SomethingWidgyHappenedError("synthetic fn decl");
+            /*
+             * There used to be logic that hoisted locals from the synthetic
+             * function's scope into the parent scope. I can't of any
+             * situation where that's the right thing to do.
+             *
+             * It's not really clear to me what this should actually do,
+             * but it turns out this isn't useful, so I'm just disabling
+             * it until someone finds a use for it or deletes it fully.
+             * TODO(felix8a): finish ripping out synthetic func annotation.
+             */
+          }
         }
         return NONE;
       }

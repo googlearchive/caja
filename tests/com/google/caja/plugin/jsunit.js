@@ -300,24 +300,13 @@ function obtainResultDiv(id, opt_idClass) {
 
 /** Aim high and you might miss the moon! */
 function expectFailure(shouldFail, opt_msg, opt_failFilter) {
-  if (typeof shouldFail !== 'function') {
-    // Avoid falsely failing expectedly by accidentally passing a non-function
-    // and no filter.
-    throw new TypeError('Non-function given as shouldFail to expectFailure: ' +
-        shouldFail);
-  }
   try {
     shouldFail();
   } catch (e) {
-    if (opt_failFilter && !opt_failFilter(e)) {
-      console.log(opt_msg + ': Caught unexpected failure ' + e + ' (' +
-          e.message + ')');
-      throw e;
-    } else {
-      console.log(opt_msg + ': Caught expected failure ' + e + ' (' + e.message
-          + ')');
-      return;
-    }
+    if (opt_failFilter && !opt_failFilter(e)) { throw e; }
+    console.log(
+        'Caught expected failure ' + e + ' (' + e.message + ')');
+    return;
   }
   fail(opt_msg || 'Expected failure');
 }

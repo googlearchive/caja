@@ -26,8 +26,7 @@
  * @author jasvir@gmail.com
  * @provides HtmlEmitter
  * @overrides window
- * @requires bridalMaker html htmlSchema cajaVM URI Q
- * @requires sanitizeStylesheetWithExternals
+ * @requires bridalMaker html htmlSchema cajaVM sanitizeStylesheet URI Q
  * @overrides window
  */
 
@@ -446,44 +445,20 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       }
     }
 
-    function makeCssUriHandler(baseUri, method, mime) {
+    function makeCssUriSanitizer(baseUri) {
       return function(uri, prop) {
-          return (domicile && domicile[method])
-              ? domicile[method](URI.utils.resolve(baseUri, uri), mime, prop)
+          return (domicile && domicile.cssUri)
+              ? domicile.cssUri(URI.utils.resolve(baseUri, uri), 'image/*', prop)
               : void 0;
       };
     }
 
-    function makeCssUriSanitizer(baseUri) {
-      return makeCssUriHandler(baseUri, 'cssUri', 'image/*');
-    }
-
-    function makeCssUriFetcher(baseUri) {
-      return makeCssUriHandler(baseUri, 'fetchUri', 'text/css');
-    }
-
     function defineUntrustedStylesheet(styleBaseUri, cssText) {
-      var safeCss = [];
-      var safeInlineCss;
-      function continuation(sanitizeStyle, moreToCome) {
-        safeCss.push(sanitizeStyle);
-        if (!moreToCome) {
-          domicile.emitCss(
-            safeCss.join(' ') + ' ' + safeInlineCss);
-        }
-      }
       if (domicile && domicile.emitCss) {
-        var sanitized = sanitizeStylesheetWithExternals(styleBaseUri,
+        domicile.emitCss(sanitizeStylesheet(styleBaseUri,
             cssText, domicile.suffixStr.replace(/^-/, ''),
             makeCssUriSanitizer(styleBaseUri),
-            makeCssUriFetcher(styleBaseUri),
-            domicile.tagPolicy,
-            continuation);
-        if (!sanitized.moreToCome) {
-          domicile.emitCss(sanitized.result);
-        } else {
-          safeInlineCss = sanitized.result;
-        }
+            domicile.tagPolicy));
       }
     }
 

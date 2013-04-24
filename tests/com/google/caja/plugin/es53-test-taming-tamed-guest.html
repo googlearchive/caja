@@ -157,12 +157,9 @@
       assertTrue(
           'Passed undefined to checkFrozen ' + path,
           o !== undefined);
-      if (Object(o) === o) {  // primitive.foo= generates unfrozen wrappers
-        expectFailure(
-            function() { o.foo = 'bar'; },
-            'Is not frozen: ' + path);
-        assertNotEquals('Mutated: ' + path, 'bar', o.foo);
-      }
+      expectFailure(
+          'Is not frozen: ' + path,
+          function() { o.foo = 'bar'; });
     };
 
     var check = function(path, o) {
@@ -182,9 +179,6 @@
         }
         if (d.get) {
           checkFrozen(path + '.' + p + ' (get)', d.get);
-          if (p !== 'caller' && p !== 'callee' && p !== 'arguments') {
-            checkFrozen(path + '.' + p + ' (gotten)', d.get.call(o));
-          }
           foundGet = true;
         }
         if (d.set) {
@@ -199,10 +193,8 @@
     });
 
     assertTrue('Did not find and check a primordial value', foundValue);
-    if (inES5Mode) {  // ES5/3 does not visibly use any accessors
-      assertTrue('Did not find and check a primordial getter', foundGet);
-      assertTrue('Did not find and check a primordial setter', foundSet);
-    }
+    assertTrue('Did not find and check a primordial getter', foundGet);
+    assertTrue('Did not find and check a primordial setter', foundSet);
 
     pass('testTamingFramePrimordialsAreFrozen');
   });

@@ -872,7 +872,7 @@ public class ES53ConformanceTest extends RewriterTestCase {
     StringBuilder es5Harness = new StringBuilder();
     es5Harness.append("testImports.w___('ES5Harness', ___.iM(['registerTest',")
               .append("    ___.markFunc(function(test) {")
-              .append("  if (!test.v___('test').f___(null,[])) {")
+              .append("  if (!test.test.f___(null,[])) {")
               .append("    throw new Error(test.description);")
               .append("  }")
               .append("})]));")

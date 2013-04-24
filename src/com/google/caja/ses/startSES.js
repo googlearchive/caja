@@ -307,14 +307,6 @@ ses.startSES = function(global,
     return freeze(func);
   }
 
-  /**
-   * Obtain the ES5 singleton [[ThrowTypeError]].
-   */
-  function getThrowTypeError() {
-    "use strict";
-    return Object.getOwnPropertyDescriptor(getThrowTypeError, "arguments").get;
-  }
-
 
   function fail(str) {
     debugger;
@@ -1177,14 +1169,6 @@ ses.startSES = function(global,
       // comments below.
       //es5ProblemReports: ses.es5ProblemReports
     };
-
-    // Inserted here to make this ES5 singleton object controllable by our
-    // whitelist, not to make it part of our public API.
-    defProp(cajaVM, '[[ThrowTypeError]]', {
-      enumerable: false,
-      value: getThrowTypeError()
-    });
-
     var extensionsRecord = extensions();
     gopn(extensionsRecord).forEach(function (p) {
       defProp(cajaVM, p,
@@ -1198,29 +1182,17 @@ ses.startSES = function(global,
   })();
 
   var propertyReports = {};
-  var rootReports = {};
-
-  function reportItemProblem(table, severity, status, path) {
-    ses.updateMaxSeverity(severity);
-    var group = table[status] || (table[status] = {
-      severity: severity,
-      list: []
-    });
-    group.list.push(path);
-  }
-
-  function logReports(table) {
-    keys(table).sort().forEach(function(status) {
-      var group = table[status];
-      ses.logger.reportDiagnosis(group.severity, status, group.list);
-    });
-  }
 
   /**
    * Report how a property manipulation went.
    */
   function reportProperty(severity, status, path) {
-    reportItemProblem(propertyReports, severity, status, path);
+    ses.updateMaxSeverity(severity);
+    var group = propertyReports[status] || (propertyReports[status] = {
+      severity: severity,
+      list: []
+    });
+    group.list.push(path);
   }
 
   /**
@@ -1486,40 +1458,16 @@ ses.startSES = function(global,
   // 'recursively JSON', or a non-warning 'skip')?
   cajaVM.es5ProblemReports = ses.es5ProblemReports;
 
-  // This protection is now gathered here, so that a future version
-  // can skip it for non-defensive frames that must only be confined.
+  /**
+   * This protection is now gathered here, so that a future version
+   * can skip it for non-defensive frames that must only be confined.
+   */
   cajaVM.def(sharedImports);
 
-  // The following objects are ambiently available via language constructs, and
-  // therefore if we did not clean and defend them we have a problem. This is
-  // defense against mistakes in modifying the whitelist, not against browser
-  // bugs.
-  [
-    ['sharedImports', sharedImports],
-    ['[[ThrowTypeError]]', getThrowTypeError()],  // function literals
-    ['Array.prototype', Array.prototype],  // [], gOPN etc.
-    ['Boolean.prototype', Boolean.prototype],  // false, true
-    ['Function.prototype', Function.prototype],  // function(){}
-    ['Number.prototype', Number.prototype],  // 1, 2
-    ['Object.prototype', Object.prototype],  // {}, gOPD
-    ['RegExp.prototype', RegExp.prototype],  // /.../
-    ['String.prototype', String.prototype]  // "..."
-    // TODO(kpreid): Is this list complete?
-  ].forEach(function(record) {
-    var name = record[0];
-    var root = record[1];
-    if (!cleaning.has(root)) {
-      reportItemProblem(rootReports, ses.severities.NOT_ISOLATED,
-          'Not cleaned', name);
-    }
-    if (!Object.isFrozen(root)) {
-      reportItemProblem(rootReports, ses.severities.NOT_ISOLATED,
-          'Not frozen', name);
-    }
+  keys(propertyReports).sort().forEach(function(status) {
+    var group = propertyReports[status];
+    ses.logger.reportDiagnosis(group.severity, status, group.list);
   });
-
-  logReports(propertyReports);
-  logReports(rootReports);
 
   // This repair cannot be fully tested until after Object.prototype is frozen.
   // TODO(kpreid): Less one-off kludge for this one problem -- or, once the
