@@ -1216,7 +1216,7 @@ var Domado = (function() {
       if (!prototypeNames.has(safeCtor.prototype)) {
         prototypeNames.set(safeCtor.prototype, name);
       }
-    }
+    };
 
     this.defAllAndFinish = function defAllAndFinish() {
       for (var name in safeCtors) {
@@ -1275,7 +1275,7 @@ var Domado = (function() {
    * @return A record of functions attachDocument, dispatchEvent, and
    *     dispatchToHandler.
    */
-  return cajaVM.constFunc(function Domado(opt_rulebreaker) {
+  return cajaVM.constFunc(function Domado_(opt_rulebreaker) {
     // Everything in this scope but not in function attachDocument() below
     // does not contain lexical references to a particular DOM instance, but
     // may have some kind of privileged access to Domado internals.

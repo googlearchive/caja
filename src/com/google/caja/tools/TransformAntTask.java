@@ -82,7 +82,7 @@ public class TransformAntTask extends AbstractCajaAntTask {
 
     if ("jslint".equals(options.get("language"))) {
       try {
-        return new Linter().build(jsLintInputs(), depends, null, output);
+        return new Linter().build(jsLintInputs(), depends, options, output);
       } catch (IOException e) {
         throw new BuildException(e);
       }

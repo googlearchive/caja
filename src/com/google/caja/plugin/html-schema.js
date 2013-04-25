@@ -25,7 +25,7 @@
 var HtmlSchema = (function() {
   'use strict';
 
-  function HtmlSchema(html4) {
+  function HtmlSchema_(html4) {
     var ELEMENTS = html4.ELEMENTS;
     var ELEMENT_DOM_INTERFACES = html4.ELEMENT_DOM_INTERFACES;
     var ATTRIBS = html4.ATTRIBS;
@@ -185,7 +185,7 @@ var HtmlSchema = (function() {
     return htmlSchema;
   }
 
-  return HtmlSchema;
+  return HtmlSchema_;
 })();
 
 // TODO(kpreid): Refactor this into parameters.

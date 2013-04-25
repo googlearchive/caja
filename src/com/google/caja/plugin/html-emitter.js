@@ -1080,7 +1080,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
      * Given that attach() has updated the insertionPoint, change the
      * insertionMode to a suitable value.
      */
-    updateInsertionMode = function updateInsertionMode() {
+    updateInsertionMode = function updateInsertionMode_() {
       // Note: This algorithm was made from scratch and does NOT reflect the
       // HTML5 specification.
       if (insertionPoint === base) {
@@ -1114,7 +1114,7 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
       }
     };
 
-    notifyEOF = function notifyEOF() {
+    notifyEOF = function notifyEOF_() {
       if (insertionPoint) {
         // Act on HTML5 "end-of-file token".
         insertionMode.endOfFile();

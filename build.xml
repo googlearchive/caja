@@ -863,7 +863,7 @@ For help on building and testing Caja, see:
   <target name="CajoledDomado" depends="pluginc">
     <transform>
       <output file="${lib}/domado.jslint.stamp"
-       language="jslint"/>
+       language="jslint" ignore="UNCAUGHT_THROW_DURING_INIT"/>
       <output file="${lib.caja}/plugin/domado.out.js"
        language="caja" renderer="pretty"/>
       <input file="${src.caja}/plugin/uri.js"/>
@@ -908,7 +908,7 @@ For help on building and testing Caja, see:
     </transform>
     <transform>
       <output file="${lib}/html-sanitizer.jslint.stamp"
-        language="jslint"/>
+        language="jslint" ignore="UNCAUGHT_THROW_DURING_INIT"/>
       <output file="${lib.caja}/plugin/html-sanitizer-minified.js"
         language="closure"/>
       <output file="${lib.caja}/plugin/html-sanitizer-bundle.js"
@@ -943,7 +943,8 @@ For help on building and testing Caja, see:
        language="closure"/>
       -->
       <output file="${lib.caja}/plugin/es53-taming-frame.opt.js"
-       language="javascript" renderer="minify"/>
+       language="javascript" renderer="minify" ignore="MAYBE_MISSING_SEMI"/>
+       <!-- warning ignored from including minified files -->
       <output file="${lib.caja}/plugin/es53-taming-frame.js"
        language="javascript" renderer="concat"/>
       <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
@@ -1033,7 +1034,9 @@ For help on building and testing Caja, see:
       -->
       <output file="${lib}/utility-frame.jslint.stamp" language="jslint"/>
       <output file="${lib.caja}/plugin/utility-frame.opt.js"
-       language="javascript" renderer="minify"/>
+       language="javascript" renderer="minify"
+       ignore="AMBIGUOUS_ESCAPE_SEQUENCE"/>
+       <!-- ignore warnings from third-party code -->
       <output file="${lib.caja}/plugin/utility-frame.js"
        language="javascript" renderer="concat"/>
       <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
@@ -1049,7 +1052,7 @@ For help on building and testing Caja, see:
       <!-- ses-single-frame: Used by caja.js when the browser is SES-capable.
       -->
       <output file="${lib}/ses-single-frame.jslint.stamp"
-       language="jslint"/>
+       language="jslint" ignore="UNCAUGHT_THROW_DURING_INIT"/>
       <!-- TODO(felix8a): closure cleanup
       <output file="${lib.caja}/plugin/ses-single-frame.clo.js"
        language="closure"/>
@@ -1491,7 +1494,8 @@ For help on building and testing Caja, see:
     <transform>
       <input file="${third_party}/js/swfobject/src/swfobject.js"/>
       <output file="${war}/swfobject.opt.js"
-              language="javascript" renderer="minify"/>
+              language="javascript" renderer="minify"
+              ignore="AMBIGUOUS_ESCAPE_SEQUENCE"/>
     </transform>
 
     <copy todir="${war}/sunspider">

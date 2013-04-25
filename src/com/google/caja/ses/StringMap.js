@@ -45,9 +45,9 @@ var StringMap;
        .beforeFailure) {
      // Object.create(null) is broken; fall back to ES3-style implementation
      // (safe because we suffix keys anyway).
-     createNull = function() { return {}; }
+     createNull = function() { return {}; };
    } else {
-     createNull = function() { return Object.create(null); }
+     createNull = function() { return Object.create(null); };
    }
 
    StringMap = function StringMap() {
