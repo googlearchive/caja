@@ -34,4 +34,10 @@ public class Es5BrowserTest extends UniversalBrowserTests {
   public void testCssImports() throws Exception {
     runTestCase("es53-test-css-imports-guest.html", true);
   }
+
+  public void testCompareModes() throws Exception {
+    // Does not use mode flag, not specific to one mode.
+    // However, requires SES compatibility, so has been put here.
+    runTestDriver("es53-test-compare-modes.js", true);
+  }
 }

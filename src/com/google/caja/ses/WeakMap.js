@@ -499,7 +499,14 @@ var WeakMap;
       }
       DoubleWeakMap.prototype = OurWeakMap.prototype;
       WeakMap = DoubleWeakMap;
-      WeakMap.prototype.constructor = WeakMap;  // hides OurWeakMap
+
+      // define .constructor to hide OurWeakMap ctor
+      Object.defineProperty(WeakMap.prototype, 'constructor', {
+        value: WeakMap,
+        enumerable: false,  // as default .constructor is
+        configurable: true,
+        writable: true
+      });
     })();
   } else {
     WeakMap = OurWeakMap;

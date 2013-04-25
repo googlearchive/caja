@@ -49,6 +49,7 @@
      + '&cajajs=/caja/testing/skew-0000/caja.js', 'es53'],
     ['es53-test-cajajs-version-skew-js-files.js'],
     ['es53-test-client-uri-rewriting.js'],
+    ['es53-test-compare-modes.js', 'es5'],
     ['es53-test-container-overflow.js'],
     ['es53-test-custom-cajoling-service-client.js', 'es53'],
     ['es53-test-defensible-objects.js'],

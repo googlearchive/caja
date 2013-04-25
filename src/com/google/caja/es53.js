@@ -5512,6 +5512,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       enforce: enforce,
       enforceType: enforceType,
       enforceNat: enforceNat,
+      Nat: enforceNat,  // newer name invented for SES
 
       // Object indistinguishability
       Token: Token,
@@ -5531,6 +5532,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       makeSealerUnsealerPair: makeSealerUnsealerPair,
 
       // Defensible objects
+      tamperProof: freeze,
       constFunc: constFunc,
       def: def,
 
