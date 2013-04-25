@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -71,8 +72,11 @@ public class CajolingService {
           public FetchedData fetch(ExternalReference ref, String mimeType)
               throws UriFetchException {
             try {
-              return FetchedData.fromConnection(
-                  ref.getUri().toURL().openConnection());
+              HttpURLConnection conn = (HttpURLConnection)
+                  ref.getUri().toURL().openConnection();
+              // appengine has a caching http proxy; this limits it
+              conn.setRequestProperty("Cache-Control", "max-age=10");
+              return FetchedData.fromConnection(conn);
             } catch (IOException ex) {
               throw new UriFetchException(ref, mimeType, ex);
             }
@@ -139,7 +143,7 @@ public class CajolingService {
           BuildInfo.getInstance().getBuildVersion().equals(buildVersion);
       String majorCajaVersion =
           BuildInfo.getInstance().getBuildVersion().split("[mM]")[0];
-      String majorReqVersion = 
+      String majorReqVersion =
           buildVersion.split("[mM]")[0];
       boolean majorVersionMatch = majorCajaVersion.equals(majorReqVersion);
       if (!versionMatch) {
