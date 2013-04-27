@@ -730,6 +730,20 @@ For help on building and testing Caja, see:
     <jar destfile="${jars}/pluginc-src.jar" basedir="${src}"/>
   </target>
 
+  <!-- Suppress lint/warnings we can't fix. Some of these might be
+       fixable, so use -Djquery.cajole.ignore='' to see them all. -->
+  <property name="jquery.cajole.ignore"
+      value="DISALLOWED_ATTRIBUTE_VALUE \
+             DISALLOWED_URI \
+             FAILED_TO_LOAD_EXTERNAL_URL \
+             MALFORMED_CSS_PROPERTY_VALUE \
+             MASKING_SYMBOL \
+             SEMICOLON_INSERTED \
+             TOP_LEVEL_FUNC_INCOMPATIBLE_WITH_CAJA \
+             UNSAFE_ATTRIBUTE \
+             UNSAFE_CSS_PROPERTY \
+             UNSAFE_CSS_PSEUDO_SELECTOR"/>
+
   <macrodef name="JQueryTestCase">
     <attribute name="testcase" />
     <sequential>
@@ -746,6 +760,7 @@ For help on building and testing Caja, see:
             <output file="${testlib}/js/jqueryjs/test/@{testcase}-cajoled.js"
                     onlyJsEmitted="true"
                     language="caja"
+                    ignore="${jquery.cajole.ignore}"
                     canLink="http://simon.incutio.com/archive/2003/03/25#getElementsBySelector \
                            http://www.google.com/ \
                            http://groups.google.com/ \
