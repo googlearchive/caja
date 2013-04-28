@@ -357,6 +357,7 @@ For help on building and testing Caja, see:
   </target>
 
   <target name="RuntestsTypoCheck">
+    <depend closure="yes" destdir="${testlib}" srcdir="${tests}"/>
     <javac destdir="${testlib}" debug="true" target="1.5" source="1.5">
       <src path="${tests}"/>
       <classpath refid="classpath.tests"/>
@@ -512,6 +513,7 @@ For help on building and testing Caja, see:
 
   <target name="tools" depends="PluginCompiler">
     <!-- Now that we have the compiler, build ant task wrappers -->
+    <depend closure="yes" destdir="${lib}" srcdir="${src}" />
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.main"/>
@@ -559,6 +561,7 @@ For help on building and testing Caja, see:
 
   <target name="pluginc" depends="tools"
    description="Build the plugin compiler and other main classes">
+    <depend closure="yes" destdir="${lib}" srcdir="${src}" />
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.main"/>
@@ -577,6 +580,7 @@ For help on building and testing Caja, see:
         <include name="**/caja/lang/*/*.json"/>
       </fileset>
     </copy>
+    <depend closure="yes" destdir="${lib}" srcdir="${src}" />
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.main"/>
@@ -650,6 +654,7 @@ For help on building and testing Caja, see:
       </fileset>
     </copy>
     <mkdir dir="${reports}/benchmarks"/>
+    <depend closure="yes" destdir="${lib}" srcdir="${tests}" />
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${tests}"/>
       <classpath refid="classpath.tests"/>
@@ -1153,6 +1158,7 @@ For help on building and testing Caja, see:
   </target>
 
   <target name="AllTests" depends="CajoledTests,CajolingServlet,PlaygroundBE,PlaygroundSupportingFiles,precajole-light">
+    <depend closure="yes" destdir="${testlib}" srcdir="${tests}" />
     <javac destdir="${testlib}" debug="true" target="1.5" source="1.5">
       <src path="${tests}"/>
       <!-- TODO(felix8a): delete sourcepath when orphans cleaned up -->
@@ -1269,6 +1275,7 @@ For help on building and testing Caja, see:
   </target>
 
   <target name="RuleDoclet" depends="HtmlParser">
+    <depend closure="yes" destdir="${lib}" srcdir="${src}" />
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.main"/>
@@ -1281,6 +1288,10 @@ For help on building and testing Caja, see:
   </target>
 
   <target name="PluginCompiler" depends="build.info, HtmlParser">
+    <!-- closure="yes" is necessary because we aren't applying
+         javac to **/*.java. TODO(felix8a): combine our javac
+         rules into to a single rule that compiles everything -->
+    <depend closure="yes" destdir="${lib}" srcdir="${src}" />
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.main"/>
@@ -1329,6 +1340,7 @@ For help on building and testing Caja, see:
 
   <!-- Builds the cajoling service. -->
   <target name="CajolingServlet" depends="HtmlParser">
+    <depend closure="yes" destdir="${lib}" srcdir="${src}" />
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.main"/>
@@ -1355,6 +1367,7 @@ For help on building and testing Caja, see:
         else="com.google.caja.demos.playground.Playground">
       <istrue value="${gwt.devground}"/>
     </condition>
+    <depend closure="yes" destdir="${gwtlib}" srcdir="${src}" />
     <javac destdir="${gwtlib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath>
@@ -1589,6 +1602,7 @@ For help on building and testing Caja, see:
         <include name="com/**" />
       </fileset>
     </copy>
+    <depend closure="yes" destdir="${war}/WEB-INF/classes" srcdir="${src}" />
     <javac destdir="${war}/WEB-INF/classes" debug="true">
       <src path="${src}"/>
       <classpath refid="classpath.main"/>
@@ -1596,6 +1610,7 @@ For help on building and testing Caja, see:
       <include name="**/caja/demos/playground/server/*.java"/>
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
+    <depend closure="yes" destdir="${lib}" srcdir="${src}" />
     <javac destdir="${lib}" debug="true">
       <src path="${src}"/>
       <classpath refid="classpath.main"/>
@@ -1677,6 +1692,8 @@ For help on building and testing Caja, see:
   </target>
 
   <target name="HtmlParser" depends="dirs">
+    <depend closure="yes" destdir="${third_party}/java/htmlparser/lib"
+     srcdir="${third_party}/java/htmlparser/src" />
     <javac destdir="${third_party}/java/htmlparser/lib" debug="true"
      target="1.5" source="1.5">
       <src path="${third_party}/java/htmlparser/src"/>

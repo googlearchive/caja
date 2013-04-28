@@ -108,18 +108,7 @@ public final class TestSummary extends Task {
         String className = testCase.getAttribute("classname");
         String methodName = testCase.getAttribute("name");
 
-        Method method;
-        try {
-          Class<?> testClass = Class.forName(className);
-          method = testClass.getMethod(methodName, new Class[0]);
-        } catch (ClassNotFoundException ex) {
-          throw new BuildException("Cannot find class " + className, ex);
-        } catch (NoSuchMethodException ex) {
-          throw new BuildException(
-              "Cannot find method " + methodName + " of " + className, ex);
-        }
-        boolean isFailureExpected = method.isAnnotationPresent(
-            FailureIsAnOption.class);
+        boolean isFailureExpected = hasFailAnnotation(className, methodName);
         boolean isFailureAllowed = isFailureAnOptionOverride &&
             isFailureExpected;
 
@@ -187,6 +176,22 @@ public final class TestSummary extends Task {
           + ", Expected Failures: " + expectedFailures,
           Project.MSG_WARN);
     }
+  }
+
+  private boolean hasFailAnnotation(String className, String methodName) {
+    Method method;
+    try {
+      Class<?> testClass = Class.forName(className);
+      method = testClass.getMethod(methodName, new Class[0]);
+    } catch (ClassNotFoundException ex) {
+      log("Cannot find class " + className, Project.MSG_WARN);
+      return false;
+    } catch (NoSuchMethodException ex) {
+      log("Cannot find method " + methodName + " of " + className,
+          Project.MSG_WARN);
+      return false;
+    }
+    return method.isAnnotationPresent(FailureIsAnOption.class);
   }
 
   private void hero(String className, String testName) {
