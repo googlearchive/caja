@@ -1,0 +1,123 @@
+#!/usr/bin/env python
+
+"""\
+
+    multitest [$testconf | --list $conflist] ...
+
+    Run multiple browser test configs.  multitest understands two
+    types of arguments:
+
+    1.  A testconf is a file that specifies properties passed to
+        'ant'. Some properties are also meaningful to this
+        script. See test_example.conf for more details.
+
+    2.  A conflist is a file that contains a list of testconf
+        filenames, one per line.
+
+        A command arg preceded by '--list' is a conflist.
+
+        A command arg that ends with the suffix '.list' is also a
+        conflist.
+
+        In a conflist, #comments and blank lines are ignored.
+
+        testconf filenames in a conflist are relative to the
+        conflist's location, not the current directory.
+
+"""
+
+
+import os, re, shlex, subprocess, sys
+import pipes
+from cStringIO import StringIO
+from ConfigParser import RawConfigParser
+
+def main(args):
+    i = 0
+    while i < len(args):
+        if args[i] == '--list' or args[i] == '-l':
+            doList(args[i + 1])
+            i += 2
+        elif args[i].endswith('.list'):
+            doList(args[i])
+            i += 1
+        else:
+            doConf(args[i])
+            i += 1
+
+def doList(listname):
+    parent = os.path.dirname(listname)
+    with file(listname) as f:
+        for line in f:
+            line = line.strip()
+            if line != '' and not line.startswith('#'):
+                confname = os.path.join(parent, line)
+                sys.stderr.write('# ' + confname + '\n')
+                doConf(confname)
+
+def doConf(confname):
+    conf = readConf(confname)
+    if needToStartWebdriver(conf):
+        withWebdriver(confname, conf)
+    else:
+        runAnt(confname, conf)
+
+def needToStartWebdriver(conf):
+    return ((conf.get('test.webdriver.command')
+             or conf.get('test.webdriver.host'))
+            and not conf.get('test.webdriver.url')
+            and not os.getenv('WEBDRIVER_URL'))
+
+def withWebdriver(confname, conf):
+    raise 'TODO(felix8a): reliable withWebdriver'
+    mydir = os.path.dirname(sys.argv[0])
+    wwd = os.path.join(mydir, 'with_webdriver')
+    cmd = [wwd, confname, sys.argv[0], confname]
+    cmdEcho(cmd)
+    subprocess.call(cmd)
+
+def runAnt(confname, conf):
+    cmd = ['ant']
+    cmd += ['-propertyfile', confname]
+
+    # commandline arg -Dfoo always overrides -propertyfile, so
+    # don't use -D for props that are in the propertyfile.
+
+    cmd += defaultProp(conf, 'test.browser.close', 'true')
+    cmd += defaultProp(conf, 'test.threads', '1')
+    cmd += defaultProp(conf, 'test.type', testType(confname))
+
+    if os.getenv('WEBDRIVER_URL'):
+        cmd += ['-Dtest.webdriver.url=' + os.getenv('WEBDRIVER_URL')]
+
+    cmd += shlex.split(conf.get('test.ant.flags', ''))
+    cmd += shlex.split(conf.get('test.ant.targets', 'brtest'))
+
+    cmdEcho(cmd)
+    subprocess.call(cmd)
+
+def defaultProp(conf, name, value):
+    if conf.get(name):
+        return []
+    else:
+        return ['-D' + name + '=' + value]
+
+def testType(confname):
+    name, ext = os.path.splitext(os.path.basename(confname))
+    return name
+
+def cmdEcho(cmd):
+    f = sys.stderr
+    f.write('+ ')
+    f.write(' '.join([pipes.quote(word) for word in cmd]))
+    f.write('\n')
+
+def readConf(confname):
+    with file(confname) as f:
+        sbuf = StringIO('[section1]\n' + f.read())
+        parser = RawConfigParser()
+        parser.readfp(sbuf, confname)
+        return dict(parser.items('section1'))
+
+if __name__ == '__main__':
+    main(sys.argv[1:])

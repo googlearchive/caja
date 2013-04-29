@@ -26,6 +26,10 @@ import java.util.Set;
  */
 
 public enum TestFlag {
+  ANT_FLAGS(
+      "test.ant.flags"),
+  ANT_TARGETS(
+      "test.ant.targets"),
   BROWSER(
       "test.browser"),
   BROWSER_CLOSE(
@@ -52,8 +56,16 @@ public enum TestFlag {
       "test.server.port"),
   THREADS(
       "test.threads"),
+  TYPE(
+      "test.type"),
+  WEBDRIVER_COMMAND(
+      "test.webdriver.command"),
+  WEBDRIVER_HOST(
+      "test.webdriver.host"),
   WEBDRIVER_URL(
-      "test.webdriver.url");
+      "test.webdriver.url"),
+  WEBDRIVER_USER(
+      "test.webdriver.user");
 
   private static class Names {
     private static final Set<String> set = new HashSet<String>();

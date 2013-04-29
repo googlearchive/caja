@@ -110,8 +110,10 @@ class WebDriverHandle {
   }
 
   void closeWindow() {
-    driver.close();
-    driver.switchTo().window(firstWindow);
+    if (driver != null) {
+      driver.close();
+      driver.switchTo().window(firstWindow);
+    }
   }
 
   void keepOpen() {
