@@ -169,30 +169,33 @@
 
   function registerUriCbTest(name, html, cb) {
     jsunitRegister(name, function() {
-        cb = jsunitCallback(cb);
-        var div = createDiv();
-        var alreadyPassed;
-        var translatedUri;
-        caja.load(
-            div,
-            {
-              rewrite: function(uri, effects, ltype, hints) {
-                alreadyPassed = cb(name, uri, effects, ltype, hints);
-                return translatedUri = 'URICALLBACK[[' + uri + ']]';
-              }
-            },
-            jsunitCallback(function frameCb(frame) {
-              frame.code('http://a.com/', 'text/html', html).run(
-                  jsunitCallback(function runCb() {
-                if (alreadyPassed) { return; }
-                assertTrue(
-                    'innerHTML ' + div.innerHTML + ' does not contain '
-                        + translatedUri,
-                    div.innerHTML.indexOf(translatedUri) !== -1);
-                jsunitPass(name);
-              }));
+      cb = jsunitCallback(cb);
+      var div = createDiv();
+      var didRewrite = false;
+      var expectPresence;
+      var translatedUri;
+      caja.load(
+          div,
+          {
+            rewrite: function(uri, effects, ltype, hints) {
+              didRewrite = true;
+              expectPresence = cb(name, uri, effects, ltype, hints);
+              return translatedUri = 'URICALLBACK[[' + uri + ']]';
+            }
+          },
+          jsunitCallback(function frameCb(frame) {
+            frame.code('http://a.com/', 'text/html', html).run(
+                jsunitCallback(function runCb() {
+              assertTrue('URL policy was invoked', didRewrite);
+              assertEquals(
+                  'innerHTML ' + div.innerHTML + ' presence of '
+                      + translatedUri,
+                  expectPresence,
+                  div.innerHTML.indexOf(translatedUri) !== -1);
+              jsunitPass(name);
             }));
-        });
+          }));
+    });
   }
 
   function registerUriCbTestCompiledAndDynamic(name, html, cb) {
@@ -213,19 +216,21 @@
       'testStyleProperty',
       '<div style="background-image: url(http://foo.com/a.jpg);"></div>',
       function(testName, uri, effects, ltype, hints) {
-        assertEquals('http://foo.com/a.jpg', uri);
+        assertEquals('http://foo.com/a.jpg', uri.toString());
         assertEquals('CSS', hints.TYPE);
         assertEquals('background-image', hints.CSS_PROP);
+        return true;
       });
 
   registerUriCbTestCompiledAndDynamic(
       'testHtmlAnchor',
       '<a href="http://foo.com/a.html">foo</a>',
       function(testName, uri, effects, ltype, hints) {
-        assertEquals('http://foo.com/a.html', uri);
+        assertEquals('http://foo.com/a.html', uri.toString());
         assertEquals('MARKUP', hints.TYPE);
         assertEquals('a', hints.XML_TAG);
         assertEquals('href', hints.XML_ATTR);
+        return true;
       });
 
   jsunitRegister(
@@ -290,8 +295,7 @@
         assertEquals('http://foo.com/a.json', uri.toString());
         assertEquals('XHR', hints.TYPE);
         assertEquals('GET', hints.XHR_METHOD);
-        jsunitPass(testName);
-        return true;
+        return false;
       });
 
   registerUriCbTest(
@@ -303,8 +307,7 @@
       '</script>',
       function(testName, uri, effects, ltype, hints) {
         assertEquals('http://a.com/a.json', uri.toString());
-        jsunitPass(testName);
-        return true;
+        return false;
       });
 
   readyToTest();

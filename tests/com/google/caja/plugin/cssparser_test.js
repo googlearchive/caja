@@ -109,6 +109,7 @@ jsunitRegister("testCssParser",
       'endRuleset',
       'endStylesheet'
     ], cssText);
+  jsunit.pass();
 });
 
 jsunitRegister("testCssParser_empty",
@@ -257,4 +258,5 @@ jsunitRegister("testAttributeSelectors",
        'endRuleset',      [],
        'endStylesheet',   []],
       'input.cl\\:ass[xml\\:lang ~= "en:us"] { color: blue }');
+  jsunit.pass();
 });

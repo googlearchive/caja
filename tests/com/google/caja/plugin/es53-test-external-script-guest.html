@@ -70,19 +70,13 @@
     assertEquals("Execution order", "12345678", executionOrder);
     assertEquals("Style loading", "block then inline", styleOrder);
     assertAsynchronousRequirement(
-      'external scripts',
-      jsunitCallback(
-        function checkScriptsLoaded() {
-          if (asyncScriptsSeen === asyncScriptsExpected) {
-            var testContainer = 
-              document.getElementById("testExternalScripts");
-            assertContains("Render result", "123", testContainer.innerText);
-            pass('testExternalScripts');
-            return true;
-          } else {
-            return false;
-          }
-        }));
+        'external scripts',
+        function() { return asyncScriptsSeen === asyncScriptsExpected; },
+        function() {
+      var testContainer = document.getElementById("testExternalScripts");
+      assertContains("Render result", "123", testContainer.innerText);
+    });
+    pass('testExternalScripts');
   });
 
   // jsunit complains if there are zero tests

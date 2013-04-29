@@ -964,13 +964,15 @@ document.write(
   });
 </script>
 
-<p id="testReadOnly" class="testcontainer">
-  <span id="indelible">I am indelible</span>
-</p>
+<div id="testReadOnly" class="testcontainer">
+  <div id="testReadOnly-target">
+    <span id="indelible">I am indelible</span>
+  </div>
+</div>
 <script type="text/javascript">
   jsunitRegister('testReadOnly',
                  function testReadOnly() {
-    makeReadOnly(document.getElementById('testReadOnly'));
+    makeReadOnly(document.getElementById('testReadOnly-target'));
     function $(id) { return document.getElementById(id); }
     assertEquals("I am indelible", $('indelible').innerHTML);
         // test we can access it and aren't just failing unconditionally
@@ -986,14 +988,14 @@ document.write(
         function () {
           var el = document.createElement('SPAN');
           el.id = 'testReadOnly-1';
-          $('testReadOnly').appendChild(el);
+          $('testReadOnly-target').appendChild(el);
           assertEquals(null, $('testReadOnly-1'));
         },
         'successfully appended element');
     expectFailure(
         function () {
           assertTrue($('indelible') !== null);
-          $('testReadOnly').removeChild($('indelible'));
+          $('testReadOnly-target').removeChild($('indelible'));
           assertEquals(null, $('testReadOnly-1'));
         },
         'successfully removed element');
@@ -1001,7 +1003,7 @@ document.write(
         function () {
           var el = document.createElement('SPAN');
           el.id = 'testReadOnly-2';
-          $('testReadOnly').replaceChild($('indelible'), el);
+          $('testReadOnly-target').replaceChild($('indelible'), el);
           assertEquals(null, $('testReadOnly-2'));
           assertTrue($('indelible') !== null);
         },

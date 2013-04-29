@@ -176,10 +176,18 @@ public class RhinoTestBed {
         "(function () {\n"
         + "   var onload = document.body.getAttribute('onload');\n"
         + "   onload && eval(onload);\n"
+        + "   return document.title;\n"
         + " })();", htmlSource));
 
-    // Execute for side-effect
-    runJs(inputs.toArray(new Executor.Input[inputs.size()]));
+    // Execute tests
+    String title = (String)
+        runJs(inputs.toArray(new Executor.Input[inputs.size()]));
+
+    // Test for success
+    if (title == null || !title.contains("all tests passed")) {
+      throw new junit.framework.AssertionFailedError(
+          "Rhino tests did not pass; title = " + title);
+    }
   }
 
   private static Block parseJavascript(CharProducer cp, MessageQueue mq)

@@ -23,14 +23,17 @@
 var jsunit = {};
 jsunit.tests = {};
 jsunit.testCount = 0;
-jsunit.passTests = {};
 jsunit.passCount = 0;
 jsunit.failCount = 0;
 jsunit.testIdStack = [];
-jsunit.originalTitle = '';
+jsunit.baseTitle = undefined;
 jsunit.asyncPoll = 50;
 jsunit.asyncWait = 1000;
 jsunit.alreadyRan = false;
+// TODO(kpreid): Kludge. The JUnit tests which run JavaScript want it to
+// complete synchronously, so this flag disables all setTimeouts in this
+// module.
+jsunit.beSynchronous = typeof _junit_ !== undefined;
 
 jsunit.getCurrentTestId = function() {
   return jsunit.testIdStack.length
@@ -38,16 +41,20 @@ jsunit.getCurrentTestId = function() {
       : undefined;
 };
 
+jsunit.isTestComplete = function(id) {
+  return jsunit.tests[id].status !== 'new';
+};
+
 jsunit.pushTestId = function(id) {
   if (!jsunit.tests[id]) {
-    throw new Error('TEST ERROR: push unregistered test ID \"' + id + '\"');
+    jsunit.panic('push unregistered test ID \"' + id + '\"', true);
   }
   jsunit.testIdStack.push(id);
 };
 
 jsunit.popTestId = function() {
   if (!jsunit.getCurrentTestId()) {
-    throw new Error('TEST ERROR: pop empty test ID stack');
+    jsunit.panic('pop empty test ID stack', true);
   }
   jsunit.testIdStack.pop();
 };
@@ -57,44 +64,133 @@ jsunit.popTestId = function() {
 // TODO: create jsunitRegisterAsync(), then make passes implicit.
 jsunit.pass = function(opt_id) {
   if (!jsunit.getCurrentTestId() && !opt_id) {
-    throw new Error('TEST ERROR: pass without a test ID');
+    jsunit.panic('pass without a test ID', true);
   }
   var id = opt_id || jsunit.getCurrentTestId();
-  if (!(id in jsunit.tests)) {
-    throw new Error(
-        'TEST ERROR: pass(' + id + ') with no such registered test');
+  var testRecord = jsunit.tests[id];
+  if (!testRecord) {
+    jsunit.panic('pass(' + id + ') with no such registered test', true);
   }
-  if (id in jsunit.passTests) {
-    throw new Error('dupe pass ' + id);
+  if (testRecord.status !== 'new') {
+    jsunit.panic('pass of test already ' + testRecord.status + ': ' + id, true);
   }
-  jsunit.passTests[id] = true;
-  jsunit.passCount += 1;
-  jsunit.updateStatus();
+  jsunitFinished(id, 'passed');
   if (typeof console !== 'undefined') {
     console.log('PASS: ' + id);
   }
 };
 
+jsunit.fail = function(id, error) {
+  var testRecord = jsunit.tests[id];
+  switch (testRecord.status) {
+    case 'failed':
+      // duplicate failures (due to callbacks) are not surprising
+      return;
+    case 'passed':
+      // TODO(kpreid): Make this a hard failure even if this pass-then-fail test
+      // happens to be the last test in the page.
+      break;
+    case 'new':
+    default:
+      break;
+  }
+  jsunitFinished(id, 'failed');
+  if (typeof console !== 'undefined') {
+    console.error('FAIL: ' + id + ': ' + error + '\n', error);
+  }
+}
+
+/**
+ * Ensure that an unexpected problem causes test suite failure, as opposed to
+ * throwing an exception (which might just be uncaught) or causing a specific
+ * registered test to fail.
+ */
+jsunit.panic = (function() {
+  var panicCount = 0;
+  return function panic(msg, alsoThrow) {
+    var testName = 'PANIC #' + ++panicCount;
+    jsunitRegisterAuxiliaryStatus(testName);
+    jsunit.tests[testName].resultContainer.appendChild(
+        document.createTextNode(': ' + msg));
+    jsunit.fail(testName, msg);
+    if (alsoThrow) {
+      throw new Error('PANIC: ' + msg);
+    }
+  };
+})();
+
 jsunit.updateStatus = function() {
+  if (jsunit.baseTitle === undefined) {
+    jsunit.baseTitle = document.title + ' (' +
+        (navigator.appName
+         ? navigator.appName + ' ' + navigator.appVersion
+         : navigator.userAgent) + ')';
+  }
+
   var status = '';
   if (!jsunit.failCount && jsunit.passCount === jsunit.testCount) {
     status += 'all tests passed:';
   }
   status += ' ' + jsunit.failCount + '/' + jsunit.testCount + ' fail';
   status += ' ' + jsunit.passCount + '/' + jsunit.testCount + ' pass';
-  document.title = status + ' - ' + jsunit.originalTitle;
+  document.title = status + ' - ' + jsunit.baseTitle;
 };
 
 /**
- * Register a test that can be run later.
+ * Register a test function to be run by jsunitRun.
  *
  * Note: opt_idClass is not usually explicitly written; if needed it is inserted
  * by the taming wrapper in browser-test-case.js.
  */
+function jsunitRegisterIf(shouldRun, testName, test, opt_idClass) {
+  if (testName in jsunit.tests) {
+    jsunit.panic('dupe test ' + testName, true);
+  }
+  if (jsunit.alreadyRan) {
+    jsunit.panic('Too late to register a new test', true);
+  }
+  jsunit.tests[testName] = {
+    status: 'new',
+    test: test,
+    resultContainer: obtainResultDiv(testName, opt_idClass)
+  };
+  if (shouldRun) {
+    jsunit.testCount++;
+    jsunit.updateStatus();
+  } else {
+    // temporarily registering skipped tests is a kludge to let jsunitFinished
+    // interact with the resultContainer
+    jsunitFinished(testName, 'skipped');
+    delete jsunit.tests[testName];
+  }
+}
+
+/**
+ * Register a test to be run by jsunitRun. See jsunitRegisterIf for details.
+ */
 function jsunitRegister(testName, test, opt_idClass) {
-  if (testName in jsunit.tests) { throw new Error('dupe test ' + testName); }
-  jsunit.tests[testName] = test;
-  obtainResultDiv(testName, opt_idClass);
+  jsunitRegisterIf(true, testName, test, opt_idClass);
+}
+
+/**
+ * Register a thing which can pass/fail, but does not need to be executed
+ * separately (probably because it was started by a registered test).
+ * For 'internal' use.
+ */
+function jsunitRegisterAuxiliaryStatus(testName) {
+  // TODO(kpreid): This is a kludge invented for assertAsynchronousRequirement
+  // (and also used for panics). It would be better to make async requirements
+  // subparts of one test.
+  if (testName in jsunit.tests) {
+    jsunit.panic('dupe test ' + testName, true);
+  }
+  jsunit.tests[testName] = {
+    status: 'new',
+    test: function() {},
+    resultContainer: obtainResultDiv(testName, undefined)
+  };
+  jsunit.testCount++;
+  jsunit.updateStatus();
 }
 
 function arrayContains(anArray, anElement) {
@@ -134,14 +230,9 @@ function jsunitFilter(filter) {
 }
 
 /** Run tests. */
-function jsunitRun(opt_testNames, opt_idClass, opt_asyncEval) {
+function jsunitRun(opt_testNames, opt_asyncEval) {
   if (jsunit.alreadyRan) { return; }
   jsunit.alreadyRan = true;
-
-  document.title += ' (' + (navigator.appName
-                            ? navigator.appName + ' ' + navigator.appVersion
-                            : navigator.userAgent) + ')';
-  jsunit.originalTitle = document.title;
 
   var filter = jsunitFilter.filter || /.?/;
   var testNames = [];
@@ -155,19 +246,17 @@ function jsunitRun(opt_testNames, opt_idClass, opt_asyncEval) {
     }
   }
 
-  jsunit.testCount = testNames.length;
   if (jsunit.testCount === 0) {
-    document.title = 'No tests?';
-    throw 'Error: no tests?';
+    jsunit.panic('No tests registered!', true);
   }
 
   testNames.sort();
   // jsunitRunNext pops off testNames
   testNames.reverse();
-  jsunitRunNext(testNames, opt_idClass, opt_asyncEval);
+  jsunitRunNext(testNames, opt_asyncEval);
 }
 
-function jsunitRunNext(testNames, opt_idClass, opt_asyncEval) {
+function jsunitRunNext(testNames, opt_asyncEval) {
   if (testNames.length === 0) {
     if (opt_asyncEval) {
       opt_asyncEval();
@@ -176,26 +265,24 @@ function jsunitRunNext(testNames, opt_idClass, opt_asyncEval) {
   }
 
   var testName = testNames.pop();
+  var testRecord = jsunit.tests[testName];
   startLogMessagesGroup(testName);
 
   var progress = jsunit.passCount + jsunit.failCount;
   try {
     (typeof setUp === 'function') && setUp();
-    jsunit.tests[testName].call();
+    testRecord.test.call();
     (typeof tearDown === 'function') && tearDown();
   } catch (e) {
-    jsunit.failCount++;
-    jsunit.updateStatus();
-    jsunitFinished(testName, 'failed', opt_idClass);
-    if (typeof console !== 'undefined') {
-      console.error('FAIL: ' + testName + ': ' + e);
-      console.error(e);
-    }
+    jsunit.fail(testName, e);
     throw e;
   } finally {
     endLogMessagesGroup(testName);
-    jsunitWait(progress, new Date().getTime(), testNames, opt_idClass,
-               opt_asyncEval);
+    if (jsunit.beSynchronous) {
+      jsunitRunNext(testNames, opt_asyncEval);
+    } else {
+      jsunitWait(progress, new Date().getTime(), testNames, opt_asyncEval);
+    }
   }
 }
 
@@ -208,21 +295,21 @@ function jsunitRunNext(testNames, opt_idClass, opt_asyncEval) {
 // jsunit.asyncWait msec to see if a test passed or failed,
 // before starting the next test.
 
-function jsunitWait(progress, start, testNames, opt_idClass, opt_asyncEval) {
+function jsunitWait(progress, start, testNames, opt_asyncEval) {
   // have we made progress yet?
   if (jsunit.passCount + jsunit.failCount === progress) {
     var now = new Date().getTime();
     // should we keep waiting?
     if (now < start + jsunit.asyncWait) {
       setTimeout(function() {
-        jsunitWait(progress, start, testNames, opt_idClass, opt_asyncEval);
+        jsunitWait(progress, start, testNames, opt_asyncEval);
       }, jsunit.asyncPoll);
       return;
     }
   }
   // we made progress, or we timed out, so start the next test
   setTimeout(function() {
-    jsunitRunNext(testNames, opt_idClass, opt_asyncEval);
+    jsunitRunNext(testNames, opt_asyncEval);
   }, 1);
   // setTimeout 1 because RhinoExecutor doesn't support 0
 }
@@ -230,10 +317,10 @@ function jsunitWait(progress, start, testNames, opt_idClass, opt_asyncEval) {
 /** Register a callback within a running test. */
 function jsunitCallback(aFunction, opt_id, opt_frame) {
   if (!aFunction || typeof aFunction !== 'function') {
-    throw new Error('TEST ERROR: jsunitCallback without a valid function');
+    jsunit.panic('jsunitCallback without a valid function', true);
   }
   if (!jsunit.getCurrentTestId() && !opt_id) {
-    throw new Error('TEST ERROR: jsunitCallback without a test ID');
+    jsunit.panic('jsunitCallback without a test ID', true);
   }
   var id = opt_id || jsunit.getCurrentTestId();
   var callbackName = aFunction.name || '<anonymous>';
@@ -243,9 +330,7 @@ function jsunitCallback(aFunction, opt_id, opt_frame) {
     try {
       result = aFunction.apply(undefined, arguments);
     } catch (e) {
-      if (typeof console !== 'undefined') {
-        console.error(e);
-      }
+      jsunit.fail(id, e);
     } finally {
       endLogMessagesGroup(id, callbackName);
     }
@@ -258,23 +343,46 @@ function jsunitCallback(aFunction, opt_id, opt_frame) {
            : callback;
 }
 
-function jsunitFinished(id, result, opt_idClass) {
-  var node = obtainResultDiv(id, opt_idClass);
-  node.appendChild(document.createTextNode(' \u2014 ' + result + ' ' + id));
+var jsunitValidStatuses = ['passed', 'failed', 'skipped'];
+
+function jsunitFinished(id, status) {
+  var testRecord = jsunit.tests[id];
+  if (jsunitValidStatuses.indexOf(status) === -1) {
+    throw new Error('bad jsunitFinished status: ' + status);
+  }
+  var node = testRecord.resultContainer;
+  if (!inDocument(node)) {
+    if (typeof console !== 'undefined') {
+      console.error('test ' + id + ' lost its result container');
+    }
+    status = 'failed';
+    node = testRecord.resultContainer = obtainResultDiv(id);
+  }
+
+  // Update internal state
+  var oldStatus = testRecord.status;
+  testRecord.status = status;
+
+  // Update DOM state
+  node.appendChild(document.createTextNode(' \u2014 ' + status + ' ' + id));
   var cl = node.className || '';
   // TODO(kpreid): Confirm 'waiting' is obsolete and remove this;
   cl = cl.replace(/\b(clickme|waiting)\b\s*/g, '');
-  node.className = cl + ' done ' + result;
+  node.className = cl + ' done ' + status;
+
+  // Update summary
+  jsunit.passCount += (status === 'passed') - (oldStatus === 'passed');
+  jsunit.failCount += (status === 'failed') - (oldStatus === 'failed');
+  jsunit.updateStatus();
 }
 
-function jsunitPass(id, opt_idClass) {
-  // Note jsunit.pass does validation of the test id, so should occur first
+// legacy alias
+function jsunitPass(id) {
   jsunit.pass(id);
-  jsunitFinished(id, 'passed', opt_idClass);
 }
 
 function jsunitFail(id) {
-  jsunitFinished(id, 'failed');
+  jsunit.fail(id);
   fail(id);
 }
 
@@ -296,6 +404,10 @@ function obtainResultDiv(id, opt_idClass) {
     }
   }
   return el;
+}
+
+function inDocument(node) {
+  return node === document || (node !== null && inDocument(node.parentNode));
 }
 
 /** Aim high and you might miss the moon! */

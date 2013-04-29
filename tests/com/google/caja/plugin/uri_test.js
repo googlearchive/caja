@@ -597,10 +597,12 @@ jsunitRegister("testSetPathWithAbsoluteUrl",
   assertEquals("uri1", "//example.com/foo/bar", uri1.toString());
   assertEquals("uri2", "//example.com/foo/bar", uri2.toString());
   assertEquals("uri3", "//example.com/foo/bar", uri3.toString());
+  jsunit.pass();
 });
 
 jsunitRegister("testUrlScheme", function testUrlScheme() {
   assertUriSchemeEquals('http', 'HTTP://example.com/');
+  jsunit.pass();
 });
 
 /**
@@ -635,6 +637,7 @@ jsunitRegister("testUrlHost", function testUrlHost() {
   assertUriDomainEquals('192.168.0.257', 'http://192.168.0.257/');
   assertUriDomainEquals('[google.com]', 'http://[google.com]/');
   assertUriDomainEquals('xn--%28-7ed/', 'http://т(/');
+  jsunit.pass();
 });
 */
 
@@ -644,6 +647,7 @@ jsunitRegister("testUrlPort", function testUrlPort() {
   assertUriPortEquals("80", 'http://www.example.com:80/');
   assertUriPortEquals("8080", 'http://www.example.com:8080/');
   assertUriPortEquals("80", 'foobar://www.example.com:80/');
+  jsunit.pass();
 });
 
 function assertResolvedEquals(expected, base, other) {

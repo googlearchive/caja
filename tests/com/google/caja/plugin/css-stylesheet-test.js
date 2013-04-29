@@ -57,6 +57,7 @@ function runCssSelectorTests(testGroups) {
         assertEquals('stylesheet test ' + i + ': ' + input, golden, actual);
       }
     }
+    jsunitPass('testCssStylesheets');
   }
   // Create a test method that will be called by jsUnit.
   jsunitRegister('testCssStylesheets', testCssStylesheets);

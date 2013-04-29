@@ -776,7 +776,6 @@ testTopLevelVarsInCatch
         } else {
           assertTrue('assignment works: ' + b, b === 1);
         }
-        pass('testProtoMention');
       });
       test(env);
     }
@@ -793,6 +792,7 @@ testTopLevelVarsInCatch
         throw e;
       }
     }
+    pass('testProtoMention');
   });
 </script>
 

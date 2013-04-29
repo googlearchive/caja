@@ -33,7 +33,7 @@
           .api(createExtraImportsForTesting(caja, frame))
           .run(function() {
                readyToTest();
-               jsunitRun(null, null, asyncRequirements.evaluate);
+               jsunitRun(null, asyncRequirements.evaluate);
           });
       });
     });

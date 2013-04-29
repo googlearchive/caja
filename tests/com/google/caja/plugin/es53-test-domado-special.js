@@ -126,7 +126,7 @@ fetch('es53-test-domado-special-initial-state.html', function(initialHtml) {
          .api(extraImports)
          .run(function(result) {
                readyToTest();
-               jsunitRun(null, null, asyncRequirements.evaluate);
+               jsunitRun(null, asyncRequirements.evaluate);
              });
      });
   });

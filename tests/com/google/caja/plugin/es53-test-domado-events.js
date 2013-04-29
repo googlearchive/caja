@@ -53,7 +53,7 @@
              .api(extraImports)
              .run(function(result) {
                    readyToTest();
-                   jsunitRun(null, null, asyncRequirements.evaluate);
+                   jsunitRun(null, asyncRequirements.evaluate);
                  });
   });
 }());

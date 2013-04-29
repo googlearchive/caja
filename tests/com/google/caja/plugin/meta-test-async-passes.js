@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Google Inc.
+// Copyright (C) 2013 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.plugin;
+// Used by meta-test.js for testing our test framework.
+//
+// Checking that an asynchronous requirement which does not immediately pass
+// will eventually be recognized as passing.
 
-import com.google.caja.util.CajaTestCase;
-import com.google.caja.util.RhinoTestBed;
+jsunitRegister('testAsyncPasses', function() {
+  var i = 0;
+  assertAsynchronousRequirement(
+      'this requirement passes',
+      jsunitCallback(function() { return i++ > 2; }));
+  pass('testAsyncPasses');
+});
 
-/**
- * JUnit wrapper for CSS stylesheet JSUnit unittests.
- *
- * @author mikesamuel@gmail.com
- */
-public final class CssStylesheetTest extends CajaTestCase {
-  public final void testCssStylesheet() throws Exception {
-    RhinoTestBed.runJsUnittestFromHtml(
-        html(fromResource("css-stylesheet-test.html")));
-  }
-}
+jsunitRegister('testAsyncPassesDummyOther', function() {
+  pass('testAsyncPassesDummyOther');
+});

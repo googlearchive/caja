@@ -296,8 +296,6 @@ function createDiv() {
   return d;
 }
 
-// TODO: async requirements are not counted in the test status.
-
 // Define an asynchronous test mechanism so that we can test things like
 // XHR, dynamic script loading, setTimeout, etc.
 // This allows test code to register conditions that must be true.
@@ -305,6 +303,7 @@ function createDiv() {
 // the test times out.
 // If a condition returns true once, it is never evaluated again.
 // TODO(mikesamuel): rewrite XHR and setTimeout tests to use this scheme.
+// TODO(kpreid): Integrate this fully into jsunit.js.
 var asyncRequirements = (function () {
   var req = [];
   var intervalId = null;
@@ -315,9 +314,22 @@ var asyncRequirements = (function () {
    * @param {string} msg descriptive text used in error messages.
    * @param {function () : boolean} predicate returns true to indicate
    *     the requirement has been satisfied.
+   * @param {function} opt_continuation called after the predicate returns
+   *     true, as part of a jsunit test.
    */
-  var assert = function (msg, predicate) {
-    req.push({ message: String(msg), predicate: predicate });
+  var assert = function (msg, predicate, opt_continuation) {
+    // TODO(kpreid): nicer shorter id
+    var id = jsunit.getCurrentTestId() + '_' + msg;
+
+    // Register a stub test which will be passed by the async evaluator.
+    jsunitRegisterAuxiliaryStatus(id);
+
+    req.push({
+      message: String(msg),
+      predicate: predicate,
+      id: id,
+      continuation: opt_continuation || function() {}
+    });
   };
 
   /**
@@ -329,12 +341,7 @@ var asyncRequirements = (function () {
    */
   var evaluate = function (handler) {
     if (!handler) {
-      handler = function (pass) {
-        if (!pass) {
-          document.title = document.title.replace(
-              /all tests passed/, 'async tests failed');
-        }
-      };
+      handler = function() {};
     }
     if (intervalId !== null) { throw new Error('dupe handler'); }
     if (req.length === 0) {
@@ -343,16 +350,23 @@ var asyncRequirements = (function () {
       var timeoutTime = (new Date).getTime() + TIMEOUT_MILLIS;
       intervalId = setInterval(function () {
         for (var i = req.length; --i >= 0;) {
-          var msgAndPredicate = req[i];
+          var record = req[i];
           try {
-            if (true === msgAndPredicate.predicate()) {
+            if (true === record.predicate()) {
               // Requirement satisfied.
               req[i] = req[req.length - 1];
               --req.length;
+              (function(record) {
+                setTimeout(jsunitCallback(function() {
+                  record.continuation();
+                  jsunitPass(record.id);
+                }, record.id), 0);
+              })(record);
             }
           } catch (e) {
+            // TODO(kpreid): convert this to failure of the registered test
             console.error(
-                'Asynchronous failure : ' + msgAndPredicate.message, e);
+                'Asynchronous failure : ' + record.message, e);
             req[i] = req[req.length - 1];
             --req.length;
           }
@@ -364,7 +378,13 @@ var asyncRequirements = (function () {
           var failures = req.length !== 0;
           if (failures) {
             for (var i = req.length; --i >= 0;) {
-              console.error('async test timeout: ' + req[i].message);
+              var record = req[i];
+              (function(record) {
+                setTimeout(jsunitCallback(function() {
+                  throw new Error('async test timeout: ' +
+                      record.message);
+                }, record.id), 0);
+              })(record);
             }
             req.length = 0;
           }
@@ -413,7 +433,14 @@ function createExtraImportsForTesting(frameGroup, frame) {
       frame.tame(frame.markFunction(function(name, test) {
         jsunitRegister(name, test, frame.idClass);
       }));
-  standardImports.jsunitPass =
+  standardImports.jsunitRegisterIf =
+      frame.tame(frame.markFunction(function(okay, name, test) {
+        jsunitRegisterIf(okay, name, test, frame.idClass);
+      }));
+  // TODO(kpreid): With the new idClass wiring, pass and jsunitPass are the same
+  // thing, so we shouldn't have two names.
+  standardImports.pass =
+      standardImports.jsunitPass =
       frame.tame(frame.markFunction(jsunitPass));
   standardImports.jsunitCallback =
       frame.tame(frame.markFunction(function(cb, opt_id) {
@@ -569,26 +596,6 @@ function createExtraImportsForTesting(frameGroup, frame) {
   } else {
     standardImports.directAccess = directAccess;
   }
-
-  // Marks a container green to indicate that test passed
-  standardImports.pass = frame.tame(frame.markFunction(function (id) {
-    jsunitPass(id, frame.idClass);
-  }));
-
-  /**
-   * Like jsunitRegister, but optionally don't register and mark the 
-   * testcontainer as skipped so that BrowserTestCase.java accepts the suite
-   * anyway.
-   */
-  standardImports.jsunitRegisterIf = frame.tame(frame.markFunction(
-      function (okay, testName, testFunc) {
-    if (okay) {
-      jsunitRegister(testName, testFunc, frame.idSuffix);
-    } else {
-      jsunitFinished(testName, 'skipped', frame.idSuffix);
-    }
-  }));
-
 
   standardImports.expectFailure =
       frame.tame(frame.markFunction(expectFailure));

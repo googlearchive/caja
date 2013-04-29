@@ -90,6 +90,11 @@ function _displayStringForValue(aVar) {
     return result;
 }
 
+// TODO(kpreid): It is no longer _necessary_ to do a special escaping exception,
+// because the RhinoTestBedWrapper actually checks jsunit.js's output, but it
+// still makes the failure more specific. Still probably a better idea to get
+// rid of this and replace it with better outside plumbing.
+
 function fail(failureMessage) {
   if ('undefined' !== typeof _junit_) {
     // If run inside Rhino in the presence of junit, throw an error which will

@@ -88,6 +88,9 @@
         'emitStatic',
         '<p>Hello world<\/p>',
         normInnerHtml(base));
+
+    // compatibility with automation for our 'jsunit' tests
+    document.title = 'all tests passed: ' + document.title;
     //]]></script>
 
   </body>

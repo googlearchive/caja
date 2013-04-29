@@ -237,14 +237,16 @@
         });
     jsunitRegister('testDocumentDomContentLoaded',
                    function testDocumentDomContentLoaded() {
+
       assertAsynchronousRequirement(
-        'testDocumentDomContentLoaded',
-        function() {
-          assertEquals('DOMContentLoaded', event.type);
-          assertEquals(1, args.length);
-          pass('testDocumentDomContentLoaded');
-          return true;
-        });
+          'event fired',
+          function() { return !!event; },
+          function() {
+        assertEquals('DOMContentLoaded', event.type);
+        assertEquals(1, args.length);
+      });
+
+      pass('testDocumentDomContentLoaded');
     });
   })();
 </script>
@@ -531,17 +533,14 @@ TODO(felix8a): fix javascript url handling
 
     jsunitRegister('testDOMContentLoadedListener',
                    function testDOMContentLoadedListener() {
-      assertAsynchronousRequirement(
-        'testDOMContentLoadedListener',
-        function() {
-          console.log('tcll', b1, b2, b3);
-          if (b1 === 0 && b2 === 1 && b3 === 1) {
-            pass('testDOMContentLoadedListener');
-            return true;
-          } else if (b2) {
-            fail('testDOMContentLoadedListener');
-          }
-        })
+      assertAsynchronousRequirement('loaded',
+          function() { return !!b2; },
+          function() {
+        assertEquals('b1', 0, b1);
+        assertEquals('b2', 1, b2);
+        assertEquals('b3', 1, b3);
+      });
+      pass('testDOMContentLoadedListener');
     });
   })();
 </script>

@@ -208,7 +208,11 @@ var window = this;
     },
     get title() {
       var titleNode = this.getElementsByTagName("title")[0];
-      return titleNode ? titleNode.innerHTML : '';
+      return titleNode ? titleNode.textContent : '';
+    },
+    set title(value) {  // patched by kpreid for Caja test suite
+      var titleNode = this.getElementsByTagName("title")[0];
+      titleNode.textContent = '' + value;
     },
 
     getComputedStyle: function(elem){

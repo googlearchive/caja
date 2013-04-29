@@ -66,8 +66,7 @@ if (testCase) {
                    function(result) {
                      if (!jQuery) {
                        readyToTest();
-                       jsunitRun(
-                         null, frame.idClass, asyncRequirements.evaluate);
+                       jsunitRun(null, asyncRequirements.evaluate);
                      }
                    });
         });

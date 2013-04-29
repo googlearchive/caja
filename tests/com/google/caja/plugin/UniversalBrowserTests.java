@@ -166,4 +166,8 @@ public abstract class UniversalBrowserTests extends BrowserTestCase<Void> {
   public void testApiTaming() throws Exception {
     runTestDriver("es53-test-apitaming.js", es5Mode);
   }
+
+  public void testMeta() throws Exception {
+    runTestDriver("meta-test.js", es5Mode);
+  }
 }
