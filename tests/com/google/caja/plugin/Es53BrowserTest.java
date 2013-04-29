@@ -97,4 +97,18 @@ public class Es53BrowserTest extends UniversalBrowserTests {
   public void testCssImports() throws Exception {
     runTestCase("es53-test-css-imports-guest.html", true);
   }
+
+  /**
+   * Test the browser environment behaves the way we expect. This is not a test
+   * of Caja per se, but we want to verify that changes to our test
+   * infrastructure do not break this test.
+   *
+   * This is not actually an ES5/3-mode test; it is independent of Caja, and in
+   * this class only because we have no 'generic' browser test file and adding
+   * one would just unnecessarily start another browser, and here as opposed to
+   * Es5BrowserTest because it works on non-SES-capable browsers.
+   */
+  public void testBrowserExpectations() throws Exception {
+    runBrowserTest("../browser-expectations.html");
+  }
 }

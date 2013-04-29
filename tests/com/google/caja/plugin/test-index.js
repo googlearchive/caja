@@ -70,6 +70,7 @@
   ];
 
   var bare_tests = [
+    '../browser-expectations.html',
     'modules-test.html',
     '../ses/test-ses.html?load=initSES.js',
     '../ses/test-ses.html?load=initSES-minified.js',
