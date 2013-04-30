@@ -63,6 +63,11 @@
     --></div>
     <div id="automatedTestingReadyIndicator" style="display: none;"></div>
 
+    <!-- cause code which fails due to cross-origin frame access policies
+         to fail in testing. URL doesn't matter but it must be other-origin -->
+    <iframe src="http://caja-cross-frame-test.invalid"
+        style="display: none;"></iframe>
+
     <!-- in es53 mode, testImageElement() is reliably fired
          before the browser has loaded the image, because js runs
          continuously without yielding: html-emitter sets the img

@@ -146,7 +146,14 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
     if (!directCtor) { return void 0; }
     if (directCtor === feralWin.Object) { return BASE_OBJECT_CONSTRUCTOR; }
     Array.prototype.slice.call(feralWin.frames).forEach(function(w) {
-      if (directCtor === w.Object) {
+      var O;
+      try {
+        O = w.Object;
+      } catch (e) {
+        // met a different-origin frame, probably
+        return;
+      }
+      if (directCtor === O) {
         directCtor = BASE_OBJECT_CONSTRUCTOR;
       }
     });
