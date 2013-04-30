@@ -11,7 +11,7 @@ function module() {
       wasClicked(thisNode___);
     });
     el___.onclick = function (event) {
-      return ___.plugin_dispatchEvent___(this, event, ___.getId(IMPORTS___), c_3___);
+      return ___.plugin_dispatchEvent___(this, event, ___.getId(IMPORTS___), c_3___, 2);
     };
     // Remove the manufactured ID
     emitter___.rmAttr(el___, 'id');
@@ -54,7 +54,7 @@ function module() {
         wasClicked(thisNode___);
     });
     el___.onclick = function (event) {
-        return ___.plugin_dispatchEvent___(this, event, ___.getId(IMPORTS___), c_3___);
+        return ___.plugin_dispatchEvent___(this, event, ___.getId(IMPORTS___), c_3___, 2);
     };
     // Pass the 'target' attribute of the <a> through the client side policy
     emitter___.setAttr(

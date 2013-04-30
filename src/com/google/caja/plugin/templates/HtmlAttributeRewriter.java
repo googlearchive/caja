@@ -221,7 +221,7 @@ public final class HtmlAttributeRewriter {
             + "(/*@synthetic*/ function (event) {"
             + "  return /*@synthetic*/ (___.plugin_dispatchEvent___("
             + "      /*@synthetic*/this, event, "
-            + "      ___./*@synthetic*/getId(IMPORTS___), @tail));"
+            + "      ___./*@synthetic*/getId(IMPORTS___), @tail, 2));"
             + "})",
             "tail", new Reference(SyntheticNodes.s(
                 new Identifier(pos, handlerFnName))));
@@ -459,7 +459,7 @@ public final class HtmlAttributeRewriter {
    *   }</pre>
    * <p>
    * And the resulting function is called via a handler attribute like
-   * {@code onchange="___.plugin_dispatchEvent___(this, node, 1234, 'handlerName')"}
+   * {@code onchange="___.plugin_dispatchEvent___(this, node, 1234, 'handlerName', 2)"}
    */
   private static void rewriteEventHandlerReferences(Block block) {
     block.visitPreOrder(

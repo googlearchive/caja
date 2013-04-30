@@ -296,7 +296,7 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "        });"
             + "    el___.onsubmit = function (event) {"
             + "      return ___.plugin_dispatchEvent___("
-            + "          this, event, ___.getId(IMPORTS___), c_1___);"
+            + "          this, event, ___.getId(IMPORTS___), c_1___, 2);"
             + "    };"
             + "    emitter___.setAttr("
             + "        el___,"

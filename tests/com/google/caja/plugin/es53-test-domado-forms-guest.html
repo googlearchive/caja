@@ -183,9 +183,11 @@
     container.innerHTML = '<form onsubmit="foo()">'
         + '<input type="submit" value="Submit"></form>';
 
+    // TODO(kpreid): This is matching implementation details. What do we
+    // actually want to test for here?
     assertEquals('<form autocomplete="off" onsubmit="'
                  + 'try { ___.plugin_dispatchEvent___'
-                 + '(this, event, 0, &quot;foo&quot;);'
+                 + '(this, event, 0, &quot;foo&quot;, 0);'
                  + ' } finally { return false; }" target="_blank">'
                  + '<input autocomplete="off" type="submit" value="Submit">'
                  + '</form>',

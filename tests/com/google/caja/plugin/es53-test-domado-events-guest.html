@@ -38,14 +38,15 @@
   </span>
 </p>
 <script type="text/javascript">
-  window.onerror = (function (onerror) {
-    return function (message, url, line) {
-        assertEquals('died!', message);
-        pass('testExceptionInEventHandler');
-        window.onerror = onerror;
-      };
-  })(onerror);
   window.die = function die() {
+    window.onerror = (function (onerror) {
+      return function (message, url, line) {
+          assertEquals('died!', message);
+          pass('testExceptionInEventHandler');
+          window.onerror = onerror;
+        };
+    })(onerror);
+
     throw new Error('died!');
   };
   jsunitRegister('testExceptionInEventHandler',
@@ -190,6 +191,43 @@
           assertEquals(1, arguments.length);
           assertEquals('click', event.type);
           pass('testHandlerArguments');
+        });
+  });
+</script>
+
+<div class="clickme testcontainer" id="testHandlerAttributeArguments">
+  testHandlerAttributeArguments -- Handler-called functions should not get
+  extra parameters.
+  <div id="testHandlerAttributeArguments-0"><b>click me: 0 args</b></div>
+  <div id="testHandlerAttributeArguments-2"><b>click me: 2 args</b></div>
+</div>
+<script type="text/javascript">
+  jsunitRegister('testHandlerAttributeArguments',
+                 function testHandlerAttributeArguments() {
+    var ok0 = false, ok2 = false;
+
+    document.getElementById('testHandlerAttributeArguments-0')
+        .setAttribute('onclick', 'testHandlerAttributeArguments_go0();');
+    window.testHandlerAttributeArguments_go0 = jsunitCallback(
+        function handlerCalledFn() {
+          console.log('go0', Array.prototype.slice.call(arguments));
+          assertEquals('length', 0, arguments.length);
+          ok0 = true;
+          if (ok0 && ok2) { pass('testHandlerAttributeArguments'); }
+        });
+
+    document.getElementById('testHandlerAttributeArguments-2')
+        .setAttribute('onclick',
+            'testHandlerAttributeArguments_go2(event, this);');
+    window.testHandlerAttributeArguments_go2 = jsunitCallback(
+        function handlerCalledFn() {
+          console.log('go2', Array.prototype.slice.call(arguments));
+          assertEquals('length', 2, arguments.length);
+          assertTrue('first arg', arguments[0] instanceof Event);
+          assertTrue('second arg', arguments[1] ===
+              document.getElementById('testHandlerAttributeArguments-2'));
+          ok2 = true;
+          if (ok0 && ok2) { pass('testHandlerAttributeArguments'); }
         });
   });
 </script>
