@@ -602,27 +602,34 @@ function createExtraImportsForTesting(frameGroup, frame) {
   standardImports.assertFailsSafe =
       frame.tame(frame.markFunction(assertFailsSafe));
 
+  function matchColor(expected, cssColorString) {
+    if (typeof cssColorString === 'string') {
+      cssColorString = cssColorString.toLowerCase();
+    }
+    if (cssColorString === expected.name) { return true; }
+    if (cssColorString === '"' + expected.name + '"') { return true; }
+    var hexSix = expected.rgb.toString(16);
+    while (hexSix.length < 6) { hexSix = '0' + hexSix; }
+    if (cssColorString === '#' + hexSix) { return true; }
+    var hexThree = hexSix.charAt(0) + hexSix.charAt(2) + hexSix.charAt(4);
+    if (cssColorString === '#' + hexThree) { return true; }
+
+    var stripped = cssColorString.replace(new RegExp(' ', 'g'), '');
+    if (('rgb(' + (expected.rgb >> 16)
+         + ',' + ((expected.rgb >> 8) & 0xff)
+         + ',' + (expected.rgb & 0xff) + ')') === stripped) {
+      return true;
+    }
+
+    return false;
+  }
+  standardImports.matchColor = frame.tame(frame.markFunction(matchColor));
+
   standardImports.assertColor = frame.tame(frame.markFunction(
       function(expected, cssColorString) {
-        if (typeof cssColorString === 'string') {
-          cssColorString = cssColorString.toLowerCase();
+        if (!matchColor(expected, cssColorString)) {
+          fail(cssColorString + ' != #' + expected.rgb.toString(16));
         }
-        if (cssColorString === expected.name) { return; }
-        if (cssColorString === '"' + expected.name + '"') { return; }
-        var hexSix = expected.rgb.toString(16);
-        while (hexSix.length < 6) { hexSix = '0' + hexSix; }
-        if (cssColorString === '#' + hexSix) { return; }
-        var hexThree = hexSix.charAt(0) + hexSix.charAt(2) + hexSix.charAt(4);
-        if (cssColorString === '#' + hexThree) { return; }
-
-        var stripped = cssColorString.replace(new RegExp(' ', 'g'), '');
-        if (('rgb(' + (expected.rgb >> 16)
-             + ',' + ((expected.rgb >> 8) & 0xff)
-             + ',' + (expected.rgb & 0xff) + ')') === stripped) {
-          return;
-        }
-
-        fail(cssColorString + ' != #' + hexSix);
       }));
 
   standardImports.assertAsynchronousRequirement =

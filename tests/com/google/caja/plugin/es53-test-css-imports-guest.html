@@ -34,34 +34,31 @@
 <script type="text/javascript">
   jsunitRegister('testCssImports',
                  function testCssImports() {
-    function assertExpectedColor(expected, clazz) {
+    function assertExpectedColor(expected, clazz, nofail) {
       var candidate = document.getElementsByClassName(clazz)[0];
 
       // Using directAccess to ensure the actual style got applied
       // by the browser
       var color = directAccess.getComputedStyle(candidate, 'background-color');
-      assertColor(expected, color);
+      return (nofail ? matchColor : assertColor)(expected, color);
     }
-  
+
     assertAsynchronousRequirement(
-      'external css',
-      jsunitCallback(
-        function checkStyles() {
-          assertExpectedColor({rgb: 0x000000}, 'shouldbezero');
-          assertExpectedColor({rgb: 0x000001}, 'shouldbeone');
-          assertExpectedColor({rgb: 0x000002}, 'shouldbetwo');
-          assertExpectedColor({rgb: 0x000003}, 'shouldbethree');
+        'external css',
+        function() { return assertExpectedColor({rgb: 0x000000}, 'shouldbezero',
+            true); },
+        function() {
+      assertExpectedColor({rgb: 0x000000}, 'shouldbezero');
+      assertExpectedColor({rgb: 0x000001}, 'shouldbeone');
+      assertExpectedColor({rgb: 0x000002}, 'shouldbetwo');
+      assertExpectedColor({rgb: 0x000003}, 'shouldbethree');
 
-          assertExpectedColor({rgb: 0x000004}, 'overrideinorder');
-          assertExpectedColor({rgb: 0x000005}, 'overriderecurse');
-          assertExpectedColor({rgb: 0x000006}, 'overridesequential');
-          pass('testCssImports');
+      assertExpectedColor({rgb: 0x000004}, 'overrideinorder');
+      assertExpectedColor({rgb: 0x000005}, 'overriderecurse');
+      assertExpectedColor({rgb: 0x000006}, 'overridesequential');
+   });
 
-          // TODO(kpreid): Move this pass() into the main line of the test once
-          // we have fixed assertAsynchronousRequirement.
-          return true;
-       })
-    );
+   pass('testCssImports');
   });
 
   // jsunit complains if there are zero tests
