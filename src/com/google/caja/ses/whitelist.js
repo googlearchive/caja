@@ -421,6 +421,7 @@ var ses;
         ignoreCase: '*',
         multiline: '*',
         lastIndex: '*',
+        options: '*',                // non-std
         sticky: '*'                  // non-std
       }
     },
