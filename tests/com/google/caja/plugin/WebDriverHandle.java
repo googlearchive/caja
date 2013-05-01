@@ -22,7 +22,6 @@ import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
 import org.openqa.selenium.Capabilities;
-import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchWindowException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
@@ -87,9 +86,8 @@ class WebDriverHandle {
     // In some webdriver implementations (such as Safari), the
     // window.open will fail, which is fine, we'll just run the test
     // in the base window and open a new session for the next test.
-    JavascriptExecutor jsexec = driver;
     String name = "cajatestwin" + (windowSeq++);
-    Boolean result = (Boolean) jsexec.executeScript(
+    Boolean result = (Boolean) driver.executeScript(
         "return !!window.open('', '" + name + "')");
     if (result) {
       driver.switchTo().window(name);
@@ -103,7 +101,14 @@ class WebDriverHandle {
     if (name == null) { name = "unknown"; }
     String version = caps.getVersion();
     if (version == null) { version = "unknown"; }
-    log("- webdriver browser " + name + " version " + version);
+    // Firefox's version is something like "20.0", which doesn't tell
+    // you the exact build, so we also try to report buildID.
+    String build = (String) driver.executeScript(
+        "return String(navigator.buildID || '')");
+    if (build != null && !"".equals(build)) {
+      version += " build " + build;
+    }
+    log("webdriver: browser " + name + " version " + version);
   }
 
   void log(String s) {
