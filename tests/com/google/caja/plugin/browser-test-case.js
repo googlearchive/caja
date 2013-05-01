@@ -638,7 +638,7 @@ function createExtraImportsForTesting(frameGroup, frame) {
   var jsunitFns = [
       'assert', 'assertContains', 'assertEquals', 'assertEvaluatesToFalse',
       'assertEvaluatesToTrue', 'assertFalse', 'assertHTMLEquals',
-      'assertHashEquals', 'assertNotEquals', 'assertNotNull',
+      'assertHashEquals', 'assertNaN', 'assertNotEquals', 'assertNotNull',
       'assertNotUndefined', 'assertNull', 'assertRoughlyEquals',
       'assertThrows', 'assertTrue', 'assertObjectEquals', 'assertUndefined',
       'assertThrowsMsg', 'error', 'fail', 'setUp', 'tearDown'];

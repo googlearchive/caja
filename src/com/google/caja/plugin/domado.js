@@ -5326,14 +5326,24 @@ var Domado = (function() {
           defaultValue: NP.filter(
             false, function (x) { return x == null ? null : String(x); },
             false, function (x) { return x == null ? '' : '' + x; }),
+          min: NP.rw,
+          max: NP.rw,
           readOnly: NP.rw,
           selectedIndex: NP.filterProp(identity, toInt),
           size: NP.rw,
-          type: NP.rw
+          step: NP.rw,
+          type: NP.rw,
+          valueAsNumber: NP.rw
         }
       });
       TameInputElement.prototype.select = nodeAmp(function(privates) {
         privates.feral.select();
+      });
+      TameInputElement.prototype.stepDown = nodeAmp(function(privates) {
+        privates.feral.stepDown();
+      });
+      TameInputElement.prototype.stepUp = nodeAmp(function(privates) {
+        privates.feral.stepUp();
       });
 
       defineElement({

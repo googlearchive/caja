@@ -220,3 +220,33 @@
     pass('testDynamicForm');
   });
 </script>
+
+<form class="testcontainer" id="testFancyInputs">testFancyInputs
+  <!-- HTML5 input types and related interface -->
+  <input type="text" id="testFancyInputs-plain" value="7">
+  <input type="number" id="testFancyInputs-num" value="7">
+</form>
+<script type="text/javascript">
+  // TODO(kpreid): Marked ES5 only because the cajoler is not allowing
+  // type=number through despite it being in the schema; I don't know why yet.
+  jsunitRegisterIf(inES5Mode, 'testFancyInputs', function testFancyInputs() {
+    // TODO(kpreid): test other HTML5 input types.
+
+    // basics/comparison
+    assertEquals('text', $('testFancyInputs-plain').type);
+    assertNaN($('testFancyInputs-plain').valueAsNumber);
+
+    assertEquals('number', $('testFancyInputs-num').getAttribute('type'));
+    if ($('testFancyInputs-num').type === 'number') {  // browser support
+      assertEquals('number', $('testFancyInputs-num').type);
+      assertEquals(7, $('testFancyInputs-num').valueAsNumber);
+
+      $('testFancyInputs-num').stepDown();
+      assertEquals(6, $('testFancyInputs-num').valueAsNumber);
+      $('testFancyInputs-num').stepUp();
+      assertEquals(7, $('testFancyInputs-num').valueAsNumber);
+    }
+
+    pass('testFancyInputs');
+  });
+</script>
