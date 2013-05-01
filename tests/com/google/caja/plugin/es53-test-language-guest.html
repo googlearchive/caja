@@ -283,6 +283,35 @@
   });
 </script>
 
+<p id="testIs" class="testcontainer">
+  Test is/identical/SameValue
+</p>
+<script type="text/javascript">
+  jsunitRegister('testIs', function testIs() {
+    function checkCall(name, fn, result, a, b) {
+      assertEquals(name + ': ' + a + ' ' + (result ? '=' : '!') + '== ' + b,
+          result, fn(a, b));
+    }
+    function check(name, fn) {
+      var o = {};
+      assertEquals(name, 'function', typeof fn);
+      checkCall(name, fn, true, o, o);
+      checkCall(name, fn, false, {}, {});
+      checkCall(name, fn, true, NaN, NaN);
+      checkCall(name, fn, true, NaN, 0/0);
+      checkCall(name, fn, true, Infinity, Infinity);
+      checkCall(name, fn, false, Infinity, -Infinity);
+      checkCall(name, fn, false, 0, -0);
+      checkCall(name, fn, false, NaN, { valueOf: function() { return NaN; } });
+    }
+    check('cajaVM.is', cajaVM.is);
+    if ('is' in Object) {  // SES only (as ES6 anticipation)
+      check('Object.is', Object.is);
+    }
+    pass('testIs');
+  });
+</script>
+
 <script>
   var c = 0;
 </script>

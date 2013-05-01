@@ -5537,6 +5537,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       def: def,
 
       // Other
+      is: SameValue,
       makeArrayLike: makeArrayLike,
       isFunction: isFunction,
       USELESS: USELESS,

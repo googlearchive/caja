@@ -256,7 +256,6 @@
         enforceNat: ON_ES53,
         enforceType: ON_ES53,
         identity: ON_ES53,
-        is: ON_SES,
         isFunction: ON_ES53
       }
     };
