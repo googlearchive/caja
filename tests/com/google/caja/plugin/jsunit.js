@@ -33,7 +33,7 @@ jsunit.alreadyRan = false;
 // TODO(kpreid): Kludge. The JUnit tests which run JavaScript want it to
 // complete synchronously, so this flag disables all setTimeouts in this
 // module.
-jsunit.beSynchronous = typeof _junit_ !== undefined;
+jsunit.beSynchronous = typeof _junit_ !== 'undefined';
 
 jsunit.getCurrentTestId = function() {
   return jsunit.testIdStack.length
