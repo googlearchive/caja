@@ -581,6 +581,20 @@ document.write(
   });
 </script>
 
+<form id="testExpandoOnProxy" class="testcontainer">
+  testExpandoOnProxy: expando props work on proxied nodes
+</form>
+<script type="text/javascript">
+  jsunitRegister('testExpandoOnProxy',
+                 function testExpandoOnProxy() {
+    var el = document.getElementById('testExpandoOnProxy');
+    el.foo = 1;
+    assertEquals(1, el.foo);
+
+    pass('testExpandoOnProxy');
+  });
+</script>
+
 <p id="testEditabilityInNodeLists" class="testcontainer">
   editability in node lists<br>
 </p>

@@ -225,20 +225,42 @@ var Domado = (function() {
     }
   };
 
-  // This is a simple forwarding proxy handler. Code copied 2011-05-24 from
-  // <http://wiki.ecmascript.org/doku.php?id=harmony:proxy_defaulthandler>
-  // with modifications to make it work on ES5-not-Harmony-but-with-proxies as
-  // provided by Firefox 4.0.1.
-  domitaModules.ProxyHandler = function (target) {
+  /**
+   * The Caja WeakMap emulation magic property name.
+   *
+   * This name can only be seen by using a proxy handler, but we need our proxy
+   * handlers to permit it even on frozen-seeming proxies, so we have to obtain
+   * it here, which we do by using a proxy to observe it.
+   *
+   * If proxies are unavailable or if WeakMaps do not use a magic property, then
+   * weakMapMagicName will be a value unequal to any string.
+   */
+  var weakMapMagicName = {};
+  // The actual initialization of weakMapMagicName occurs after ProxyHandler.
+
+  /**
+   * This is a simple forwarding proxy handler. Code copied 2011-05-24 from
+   * <http://wiki.ecmascript.org/doku.php?id=harmony:proxy_defaulthandler>
+   * with modifications to make it work on ES5-not-Harmony-but-with-proxies as
+   * provided by Firefox 4.0.1 and to be compatible with SES's WeakMap
+   * emulation.
+   */
+  function ProxyHandler(target) {
     this.target = target;
   };
-  domitaModules.ProxyHandler.prototype = {
-    constructor: domitaModules.ProxyHandler,
+  ProxyHandler.prototype = {
+    constructor: ProxyHandler,
 
     // == fundamental traps ==
 
     // Object.getOwnPropertyDescriptor(proxy, name) -> pd | undefined
     getOwnPropertyDescriptor: function(name) {
+      if (name === weakMapMagicName) {
+        // Caja WeakMap emulation internal property; must be redirected to
+        // avoid glitches involving the proxy being treated as identical to its
+        // target.
+        return Object.getOwnPropertyDescriptor(this, 'weakMapMagic');
+      }
       var desc = Object.getOwnPropertyDescriptor(this.target, name);
       if (desc !== undefined) { desc.configurable = true; }
       return desc;
@@ -263,11 +285,28 @@ var Domado = (function() {
 
     // Object.defineProperty(proxy, name, pd) -> undefined
     defineProperty: function(name, desc) {
-      return Object.defineProperty(this.target, name, desc);
+      if (name === weakMapMagicName) {
+        if (desc.get) {
+          throw new Error('WeakMap compatibility doesn\'t expect accessors');
+        }
+        if (desc.set === null) {
+          // TODO(kpreid): stale?
+          desc.set = undefined;
+        }
+        Object.defineProperty(this, 'weakMapMagic', desc);
+        return true;
+      }
+      Object.defineProperty(this.target, name, desc);
+      return true;
     },
 
     // delete proxy[name] -> boolean
-    'delete': function(name) { return delete this.target[name]; },
+    'delete': function(name) {
+      if (name === weakMapMagicName) {
+        return delete this.weakMapMagic;
+      }
+      return delete this.target[name];
+    },
 
     // Object.{freeze|seal|preventExtensions}(proxy) -> proxy
     fix: function() {
@@ -295,11 +334,21 @@ var Domado = (function() {
 
     // proxy[name] -> any
     get: domitaModules.permuteProxyGetSet.getter(
-        function(name, proxy) { return this.target[name]; }),
+        function(name, proxy) {
+      if (name === weakMapMagicName) {
+        // Caja WeakMap emulation internal property
+        // Note: Not correct in the presence of a getter (checked above)
+        return this.weakMapMagic;
+      }
+      return this.target[name];
+    }),
 
     // proxy[name] = value
     set: domitaModules.permuteProxyGetSet.setter(
-        function(name, value, proxy) { this.target[name] = value; }),
+        function(name, value, proxy) {
+      this.target[name] = value;
+      return true;
+    }),
 
     // for (var name in proxy) { ... }
     enumerate: function() {
@@ -325,7 +374,40 @@ var Domado = (function() {
     // Object.keys(proxy) -> [ string ]
     keys: function() { return Object.keys(this.target); }
   };
-  cajaVM.def(domitaModules.ProxyHandler);
+  cajaVM.def(ProxyHandler);
+
+  // Find the weakMapMagicName. This occurs after ProxyHandler is defined
+  // because it uses ProxyHandler.
+  (function() {
+    if (!domitaModules.proxiesAvailable) {
+      // unobservable so doesn't matter
+      return;
+    }
+
+    // Create a proxy whose handler will stash away the magic name.
+    var handler = new ProxyHandler({});
+    handler.getOwnPropertyDescriptor = function(name) {
+      if (/^weakmap:/.test(name)) { weakMapMagicName = name; }
+      return ProxyHandler.prototype.getOwnPropertyDescriptor.call(this, name);
+    };
+    handler.get = domitaModules.permuteProxyGetSet.getter(function(name) {
+      if (/^weakmap:/.test(name)) { weakMapMagicName = name; }
+      return ProxyHandler.prototype.get.call(this, name);
+    });
+    var proxy = Proxy.create(handler);
+
+    // Cause the proxy to be used as a key.
+    var w = new WeakMap();
+    try {
+      w.get(proxy);
+    } catch (e) {
+      console.error('Domado internal error: failed in WeakMap name setup:', e);
+    }
+
+    // At this point, we have either obtained the magic name, or there is no
+    // observable magic name, in which case weakMapMagicName is left at its
+    // initial {} value which is not === to any property name.
+  })();
 
   /**
    * Identical to Object.defineProperty except that if used to define a
@@ -568,243 +650,6 @@ var Domado = (function() {
     return cajaVM.constFunc(f);
   }
 
-  /**
-   * The Caja WeakMap emulation magic property name.
-   *
-   * This name can only be seen by using a proxy handler, but we need our proxy
-   * handlers to permit it even on frozen-seeming proxies, so we have to obtain
-   * it here, which we do by using a proxy to observe it.
-   *
-   * If proxies are unavailable or if WeakMaps do not use a magic property, then
-   * weakMapMagicName will be a value unequal to any string.
-   */
-  var weakMapMagicName = {};
-  (function() {
-    if (!domitaModules.proxiesAvailable) {
-      // unobservable so doesn't matter
-      return;
-    }
-
-    var ProxyHandler = domitaModules.ProxyHandler;
-
-    // Create a proxy whose handler will stash away the magic name.
-    var handler = new ProxyHandler({});
-    handler.getOwnPropertyDescriptor = function(name) {
-      if (/^weakmap:/.test(name)) { weakMapMagicName = name; }
-      return ProxyHandler.prototype.getOwnPropertyDescriptor.call(this, name);
-    };
-    handler.get = domitaModules.permuteProxyGetSet.getter(function(name) {
-      if (/^weakmap:/.test(name)) { weakMapMagicName = name; }
-      return ProxyHandler.prototype.get.call(this, name);
-    });
-    var proxy = Proxy.create(handler);
-
-    // Cause the proxy to be used as a key.
-    var w = new WeakMap();
-    try {
-      w.get(proxy);
-    } catch (e) {
-      console.error('Domado internal error: failed in WeakMap name setup:', e);
-    }
-    
-    // At this point, we have either obtained the magic name, or there is no
-    // observable magic name, in which case weakMapMagicName is left at its
-    // initial {} value which is not === to any property name.
-  })();
-
-  var ExpandoProxyHandler = domitaModules.ExpandoProxyHandler = (function() {
-    var getPropertyDescriptor = domitaModules.getPropertyDescriptor;
-    var ProxyHandler = domitaModules.ProxyHandler;
-
-    /**
-     * A handler for a proxy which implements expando properties by forwarding
-     * them to a separate object associated (by weak map) with the real node.
-     *
-     * The {@code target} is treated as if it were the prototype of this proxy,
-     * and the expando properties as own properties of this proxy, except that
-     * expando properties cannot hide target properties.
-     *
-     * The client SHOULD call ExpandoProxyHandler.register(proxy, target) to
-     * enable use of ExpandoProxyHandler.unwrap.
-     * TODO(kpreid): Wouldn't this mapping better be handled just by the client
-     * since this is not defensively consistent and we don't need it here?
-     *
-     * Note the following exophoric hazard: if there are multiple expando
-     * proxies with the same {@code storage}, and an accessor property is set on
-     * one, and then that property is read on the other, the {@code this} seen
-     * by the accessor get/set functions will be the latter proxy rather than
-     * the former. Therefore, it should never be the case that two expando
-     * proxies have the same storage and provide different authority, unless
-     * every proxy which is editable provides a superset of the authority
-     * provided by all others (which is the case for the use with TameNodes in
-     * Domado).
-     *
-     * @param {Object} target The tame node to forward methods to.
-     * @param {boolean} editable Whether modifying the properties is allowed.
-     * @param {Object} storage The object to store the expando properties on.
-     */
-    function ExpandoProxyHandler(target, editable, storage) {
-      this.editable = editable;
-      this.storage = storage;
-      this.target = target;
-    }
-    var expandoProxyTargets = new WeakMap();
-    // Not doing this because it implements all the derived traps, requiring
-    // us to do the same. Instead, we use its prototype selectively, whee.
-    //inherit(ExpandoProxyHandler, ProxyHandler);
-
-    ExpandoProxyHandler.register = function (proxy, handler) {
-      expandoProxyTargets.set(proxy, handler);
-    };
-
-    /**
-     * If obj is an expando proxy, return the underlying object. This is used
-     * to apply non-expando properties to the object outside of its constructor.
-     *
-     * This is not robust against spoofing because it is only used during
-     * initialization.
-     */
-    ExpandoProxyHandler.unwrap = function (obj) {
-      return expandoProxyTargets.has(obj) ? expandoProxyTargets.get(obj) : obj;
-    };
-
-    ExpandoProxyHandler.prototype.getOwnPropertyDescriptor = function (name) {
-      if (name === weakMapMagicName) {
-        // Caja WeakMap emulation internal property
-        return Object.getOwnPropertyDescriptor(this, 'weakMapMagic');
-      } else {
-        return Object.getOwnPropertyDescriptor(this.storage, name);
-      }
-    };
-    ExpandoProxyHandler.prototype.getPropertyDescriptor = function (name) {
-      var desc = this.getOwnPropertyDescriptor(name)
-          || getPropertyDescriptor(this.target, name);
-      return desc;
-    };
-    ExpandoProxyHandler.prototype.getOwnPropertyNames = function () {
-      return Object.getOwnPropertyNames(
-          this.storage || {});
-    };
-    ExpandoProxyHandler.prototype.defineProperty = function (name, descriptor) {
-      if (name === weakMapMagicName) {
-        if (descriptor.set === null) descriptor.set = undefined;
-        Object.defineProperty(this, 'weakMapMagic', descriptor);
-      } else if (Object.prototype.hasOwnProperty.call(this.target, name)) {
-        // Forward attempted redefinitions of own properties to the target.
-        return ProxyHandler.prototype.defineProperty.call(this, name,
-            descriptor);
-      } else {
-        if (!this.editable) { throw new Error(NOT_EDITABLE); }
-        Object.defineProperty(this.storage, name, descriptor);
-        return true;
-      }
-      return false;
-    };
-    ExpandoProxyHandler.prototype['delete'] = function (name) {
-      if (name === weakMapMagicName) {
-        return false;
-      } else if (Object.prototype.hasOwnProperty.call(this.target, name)) {
-        // Forward attempted deletions of own properties to the target.
-        return ProxyHandler.prototype['delete'].call(this, name);
-      } else {
-        if (!this.editable) { throw new Error(NOT_EDITABLE); }
-        return delete this.storage[name];
-      }
-      return false;
-    };
-    ExpandoProxyHandler.prototype.fix = function () {
-      // TODO(kpreid): Implement fixing, because it is possible to freeze a
-      // host DOM node and so ours should support it too.
-      return undefined;
-    };
-
-    // Derived traps
-    ExpandoProxyHandler.prototype.get = domitaModules.permuteProxyGetSet.getter(
-        function (name) {
-      // Written for an ES5/3 bug, but probably useful for efficiency too.
-      if (name === weakMapMagicName) {
-        // Caja WeakMap emulation internal property
-        return this.weakMapMagic;
-      } else if (Object.prototype.hasOwnProperty.call(this.storage, name)) {
-        return this.storage[name];
-      } else {
-        return this.target[name];
-      }
-    });
-    ExpandoProxyHandler.prototype.enumerate = function () {
-      // This derived trap shouldn't be necessary, but Firebug won't complete
-      // properties without it (FF 4.0.1, Firebug 1.7.1, 2011-06-02).
-      var names = [];
-      for (var k in this.target) names.push(k);
-      for (var k in this.storage) names.push(k);
-      return names;
-    };
-    ExpandoProxyHandler.prototype.set = domitaModules.permuteProxyGetSet.setter(
-        function (name, val, receiver) {
-      // NOTE: this was defined to work around what might be a FF4 or
-      // FF4+initSES bug or a bug in our get[Own]PropertyDescriptor that made
-      // the innerHTML setter not be invoked.
-      // It is, in fact, an exact copy of the default derived trap code from
-      // https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Proxy
-      // as of 2011-05-25.
-      var desc = this.getOwnPropertyDescriptor(name);
-      if (desc) {
-        if ('writable' in desc) {
-          if (desc.writable) {
-            desc.value = val;
-            this.defineProperty(name, desc);
-            return true;
-          } else {
-            return false;
-          }
-        } else { // accessor
-          if (desc.set) {
-            desc.set.call(receiver, val);
-            return true;
-          } else {
-            return false;
-          }
-        }
-      }
-      desc = this.getPropertyDescriptor(name);
-      if (desc) {
-        if ('writable' in desc) {
-          // The commenting-out of the below code corresponds to "fixing the
-          // override mistake". For further information, see
-          // Object.prototype.w___ in ES5/3 and makeTamperProof in SES.
-          //
-          // We need to do the 'fix' here because this proxy trap is a
-          // reimplementation of what otherwise would be JS runtime internal
-          // algorithms, and so not doing the fix would break code which
-          // optimizes on the knowledge that the platform has the fix.
-          // (In particular, cajaVM.def uses nonwritable data properties instead
-          // of accessor properties whenever possible.)
-          //
-          // if (desc.writable) {
-          //   // fall through
-          // } else {
-          //   return false;
-          // }
-        } else { // accessor
-          if (desc.set) {
-            desc.set.call(receiver, val);
-            return true;
-          } else {
-            return false;
-          }
-        }
-      }
-      this.defineProperty(name, {
-        value: val,
-        writable: true,
-        enumerable: true,
-        configurable: true});
-      return true;
-    });
-
-    return cajaVM.def(ExpandoProxyHandler);
-  })();
-
   var CollectionProxyHandler = (function() {
     /**
      * Handler for a proxy which presents value properties derived from an
@@ -813,10 +658,10 @@ var Domado = (function() {
      * The subclass should implement .col_lookup(name) -> internalvalue,
      * .col_evaluate(internalvalue) -> value, and .col_names() -> array.
      */
-    function CollectionProxyHandler(target, editable, storage) {
-      ExpandoProxyHandler.call(this, target, editable, storage);
+    function CollectionProxyHandler(target) {
+      ProxyHandler.call(this, target);
     }
-    inherit(CollectionProxyHandler, ExpandoProxyHandler);
+    inherit(CollectionProxyHandler, ProxyHandler);
     CollectionProxyHandler.prototype.getOwnPropertyDescriptor =
         function (name) {
       var lookup;
@@ -828,8 +673,7 @@ var Domado = (function() {
           value: this.col_evaluate(lookup)
         };
       } else {
-        return ExpandoProxyHandler.prototype.getOwnPropertyDescriptor
-            .call(this, name);
+        return ProxyHandler.prototype.getOwnPropertyDescriptor.call(this, name);
       }
     };
     CollectionProxyHandler.prototype.get =
@@ -838,12 +682,11 @@ var Domado = (function() {
       if (name !== weakMapMagicName && (lookup = this.col_lookup(name))) {
         return this.col_evaluate(lookup);
       } else {
-        return ExpandoProxyHandler.prototype.get.unpermuted.call(this, name);
+        return ProxyHandler.prototype.get.unpermuted.call(this, name);
       }
     });
     CollectionProxyHandler.prototype.getOwnPropertyNames = function() {
-      var names =
-          ExpandoProxyHandler.prototype.getOwnPropertyNames.call(this);
+      var names = ProxyHandler.prototype.getOwnPropertyNames.call(this);
       names.push.apply(names, this.col_names());
       return names;
     };
@@ -854,7 +697,7 @@ var Domado = (function() {
       } else if ((lookup = this.col_lookup(name))) {
         return false;
       } else {
-        return ExpandoProxyHandler.prototype['delete'].call(this, name);
+        return ProxyHandler.prototype['delete'].call(this, name);
       }
     };
     return cajaVM.def(CollectionProxyHandler);
@@ -1324,8 +1167,6 @@ var Domado = (function() {
     var makeFunctionAccessible = rulebreaker.makeFunctionAccessible;
 
     var Confidence = domitaModules.Confidence;
-    var ProxyHandler = domitaModules.ProxyHandler;
-    var ExpandoProxyHandler = domitaModules.ExpandoProxyHandler;
     var canHaveEnumerableAccessors = domitaModules.canHaveEnumerableAccessors;
 
     /**
@@ -1978,13 +1819,7 @@ var Domado = (function() {
        */
       function finishNode(node) {
         nodeAmplify(node, function(privates) {
-          if (domitaModules.proxiesAvailable) {
-            // If running with proxies, it is indicative of something going
-            // wrong if our objects are mutated (the expando proxy handler
-            // should intercept writes). If running without proxies, then we
-            // need to be unfrozen so that assignments to expando fields work.
-            Object.freeze(node);
-
+          if (domitaModules.proxiesAvailable && privates.proxyHandler) {
             // The proxy construction is deferred until now because the ES5/3
             // implementation of proxies requires that the proxy's prototype is
             // frozen.
@@ -1992,7 +1827,6 @@ var Domado = (function() {
                 Object.getPrototypeOf(node));
             delete privates.proxyHandler;  // no longer needed
 
-            ExpandoProxyHandler.register(proxiedNode, node);
             TameNodeConf.confide(proxiedNode, taming, node);
             tamingProxies.set(node, proxiedNode);
 
@@ -2011,6 +1845,8 @@ var Domado = (function() {
             } else {
               // Other node types are tamed every time they are encountered;
               // we simply remember the latest taming here.
+              // TODO(kpreid): Review whether this is still desired and
+              // consistent behavior.
               taming.reTamesTo(feral, node);
             }
           } else {
@@ -2732,19 +2568,6 @@ var Domado = (function() {
         })
       };
 
-      var nodeExpandos = new WeakMap(true);
-      /**
-       * Return the object which stores expando properties for a given
-       * host DOM node.
-       */
-      function getNodeExpandoStorage(node) {
-        var s = nodeExpandos.get(node);
-        if (s === undefined) {
-          nodeExpandos.set(node, s = {});
-        }
-        return s;
-      }
-      
       var nodeClassNoImplWarnings = {};
 
       function makeTameNodeByType(node) {
@@ -3130,7 +2953,7 @@ var Domado = (function() {
           this.feral = feral;
           this.mapping = mapping;
           this.visibleList = visibleList;
-          CollectionProxyHandler.call(this, target, true, {});
+          CollectionProxyHandler.call(this, target);
         };
         inherit(NamedNodeMapProxyHandler, CollectionProxyHandler);
         NamedNodeMapProxyHandler.prototype.col_lookup = function(name) {
@@ -3549,7 +3372,7 @@ var Domado = (function() {
        * revealed.
        *
        * @param {Function} opt_proxyType The constructor of the proxy handler
-       *     to use, defaulting to ExpandoProxyHandler.
+       *     to use, defaulting to no proxy wrapper.
        * @constructor
        */
       function TameBackedNode(node, opt_policy, opt_proxyType) {
@@ -3598,9 +3421,8 @@ var Domado = (function() {
         nodeAmplify(this, function(privates) {
           privates.feral = node;
 
-          if (domitaModules.proxiesAvailable) {
-            privates.proxyHandler = new (opt_proxyType || ExpandoProxyHandler)(
-                this, policy.editable, getNodeExpandoStorage(node));
+          if (domitaModules.proxiesAvailable && opt_proxyType) {
+            privates.proxyHandler = new opt_proxyType(this);
           }
         });
       }
@@ -5114,17 +4936,17 @@ var Domado = (function() {
       defineTrivialElement('HTMLDListElement');
       defineTrivialElement('HTMLDivElement');
 
-      function FormElementAndExpandoProxyHandler(target, editable, storage) {
-        CollectionProxyHandler.call(this, target, editable, storage);
+      function FormElementProxyHandler(target) {
+        CollectionProxyHandler.call(this, target);
       }
-      inherit(FormElementAndExpandoProxyHandler, CollectionProxyHandler);
-      FormElementAndExpandoProxyHandler.prototype.col_lookup = function(name) {
+      inherit(FormElementProxyHandler, CollectionProxyHandler);
+      FormElementProxyHandler.prototype.col_lookup = function(name) {
         return nodeAmplify(this.target, function(privates) {
           return makeDOMAccessible(
               makeDOMAccessible(privates.feral.elements).namedItem(name));
         });
       };
-      FormElementAndExpandoProxyHandler.prototype.col_evaluate =
+      FormElementProxyHandler.prototype.col_evaluate =
           function(nodeOrList) {
         if (taming.hasTameTwin(nodeOrList)) {
           return taming.tame(nodeOrList);
@@ -5138,15 +4960,15 @@ var Domado = (function() {
           throw new Error('could not interpret form.elements result');
         }
       };
-      FormElementAndExpandoProxyHandler.prototype.col_names = function() {
+      FormElementProxyHandler.prototype.col_names = function() {
         // TODO(kpreid): not quite right result set
         return Object.getOwnPropertyNames(this.target.elements);
       };
-      cajaVM.def(FormElementAndExpandoProxyHandler);
+      cajaVM.def(FormElementProxyHandler);
 
       var TameFormElement = defineElement({
         domClass: 'HTMLFormElement',
-        proxyType: FormElementAndExpandoProxyHandler,
+        proxyType: FormElementProxyHandler,
         properties: {
           action: NP.filterAttr(defaultToEmptyStr, String),
           elements: NP.TameMemoIf(false, 'elements', function(f) {
@@ -5788,17 +5610,7 @@ var Domado = (function() {
       cajaVM.def(TameEvent);  // and its prototype
 
       function TameCustomHTMLEvent(event) {
-        var self = TameEvent.call(this, event, true);
-        if (domitaModules.proxiesAvailable) {
-          Object.preventExtensions(this);  // required by ES5/3 proxy emulation
-          var proxy = Proxy.create(
-              new ExpandoProxyHandler(self, true, {}),
-              Object.getPrototypeOf(self));
-          ExpandoProxyHandler.register(proxy, self);
-          TameEventConf.confide(proxy, taming, self);
-          self = proxy;
-        }
-        return self;
+        return TameEvent.call(this, event, true);
       }
       inertCtor(TameCustomHTMLEvent, TameEvent);
       /**
@@ -5884,11 +5696,6 @@ var Domado = (function() {
       function TameHTMLDocument(doc, container, domain) {
         TameNode.call(this, nodePolicyEditable);
         nodeAmplify(this, function(privates) {
-          if (domitaModules.proxiesAvailable) {
-            // finishNode will wrap 'this' with an actual proxy later.
-            privates.proxyHandler = new ExpandoProxyHandler(this, true, {});
-          }
-
           privates.feralDoc = doc;
           privates.feralContainerNode = container;
           privates.onLoadListeners = [];
