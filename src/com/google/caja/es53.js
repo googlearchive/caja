@@ -263,7 +263,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         this[P + '_w___'] = false;
       }
       // inline this.hasNumerics___()
-      if (!this.NUM____v___ === this) {
+      if (!(this.NUM____v___ === this)) {
         this.NUM____v___ = this;
         this.NUM____e___ = this;
         this.NUM____g___ = void 0;

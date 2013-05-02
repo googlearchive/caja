@@ -463,6 +463,35 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
   }
 
   /**
+   * Tests freezing objects with numeric properties. See <a
+   * href="http://code.google.com/p/google-caja/issues/detail?id=1683">issue
+   * 1683</a>.
+   */
+  public final void testFreezeNumerics() throws Exception {
+    // The observable problem is that if no numeric property of an object has
+    // been mentioned (in a way which triggers isWritable) before freeze/def,
+    // then its NUM___ descriptor will be writable and configurable afterward.
+    // This occurred because a bad test was not registering it as an own
+    // property descriptor.
+    
+    // Test for symptom
+    rewriteAndExecute(
+        "var o = {0: 'foo'};" +
+        "Object.freeze(o);" +
+        "var d = Object.getOwnPropertyDescriptor(o, '0');" +
+        "assertFalse('writable', d.writable);" +
+        "assertFalse('configurable', d.configurable);");
+
+    // Test for actual mutability
+    rewriteAndExecute(
+        "var o = {0: 'foo'};" +
+        "void Object.getOwnPropertyDescriptor(o, '0');" +
+        "Object.freeze(o);" +
+        "try { o[1] = 'bar'; } catch (e) {}" +
+        "assertEquals('element 1', undefined, o[1]);");
+  }
+
+  /**
    * Tests that the {@code prototype}, {@code name}, and {@code length}
    * properties of function instances are set properly.
    */
