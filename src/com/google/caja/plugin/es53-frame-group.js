@@ -428,23 +428,22 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
   //----------------
 
   function makeDomadoRuleBreaker() {
-    // TODO(felix8a): should markFunc be markFuncFreeze?
     var ruleBreaker = {
-      makeDOMAccessible: ___.markFunc(makeDOMAccessible),
-      makeFunctionAccessible: ___.markFunc(function (f) {
+      makeDOMAccessible: ___.markConstFunc(makeDOMAccessible),
+      makeFunctionAccessible: ___.markConstFunc(function (f) {
         return markCallableWithoutMembrane(f);
       }),
-      writeToPixelArray: ___.markFunc(writeToPixelArray),
-      copyLengthPropertyIfUninterceptable: ___.markFunc(
+      writeToPixelArray: ___.markConstFunc(writeToPixelArray),
+      copyLengthPropertyIfUninterceptable: ___.markConstFunc(
           function(source, target) {
         if (source.GetOwnProperty___('length')) {
           target.length = source.v___('length');
         }
       }),
-      getId: ___.markFunc(function () {
+      getId: ___.markConstFunc(function() {
         return cajaInt.getId.apply(undefined, arguments);
       }),
-      getImports: ___.markFunc(function () {
+      getImports: ___.markConstFunc(function() {
         return cajaInt.getImports.apply(undefined, arguments);
       })
     };

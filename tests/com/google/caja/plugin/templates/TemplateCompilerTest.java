@@ -289,7 +289,7 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "    var el___; var emitter___ = IMPORTS___.htmlEmitter___;"
             + "    el___ = emitter___.byId('id_2___');"
             // The extracted handler.
-            + "    var c_1___ = ___.markFuncFreeze("
+            + "    var c_1___ = ___.markConstFunc("
             + "        function(event, thisNode___) {"
             + "          alert('hi');"  // Cajoled later
             + "          return true;"
@@ -323,7 +323,7 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "    var el___;"
             + "    var emitter___ = IMPORTS___.htmlEmitter___;"
             + "    el___ = emitter___.byId('id_2___');"
-            + "    var c_1___ = IMPORTS___.handlers___.push(___.markFuncFreeze("
+            + "    var c_1___ = IMPORTS___.handlers___.push(___.markConstFunc("
             // body is cajoled later
             + "        function() { alert(1 + 1); })) - 1;"
             // The extracted handler.
@@ -357,7 +357,7 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "    var el___; var emitter___ = IMPORTS___.htmlEmitter___;"
             + "    el___ = emitter___.byId('id_2___');"
             // The extracted handler.
-            + "    var c_1___ = IMPORTS___.handlers___.push(___.markFuncFreeze("
+            + "    var c_1___ = IMPORTS___.handlers___.push(___.markConstFunc("
             + "        function () {"
             + "          'use strict';"
             + "          alert(1 + 1);"  // Cajoled later

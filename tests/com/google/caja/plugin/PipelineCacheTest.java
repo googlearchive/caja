@@ -256,7 +256,7 @@ public class PipelineCacheTest extends PipelineStageTestCase {
       "  {",
       "    emitter___ = IMPORTS___.htmlEmitter___;",
       "    el___ = emitter___.byId(@b_brk);",
-      "    @handler___ = ___.markFuncFreeze(function (event, thisNode___) {",
+      "    @handler___ = ___.markConstFunc(function (event, thisNode___) {",
       "        (IMPORTS___.alert_v___? IMPORTS___.alert:"
         + " ___.ri(IMPORTS___, 'alert'))",
       "        .i___('Hello');",
@@ -546,7 +546,7 @@ public class PipelineCacheTest extends PipelineStageTestCase {
                 "  {",
                 "    emitter___ = IMPORTS___.htmlEmitter___;",
                 "    el___ = emitter___.byId('id_2___');",
-                "    c_1___ = ___.markFuncFreeze(function (event, thisNode___) {",
+                "    c_1___ = ___.markConstFunc(function (event, thisNode___) {",
                 "        (IMPORTS___.alert_v___? IMPORTS___.alert:"
                 + " ___.ri(IMPORTS___, 'alert'))",
                 "        .i___(1337);",

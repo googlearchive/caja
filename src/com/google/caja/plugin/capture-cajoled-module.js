@@ -19,7 +19,7 @@ function CaptureCajoledModule(importsCallback) {
 
   // ... which grabs Domado and removes itself.
   var normalHandle = ourHandler.handle;
-  ourHandler.handle = ___.markFuncFreeze(function (module) {
+  ourHandler.handle = ___.markConstFunc(function (module) {
     ___.setNewModuleHandler(originalNewModuleHandler);
 
     // TODO(kpreid): This useful-for-debugging code ought to be available
@@ -49,7 +49,7 @@ function CaptureCajoledModule(importsCallback) {
           };
         }
         saneConsole.DefineOwnProperty___(v, {
-          value: ___.markFuncFreeze(logFunc),
+          value: ___.markConstFunc(logFunc),
           enumerable: true
         });
       });

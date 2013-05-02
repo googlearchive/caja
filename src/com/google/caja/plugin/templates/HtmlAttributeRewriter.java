@@ -205,7 +205,7 @@ public final class HtmlAttributeRewriter {
           handlerFnName = meta.generateUniqueName("c");
           Declaration handler = (Declaration) QuasiBuilder.substV(
               ""
-              + "var @handlerName = ___./*@synthetic*/markFuncFreeze("
+              + "var @handlerName = ___./*@synthetic*/markConstFunc("
               + "    /*@synthetic*/function ("
               + "        event, " + ReservedNames.THIS_NODE + ") { @body*; });",
               "handlerName", SyntheticNodes.s(
@@ -271,7 +271,7 @@ public final class HtmlAttributeRewriter {
           Statement handler = (Statement) QuasiBuilder.substV(
               ""
               + "var @handlerIndex = IMPORTS___.handlers___.push("
-              + "    ___./*@synthetic*/markFuncFreeze("
+              + "    ___./*@synthetic*/markConstFunc("
               // There is no node or event object available to code in
               // javascript: URIs.
               + "        /*@synthetic*/function () { @body*; })) - 1;",

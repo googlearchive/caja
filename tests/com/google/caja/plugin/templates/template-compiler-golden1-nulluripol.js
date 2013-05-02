@@ -12,7 +12,7 @@ function module() {
     // Remove the bits the first script shouldn't see.
     emitter___.attach('id_4___');
     // Define handlers as needed.
-    var c_3___ = ___.markFuncFreeze(function (event, thisNode___) {
+    var c_3___ = ___.markConstFunc(function (event, thisNode___) {
       wasClicked(thisNode___);
     });
     el___.onclick = function (event) {
@@ -55,7 +55,7 @@ function module() {
     el___ = emitter___.byId('id_7___');
     emitter___.setAttr(el___, 'href',
       IMPORTS___.rewriteUriInAttribute___('foo%3dbar?baz%28%29', 'a', 'href'));
-    var c_3___ = ___.markFuncFreeze(function (event, thisNode___) {
+    var c_3___ = ___.markConstFunc(function (event, thisNode___) {
       wasClicked(thisNode___);
     });
     el___.onclick = function (event) {

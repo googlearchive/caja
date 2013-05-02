@@ -7,7 +7,7 @@ function module() {
     // Remove the bits the first script shouldn't see.
     emitter___.attach('id_4___');
     // Attach the onclick handler.
-    var c_3___ = ___.markFuncFreeze(function (event, thisNode___) {
+    var c_3___ = ___.markConstFunc(function (event, thisNode___) {
       wasClicked(thisNode___);
     });
     el___.onclick = function (event) {
@@ -50,7 +50,7 @@ function module() {
     // Since the two handlers have the same text, they should share the
     // same handler function.
     el___ = emitter___.byId('id_6___');
-    var c_3___ = ___.markFuncFreeze(function (event, thisNode___) {
+    var c_3___ = ___.markConstFunc(function (event, thisNode___) {
         wasClicked(thisNode___);
     });
     el___.onclick = function (event) {

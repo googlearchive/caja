@@ -336,10 +336,10 @@ function jsunitCallback(aFunction, opt_id, opt_frame) {
     }
     return result;
   }
-  return typeof ___ !== 'undefined' && ___.markFuncFreeze || opt_frame
+  return typeof ___ !== 'undefined' && ___.markConstFunc || opt_frame
            ? (opt_frame
                ? opt_frame.markFunction(callback)
-               : ___.markFuncFreeze(callback))
+               : ___.markConstFunc(callback))
            : callback;
 }
 

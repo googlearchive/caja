@@ -120,7 +120,7 @@ var cajaFlash = {};
         var result = obj[fnName].apply(obj, feralWin.caja.untame(args));
         return feralWin.caja.tame(result);
       };
-      tamingWin.___.markFuncFreeze(el[baseFnName], baseFnName);
+      tamingWin.___.markConstFunc(el[baseFnName], baseFnName);
       if (!tamingWin.___.canRead(el, baseFnName)) {
         tamingWin.___.grantRead(el, baseFnName);
       }
@@ -254,7 +254,7 @@ var cajaFlash = {};
       }
     }
     domicile.window.DefineOwnProperty___('cajaHandleEmbed', {
-      value: tamingWin.___.markFuncFreeze(cajaHandleEmbed)
+      value: tamingWin.___.markConstFunc(cajaHandleEmbed)
     });
   };
 })();

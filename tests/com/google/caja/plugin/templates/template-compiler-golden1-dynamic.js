@@ -12,7 +12,7 @@ function module() {
     // Remove the bits the first script shouldn't see.
     emitter___.attach('id_4___');
     // Define handlers as needed.
-    var c_3___ = ___.markFuncFreeze(function (event, thisNode___) {
+    var c_3___ = ___.markConstFunc(function (event, thisNode___) {
       wasClicked(thisNode___);
     });
     el___.onclick = function (event) {
@@ -53,7 +53,7 @@ function module() {
     var el___;
     var emitter___ = IMPORTS___.htmlEmitter___;
     el___ = emitter___.byId('id_7___');
-    var c_3___ = ___.markFuncFreeze(function (event, thisNode___) {
+    var c_3___ = ___.markConstFunc(function (event, thisNode___) {
       wasClicked(thisNode___);
     });
     el___.onclick = function (event) {

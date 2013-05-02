@@ -165,25 +165,25 @@ var loadModuleMaker = function(rootUrl, cajolingServiceClient, uriUtils) {
       return result.promise;
     };
 
-    // We use direct exposure via markFuncFreeze, rather than the membrane
+    // We use direct exposure via markConstFunc, rather than the membrane
     // taming, because 'load' is a system function and it's far easier to
     // reason about how it is called and what it returns without having to
     // think about the semantics of a taming layer.
 
     load.DefineOwnProperty___('async', {
-          value: ___.markFuncFreeze(async),
+          value: ___.markConstFunc(async),
           writable: false,
           enumerable: true,
           configurable: false
         });
     load.DefineOwnProperty___('asyncAll', {
-          value: ___.markFuncFreeze(asyncAll),
+          value: ___.markConstFunc(asyncAll),
           writable: false,
           enumerable: true,
           configurable: false
         });
     load.loadCajoledJson___ = loadCajoledJson___;
-    return ___.markFuncFreeze(load);
+    return ___.markConstFunc(load);
   };
 
   return makeLoad(rootUrl);

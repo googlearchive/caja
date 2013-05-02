@@ -21,45 +21,45 @@
 var imports = ___.copy(___.sharedImports);
 var exports = {};
 imports.DefineOwnProperty___('onerror', {
-  value: ___.markFuncFreeze(function(a,b,c){}),
+  value: ___.markConstFunc(function(a,b,c){}),
   enumerable: true,
   writable: true,
   configurable: true});
 imports.DefineOwnProperty___('fail', {
-  value: ___.markFuncFreeze(fail),
+  value: ___.markFunc(fail),
   enumerable: true,
   writable: false,
   configurable: false});
 imports.DefineOwnProperty___('assertEquals', {
-  value: ___.markFuncFreeze(assertEquals),
+  value: ___.markFunc(assertEquals),
   enumerable: true,
   writable: false,
   configurable: false});
 imports.DefineOwnProperty___('assertTrue', {
-  value: ___.markFuncFreeze(assertTrue),
+  value: ___.markFunc(assertTrue),
   enumerable: true,
   writable: false,
   configurable: false});
 imports.DefineOwnProperty___('assertFalse', {
-  value: ___.markFuncFreeze(assertFalse),
+  value: ___.markFunc(assertFalse),
   enumerable: true,
   writable: false,
   configurable: false});
 imports.DefineOwnProperty___('assertThrows', {
-  value: ___.markFuncFreeze(assertThrows),
+  value: ___.markFunc(assertThrows),
   enumerable: true,
   writable: false,
   configurable: false});
 imports.rewriteTargetAttribute___ =
-    ___.markFuncFreeze(function(value, tagName, attribName) {
+    ___.markConstFunc(function(value, tagName, attribName) {
       return "rewritten-" + value;
     });
 imports.document = document;
 imports.console = console;
-___.markFuncFreeze(console.log);
+___.markFunc(console.log);
 // Included in order to test this function;
 // stamp should never be made available to real caja code.
-imports.stamp = ___.markFuncFreeze(___.stamp);
+imports.stamp = ___.markFunc(___.stamp);
 imports.exports = exports;
 ___.getNewModuleHandler().setImports(imports);
 if (typeof _junit_ !== 'undefined') {

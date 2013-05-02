@@ -514,9 +514,9 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
     rewriteAndExecute(
         "var f = function(){};" +
         "assertEquals(Object.getOwnPropertyNames(f).length, 5);");
-    // Check frozen functions created early in es53.js
+    // Check constFunc functions created early in es53.js - explicitly null
     rewriteAndExecute(
-        "assertTrue(!!(cajaVM.USELESS.toString.prototype));");
+        "assertEquals('constFunc', null, cajaVM.USELESS.toString.prototype);");
   }
 
   /**
@@ -1381,7 +1381,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         // frozen objects anyway.
         "___.getNewModuleHandler()." +
         "    getImports().DefineOwnProperty___('stampAnyway', {" +
-        "      value: ___.markFuncFreeze(function(stamp, obj) {" +
+        "      value: ___.markConstFunc(function(stamp, obj) {" +
         "          stamp.mark___(obj);" +
         "        })," +
         "      enumerable: false," +
@@ -1987,6 +1987,26 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "assertTrue('write threw', fail);");
   }
 
+  public final void testConstFunc() throws Exception {
+    rewriteAndExecute(
+        "___.getNewModuleHandler()." +
+        "    getImports().DefineOwnProperty___('outerFunc', {" +
+        "      value: ___.markConstFunc(function() {})," +
+        "      enumerable: false," +
+        "      writable: false," +
+        "      configurable: false" +
+        "    });",
+        "var innerFunc = cajaVM.constFunc(function() {});" +
+        "function check(f, name) {" +
+        "  assertTrue(name + ' frozen', Object.isFrozen(f));" +
+        "  assertEquals(name + ' no proto', null, f.prototype);" +
+        "}" +
+        "check(outerFunc, 'outer');" +
+        "check(innerFunc, 'inner');" +
+        "check(cajaVM.def, 'builtin');",
+        "");
+  }
+
   @Override
   public void setUp() throws Exception {
     super.setUp();
@@ -2042,8 +2062,8 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "var testImports = ___.copy(___.whitelistAll(___.sharedImports));");
     for (String f : assertFunctions) {
       importsSetup
-          .append("testImports." + f + " = ___.markFuncFreeze(" + f + ");")
-          .append("___.grantRead(testImports, '" + f + "');");
+          .append("testImports.DefineOwnProperty___('" + f + "', " + 
+                      "{ value: ___.markFunc(" + f + ") });");
     }
     importsSetup.append(
         "___.getNewModuleHandler().setImports(___.whitelistAll(testImports));");

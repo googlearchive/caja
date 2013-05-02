@@ -166,8 +166,8 @@ var Q;
     }
     promise.isPromise___ = true;
     return ___.primFreeze({
-      promise: ___.markFuncFreeze(promise),
-      resolve: ___.markFuncFreeze(function (p) {
+      promise: ___.markConstFunc(promise),
+      resolve: ___.markConstFunc(function (p) {
         if (!pending) { return; }
 
         var todo = pending;
@@ -186,19 +186,19 @@ var Q;
      * Enqueues a task to be run in a future turn.
      * @param task  function to invoke later
      */
-    run: ___.markFuncFreeze(enqueue),
+    run: ___.markConstFunc(enqueue),
 
     /**
      * Constructs a rejected promise.
      * @param reason    value describing the failure
      */
-    reject: ___.markFuncFreeze(reject),
+    reject: ___.markConstFunc(reject),
 
     /**
      * Constructs a promise for an immediate reference.
      * @param value immediate reference
      */
-    ref: ___.markFuncFreeze(ref),
+    ref: ___.markConstFunc(ref),
 
     /**
      * Constructs a ( promise, resolver ) pair.
@@ -210,13 +210,13 @@ var Q;
      * same state as another promise, invoke the resolver with that other
      * promise.
      */
-    defer: ___.markFuncFreeze(defer),
+    defer: ___.markConstFunc(defer),
 
     /**
      * Gets the current value of a promise.
      * @param value promise or immediate reference to evaluate
      */
-    near: ___.markFuncFreeze(function (value) {
+    near: ___.markConstFunc(function (value) {
       return ('function' === typeof value && value.isPromise___ === true)
           ? value() : value;
     }),
@@ -228,7 +228,7 @@ var Q;
      * @param rejected  function to be called with the rejection reason
      * @return promise for the return value from the invoked callback
      */
-    when: ___.markFuncFreeze(function (value, fulfilled, rejected) {
+    when: ___.markConstFunc(function (value, fulfilled, rejected) {
       var r = defer();
       var done = false;   // ensure the untrusted promise makes at most a
                           // single call to one of the callbacks
@@ -250,7 +250,7 @@ var Q;
      * @param noun      name of property to get
      * @return promise for the property value
      */
-    get: ___.markFuncFreeze(function (target, noun) {
+    get: ___.markConstFunc(function (target, noun) {
       var r = defer();
       forward(promised(target), 'GET', r.resolve, noun);
       return r.promise;
@@ -263,7 +263,7 @@ var Q;
      * @param argv      array of invocation arguments
      * @return promise for the return value
      */
-    post: ___.markFuncFreeze(function (target, verb, argv) {
+    post: ___.markConstFunc(function (target, verb, argv) {
       var r = defer();
       forward(promised(target), 'POST', r.resolve, verb, argv);
       return r.promise;
@@ -276,7 +276,7 @@ var Q;
      * @param value     new value of property
      * @return promise for the return value
      */
-    put: ___.markFuncFreeze(function (target, noun, value) {
+    put: ___.markConstFunc(function (target, noun, value) {
       var r = defer();
       forward(promised(target), 'PUT', r.resolve, noun, value);
       return r.promise;
@@ -288,7 +288,7 @@ var Q;
      * @param noun      name of property to delete
      * @return promise for the return value
      */
-    remove: ___.markFuncFreeze(function (target, noun) {
+    remove: ___.markConstFunc(function (target, noun) {
       var r = defer();
       forward(promised(target), 'DELETE', r.resolve, noun);
       return r.promise;

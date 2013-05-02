@@ -598,7 +598,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     f.name_e___ = false;
     f.name_g___ = ((name === '')
         ? functionInstanceVoidNameGetter
-        : markFuncFreeze(function() {return name;}));
+        : markConstFunc(function() {return name;}));
     f.name_s___ = void 0;
     f.name_m___ = false;
     f.name_av___ = f;
@@ -698,8 +698,14 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     return fn;
   }
 
-  function markFuncFreeze(fn, name) {
-    return freeze(markFunc(fn, name));
+  /**
+   * {@code markConstFunc(fn[, name])} is equivalent to
+   * {@code constFunc(markFunc(fn[, name]))}.
+   */
+  function markConstFunc(fn, name) {
+    markFunc(fn, name);
+    fn.prototype = null;
+    return freeze(fn);
   }
   
   /**
@@ -947,7 +953,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   function Token(name) {
     name = '' + name;
     return snowWhite({
-        toString: markFuncFreeze(function tokenToString() {
+        toString: markConstFunc(function tokenToString() {
             return name;
           }),
         throwable___: true
@@ -1060,7 +1066,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    * case, remember that the arguments are still evaluated.
    */
   function defaultLogger(str, opt_stop) {}
-  var myLogFunc = markFuncFreeze(defaultLogger);
+  var myLogFunc = markConstFunc(defaultLogger);
 
   /**
    * Gets the currently registered logging function.
@@ -1274,9 +1280,9 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
 
     if (opt_useKeyLifetime) {
       return snowWhite({
-          set: markFuncFreeze(setOnKey),
-          get: markFuncFreeze(getOnKey),
-          has: markFuncFreeze(hasOnKey)
+          set: markConstFunc(setOnKey),
+          get: markConstFunc(getOnKey),
+          has: markConstFunc(hasOnKey)
         });
     }
 
@@ -1358,9 +1364,9 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     }
 
     return snowWhite({
-        set: markFuncFreeze(setOnTable),
-        get: markFuncFreeze(getOnTable),
-        has: markFuncFreeze(hasOnTable)
+        set: markConstFunc(setOnTable),
+        get: markConstFunc(getOnTable),
+        has: markConstFunc(hasOnTable)
       });
   }
 
@@ -1428,18 +1434,18 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         var omap = newTable(true);
         
         return snowWhite({
-          get: markFuncFreeze(function(key, opt_default) {
+          get: markConstFunc(function(key, opt_default) {
             return hmap.has(key) ? hmap.get(key) :
                    omap.has(key) ? omap.get(key) : opt_default;
           }),
-          set: markFuncFreeze(function(key, value) {
+          set: markConstFunc(function(key, value) {
             try {
               hmap.set(key, value);
             } catch (e) {
               omap.set(key, value);
             }
           }),
-          has: markFuncFreeze(function(key) {
+          has: markConstFunc(function(key) {
             return hmap.has(key) || omap.has(key);
           })
         });
@@ -1535,7 +1541,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    * into a subjectively-mutable object.
    */
 
-  var def = markFuncFreeze(function (root) {
+  var def = markConstFunc(function (root) {
 
     // 'defended' is a table of objects known to be deep-frozen.  In the
     // loop below, we add objects to the table before they're completely
@@ -1652,7 +1658,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         throw token;
       }
     }
-    markFuncFreeze(ejector);
+    markConstFunc(ejector);
     try {
       try {
         return attemptFunc.m___('call', [USELESS, ejector]);
@@ -1695,19 +1701,19 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   function makeTrademark(typename, table) {
     typename = '' + typename;
     return snowWhite({
-        toString: markFuncFreeze(function() { return typename + 'Mark'; }),
+        toString: markConstFunc(function() { return typename + 'Mark'; }),
 
         stamp: snowWhite({
-          toString: markFuncFreeze(function() { return typename + 'Stamp'; }),
-          mark___: markFuncFreeze(function(obj) {
+          toString: markConstFunc(function() { return typename + 'Stamp'; }),
+          mark___: markConstFunc(function(obj) {
             table.set(obj, true);
             return obj;
           })
         }),
 
         guard: snowWhite({
-          toString: markFuncFreeze(function() { return typename + 'T'; }),
-          coerce: markFuncFreeze(function(specimen, opt_ejector) {
+          toString: markConstFunc(function() { return typename + 'T'; }),
+          coerce: markConstFunc(function(specimen, opt_ejector) {
             if (table.get(specimen)) { return specimen; }
             eject(opt_ejector,
                   'Specimen does not have the "' + typename + '" trademark');
@@ -1757,7 +1763,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     freeze(GuardStamp.mark___(result.guard));
     return result;
   }
-  markFuncFreeze(Trademark);
+  markConstFunc(Trademark);
 
   /**
    * First ensures that g is a guard; then does
@@ -1780,11 +1786,11 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   function passesGuard(g, specimen) {
     g = GuardT.coerce(g); // failure throws rather than ejects
     return callWithEjector(
-      markFuncFreeze(function(opt_ejector) {
+      markConstFunc(function(opt_ejector) {
         g.coerce(specimen, opt_ejector);
         return true;
       }),
-      markFuncFreeze(function(ignored) {
+      markConstFunc(function(ignored) {
         return false;
       })
     );
@@ -1831,8 +1837,8 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    */
   function makeTableGuard(table, typename, errorMessage) {
     var g = whitelistAll({
-      toString: markFuncFreeze(function() { return typename + 'T'; }),
-      coerce: markFuncFreeze(function(specimen, opt_ejector) {
+      toString: markConstFunc(function() { return typename + 'T'; }),
+      coerce: markConstFunc(function(specimen, opt_ejector) {
         if (Object(specimen) === specimen && table.get(specimen)) {
           return specimen;
         }
@@ -1880,8 +1886,8 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       }
     }
     return snowWhite({
-        seal: markFuncFreeze(seal),
-        unseal: markFuncFreeze(unseal)
+        seal: markConstFunc(seal),
+        unseal: markConstFunc(unseal)
       });
   }
 
@@ -2580,10 +2586,10 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
 
     O[P + '_v___'] = false;
     O[P + '_w___'] = false;
-    O[P + '_g___'] = markFuncFreeze(function virtualizedPropertyGetter() {
+    O[P + '_g___'] = markConstFunc(function virtualizedPropertyGetter() {
       return value;
     });
-    O[P + '_s___'] = markFuncFreeze(
+    O[P + '_s___'] = markConstFunc(
           function virtualizedPropertySetter(newValue) {
       if (this === O) {
         // Fastpath: avoid generating a new accessor
@@ -3185,7 +3191,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   }
 
   function makeDefensibleFunction(f) {
-    return markFuncFreeze(function(_) {
+    return markConstFunc(function(_) {
       return f.apply(USELESS, arguments);
     });
   }
@@ -4292,11 +4298,10 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   // ArrayLike and two functions, getItem and getLength, which put
   // it in a position to do taming on demand.
   var makeArrayLike, itemMap = WeakMap(), lengthMap = WeakMap();
-  var lengthGetter = markFuncFreeze(function () {
+  var lengthGetter = markConstFunc(function () {
       var getter = lengthMap.get(this);
       return getter ? getter.i___() : void 0;
     });
-  freeze(lengthGetter.prototype);
 
   var nativeProxies = Proxy && (function () {
       var obj = {0: 'hi'};
@@ -4355,11 +4360,10 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         if (P === 'length') {
           return { get: lengthGetter };
         } else if (isNumericName(P)) {
-          var get = markFuncFreeze(function () {
+          var get = markConstFunc(function () {
               var getter = itemMap.get(this);
               return getter ? getter.i___(+P) : void 0;
             });
-          freeze(get.prototype);
           return {
               get: get,
               enumerable: true,
@@ -4465,7 +4469,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
           for (var i = 0; i < len; i++) {
             (function(j) {
               defProp(BAL.prototype, j, {
-                  get: markFuncFreeze(function() {
+                  get: markConstFunc(function() {
                     var itemGetter = itemMap.get(this);
                     return itemGetter ? itemGetter.i___(j) : void 0;
                   }),
@@ -4946,7 +4950,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
 
   var CajaProxy = {};
   CajaProxy.DefineOwnProperty___('create', {
-      value: markFuncFreeze(function CajaProxy_create(handler, proto) {
+      value: markConstFunc(function CajaProxy_create(handler, proto) {
           if (Type(handler) !== 'Object') {
             notObject(handler, 'handler');
           }
@@ -4994,7 +4998,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     });
 
   CajaProxy.DefineOwnProperty___('createFunction', {
-      value: markFuncFreeze(function (handler, callTrap, constructTrap) {
+      value: markConstFunc(function (handler, callTrap, constructTrap) {
           if (Type(handler) !== 'Object') {
             notObject(handler, 'handler');
           }
@@ -5076,7 +5080,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    * instantiating it.
    */
   var obtainNewModule = snowWhite({
-    handle: markFuncFreeze(function handleOnly(newModule){ return newModule; })
+    handle: markConstFunc(function handleOnly(newModule){ return newModule; })
   });
 
   /**
@@ -5134,8 +5138,8 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       return imports;
     }
     return snowWhite({
-      getImports: markFuncFreeze(getImports),
-      setImports: markFuncFreeze(function setImports(newImports) {
+      getImports: markConstFunc(getImports),
+      setImports: markConstFunc(function setImports(newImports) {
           imports = newImports;
         }),
 
@@ -5160,7 +5164,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
        * overwrite an already reported outcome with NO_RESULT, so the
        * last script-block's outcome will be preserved.
        */
-      getLastOutcome: markFuncFreeze(function getLastOutcome() {
+      getLastOutcome: markConstFunc(function getLastOutcome() {
           return lastOutcome;
         }),
 
@@ -5168,7 +5172,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
        * If the last outcome is a success, returns its value;
        * otherwise <tt>undefined</tt>.
        */
-      getLastValue: markFuncFreeze(function getLastValue() {
+      getLastValue: markConstFunc(function getLastValue() {
           if (lastOutcome && lastOutcome[0]) {
             return lastOutcome[1];
           } else {
@@ -5183,7 +5187,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
        * reported outcome. Propagate this outcome by terminating in
        * the same manner.
        */
-      handle: markFuncFreeze(function handle(newModule) {
+      handle: markConstFunc(function handle(newModule) {
           registerClosureInspector(newModule);
           var outcome = void 0;
           try {
@@ -5225,7 +5229,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
        * @param {string} lineNum the approximate line number in source at which
        *   the error originated.
        */
-      handleUncaughtException: markFuncFreeze(
+      handleUncaughtException: markConstFunc(
           function handleUncaughtException(exception,
                                            onerror,
                                            source,
@@ -5349,7 +5353,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       return module.instantiate(___, IMPORTS___);
     };
 
-    return markFuncFreeze(theModule);
+    return markConstFunc(theModule);
   }
 
   /**
@@ -5362,7 +5366,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    */
   function loadModule(module) {
     freeze(module);
-    markFuncFreeze(module.instantiate);
+    markConstFunc(module.instantiate);
     return myNewModuleHandler.m___('handle', [module]);
   }
 
@@ -5374,7 +5378,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
 
   function grantFunc(obj, name) {
     obj.DefineOwnProperty___(name, {
-        value: markFuncFreeze(obj[name]),
+        value: markConstFunc(obj[name]),
         writable: false,
         enumerable: false,
         configurable: false
@@ -5653,7 +5657,6 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       iM: initializeMap,
       f: markSafeFunc,
       markFunc: markFunc,
-      markFuncFreeze: markFuncFreeze,
       Trademark: Trademark,
       makeSealerUnsealerPair: makeSealerUnsealerPair,
       getId: getId,
@@ -5662,6 +5665,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       newTable: newTable,
       whitelistAll: whitelistAll,
       snowWhite: snowWhite,
+      markConstFunc: markConstFunc,
       makeDefensibleFunction: makeDefensibleFunction,
       makeDefensibleObject: makeDefensibleObject,
       ri: readImport,
@@ -5675,7 +5679,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       grantInnocentMethod: grantInnocentMethod,
       all2: all2,
       hasOwnProp: hasOwnProp,
-      markCtor: markFuncFreeze,
+      markCtor: function(fn) { freeze(markFunc(fn)); return fn; },
       useGetHandler: useGetHandler,
       useSetHandler: useSetHandler,
       primFreeze: snowWhite,
