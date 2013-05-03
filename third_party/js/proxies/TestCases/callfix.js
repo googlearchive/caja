@@ -27,7 +27,7 @@ ES5Harness.registerTest( {
   test: function testcase() {
     
     var handler = {
-      get: function(name, proxy) {
+      get: function(rcvr, name) {
         if (name === 'isTrapping') return true;
       },
       fix: function() {
@@ -36,6 +36,7 @@ ES5Harness.registerTest( {
         }
       }
     };
+    
     assert('preventExtensions freezes object proxy',
            ! (Object.preventExtensions(Proxy.create(handler))).isTrapping);
     assert('seal freezes object proxy',

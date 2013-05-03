@@ -28,17 +28,16 @@ ES5Harness.registerTest( {
     // this proxy expects only two invocations:
     // one for enumerate() and one for has('a')
     var handlerProxy = Proxy.create({
-      get: function(name, proxy) {
+      get: function(rcvr, name) {
         if (name === 'enumerate') {
           return function(var_args) {
-            assert('enumerate called with at least no args', 
-                0 <= arguments.length);
+            assertEq('enumerate called with no args', 0, arguments.length);
             return ['a'];
           }
         } else if (name === 'has') {
           return function(var_args) {
             var args = Array.prototype.slice.call(arguments);
-            assert('has called with at least one argument', 1 <= args.length);
+            assertEq('has called with one argument', 1, args.length);
             return (args[0] === 'a');
           }
         } else {

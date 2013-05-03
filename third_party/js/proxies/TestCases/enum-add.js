@@ -31,10 +31,10 @@ ES5Harness.registerTest( {
       has: function(name) {
         return target.hasOwnProperty(name);
       },
-      get: function(name, proxy) {
+      get: function(rcvr, name) {
         return target[name];
       },
-      set: function(name, val, proxy) {
+      set: function(rcvr, name, val) {
         target[name] = val;
         return true;
       },

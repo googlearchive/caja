@@ -27,7 +27,7 @@ ES5Harness.registerTest( {
   test: function testcase() {
     
     var handler = {
-      get: function(name, proxy) { return Function.prototype[name]; },
+      get: function(obj, name) { return Function.prototype[name]; },
     };
 
     var fproxy = Proxy.createFunction(handler,
@@ -40,9 +40,11 @@ ES5Harness.registerTest( {
     
     fproxy = Proxy.createFunction(handler,
       function() { return 42; }); // call trap is the construct trap
+    // an optional [[Construct]] trap defaults to calling the
+    // [[Construct]] behavior of the call trap
     result = new fproxy();
-    assert("function proxy with default construct trap returns number",
-           typeof result === "number" && result === 42);
+    assert("function proxy with default construct trap does not return number",
+           typeof result === "object");
 
     return true;
   },

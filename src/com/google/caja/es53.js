@@ -4534,19 +4534,19 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   // Default implementations for derived traps invoke code supplied by
   // the guest on objects supplied by the guest, so we have to be careful.
   var defaultDerivedTraps = {
-      has: function(name, proxy) {
+      has: function(name) {
           var dis = safeDis(this);
           return !!(dis.getPropertyDescriptor_m___ ?
-              dis.getPropertyDescriptor(name, proxy) :
-              dis.m___('getPropertyDescriptor', [name, proxy]));
+              dis.getPropertyDescriptor(name) :
+              dis.m___('getPropertyDescriptor', [name]));
         },
-      hasOwn: function(name, proxy) {
+      hasOwn: function(name) {
           var dis = safeDis(this);
           return !!(dis.getOwnPropertyDescriptor_m___ ?
-              dis.getOwnPropertyDescriptor(name, proxy) :
-              dis.m___('getOwnPropertyDescriptor', [name, proxy]));
+              dis.getOwnPropertyDescriptor(name) :
+              dis.m___('getOwnPropertyDescriptor', [name]));
         },
-      get: function(name, proxy) {
+      get: function(proxy, name) {
           var dis = safeDis(this);
           var desc = dis.getPropertyDescriptor_m___ ?
               dis.getPropertyDescriptor(name) :
@@ -4562,7 +4562,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
             return get.f___(safeDis(proxy), []);
           }
         },
-      set: function(name, val, proxy) {
+      set: function(proxy, name, val) {
           var dis = safeDis(this);
           var desc = dis.getOwnPropertyDescriptor_m___ ?
               dis.getOwnPropertyDescriptor(name) :
@@ -4625,15 +4625,15 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
               dis.m___('defineProperty', [name, desc]);
           return true;
         },
-      enumerate: function(proxy) {
+      enumerate: function() {
           var dis = safeDis(this);
           var names = dis.getPropertyNames_m___ ?
-              dis.getPropertyNames(proxy) :
-              dis.m___('getPropertyNames', [proxy]);
+              dis.getPropertyNames() :
+              dis.m___('getPropertyNames', []);
           var filter = markFunc(function (name) {
                 var desc = dis.getPropertyDescriptor_m___ ?
-                    dis.getPropertyDescriptor(name, proxy) :
-                    dis.m___('getPropertyDescriptor', [name, proxy]);
+                    dis.getPropertyDescriptor(name) :
+                    dis.m___('getPropertyDescriptor', [name]);
                 return desc.enumerable_v___ ?
                     desc.enumerable :
                     desc.v___('enumerable');
@@ -4642,15 +4642,15 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
               names.filter(filter) :
               names.m___('filter', [filter]);
         },
-      keys: function(proxy) {
+      keys: function() {
           var dis = safeDis(this);
           var names = dis.getOwnPropertyNames_m___ ?
-              dis.getOwnPropertyNames(proxy) :
-              dis.m___('getOwnPropertyNames', [proxy]);
+              dis.getOwnPropertyNames() :
+              dis.m___('getOwnPropertyNames', []);
           var filter = markFunc(function (name) {
                 var desc = dis.getOwnPropertyDescriptor_m___ ?
-                    dis.getOwnPropertyDescriptor(name, proxy) :
-                    dis.m___('getOwnPropertyDescriptor', [name, proxy]);
+                    dis.getOwnPropertyDescriptor(name) :
+                    dis.m___('getOwnPropertyDescriptor', [name]);
                 return desc.enumerable_v___ ?
                     desc.enumerable :
                     desc.v___('enumerable');
@@ -4674,9 +4674,9 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         assertValidPropertyName(P);
         var get = handler.get_v___ ? handler.get : handler.v___('get');
         if (isFunction(get)) {
-          return get.f___(handler, [P, proxy]);
+          return get.f___(handler, [proxy, P]);
         } else {
-          return defaultDerivedTraps.get.apply(handler, [P, proxy]);
+          return defaultDerivedTraps.get.apply(handler, [proxy, P]);
         }
       };
     proxy.w___ = function (P, V) {
@@ -4692,9 +4692,9 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         var result;
         var set = handler.set_v___ ? handler.set : handler.v___('set');
         if (isFunction(set)) {
-          result = set.f___(handler, [P, V, proxy]);
+          result = set.f___(handler, [proxy, P, V]);
         } else {
-          result = defaultDerivedTraps.set.apply(handler, [P, V, proxy]);
+          result = defaultDerivedTraps.set.apply(handler, [proxy, P, V]);
         }
         if (!result) { throw new TypeError('Failed to set ' + P); }
         return V;
@@ -4712,7 +4712,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         assertValidPropertyName(P);
         var deleter = handler.delete_v___ ? handler['delete'] :
             handler.v___('delete');
-        var result = deleter.f___(handler, [P, proxy]);
+        var result = deleter.f___(handler, [P]);
         if (!result) { throw new TypeError('Unable to delete ' + P); }
         return true;
       };
@@ -4730,9 +4730,9 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
           assertValidPropertyName(P);
           var get = handler.get_v___ ? handler.get : handler.v___('get');
           if (!isFunction(get)) {
-            method = defaultDerivedTraps.get.apply(handler, [P, proxy]);
+            method = defaultDerivedTraps.get.apply(handler, [proxy, P]);
           } else {
-            method = get.f___(handler, [P, proxy]);
+            method = get.f___(handler, [proxy, P]);
           }
         }
         return method.f___(proxy, args);
@@ -4746,9 +4746,9 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         var enumerate = handler.enumerate___ ? handler.enumerate :
             handler.v___('enumerate');
         if (isFunction(enumerate)) {
-          names = enumerate.f___(handler, [proxy]);
+          names = enumerate.f___(handler, []);
         } else {
-          names = defaultDerivedTraps.enumerate.apply(handler, [proxy]);
+          names = defaultDerivedTraps.enumerate.apply(handler, []);
         }
         var result = {};
         for (var i = 0, len = names.length; i < len; ++i) {
@@ -4766,9 +4766,9 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         var names;
         var keys = handler.keys_v___ ? handler.keys : handler.v___('keys');
         if (isFunction(keys)) {
-          names = keys.f___(handler, [proxy]);
+          names = keys.f___(handler, []);
         } else {
-          names = defaultDerivedTraps.keys.apply(handler, [proxy]);
+          names = defaultDerivedTraps.keys.apply(handler, []);
         }
         var result = [];
         var i, len = names.length, seen = {};
@@ -4790,7 +4790,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         var keys = handler.getOwnPropertyNames_v___ ?
             handler.getOwnPropertyNames :
             handler.v___('getOwnPropertyNames');
-        names = keys.f___(handler, [proxy]);
+        names = keys.f___(handler, []);
         var result = [];
         var i, len = names.length, seen = {};
         for (i = 0; i < len; ++i) {
@@ -4811,7 +4811,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         var keys = handler.getPropertyNames_v___ ?
             handler.getPropertyNames :
             handler.v___('getPropertyNames');
-        names = keys.f___(handler, [proxy]);
+        names = keys.f___(handler, []);
         var result = [];
         var i, len = names.length, seen = {};
         for (i = 0; i < len; ++i) {
@@ -4839,7 +4839,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       try {
         proxy.fixing___ = true;
         var fixer = handler.fix_v___ ? handler.fix : handler.v___('fix');
-        descMap = fixer.f___(handler, [proxy]);
+        descMap = fixer.f___(handler, []);
       } finally {
         delete proxy.fixing___;
       }
@@ -4901,8 +4901,8 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         P = '' + P;
         var extDesc = desc ? FromPropertyDescriptor(desc) : void 0;
         return (handler.defineProperty_m___ ?
-            handler.defineProperty(P, extDesc, proxy) :
-            handler.m___('defineProperty', [P, extDesc, proxy]));
+            handler.defineProperty(P, extDesc) :
+            handler.m___('defineProperty', [P, extDesc]));
       };
     proxy.GetOwnProperty___ = function (P) {
         if (this !== proxy) {
@@ -4911,8 +4911,8 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         }
         P = '' + P;
         var desc = (handler.getOwnPropertyDescriptor_m___ ?
-            handler.getOwnPropertyDescriptor(P, proxy) :
-            handler.m___('getOwnPropertyDescriptor', [P, proxy]));
+            handler.getOwnPropertyDescriptor(P) :
+            handler.m___('getOwnPropertyDescriptor', [P]));
         var intDesc = desc ? ToPropertyDescriptor(desc) : void 0;
         if (intDesc && !intDesc.configurable) {
           throw new TypeError('Proxy properties must be configurable.');
@@ -4927,9 +4927,9 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         P = '' + P;
         var has = handler.has_v___ ? handler.has : handler.v___('has');
         if (isFunction(has)) {
-          return !!(has.f___(handler, [P, proxy]));
+          return !!(has.f___(handler, [P]));
         } else {
-          return defaultDerivedTraps.has.apply(handler, [P, proxy]);
+          return defaultDerivedTraps.has.apply(handler, [P]);
         }
       };
     proxy.HasOwnProperty___ = function (P) {
@@ -4941,9 +4941,9 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         var hasOwn = handler.hasOwn_v___ ? handler.hasOwn :
             handler.v___('hasOwn');
         if (isFunction(hasOwn)) {
-          return !!(hasOwn.f___(handler, [P, proxy]));
+          return !!(hasOwn.f___(handler, [P]));
         } else {
-          return defaultDerivedTraps.hasOwn.apply(handler, [P, proxy]);
+          return defaultDerivedTraps.hasOwn.apply(handler, [P]);
         }
       };
   }
@@ -5006,7 +5006,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
             notFunction(callTrap, 'callTrap');
           }
           if (constructTrap === void 0) {
-            constructTrap = callTrap;
+            constructTrap = function() { return new callTrap(); };
           }
           if (!isFunction(constructTrap)) {
             notFunction(constructTrap, 'constructTrap');
@@ -5040,7 +5040,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
           }
           prepareProxy(proxy, handler);
           proxy.new___ = function (var_args) {
-              return constructTrap.apply(this, arguments);
+              return constructTrap.apply(cajaVM.USELESS, arguments);
             };
           if (constructTrap) { proxy.prototype = constructTrap.prototype; }
           return proxy;

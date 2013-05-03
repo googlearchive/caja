@@ -40,13 +40,15 @@ ES5Harness.registerTest( {
 
   test: function testcase() {
     function TestType() { };
+    // Patched for Caja: ES5/3 gotcha: inherit only from frozen
     Object.freeze(TestType.prototype);
     
     //  case 1: obj instanceof aFunctionProxy
-    // Gotcha: can't intercept instanceof
+    
+    // Patched for Caja: ES5/3 gotcha: can't intercept instanceof
     /*
     var funProxy = Proxy.createFunction({
-      get: function(name, proxy) {
+      get: function(receiver, name) {
         assert('get trap called for "prototype"', name === 'prototype');
         return TestType.prototype;
       }
@@ -61,24 +63,28 @@ ES5Harness.registerTest( {
     // for 'prototype'
     assertThrows('instance instanceof bogusFunction', TypeError, function() {
       instance instanceof (Proxy.createFunction({
-        get: function(name, proxy) {
+        get: function(receiver, name) {
           assert('get trap called for "prototype"', name === 'prototype');
           return undefined;
         }
       }, function(var_args){return null;}));
     });
-    */ 
+    */
+    
     //  case 2: anObjectProxy instanceof aConstructorFunction
     
     var objProxy = Proxy.create({}, TestType.prototype);
     assert('objProxy instanceof TestType', objProxy instanceof TestType);
     
+    // Patched for Caja: ES5/3 gotcha:
     // Don't want to freeze String.prototype and proxies
     // can't inherit from non-extensible objects.
-    /* var objProxyWithPrimitivePrototype = Proxy.create({}, String.prototype);
+    /*
+    var objProxyWithPrimitivePrototype = Proxy.create({}, String.prototype);
     assert('objProxyWPrimType instanceof String',
            objProxyWithPrimitivePrototype instanceof String);
     */
+           
     return true;
   },
 

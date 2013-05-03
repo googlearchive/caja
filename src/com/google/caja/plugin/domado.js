@@ -141,64 +141,6 @@ var Domado = (function() {
     return proxy[1] === 'ok';
   }());
 
-  // The proxy facilities provided by Firefox and ES5/3 differ in whether the
-  // proxy itself (or rather 'receiver') is the first argument to the 'get'
-  // traps. This autoswitches as needed, removing the first argument.
-  domitaModules.permuteProxyGetSet = (function () {
-    var needToSwap = false;
-
-    if (domitaModules.proxiesAvailable) {
-      var testHandler = {
-        set: function (a, b, c) {
-          if (a === proxy && b === "foo" && c === 1) {
-            needToSwap = true;
-          } else if (a === "foo" && b === 1 && c === proxy) {
-            // needToSwap already false
-          } else if (a === "foo" && b === 1 && c === undefined) {
-            throw new Error('Proxy implementation does not provide proxy '
-                + 'parameter: ' + Array.prototype.slice.call(arguments, 0));
-          } else {
-            throw new Error('internal: Failed to understand proxy arguments: '
-                + Array.prototype.slice.call(arguments, 0));
-          }
-          return true;
-        }
-      };
-      var proxy = Proxy.create(testHandler);
-      proxy.foo = 1;
-    }
-
-    if (needToSwap) {
-      return {
-        getter: function (getFunc) {
-          function permutedGetter(proxy, name) {
-            return getFunc.call(this, name, proxy);
-          };
-          permutedGetter.unpermuted = getFunc;
-          return permutedGetter;
-        },
-        setter: function (setFunc) {
-          function permutedSetter(proxy, name, value) {
-            return setFunc.call(this, name, value, proxy);
-          };
-          permutedSetter.unpermuted = setFunc;
-          return permutedSetter;
-        }
-      };
-    } else {
-      return {
-        getter: function (getFunc) {
-          getFunc.unpermuted = getFunc;
-          return getFunc;
-        },
-        setter: function (setFunc) {
-          setFunc.unpermuted = setFunc;
-          return setFunc;
-        }
-      };
-    }
-  })();
-
   domitaModules.canHaveEnumerableAccessors = (function () {
     // Firefox bug causes enumerable accessor properties to appear as own
     // properties of children. SES patches this by prohibiting enumerable
@@ -333,22 +275,20 @@ var Domado = (function() {
     },
 
     // proxy[name] -> any
-    get: domitaModules.permuteProxyGetSet.getter(
-        function(name, proxy) {
+    get: function(proxy, name) {
       if (name === weakMapMagicName) {
         // Caja WeakMap emulation internal property
         // Note: Not correct in the presence of a getter (checked above)
         return this.weakMapMagic;
       }
       return this.target[name];
-    }),
+    },
 
     // proxy[name] = value
-    set: domitaModules.permuteProxyGetSet.setter(
-        function(name, value, proxy) {
+    set: function(proxy, name, value) {
       this.target[name] = value;
       return true;
-    }),
+    },
 
     // for (var name in proxy) { ... }
     enumerate: function() {
@@ -390,10 +330,10 @@ var Domado = (function() {
       if (/^weakmap:/.test(name)) { weakMapMagicName = name; }
       return ProxyHandler.prototype.getOwnPropertyDescriptor.call(this, name);
     };
-    handler.get = domitaModules.permuteProxyGetSet.getter(function(name) {
+    handler.get = function(receiver, name) {
       if (/^weakmap:/.test(name)) { weakMapMagicName = name; }
-      return ProxyHandler.prototype.get.call(this, name);
-    });
+      return ProxyHandler.prototype.get.call(this, receiver, name);
+    };
     var proxy = Proxy.create(handler);
 
     // Cause the proxy to be used as a key.
@@ -676,15 +616,14 @@ var Domado = (function() {
         return ProxyHandler.prototype.getOwnPropertyDescriptor.call(this, name);
       }
     };
-    CollectionProxyHandler.prototype.get =
-        domitaModules.permuteProxyGetSet.getter(function(name) {
+    CollectionProxyHandler.prototype.get = function(receiver, name) {
       var lookup;
       if (name !== weakMapMagicName && (lookup = this.col_lookup(name))) {
         return this.col_evaluate(lookup);
       } else {
-        return ProxyHandler.prototype.get.unpermuted.call(this, name);
+        return ProxyHandler.prototype.get.call(this, receiver, name);
       }
-    });
+    };
     CollectionProxyHandler.prototype.getOwnPropertyNames = function() {
       var names = ProxyHandler.prototype.getOwnPropertyNames.call(this);
       names.push.apply(names, this.col_names());

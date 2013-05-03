@@ -44,13 +44,13 @@ ES5Harness.registerTest( {
         print('has '+name);
         return name in target;
       }
-      , get: function(name, proxy) {
+      , get: function(receiver, name) {
         print('get '+name);
         return Object.getOwnPropertyDescriptor(target, name).get.call(receiver);
       }
-      , set: function(name, val, proxy) {
+      , set: function(receiver, name, val) {
         print('set '+name);
-        Object.getOwnPropertyDescriptor(target, name).set.call(proxy, val);
+        Object.getOwnPropertyDescriptor(target, name).set.call(receiver, val);
       }*/
     });
     

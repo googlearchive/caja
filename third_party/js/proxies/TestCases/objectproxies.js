@@ -28,64 +28,64 @@ ES5Harness.registerTest( {
 
     function noopHandlerMaker(obj) {
         return {
-      getOwnPropertyDescriptor: function(name) {
-          var desc = Object.getOwnPropertyDescriptor(obj);
-          // a trapping proxy's properties must always be configurable
-          desc.configurable = true;
-          return desc;
-      },
-      getPropertyDescriptor: function(name) {
-          var desc = Object.getPropertyDescriptor(obj); // assumed
-          // a trapping proxy's properties must always be configurable
-          desc.configurable = true;
-          return desc;
-      },
-      getOwnPropertyNames: function() {
-          return Object.getOwnPropertyNames(obj);
-      },
-      defineProperty: function(name, desc) {
-          return Object.defineProperty(obj, name, desc);
-      },
-      'delete': function(name) { return delete obj[name]; },
-      fix: function() {
-          // As long as obj is not frozen, the proxy won't allow itself to be fixed
-          // if (!Object.isFrozen(obj)) [not implemented in SpiderMonkey]
-          //     return undefined;
-          // return Object.getOwnProperties(obj); // assumed [not implemented in SpiderMonkey]
-          var props = { isTrapping: { value: false } };
-          for (x in obj)
-        props[x] = Object.getOwnPropertyDescriptor(obj, x);
-          return props;
-      },
-       has: function(name) { return name in obj; },
-      hasOwn: function(name) { return ({}).hasOwnProperty.call(obj, name); },
-      get: function(name, proxy) {
-        if (name === 'isTrapping') return true;
-        return obj[name];
-      },
-      set: function(name, val, proxy) { obj[name] = val; return true; }, // bad behavior when set fails in non-strict mode
-      enumerate: function() {
-          var result = [];
-          for (name in obj) { result.push(name); };
-          return result;
-      },
-      keys: function() { return Object.keys(obj); }
+    	getOwnPropertyDescriptor: function(name) {
+    	    var desc = Object.getOwnPropertyDescriptor(obj);
+    	    // a trapping proxy's properties must always be configurable
+    	    desc.configurable = true;
+    	    return desc;
+    	},
+    	getPropertyDescriptor: function(name) {
+    	    var desc = Object.getPropertyDescriptor(obj); // assumed
+    	    // a trapping proxy's properties must always be configurable
+    	    desc.configurable = true;
+    	    return desc;
+    	},
+    	getOwnPropertyNames: function() {
+    	    return Object.getOwnPropertyNames(obj);
+    	},
+    	defineProperty: function(name, desc) {
+    	    return Object.defineProperty(obj, name, desc);
+    	},
+    	'delete': function(name) { return delete obj[name]; },
+    	fix: function() {
+    	    // As long as obj is not frozen, the proxy won't allow itself to be fixed
+    	    // if (!Object.isFrozen(obj)) [not implemented in SpiderMonkey]
+    	    //     return undefined;
+    	    // return Object.getOwnProperties(obj); // assumed [not implemented in SpiderMonkey]
+    	    var props = { isTrapping: { value: false } };
+    	    for (x in obj)
+    		props[x] = Object.getOwnPropertyDescriptor(obj, x);
+    	    return props;
+    	},
+     	has: function(name) { return name in obj; },
+    	hasOwn: function(name) { return ({}).hasOwnProperty.call(obj, name); },
+    	get: function(receiver, name) {
+    	  if (name === 'isTrapping') return true;
+    	  return obj[name];
+    	},
+    	set: function(receiver, name, val) { obj[name] = val; return true; }, // bad behavior when set fails in non-strict mode
+    	enumerate: function() {
+    	    var result = [];
+    	    for (name in obj) { result.push(name); };
+    	    return result;
+    	},
+    	keys: function() { return Object.keys(obj); }
         };
     };
 
     function testNoopHandler(obj, proxy) {
         /* Check that both objects see the same properties. */
         for (x in obj)
-      assertEq("for-in " + x, obj[x], proxy[x]);
+    	assertEq("for-in " + x, obj[x], proxy[x]);
         for (x in proxy)
-      assertEq("for-in " + x, obj[x], proxy[x]);
+    	assertEq("for-in " + x, obj[x], proxy[x]);
         /* Check that the iteration order is the same. */
         var a = [], b = [];
         for (x in obj)
-      a.push(x);
+    	a.push(x);
         for (x in proxy)
-      b.push(x);
-        assertEq("iter-order", uneval(a), uneval(b));
+    	b.push(x);
+        assertEq("iter-order", a.join(','), b.join(','));
     }
 
     var obj = new Date();

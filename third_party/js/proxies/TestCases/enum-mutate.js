@@ -52,7 +52,6 @@ ES5Harness.registerTest( {
         keys[4] = 'd'; // add a new element
       }
     }
-
     return sameStructure(['a','b','C', 'd'], results);
   },
 

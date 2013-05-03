@@ -32,11 +32,11 @@ ES5Harness.registerTest( {
       // test whether the missing property on the receiver exists
       // in its prototype by calling the has() trap
       has: function(name) { return (name === 'foo'); },
-      get: function(name, proxy) {
+      get: function(receiver, name) {
         return function(var_args) {
           // the receiver passed to 'get' should be bound to the original receiver of
           // the message, not to the proxy object itself
-          return (delegator === proxy) && (proxy === this);
+          return (delegator === receiver) && (receiver === this);
         }
       }
     });

@@ -1773,8 +1773,8 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
           "    hasOwn: function(name) {" +
           "      return ({}).hasOwnProperty.call(obj, name);" +
           "    }," +
-          "    get: function(name) { return obj[name]; }," +
-          "    set: function(name, val) {" +
+          "    get: function(receiver, name) { return obj[name]; }," +
+          "    set: function(receiver, name, val) {" +
           "      obj[name] = val;" +
           "      return true;" +
           "    }, " +
@@ -1845,8 +1845,10 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
           "  proxy = Proxy.createFunction(handlerMaker(f)," +
           "      function(){return 5;}," +
           "      function(){" +
-          "        this.x = 1; " +
-          "        this.f = function(){return this.x;};" +
+          "        return {" +
+          "          x: 1," +
+          "          f: function(){return this.x;}" +
+          "        };" +
           "      });" +
           "  assertEquals('joe', proxy.name);" +
           "  assertEquals(5, proxy());" +

@@ -25,60 +25,61 @@ ES5Harness.registerTest( {
   description: 'this-binding in traps refers to handler',
 
   test: function testcase() {
+    
     var handler = {
-      getOwnPropertyDescriptor: function(name) {
-        assert('gopd this', this===handler);
-        return undefined;
-      },
-      getPropertyDescriptor: function(name) {
-        assert('gpd this', this===handler);
-        return undefined;
-      },
-      getOwnPropertyNames: function() {
-        assert('gopn this', this===handler);
-        return [];
-      },
-      defineProperty: function(name, desc) {
-        assert('dP this', this===handler);
-        return {};
-      },
-      'delete': function(name) {
-        assert('delete this', this===handler);
-        return true;
-      },
-      fix: function() {
-        assert('fix this', this===handler);
-        return undefined; // don't fix this proxy
-      },
-       has: function(name) {
-        assert('has this', this===handler);
-         return false;
-       },
-      hasOwn: function(name) {
-        assert('hasOwn this', this===handler);
-        return false;
-      },
-      get: function(name, proxy) {
-        assert('get this', this===handler);
-        return undefined;
-      },
-      set: function(name, val, proxy) {
-        assert('set this', this===handler);
-        return val;
-      },
-      enumerate: function() {
-        assert('enumerate this', this===handler);
-        return [];
-      },
-      keys: function() {
-        assert('keys this', this===handler);
-        return [];
-      }
+    	getOwnPropertyDescriptor: function(name) {
+    	  assert('gopd this', this===handler);
+    	  return undefined;
+    	},
+    	getPropertyDescriptor: function(name) {
+    	  assert('gpd this', this===handler);
+    	  return undefined;
+    	},
+    	getOwnPropertyNames: function() {
+    	  assert('gopn this', this===handler);
+    	  return [];
+    	},
+    	defineProperty: function(name, desc) {
+    	  assert('dP this', this===handler);
+    	  return {};
+    	},
+    	'delete': function(name) {
+    	  assert('delete this', this===handler);
+    	  return true;
+    	},
+    	fix: function() {
+    	  assert('fix this', this===handler);
+    	  return undefined; // don't fix this proxy
+  	  },
+     	has: function(name) {
+    	  assert('has this', this===handler);
+     	  return false;
+     	},
+    	hasOwn: function(name) {
+    	  assert('hasOwn this', this===handler);
+    	  return false;
+    	},
+    	get: function(receiver, name) {
+    	  assert('get this', this===handler);
+    	  return undefined;
+    	},
+    	set: function(receiver, name, val) {
+    	  assert('set this', this===handler);
+    	  return false;
+    	},
+    	enumerate: function() {
+    	  assert('enumerate this', this===handler);
+    	  return [];
+    	},
+    	keys: function() {
+    	  assert('keys this', this===handler);
+    	  return [];
+    	}
     };
     
     function triggerTrapsOn(proxy) {
       var result;
-
+      
       result = Object.getOwnPropertyDescriptor(proxy, 'foo');
       assertEq('getOwnPropertyDescriptor result', undefined, result);
 
@@ -104,13 +105,13 @@ ES5Harness.registerTest( {
       result = ({}).hasOwnProperty.call(proxy, 'foo');
       assertEq('hasOwn result', false, result);
 
+      // Patched for Caja: strict mode
       try {
-        result = (proxy.foo = false);
+        result = (proxy.foo = 0);
+        assertEq('set result', 0, result);
       } catch (e) {
         assert('set false', e instanceof TypeError);
       }
-      result = (proxy.foo = true)
-      assertEq('set result', true, result);
 
       result = proxy.foo;
       assertEq('get result', undefined, result);
@@ -160,14 +161,16 @@ ES5Harness.registerTest( {
         // binding of |this| depends on strict-mode:
         // strict-mode: set to undefined
         // non-strict-mode: set to [object global]
-        // Gotcha: assert('this in strict constructTrap is undefined',this===undefined);
+        // Patched for Caja: ES5/3 can't use undefined
+        assert('this in strict constructTrap is undefined',
+            this===undefined ||
+            typeof cajaVM !== 'undefined' && this === cajaVM.USELESS);
         assert('constructTrap args',arguments.length===3);
         return {};
       }));
 
     // test with non-strict call & construct traps
-    // Gotcha: all ES5/3 code is strict.
-    /* triggerFunTrapsOn(Proxy.createFunction(handler,
+    triggerFunTrapsOn(Proxy.createFunction(handler,
       function callTrap(var_args) {
         assert('this in non-strict callTrap is this from callsite',
                this===thisFromCallSite);
@@ -181,7 +184,7 @@ ES5Harness.registerTest( {
         assert('this in non-strict constructTrap is global',this===global);
         assert('constructTrap args',arguments.length===3);
         return {};
-      })); */
+      }));
         
     return true;
   },

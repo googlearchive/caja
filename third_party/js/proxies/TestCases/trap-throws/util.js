@@ -22,10 +22,12 @@
 // passes exceptions thrown within the handler unmodified to the caller
 // 'operation' is expected to be a function(proxy) { /*trigger trapName trap*/ }
 function assertProxyThrows(trapName, operation) {
+  function Exc() {}; // dummy exception type
+  
   var handler = {};
   handler[trapName] = function() {    
-    throw new Error();
+    throw new Exc();
   };
   var proxy = Proxy.create(handler);
-  assertThrows(trapName + ' throws', Error, function() { return operation(proxy); });
+  assertThrows(trapName + ' throws', Exc, function() { return operation(proxy); });
 }

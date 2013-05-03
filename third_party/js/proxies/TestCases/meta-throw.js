@@ -25,10 +25,10 @@ ES5Harness.registerTest( {
   description: 'test whether exceptions are propagated across meta-level proxies',
 
   test: function testcase() {
-    var exception = new Error();
+    var exception = {};
    
     var metaProxy = Proxy.create({
-      get: function(name, proxy) {
+      get: function(rcvr, name) {
         throw exception;
       }
     });
@@ -36,8 +36,8 @@ ES5Harness.registerTest( {
     var baseProxy = Proxy.create(metaProxy);
 
     try {
-      ('x' in baseProxy) // triggers 'has' trap of baseProxy, which triggers 'get' trap of metaProxy
-      return false; // we expect the in-operator to fail
+     ('x' in baseProxy) // triggers 'has' trap of baseProxy, which triggers 'get' trap of metaProxy
+     return false; // we expect the in-operator to fail
     } catch (e) {
       return e === exception;
     }

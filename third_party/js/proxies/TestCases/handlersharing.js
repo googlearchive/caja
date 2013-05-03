@@ -30,11 +30,11 @@ ES5Harness.registerTest( {
     var proxy2;
     
     var handler = {
-      get: function(name, proxy) {
+      get: function(rcvr, name) {
         if (name === 'isTrapping') {
           return true;
         }
-        if (proxy === proxy1) {
+        if (rcvr === proxy1) {
           return 1;
         } else {
           return 2;

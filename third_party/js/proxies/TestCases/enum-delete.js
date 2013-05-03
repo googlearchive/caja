@@ -31,7 +31,7 @@ ES5Harness.registerTest( {
       has: function(name) {
         return name in target;
       },
-      //get: function(name, proxy) {
+      //get: function(rcvr, name) {
       //  return target[name];
       //},
       delete: function(name) {

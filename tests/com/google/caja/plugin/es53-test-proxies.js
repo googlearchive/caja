@@ -28,7 +28,8 @@
 
   caja.initialize({
     cajaServer: '/caja',
-    debug: true
+    debug: true,
+    forceES5Mode: inES5Mode
   });
   
 

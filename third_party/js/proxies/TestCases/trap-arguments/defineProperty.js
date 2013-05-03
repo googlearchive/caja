@@ -25,9 +25,18 @@ ES5Harness.registerTest( {
   description: 'defineProperty trap called with correct arguments',
 
   test: function testcase() {
-    var pd = {};
-    var result = {};
-    var proxy = proxyExpecting('defineProperty', ['foo',pd], result);
+    var pd = {value:1,writable:true,enumerable:true,configurable:true};
+    var proxy = Proxy.create({
+      defineProperty: function(name, desc) {
+        assertEq('defineProperty args name', 'foo', name);
+        assert('defineProperty args desc',
+                 desc.value === pd.value &&
+                 desc.writable === pd.writable &&
+                 desc.enumerable === pd.enumerable &&
+                 desc.configurable === pd.configurable);
+        return true;
+      }
+    });    
     return proxy === Object.defineProperty(proxy, 'foo', pd);
   },
 

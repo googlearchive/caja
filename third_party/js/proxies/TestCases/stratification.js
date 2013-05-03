@@ -35,7 +35,7 @@ ES5Harness.registerTest( {
     
     function HandlerProto() { };
     HandlerProto.prototype = {
-      get: function(name, proxy) {
+      get: function(rcvr, name) {
         assert('get trap called for has', name === 'has');
         return function(var_args) {
           assertEq('result of get trap called with 1 arg', 1, arguments.length);

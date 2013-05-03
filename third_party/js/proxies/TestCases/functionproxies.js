@@ -27,7 +27,7 @@ ES5Harness.registerTest( {
   test: function testcase() {
 
     var proxy = Proxy.createFunction({
-        get: function(name, proxy) { return Function.prototype[name]; },
+        get: function(obj,name) { return Function.prototype[name]; },
         fix: function() {
     	return ({});
         }

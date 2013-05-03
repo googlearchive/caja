@@ -27,15 +27,16 @@ ES5Harness.registerTest( {
   test: function testcase() {
 
     var proxy = Proxy.create({
-      get: function(name, proxy) {
+      get: function(obj,name) {
         return function(var_args) {
           var args = Array.prototype.slice.call(arguments);
-          return 'get:'+name+uneval(args);
+          return 'get:'+name+"["+args.join(',')+"]";
         }
       },
+      // the invoke trap is a remnant of an earlier design, now deprecated
+      // invoke: function(obj,name,args) { return 'invoke:'+name + uneval(args); }
     });
-        
-    return proxy.foo(1,2,3) === "get:foo[1, 2, 3]";
+    return proxy.foo(1,2,3) === "get:foo[1,2,3]";
   },
 
   precondition: function precond() {

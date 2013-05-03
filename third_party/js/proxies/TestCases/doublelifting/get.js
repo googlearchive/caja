@@ -25,10 +25,11 @@ ES5Harness.registerTest( {
   description: 'double lifting of get trap',
 
   test: function testcase() {
-    var getArgs = ['foo'];
+    var getArgs = [null, 'foo'];
     var proxy = genericProxyExpecting('get', getArgs, 42);
-
-    return 42 === proxy.foo;
+    getArgs[0] = proxy;
+    
+    return 42 === proxy.foo;    
   },
 
   precondition: function precond() {

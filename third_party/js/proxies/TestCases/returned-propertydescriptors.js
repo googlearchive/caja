@@ -32,7 +32,7 @@ ES5Harness.registerTest( {
     // empty property descriptor
     proxy = Proxy.create({
       getOwnPropertyDescriptor: function(name) {
-        return {configurable: true};
+        return { configurable: true };
       }
     });
     result = Object.getOwnPropertyDescriptor(proxy, 'foo');
@@ -66,17 +66,30 @@ ES5Harness.registerTest( {
       Object.getOwnPropertyDescriptor(proxy, 'foo');      
     });
     
+    // illegal non-configurable property descriptor
+    proxy = Proxy.create({
+      getOwnPropertyDescriptor: function(name) {
+        return { configurable: false };
+      }
+    });
+    
+    // does the Proxy implementation throw or pass the invalid descriptor through?
+    assertThrows('cannot return non-configurable property descriptor', TypeError,
+      function () {
+        Object.getOwnPropertyDescriptor(proxy, 'foo');      
+      });
+    
     // property descriptor with non-standard attributes
     proxy = Proxy.create({
       getOwnPropertyDescriptor: function(name) {
-        return { value: 42, extra: true };
+        return { value: 42, extra: true, configurable: true };
       }
     });
     result = Object.getOwnPropertyDescriptor(proxy, 'foo');
     
     // TODO: are implementations allowed to truncate property descriptors
     // (i.e. to remove non-standard attributes)?
-    // assert('non-standard pd attribute present', result.extra === true);
+    assert('non-standard pd attribute present', result.extra === true);
     
   },
 

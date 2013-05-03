@@ -25,8 +25,10 @@ ES5Harness.registerTest( {
   description: 'get trap called with correct arguments',
 
   test: function testcase() {
-    var proxy = proxyExpecting('get', ['foo'], 42);
-
+    var getArgs = [null, 'foo'];
+    var proxy = proxyExpecting('get', getArgs, 42);
+    getArgs[0] = proxy;
+    
     return 42 === proxy.foo;
   },
 

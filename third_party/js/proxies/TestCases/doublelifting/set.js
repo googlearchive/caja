@@ -25,8 +25,9 @@ ES5Harness.registerTest( {
   description: 'double lifting of set trap',
 
   test: function testcase() {
-    var setArgs = ['foo', 0];
+    var setArgs = [null, 'foo', 0];
     var proxy = genericProxyExpecting('set', setArgs, true);
+    setArgs[0] = proxy;
     return 0 === (proxy.foo = 0);
   },
 

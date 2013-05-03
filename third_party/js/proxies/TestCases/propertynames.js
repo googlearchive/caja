@@ -31,14 +31,14 @@ ES5Harness.registerTest( {
         assert(propName+' is a string', typeof propName === "string");
         return true;
       },
-      get: function(propName, proxy) {
+      get: function(receiver, propName) {
         assert(propName+' is a string', typeof propName === "string");
         return propName;
       }
     });
     
     assertEq('.foo', 'foo', proxy.foo);
-    // Gotcha: can't intercept numeric indices
+    // Patched for Caja: ES5/3 gotcha: can't intercept numeric indices
     /*
     assertEq('[15]', '15', proxy[15]);
     assertEq("['15']", '15', proxy['15']);
@@ -49,6 +49,7 @@ ES5Harness.registerTest( {
     assertEq('[0]', '0', proxy[0]);
     assertEq('[2<<17]', ''+(2<<17), proxy[2<<17]);
     */
+    
     assert('foo', 'foo' in proxy);
     assert('15', 15 in proxy);
     assert("'15'", '15' in proxy);

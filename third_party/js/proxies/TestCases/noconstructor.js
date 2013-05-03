@@ -30,8 +30,9 @@ ES5Harness.registerTest( {
   description: 'Test fallback on call if no construct trap was given',
 
   test: function testcase() {
+
     var proxy = Proxy.createFunction({
-        get: function(name, proxy) { return Function.prototype[name]; },
+        get: function(obj, name) { return Function.prototype[name]; },
         fix: function() { return ({}); }
     },
     function() { this.origin = "new"; return "new-ret"; });

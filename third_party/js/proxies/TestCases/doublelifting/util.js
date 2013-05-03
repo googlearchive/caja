@@ -33,7 +33,7 @@ function genericProxyExpecting(expectedOp, expectedArgs, legalReturnvalueForOp,
                      function(actArgs) { return sameStructure(expectedArgs, actArgs); };
   // note: handlerProxy is both a handler for other proxies and a proxy itself
   var handlerProxy = Proxy.create({
-    get: function(name, proxy) {
+    get: function(rcvr, name) {
       assertEq(expectedOp, expectedOp, name);
       return function() {
         var args = Array.prototype.slice.call(arguments);

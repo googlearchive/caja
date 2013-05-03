@@ -28,18 +28,19 @@ ES5Harness.registerTest( {
     
     var sink;
     var sinkHandler = {
-      getOwnPropertyDescriptor: function(name) { return undefined; },
-      getPropertyDescriptor: function(name) { return undefined; },
-      getOwnPropertyNames: function() { return []; },
-      defineProperty: function(name, desc) { return; },
-      'delete': function(name) { return true; },
-      fix: function() { return undefined; }, // sink can't be fixed
-       has: function(name) { return false; },
-      hasOwn: function(name) { return false; },
-      get: function(name, proxy) { return sink; },
-      set: function(name, val, proxy) { return true; },
-      enumerate: function() { return []; },
-      keys: function() { return []; }
+    	getOwnPropertyDescriptor: function(name) { return undefined; },
+    	getPropertyDescriptor: function(name) { return undefined; },
+    	getOwnPropertyNames: function() { return []; },
+    	defineProperty: function(name, desc) { return true; },
+    	'delete': function(name) { return true; },
+    	fix: function() { return undefined; }, // sink can't be fixed
+     	has: function(name) { return false; },
+    	hasOwn: function(name) { return false; },
+    	get: function(receiver, name) { return sink; },
+    	// Patched for Caja: always strict mode, and set isn't expected to throw
+    	set: function(receiver, name, val) { return true; },
+    	enumerate: function() { return []; },
+    	keys: function() { return []; }
     };
     sink = Proxy.createFunction(sinkHandler, function() { return sink; });
     

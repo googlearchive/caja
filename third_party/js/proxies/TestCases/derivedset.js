@@ -80,7 +80,6 @@ ES5Harness.registerTest( {
   description: 'test the derived set trap implementation',
 
   test: function testcase() {
-    
     var a = 2;
     var target = {
       dataProp: 1,

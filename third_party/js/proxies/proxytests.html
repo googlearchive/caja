@@ -1,10 +1,10 @@
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<title>Proxies unit tests</title>
-<meta name="generator" content="genhtmltests">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>Proxies unit tests</title>
+	<meta name="generator" content="genhtmltests">
 <script>
-var print = function(res) {
+print = function(res) {
   document.write(''+res+'<br>');
 }
 </script>
@@ -13,7 +13,10 @@ var print = function(res) {
 <script src="TestCases/coerce-propertydescriptors.js"></script>
 <!-- Gotcha: new operator can't return non-objects. script src="TestCases/construct-primitive.js"></script -->
 <script src="TestCases/constructor.js"></script>
-<!-- Gotcha: can't inherit from null. script src="TestCases/defaultProto.js"></script --!>
+<!-- Gotcha: can't inherit from null. script src="TestCases/create.js"></script -->
+<script src="TestCases/createFunction.js"></script>
+<script src="TestCases/default-construct.js"></script>
+<!-- Gotcha: can't inherit from null. script src="TestCases/defaultProto.js"></script -->
 <!-- Gotcha: won't support non-standard attributes. script src="TestCases/defineProperty-attributes.js"></script -->
 <!-- TODO: support inheriting from proxies. script src="TestCases/delegatedAccessor.js"></script -->
 <script src="TestCases/denyfix.js"></script>
@@ -35,7 +38,7 @@ var print = function(res) {
 <script src="TestCases/duplicate-getOwnPropertyNames.js"></script>
 <script src="TestCases/duplicate-keys.js"></script>
 <script src="TestCases/enum-add.js"></script>
-<script src="TestCases/enum-delete.js"></script>
+<!-- Gotcha: can't support mutating during enumeration. script src="TestCases/enum-delete.js"></script -->
 <script src="TestCases/enum-fix.js"></script>
 <!-- Gotcha: can't support mutating during enumeration. script src="TestCases/enum-mutate.js"></script -->
 <!-- Gotcha: can't support intercepting numeric properties. script src="TestCases/enumeration.js"></script -->
@@ -90,8 +93,4 @@ var print = function(res) {
 <script src="TestCases/trap-throws/keys.js"></script>
 <script src="TestCases/trap-throws/set.js"></script>
 <script src="TestCases/trap-throws/util.js"></script>
-</head><body>
-<script>
-ES5Harness.startTesting(false);
-</script>
-</body></html>
+<body onload="ES5Harness.startTesting(true);"></body></html>

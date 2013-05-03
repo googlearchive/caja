@@ -37,6 +37,7 @@ ES5Harness.registerTest( {
     var proxy = Proxy.create({
       defineProperty: function(name, descObj) {
         result = (descObj.non_standard === 1);
+        return true;
       }
     });
     

@@ -27,31 +27,32 @@ ES5Harness.registerTest( {
   test: function testcase() {
         
     var handler = {
-      getOwnPropertyDescriptor: function(name) { assert('gopd name', name!==null); return undefined; },
-      getPropertyDescriptor: function(name) { assert('gpd name', name!==null); return undefined; },
-      getOwnPropertyNames: function() { return []; },
-      defineProperty: function(name, desc) {
-        assert('dP name', name!==null);
-        assert('dP desc', desc!==null);
-        return {};
-      },
-      'delete': function(name) { assert('delete name', name!==null); return true; },
-      fix: function() { return undefined; }, // don't fix this proxy
-       has: function(name) { assert('has name',name!==null); return false; },
-      hasOwn: function(name) { assert('hasOwn name',name!==null); return false; },
-      get: function(name, proxy) {
-        assert('get proxy',proxy!==null);
-        assert('get name',name!==null);
-        return undefined;
-      },
-      set: function(name, val, proxy) {
-        assert('set proxy',proxy!==null);
-        assert('set name',name!==null);
-        assert('set val',val===null);
-        return true;
-      },
-      enumerate: function() { return []; },
-      keys: function() { return []; }
+    	getOwnPropertyDescriptor: function(name) { assert('gopd name', name!==null); return undefined; },
+    	getPropertyDescriptor: function(name) { assert('gpd name', name!==null); return undefined; },
+    	getOwnPropertyNames: function() { return []; },
+    	defineProperty: function(name, desc) {
+    	  assert('dP name', name!==null);
+    	  assert('dP desc', desc!==null);
+    	  return {};
+    	},
+    	'delete': function(name) { assert('delete name', name!==null); return true; },
+    	fix: function() { return undefined; }, // don't fix this proxy
+     	has: function(name) { assert('has name',name!==null); return false; },
+    	hasOwn: function(name) { assert('hasOwn name',name!==null); return false; },
+    	get: function(receiver, name) {
+    	  assert('get receiver',receiver!==null);
+    	  assert('get name',name!==null);
+    	  return undefined;
+    	},
+    	set: function(receiver, name, val) {
+    	  assert('set receiver',receiver!==null);
+    	  assert('set name',name!==null);
+    	  assert('set val',val===null);
+    	  // Patched for Caja: running in strict mode
+    	  return true;
+    	},
+    	enumerate: function() { return []; },
+    	keys: function() { return []; }
     };
     
     function triggerTrapsOn(proxy) {
@@ -103,8 +104,8 @@ ES5Harness.registerTest( {
     triggerTrapsOn(funProxy);
     assertEq('call null', null, funProxy());
 
-    // Gotcha: we use slice.call on the args list, which promotes its
-    // 'this' to an object.
+    // Patched for Caja: ES5/3 gotcha: we use slice.call on the args list, which
+    // promotes its 'this' to an object.
     /*
     assertThrows('call with illegal args', TypeError,
       function() { Function.prototype.apply.call(funProxy,this,0) });

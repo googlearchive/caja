@@ -30,7 +30,7 @@ ES5Harness.registerTest( {
     var proxy = genericProxyExpecting('defineProperty', ['foo',pd], result,
       // test the actual args, return boolean success value
       function(actualArgs) {
-          return actualArgs.length >= 2 &&
+          return actualArgs.length == 2 &&
                  actualArgs[0] === 'foo' &&
                  actualArgs[1].value === 42;
       });

@@ -21,7 +21,9 @@
 // a shell-based testrunner, based on the ES5 Conformance test suite
 // http://es5conform.codeplex.com
 
+// Patched for Caja: required for function proxies
 Object.freeze(Function.prototype);
+
 this.ES5Harness = (function () {
   var tests = [];
 
@@ -68,8 +70,7 @@ this.ES5Harness = (function () {
         
     loadTest: function(filename) {
       try {
-        //load(filename);
-        cajaVM.log("Tried to load " + filename);
+        load(filename);
       } catch (e) {
         restoreGlobals();
         // register a mock test that will fail with the early error
@@ -116,7 +117,7 @@ this.ES5Harness = (function () {
             report('[fail]', test, e.msg);
           } else {
             error++;
-            report('[ err]', test, e);
+            report('[ err]', test, ''+ e);            
           }
         }
       }
@@ -182,7 +183,7 @@ function compareArray(aExpected, aActual) {
 // same structure. Non-array elements are tested for
 // equality using ===
 function sameStructure(aExpected, aActual) {
-  if (aActual.length < aExpected.length) {
+  if (aActual.length != aExpected.length) {
     return false;
   }
   for (var i = 0; i < aExpected.length; i++) {
@@ -200,7 +201,6 @@ function sameStructure(aExpected, aActual) {
 
 function TestFailure(msg) {
   this.msg = msg;
-  this.toString = function () { return '' + this.msg; };
 }
 
 function fail(msg) {
@@ -234,8 +234,4 @@ function assertThrows(what, type, fun) {
     }
   }
   if (success) fail(what);
-}
-
-function uneval(arr) {
-  return '['+arr.join(', ')+']';
 }

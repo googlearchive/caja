@@ -1,4 +1,4 @@
-/// Copyright (c) 2010 Google Inc. 
+/// Copyright (c) 2011 Vrije Universiteit Brussel. 
 /// 
 /// Redistribution and use in source and binary forms, with or without modification, are permitted provided
 /// that the following conditions are met: 
@@ -6,7 +6,7 @@
 ///      the following disclaimer. 
 ///    * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and 
 ///      the following disclaimer in the documentation and/or other materials provided with the distribution.  
-///    * Neither the name of Google Inc. nor the names of its contributors may be used to
+///    * Neither the name of Mozilla Foundation nor the names of its contributors may be used to
 ///      endorse or promote products derived from this software without specific prior written permission.
 /// 
 /// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
@@ -19,16 +19,33 @@
 /// ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
  
 ES5Harness.registerTest( {
-  id: "args-set",
-  path: "TestCases/trap-arguments/set.js",
+  id: "default-construct",
+  path: "TestCases/default-construct.js",
 
-  description: 'set trap called with correct arguments',
+  description: 'missing construct trap falls back on Function [[Construct]]',
 
   test: function testcase() {
-    var setArgs = [null, 'foo', 0];
-    var proxy = proxyExpecting('set', setArgs, true);
-    setArgs[0] = proxy;
-    return 0 === (proxy.foo = 0);
+    
+    var prototype = {};
+    
+    var handler = {
+      get: function(obj, name) {
+        if (name === "prototype") {
+          return prototype;
+        }
+        return undefined;
+      },
+    };
+
+    var callTrap = function() {
+      return this;
+    };
+
+    // function proxy with missing construct trap
+    var fproxy = Proxy.createFunction(handler, callTrap);
+
+    var result = new fproxy();
+    return Object.getPrototypeOf(result) === callTrap.prototype;
   },
 
   precondition: function precond() {

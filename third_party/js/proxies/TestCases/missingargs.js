@@ -35,8 +35,9 @@ ES5Harness.registerTest( {
     assertThrows('handler is not non-null object', TypeError,
                  function() { Proxy.create(0); });
     
-    // Gotcha: can't inherit from null.
-    /* assertEq('default prototype is null',
+    // Patched for Caja: ES5/3 gotcha: cannot inherit null
+    /*
+    assertEq('default prototype is null',
              null,
              Object.getPrototypeOf(Proxy.create({})));
     */

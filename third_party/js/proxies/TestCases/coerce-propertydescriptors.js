@@ -28,7 +28,9 @@ ES5Harness.registerTest( {
     
     var proxy = Proxy.create({
       getOwnPropertyDescriptor: function(name) {
-        return { value: 0, configurable: true }; // return incomplete property descriptor
+        // return incomplete property descriptor
+        // note: returned descriptor must be configurable
+        return { value: 0, configurable: true };
       }
     });
     
