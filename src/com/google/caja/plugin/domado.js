@@ -727,6 +727,11 @@ var Domado = (function() {
         var xhr = privates.feral =
             rulebreaker.makeDOMAccessible(new xmlHttpRequestMaker());
         taming.tamesTo(xhr, this);
+        
+        privates.async = undefined;
+        privates.handler = undefined;
+        
+        Object.preventExtensions(privates);
       });
     }
     Object.defineProperties(TameXMLHttpRequest.prototype, {
@@ -1795,6 +1800,11 @@ var Domado = (function() {
             // complex.
             taming.tamesTo({}, node);
           }
+
+          // Require all properties of the private state record to have already
+          // been created (presumably in the constructor). This is so that the
+          // use of the namespace can be more easily audited.
+          Object.preventExtensions(privates);
         });
 
         return node;
@@ -3749,6 +3759,7 @@ var Domado = (function() {
         TameBackedNode.call(this, node, opt_policy, opt_proxyType);
         nodeAmplify(this, function(privates) {
           privates.geometryDelegate = node;
+          privates.wrappedListeners = undefined;
         });
       }
       var defaultNodeClassCtor =
@@ -4366,6 +4377,8 @@ var Domado = (function() {
                 })
               }
             });
+
+            Object.preventExtensions(privates);
           });
           return Object.freeze(tameImageData);
         }
@@ -4839,6 +4852,7 @@ var Domado = (function() {
           TameContext2DConf.amplify(tameContext2d, function(privates) {
             privates.policy = policy;
             privates.feral = context;
+            Object.preventExtensions(privates);
           });
           cajaVM.def(tameContext2d);
           taming.tamesTo(context, tameContext2d);
@@ -4955,7 +4969,8 @@ var Domado = (function() {
       var TameIFrameElement = defineElement({
         domClass: 'HTMLIFrameElement',
         construct: nodeAmp(function(privates) {
-          privates.childrenEditable = false;
+          privates.contentDomicile = undefined;
+          privates.seenContentDocument = undefined;
         }),
         properties: {
           align: {
@@ -5171,13 +5186,13 @@ var Domado = (function() {
           window.cajaDynamicScriptCounter + '___';
         window[name] = function() {
           try {
-            if (privates.src &&
+            if (privates.scriptSrc &&
               'function' === typeof domicile.evaluateUntrustedExternalScript) {
               // Per HTML5 spec (2013-02-08), execution time (now) is when the
               // relative URL is resolved, not e.g. setAttribute time.
               domicile.evaluateUntrustedExternalScript(
                   URI.utils.resolve(domicile.pseudoLocation.href,
-                      privates.src));
+                      privates.scriptSrc));
             }
           } finally {
             window[name] = undefined;
@@ -5193,6 +5208,7 @@ var Domado = (function() {
           src: NP.filter(false, identity, true, identity)
         },
         construct: nodeAmp(function(privates) {
+          privates.scriptSrc = undefined;
           privates.feral.appendChild(
             document.createTextNode(
               dynamicCodeDispatchMaker(privates)));
@@ -5206,7 +5222,7 @@ var Domado = (function() {
         TameElement.prototype.setAttribute.call(this, attrib, value);
         var attribName = String(attrib).toLowerCase();
         if ("src" === attribName) {
-          privates.src = String(value);
+          privates.scriptSrc = String(value);
         }
       });
 
@@ -5446,6 +5462,7 @@ var Domado = (function() {
         eventAmplify(this, function(privates) {
           privates.feral = event;
           privates.notYetDispatched = notYetDispatched;
+          Object.preventExtensions(privates);
         });
         return this;
       }
@@ -6103,6 +6120,12 @@ var Domado = (function() {
             privates.writeByCanonicalName = function(canonName, val) {
               style[canonName] = val;
             };
+
+            // predeclared for TameComputedStyle
+            privates.rawElement = undefined;
+            privates.pseudoElement = undefined;
+
+            Object.preventExtensions(privates);
           });
         };
         inertCtor(TameStyle, Object /*, 'Style'*/);
@@ -6363,6 +6386,7 @@ var Domado = (function() {
         TameWindowConf.confide(this, taming);
         TameWindowConf.amplify(this, function(privates) {
           privates.feralContainerNode = container;
+          Object.preventExtensions(privates);
         });
 
         // These descriptors were chosen to resemble actual ES5-supporting browser
