@@ -160,7 +160,7 @@ function assert() {
     var booleanValue = nonCommentArg(1, 1, arguments);
 
     if (typeof(booleanValue) != 'boolean')
-        error('Bad argument to assert(boolean)');
+        error(commentArg(1, arguments) + ': Bad argument to assert(boolean)');
 
     _assert(commentArg(1, arguments), booleanValue === true, 'Call to assert(boolean) with false');
 }
@@ -170,7 +170,7 @@ function assertTrue() {
     var booleanValue = nonCommentArg(1, 1, arguments);
 
     if (typeof(booleanValue) != 'boolean')
-        error('Bad argument to assertTrue(boolean)');
+        error(commentArg(1, arguments) + ': Bad argument to assertTrue(boolean)');
 
     _assert(commentArg(1, arguments), booleanValue === true, 'Call to assertTrue(boolean) with false');
 }
@@ -180,7 +180,7 @@ function assertFalse() {
     var booleanValue = nonCommentArg(1, 1, arguments);
 
     if (typeof(booleanValue) != 'boolean')
-        error('Bad argument to assertFalse(boolean)');
+        error(commentArg(1, arguments) + ': Bad argument to assertFalse(boolean)');
 
     _assert(commentArg(1, arguments), booleanValue === false, 'Call to assertFalse(boolean) with true');
 }

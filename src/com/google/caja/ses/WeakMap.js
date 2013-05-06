@@ -23,8 +23,8 @@
  * quite conform, run <code>repairES5.js</code> first.
  *
  * @author Mark S. Miller
- * @requires ses, crypto, ArrayBuffer, Uint8Array, document
- * @overrides WeakMap, WeakMapModule
+ * @requires ses, crypto, ArrayBuffer, Uint8Array
+ * @overrides WeakMap, WeakMapModule, navigator
  */
 
 /**
@@ -103,15 +103,25 @@ var WeakMap;
   var HostWeakMap = WeakMap;
   if (typeof HostWeakMap === 'function') {
     // There is a WeakMap -- is it good enough?
-    if (typeof document !== 'undefined') {
-      var problematic = document.createEvent('HTMLEvents');
-      var testHostMap = new HostWeakMap();
-      try {
-        testHostMap.set(problematic, 1);  // Firefox 20 will throw here
-        if (testHostMap.get(problematic) === 1) {
-          return;
-        }
-      } catch (e) {}
+    if (typeof navigator !== 'undefined' &&
+        /Firefox/.test(navigator.userAgent)) {
+      // We're now *assuming not*, because as of this writing (2013-05-06)
+      // Firefox's WeakMaps have a miscellany of objects they won't accept, and
+      // we don't want to make an exhaustive list, and testing for just one
+      // will be a problem if that one is fixed alone (as they did for Event).
+
+      // If there is a platform that we *can* reliably test on, here's how to
+      // do it:
+      //  var problematic = ... ;
+      //  var testHostMap = new HostWeakMap();
+      //  try {
+      //    testHostMap.set(problematic, 1);  // Firefox 20 will throw here
+      //    if (testHostMap.get(problematic) === 1) {
+      //      return;
+      //    }
+      //  } catch (e) {}
+
+      // Fall through to installing our WeakMap.
     } else {
       return;
     }
@@ -461,33 +471,44 @@ var WeakMap;
 
   if (typeof HostWeakMap === 'function') {
     (function() {
-      // If we got here, then the platform has a WeakMap but it refuses to store
-      // some key types. Therefore, make a map implementation which makes use of
-      // both as possible.
+      // If we got here, then the platform has a WeakMap but we are concerned
+      // that it may refuse to store some key types. Therefore, make a map
+      // implementation which makes use of both as possible.
 
       function DoubleWeakMap() {
+        // Preferable, truly weak map.
         var hmap = new HostWeakMap();
-        var omap = new OurWeakMap();
+
+        // Our hidden-property-based pseudo-weak-map. Lazily initialized in the
+        // 'set' implementation; thus we can avoid performing extra lookups if
+        // we know all entries actually stored are entered in 'hmap'.
+        var omap = undefined;
 
         function dget(key, opt_default) {
-          return hmap.has(key) ? hmap.get(key) : omap.get___(key, opt_default);
+          if (omap) {
+            return hmap.has(key) ? hmap.get(key)
+                : omap.get___(key, opt_default);
+          } else {
+            return hmap.get(key, opt_default);
+          }
         }
 
         function dhas(key) {
-          return hmap.has(key) || omap.has___(key);
+          return hmap.has(key) || (omap ? omap.has___(key) : false);
         }
 
         function dset(key, value) {
           try {
             hmap.set(key, value);
           } catch (e) {
+            if (!omap) { omap = new OurWeakMap(); }
             omap.set___(key, value);
           }
         }
 
         function ddelete(key) {
           hmap['delete'](key);
-          omap.delete___(key);
+          if (omap) { omap.delete___(key); }
         }
 
         return Object.create(OurWeakMap.prototype, {
