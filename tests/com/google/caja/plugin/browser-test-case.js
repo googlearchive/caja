@@ -336,8 +336,9 @@ var asyncRequirements = (function () {
    * Start checking the asynchronous requirements.
    * @param {function (boolean) : void} handler called with the value
    *     {@code true} when and if all requirements are satisfied.
-   *     Called with false if more than TIMEOUT_MILLIS time passes
-   *     and requirements still aren't satisfied.
+   *     Called with false if more than TIMEOUT_MILLIS time and (number
+   *     of registered tests * 2) turns pass and requirements still
+   *     aren't satisfied.
    */
   var evaluate = function (handler) {
     if (!handler) {
@@ -347,8 +348,12 @@ var asyncRequirements = (function () {
     if (req.length === 0) {
       handler(true);
     } else {
-      var timeoutTime = (new Date).getTime() + TIMEOUT_MILLIS;
+      var asyncStartTime = (new Date).getTime();
+      var timeoutTime = asyncStartTime + TIMEOUT_MILLIS;
+      var timeoutTurns = jsunit.testCount * 2;
+      var turn = 0;
       intervalId = setInterval(function () {
+        turn++;
         for (var i = req.length; --i >= 0;) {
           var record = req[i];
           try {
@@ -371,9 +376,14 @@ var asyncRequirements = (function () {
             --req.length;
           }
         }
-        if (req.length === 0 || (new Date).getTime() >= timeoutTime) {
+        var now = (new Date).getTime();
+        if (req.length === 0 || now >= timeoutTime && turn > timeoutTurns) {
           clearInterval(intervalId);
           intervalId = null;
+
+          var timeoutDesc = 'async test timeout after ' + (now - asyncStartTime)
+              + '/' + (timeoutTime - asyncStartTime) + ' ms and ' + turn + '/' +
+              timeoutTurns + ' turns: ';
 
           var failures = req.length !== 0;
           if (failures) {
@@ -381,8 +391,7 @@ var asyncRequirements = (function () {
               var record = req[i];
               (function(record) {
                 setTimeout(jsunitCallback(function() {
-                  throw new Error('async test timeout: ' +
-                      record.message);
+                  throw new Error(timeoutDesc + record.message);
                 }, record.id), 0);
               })(record);
             }
