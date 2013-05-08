@@ -301,8 +301,9 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
     // Add JavaScript globals to the DOM window object.
     ___.copyToImports(imports, guestWin.___.sharedImports);
 
-    var htmlEmitter = new HtmlEmitter(
-      makeDOMAccessible, domicile.htmlEmitterTarget, domicile, imports);
+    var htmlEmitter = new HtmlEmitter(makeDOMAccessible,
+        domicile.htmlEmitterTarget, 
+        undefined /* cajoling proxy unused in es53 */, domicile, imports);
 
     // These ___ variables are interfaces used by cajoled code.
     imports.htmlEmitter___ = htmlEmitter;

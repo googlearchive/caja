@@ -757,6 +757,16 @@ testTopLevelVarsInCatch
     check(function() {
       cajaVM.compileExpr('}');
     }, 'compileExpr failure');
+    check(function() {
+      cajaVM.compileExpr('}', {
+        parseProgram: false
+      });
+    }, 'compileExpr failure');
+    check(function() {
+      cajaVM.compileExpr('});fail();(function(){', {
+        parseProgram: false
+      });
+    }, 'compileExpr failure');
     expectFailure(function() {
       new Function('}');
     }, 'Function failure');

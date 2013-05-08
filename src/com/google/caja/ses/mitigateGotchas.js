@@ -196,24 +196,50 @@
     };
   }
   
-  function resolveOptions(options) {
+  function resolveOptions(options, logger) {
     function resolve(opt, defaultOption) {
-      return (options && opt in options) ? opt : defaultOption;
+      return (options && opt in options) ? options[opt] : defaultOption;
     }
     var resolved = {};
-    resolved.rewriteTopLevelVars = resolve('rewriteTopLevelVars', true);
-    resolved.rewriteTopLevelFuncs = resolve('rewriteTopLevelFuncs', true);
-    resolved.rewriteTypeOf = resolve('rewriteTypeOf', true);
+    if (options === undefined || options === null) {
+      resolved.parseProgram = true;
+      resolved.rewriteTopLevelVars = true;
+      resolved.rewriteTopLevelFuncs = true;
+      resolved.rewriteTypeOf = true;
+    } else {
+      if (options.parseProgram === false) {
+        logger.warn('Refused to disable parsing for safety on all browsers');
+      }
+      // TODO(jasvir): This should only be necessary if a to-be-added
+      // test in repairES5.js indicates that this platform has the
+      // Function constructor bug
+      resolved.parseProgram = true;
+      resolved.rewriteTopLevelVars = resolve('rewriteTopLevelVars', true);
+      resolved.rewriteTopLevelFuncs = resolve('rewriteTopLevelFuncs', true);
+      resolved.rewriteTypeOf = resolve('rewriteTypeOf', true);
+    }
     return resolved;
   }
 
+  function needsRewriting(options) {
+    return options.rewriteTopLevelVars ||
+      options.rewriteTopLevelFuncs ||
+      options.rewriteTypeOf;
+  }
+
   ses.mitigateGotchas = function(programSrc, options, logger) {
+    options = resolveOptions(options, logger);
+    if (!options.parseProgram) {
+      return programSrc;
+    }
     try {
-      options = resolveOptions(options);
       var dirty = false;
       var path = [];
       var scopeLevel = 0;
       var ast = ses.rewriter_.parse(programSrc);
+      if (!needsRewriting(options)) {
+        return programSrc;
+      }
       ses.rewriter_.traverse(ast, {
         enter: function enter(node) {
             var parent = path[path.length - 1];

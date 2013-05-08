@@ -31,6 +31,10 @@ public class Es5BrowserTest extends UniversalBrowserTests {
     runTestDriver("es53-test-unicode.js", es5Mode);
   }
 
+  public void testMitigatingUrlRewriter() throws Exception {
+    runTestDriver("es53-test-mitigating-url-rewriter.js", true);
+  }
+
   public void testCssImports() throws Exception {
     runTestCase("es53-test-css-imports-guest.html", true);
   }

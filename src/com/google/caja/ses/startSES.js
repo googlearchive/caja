@@ -274,7 +274,7 @@ ses.startSES = function(global,
    * program with the same semantics as the original but with as
    * many of the ES5 gotchas removed as possible.  {@code options} is
    * a record of which gotcha-rewriting-stages to use or omit.
-   * Passing no option performs no mitigation.
+   * Passing no option performs all the default mitigations.
    */
   function mitigateGotchas(programSrc, options) {
     var safeError;
@@ -713,12 +713,26 @@ ses.startSES = function(global,
     ses.makeCompiledExpr = makeCompiledExpr;
 
     /**
-     * Compiles {@code exprSrc} as a strict expression into a function
+     * Compiles {@code src} as a strict expression into a function
      * of an {@code imports}, that when called evaluates {@code
      * exprSrc} in a virtual global environment whose {@code this} is
      * bound to that {@code imports}, and whose free variables
      * refer only to the properties of that {@code imports}.
      *
+     * The optional {@code opt_mitigateOpts} can be used to control
+     * which transformations are applied to src, if they are available.
+     * If {@code opt_mitigateOpts} is:
+     *   - undefined || null then all default transformations are applied.
+     * else the following option keys can be used.
+     *   - parseProgram: check the program is syntactically valid
+     *   - rewriteTopLevelVars: transform vars to properties of global object
+     *   - rewriteTopLevelFuncs: transform funcs to properties of global object
+     *   - rewriteTypeOf: rewrite program to support typeof barevar
+     *
+     * Currently for security, parseProgram is always true and cannot be unset
+     * because of the Function constructor bug
+     * (https://code.google.com/p/v8/issues/detail?id=2470)
+     * 
      * <p>When SES is provided primitively, it should provide an
      * analogous {@code compileProgram} function that accepts a
      * Program and return a function that evaluates it to the
@@ -731,10 +745,11 @@ ses.startSES = function(global,
      * {@code with} together with RegExp matching to intercept free
      * variable access without parsing.
      */
-    function compileExpr(src, opt_sourcePosition) {
+    function compileExpr(src, opt_mitigateOpts, opt_sourcePosition) {
       // Force src to be parsed as an expr
       var exprSrc = '(' + src + '\n)';
-      exprSrc = mitigateGotchas(exprSrc);
+      exprSrc = mitigateGotchas(exprSrc, opt_mitigateOpts);
+
       // This is a workaround for a bug in the escodegen renderer that
       // renders expressions as expression statements
       if (exprSrc[exprSrc.length - 1] === ';') {
@@ -805,6 +820,9 @@ ses.startSES = function(global,
      * A module source is actually any valid FunctionBody, and thus
      * any valid Program.
      *
+     * For documentation on {@code opt_mitigateOpts} see the
+     * corresponding parameter in compileExpr.
+     * 
      * <p>In addition, in case the module source happens to begin with
      * a streotyped prelude of the CommonJS module system, the
      * function resulting from module compilation has an additional
@@ -826,12 +844,13 @@ ses.startSES = function(global,
      * {@code getRequirements} above would also have to extract these
      * from the text to be compiled.
      */
-    function compileModule(modSrc, opt_sourcePosition) {
+    function compileModule(modSrc, opt_mitigateOpts, opt_sourcePosition) {
       // Note the EOL after modSrc to prevent trailing line comment in modSrc
       // eliding the rest of the wrapper.
       var exprSrc =
-          '(function() {' + mitigateGotchas(modSrc) + '\n}).call(this)';
-
+          '(function() {' +
+          mitigateGotchas(modSrc, opt_mitigateOpts) +
+          '\n}).call(this)';
       // Follow the pattern in compileExpr
       var wrapperSrc = securableWrapperSrc(exprSrc, opt_sourcePosition);
       var wrapper = unsafeEval(wrapperSrc);

@@ -49,6 +49,7 @@ public class PlaygroundUI extends Composite {
   @UiField protected HorizontalPanel feedbackPanel;
   @UiField protected ListBox mode;
   @UiField protected CheckBox unsafe;
+  @UiField protected Label renderTime;
 
   @UiField(provided=true)
   protected SuggestBox addressField;

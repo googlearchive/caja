@@ -5049,8 +5049,9 @@ var Domado = (function() {
             // Creating HtmlEmitter hooks up document.write, and finish() (i.e.
             // end-of-file, i.e. an empty-string input document) triggers
             // construction of the virtualized global structure.
-            var emitter = new HtmlEmitter(
-                makeDOMAccessible, subDomicile.htmlEmitterTarget, subDomicile);
+            var emitter = new HtmlEmitter(makeDOMAccessible,
+                subDomicile.htmlEmitterTarget,
+                naiveUriPolicy.mitigate, subDomicile);
             emitter.finish();
           }
           return privates.contentDomicile;
@@ -6006,7 +6007,9 @@ var Domado = (function() {
       });
       domicile.html = cajaVM.def(safeHtml);
       domicile.fetchUri = cajaVM.constFunc(function(uri, mime, callback) {
-        uriFetch(naiveUriPolicy, uri, mime, callback);
+        uriFetch(naiveUriPolicy,
+            URI.utils.resolve(domicile.pseudoLocation.href, uri),
+          mime, callback);
       });
       domicile.rewriteUri = cajaVM.constFunc(function(uri, mimeType, opt_hints) {
         // (SAME_DOCUMENT, SANDBOXED) is chosen as the "reasonable" set of

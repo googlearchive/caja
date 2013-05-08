@@ -148,8 +148,12 @@
             <g:north size="50">
               <g:DisclosurePanel styleName="{style.playgroundUI}" width="100%">
                 <g:header>Eval Result</g:header>
-                <g:TextBox ui:field="renderResult" width="100%">
-                </g:TextBox>
+                <g:HorizontalPanel>
+                  <g:TextBox ui:field="renderResult">
+                  </g:TextBox>
+                  <g:Label>Time:</g:Label>
+                  <g:Label ui:field="renderTime">Unknown</g:Label>
+                </g:HorizontalPanel>
               </g:DisclosurePanel>
             </g:north>
             <g:south size="0">

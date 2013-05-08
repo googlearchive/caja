@@ -44,13 +44,17 @@ if ('I'.toLowerCase() !== 'i') { throw 'I/i problem'; }
  *     Except, this contract may be impossible to satisfy on IE<=8.
  *     TODO(felix8a): check all the implications of violating the contract.
  * @param base a node that is the ancestor of all statically generated HTML.
+ * @param opt_mitigatingUrlRewriter a script url rewriting proxy which can be used
+ *     to optionally load premitigated scripts instead of mitigating on the
+ *     fly (used only in SES)
  * @param opt_domicile the domado instance that will receive a load event when
  *     the html-emitter is closed, and which will have the {@code writeHook}
  *     property set to the HtmlEmitter's document.write implementation.
  * @param opt_guestGlobal the object in the guest frame that is the global scope
  *     for guest code.
  */
-function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
+function HtmlEmitter(makeDOMAccessible, base,
+    opt_mitigatingUrlRewriter, opt_domicile, opt_guestGlobal) {
   if (!base) {
     throw new Error(
         'Host page error: Virtual document element was not provided');
@@ -396,12 +400,13 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
     }
 
     function evaluateUntrustedScript(
-        scriptBaseUri, scriptInnerText, opt_delayed) {
+        scriptBaseUri, scriptInnerText, opt_delayed, opt_mitigate) {
       if (!opt_guestGlobal) { return; }
 
       if (opt_delayed) {
         delayScript(function () {
-          evaluateUntrustedScript(scriptBaseUri, scriptInnerText, false);
+          evaluateUntrustedScript(
+            scriptBaseUri, scriptInnerText, false, opt_mitigate);
         });
         return;
       }
@@ -413,7 +418,10 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
         var compileModule = cajaVM.compileModule;
         if (compileModule) {
           try {
-            var compiledModule = compileModule(scriptInnerText);
+            // TODO(jasvir): Consider caching in localStorage here
+            // May require tying the key to the caja version and/or
+            // a crypto hash
+            var compiledModule = compileModule(scriptInnerText, opt_mitigate);
             try {
               compiledModule(opt_domicile.window);
               return;  // Do not trigger onerror below.
@@ -514,21 +522,46 @@ function HtmlEmitter(makeDOMAccessible, base, opt_domicile, opt_guestGlobal) {
         defineUntrustedStylesheet, url, 'text/css', marker, continuation);
     }
 
+    function getMitigatedUrl(url) {
+      if (!opt_mitigatingUrlRewriter) { return null; }
+      if ('function' === typeof opt_mitigatingUrlRewriter) {
+        var p = opt_mitigatingUrlRewriter(URI.parse(url));
+        return p ? String(p) : null;
+      }
+      return null;
+    }
+
     function evaluateUntrustedExternalScript(
         url, marker, continuation, delayed) {
+      var proxiedUrl = getMitigatedUrl(url);
+      var mitigateOpts;
+      if (proxiedUrl) {
+        // Disable mitigation
+        mitigateOpts = {
+          parseProgram : true,
+          rewriteTopLevelVars : false,
+          rewriteTopLevelFuncs : false,
+          rewriteTypeOf : false
+        };
+        url = proxiedUrl;
+      } else {
+        mitigateOpts = undefined; // Enable all mitigation
+      }
       var handler;
       if (delayed && delayedScripts) {
         var idx = delayedScripts.length;
         delayedScripts[idx] = UNSATISFIED;
         handler = function (url, src) {
           delayedScripts[idx] = function () {
-            evaluateUntrustedScript(url, src, true);
+            evaluateUntrustedScript(url, src, true, mitigateOpts);
           };
           // TODO(mikesamuel): should this be done via timeout?
           execDelayedScripts();
         };
       } else {
-        handler = evaluateUntrustedScript;
+        handler = function(uri, src, opt_delayed) {
+          evaluateUntrustedScript(uri, src, opt_delayed, mitigateOpts);
+        };
       }
       resolveUntrustedExternal(
         handler, url, 'text/javascript', marker, continuation,

@@ -272,7 +272,8 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
     cajaVM.copyToImports(imports, cajaVM.sharedImports);
 
     var htmlEmitter = new tamingWin.HtmlEmitter(
-      identity, domicile.htmlEmitterTarget, domicile, window);
+      identity, domicile.htmlEmitterTarget, uriPolicy.mitigate, domicile,
+      window);
 
     if (!feralWin.___.tamingWindows) {
       feralWin.___.tamingWindows = {};

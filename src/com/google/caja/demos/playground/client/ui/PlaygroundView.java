@@ -100,6 +100,7 @@ public class PlaygroundView {
         playgroundUI.compileMessages.clear();
         playgroundUI.cajoledSource.setText("");
         playgroundUI.renderPanel.setText("");
+        playgroundUI.renderTime.setText("Unknown");
         controller.cajole(
             playgroundUI.addressField.getText(),
             playgroundUI.sourceText.getText(),
@@ -466,6 +467,7 @@ public class PlaygroundView {
       boolean es5,
       String html,
       String js) /*-{
+    var startTime = Date.now();
     var that = this;
     $wnd.caja.load(
         element,
@@ -476,6 +478,7 @@ public class PlaygroundView {
           frame = frame.code(baseUrl, "text/html", html).cajoled(baseUrl, js, html)
           frame.run(function(r) {
             that.@com.google.caja.demos.playground.client.ui.PlaygroundView::setRenderedResult(Ljava/lang/String;)(r + '');
+            that.@com.google.caja.demos.playground.client.ui.PlaygroundView::setRenderTime(I)(Date.now() - startTime);
           });
         },
         {
@@ -486,6 +489,10 @@ public class PlaygroundView {
 
   private void setRenderedResult(String result) {
     playgroundUI.renderResult.setText(result);
+  }
+
+  private void setRenderTime(int time) {
+    playgroundUI.renderTime.setText(time + "ms");
   }
 
   private native JavaScriptObject makeExtraImports(
@@ -530,6 +537,16 @@ public class PlaygroundView {
 
   private native JavaScriptObject makeUriPolicy() /*-{
         return {
+          mitigate: function (uri) {
+            // Skip rewriting jquery and jqueryui when loaded
+            // from the google cdn
+            if (uri.getDomain() === "ajax.googleapis.com" &&
+                (uri.getPath().indexOf("/ajax/libs/jquery/") === 0 ||
+                 uri.getPath().indexOf("/ajax/libs/jqueryui/") === 0))  {
+              return uri;
+            }
+            return null;
+          },
           fetch: $wnd.caja.policy.net.ALL.fetch,
           rewrite: function (uri, uriEffect, loaderType, hints) {
             if (uriEffect === $wnd.html4.ueffects.NEW_DOCUMENT) {
