@@ -26,7 +26,7 @@
  * </ul>
  *
  * @author metaweta@gmail.com
- * @requires json_sans_eval, cajaBuildVersion, taming, this, document
+ * @requires json_sans_eval, cajaBuildVersion, taming, this, navigator
  * @provides ___, safeJSON, WeakMap, cajaVM
  * @overrides Error, EvalError, RangeError, ReferenceError, SyntaxError,
  *   TypeError, URIError, ArrayLike, window
@@ -1373,21 +1373,15 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   var HostWeakMap = WeakMap;
   if (typeof HostWeakMap === 'function') {
     var hostWeakMapOK;
-    // There is a WeakMap -- is it good enough?
-    if (typeof document !== 'undefined') {
+    // Firefox 19-22 weakmaps fail to store a variety of objects.
+    // See also ses/WeakMap.js
+    if (typeof navigator !== 'undefined' &&
+        /Firefox/.test(navigator.userAgent)) {
       hostWeakMapOK = false;
-      var problematic = document.createEvent('HTMLEvents');
-      var testHostMap = new HostWeakMap();
-      try {
-        testHostMap.set(problematic, 1);  // Firefox 20 will throw here
-        if (testHostMap.get(problematic) === 1) {
-          hostWeakMapOK = true;
-        }
-      } catch (e) {}
     } else {
       hostWeakMapOK = true;
     }
-    
+
     if (hostWeakMapOK) {
       // Whitelist WeakMap methods.
       WeakMap = markFunc(function() {
@@ -1431,22 +1425,23 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       // Take advantage of both implementations.
       WeakMap = markFunc(function DoubleWeakMap() {
         var hmap = HostWeakMap();
-        var omap = newTable(true);
-        
+        var omap = undefined;
         return snowWhite({
           get: markConstFunc(function(key, opt_default) {
             return hmap.has(key) ? hmap.get(key) :
-                   omap.has(key) ? omap.get(key) : opt_default;
+                   omap && omap.has(key) ? omap.get(key) :
+                   opt_default;
           }),
           set: markConstFunc(function(key, value) {
             try {
               hmap.set(key, value);
             } catch (e) {
+              if (!omap) { omap = newTable(true); }
               omap.set(key, value);
             }
           }),
           has: markConstFunc(function(key) {
-            return hmap.has(key) || omap.has(key);
+            return hmap.has(key) || (omap ? omap.has(key) : false);
           })
         });
       });
