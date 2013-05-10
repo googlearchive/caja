@@ -73,10 +73,11 @@ class ChangeList(object):
 
   def get_upload_args(self, send_mail=False):
     """
-    Returns a parameter list to update.py, the tool that is used to create or
+    Returns a parameter list to upload.py, the tool that is used to create or
     modify a code review.
     """
     args = []
+    args.extend(['--oauth2'])
     args.extend(['--server', server])
     if self.issue:
       args.extend(['--issue', str(self.issue)])
