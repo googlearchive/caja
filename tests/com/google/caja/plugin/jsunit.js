@@ -18,6 +18,18 @@
  * in the global scope, and run them.
  *
  * @author mikesamuel@gmail.com
+ *
+ * TODO(kpreid): Clean up stuff not intended to be exported.
+ * @requires navigator, setTimeout, ___, console,
+ *     assertContains, fail
+ * @provides jsunit, jsunitRegisterIf, jsunitRegister,
+ *     jsunitRegisterAuxiliaryStatus, jsunitRun, jsunitPass, jsunitFail,
+ *     jsunitFinished, jsunitFilter, jsunitCallback
+ *     isGroupLogMessages, startLogMessagesGroup, endLogMessagesGroup,
+ *     inDocument, obtainResultDiv, jsunitWait, jsunitRunNext, arrayContains,
+ *     jsunitValidStatuses
+ *     expectFailure, assertFailsSafe, assertThrowsMsg
+ * @overrides _junit_, setUp, tearDown, document
  */
 
 var jsunit = {};
@@ -98,7 +110,7 @@ jsunit.fail = function(id, error) {
   if (typeof console !== 'undefined') {
     console.error('FAIL: ' + id + ': ' + error + '\n', error);
   }
-}
+};
 
 /**
  * Ensure that an unexpected problem causes test suite failure, as opposed to
@@ -208,7 +220,7 @@ function isGroupLogMessages() {
 function startLogMessagesGroup(testName, opt_subTestName) {
   if (isGroupLogMessages()) {
     if (opt_subTestName) {
-      console.group('running ' + testName + ' - ' + opt_subTestName)
+      console.group('running ' + testName + ' - ' + opt_subTestName);
     } else {
       console.group('running ' + testName);
     }
@@ -387,7 +399,7 @@ function jsunitFail(id) {
 }
 
 function obtainResultDiv(id, opt_idClass) {
-  var el;
+  var el = undefined;
   if (opt_idClass) {
     el = document.getElementById(id + '-' + opt_idClass);
   }

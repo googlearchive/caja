@@ -99,6 +99,18 @@
  *
  *  [ TODO(ihab.awad): Document more as we determine they are useful. ]
  *
+ * TODO(kpreid): Clean up stuff not intended to be exported.
+ * @requires document, window, setInterval, setTimeout, clearInterval, Proxy,
+ *     console,
+ *     jsunit, jsunitRegisterAuxiliaryStatus, jsunitRun, jsunitRegister,
+ *     jsunitRegisterIf, jsunitCallback, jsunitPass, expectFailure,
+ *     JsUnitException, assertFailsSafe, fail,
+ *     bridalMaker
+ * @provides cajaBuildVersion, getUrlParam, withUrlParam, readyToTest,
+ *     createDiv, createExtraImportsForTesting, inES5Mode, setUp, tearDown,
+ *     asyncRequirements,
+ *     canonInnerHtml, assertStringContains, assertStringDoesNotContain,
+ *     splitHtmlAndScript, pageLoaded___, urlParamPattern, fetch
  */
 function setUp() { }
 function tearDown() { }
@@ -109,7 +121,7 @@ var cajaBuildVersion = '%VERSION%';
 // URL parameter parsing code from blog at:
 // http://www.netlobo.com/url_query_string_javascript.html
 function urlParamPattern(name) {
-  name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
+  name = name.replace(/[\[]/,"\\[").replace(/[\]]/,"\\]");
   return new RegExp("([\\?&]"+name+"=)([^&#]*)");
 }
 function getUrlParam(name) {
@@ -148,10 +160,11 @@ function readyToTest() {
       .className = 'readytotest';
 }
 
+var inES5Mode;
 if (getUrlParam('es5') === 'true') {
-  var inES5Mode = true;
+  inES5Mode = true;
 } else if (getUrlParam('es5') === 'false') {
-  var inES5Mode = false;
+  inES5Mode = false;
 } else {
   throw new Error('es5 parameter is not "true" or "false"');
 }
@@ -161,13 +174,13 @@ window.addEventListener('load', function() {
   var toolbar = document.getElementById('toolbar');
   var put = toolbar.appendChild.bind(toolbar);
 
-  function link(label, state, link, opt_title) {
+  function link(label, state, href, opt_title) {
     var el;
     if (state) {
       el = document.createElement('strong');
     } else {
       el = document.createElement('a');
-      el.href = link;
+      el.href = href;
     }
     el.textContent = label;
     el.title = opt_title !== undefined ? opt_title : '';

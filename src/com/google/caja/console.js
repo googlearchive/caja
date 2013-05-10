@@ -19,6 +19,9 @@
  * console on browsers which do not have one.  It appends console
  * messages to an element called 'console-results' if it exists, else
  * it creates and appends such an element to the document.
+ *
+ * @requires document, setTimeout
+ * @overrides console
  */
 if ('undefined' === typeof console) {
   var console = (function () {

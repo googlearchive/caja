@@ -1174,6 +1174,20 @@ For help on building and testing Caja, see:
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
 
+    <transform>
+      <output file="${testlib}/testglue.jslint.stamp"
+        language="jslint" ignore="UNCAUGHT_THROW_DURING_INIT"/>
+      <!-- Should be the files loaded by browser-test-case.html, plus the
+           default test driver -->
+      <input file="${lib}/com/google/caja/console.js"/>
+      <!-- skipping "third-party" code for now
+           <input file="${testlib}/com/google/caja/plugin/jsUnitCore.js"/> -->
+      <input file="${testlib}/com/google/caja/plugin/jsunit.js"/>
+      <!-- uri.js and bridal.js are linted as non-test code -->
+      <input file="${testlib}/com/google/caja/plugin/browser-test-case.js"/>
+      <input file="${testlib}/com/google/caja/plugin/default-test-driver.js"/>
+    </transform>
+
     <copy todir="${testlib}">
       <fileset dir="${tests}">
         <include name="**/caja/**/*.css"/>
