@@ -17,7 +17,8 @@
 <div class="testcontainer waiting" id="testCssImports">
   <link href="es53-test-css-imports-1.css" rel="stylesheet">
   <style>
-    @import url("es53-test-css-imports-2.css");
+    @import "es53-test-css-imports-2.css";
+    @import url(es53-test-css-imports-5.css);
     .shouldbezero { background-color: #000000; }
 
     .overrideinorder { background-color: #000004; }
@@ -30,6 +31,8 @@
   <div class="overrideinorder">override ordering</div>
   <div class="overriderecurse">override recursively</div>
   <div class="overridesequential">override sequentially</div>
+  
+  <div class="nonstandard">nonstandard</div>
 <br>
 <script type="text/javascript">
   jsunitRegister('testCssImports',
@@ -56,6 +59,8 @@
       assertExpectedColor({rgb: 0x000004}, 'overrideinorder');
       assertExpectedColor({rgb: 0x000005}, 'overriderecurse');
       assertExpectedColor({rgb: 0x000006}, 'overridesequential');
+
+      assertExpectedColor({rgb: 0x000007}, 'nonstandard');
    });
 
    pass('testCssImports');

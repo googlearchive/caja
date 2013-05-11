@@ -517,13 +517,33 @@ var sanitizeStylesheetWithExternals = undefined;
     }
   
     /**
-     * Extracts a url out of a very restrictive form of url(...) css
-     * function call
+     * Extracts a url out of an at-import rule of the form:
+     *   \@import "mystyle.css";
+     *   \@import url("mystyle.css");
+     *
      * Returns null if no valid url was found.
      */
-    function cssParseUri(url) {
-      var match = /^url[(]["'](.*)["'][)]$/.exec(url);
-      return match ? match[1] : null;
+    function cssParseUri(candidate) {
+      var string1 = /^\s*["]([^"]*)["]\s*$/;
+      var string2 = /^\s*[']([^']*)[']\s*$/;
+      var url1 = /^\s*url\s*[(]["]([^"]*)["][)]\s*$/;
+      var url2 = /^\s*url\s*[(][']([^']*)['][)]\s*$/;
+      // Not officially part of the CSS2.1 grammar
+      // but supported by Chrome
+      var url3 = /^\s*url\s*[(]([^)]*)[)]\s*$/;
+      var match;
+      if (match = string1.exec(candidate)) {
+        return match[1];
+      } else if (match = string2.exec(candidate)) {
+        return match[1];
+      } else if (match = url1.exec(candidate)) {
+        return match[1];
+      } else if (match = url2.exec(candidate)) {
+        return match[1];
+      } else if (match = url3.exec(candidate)) {
+        return match[1];
+      }
+      return null;
     }
   
     /**

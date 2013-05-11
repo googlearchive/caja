@@ -1,5 +1,5 @@
-@import url("es53-test-css-imports-3.css");
-@import url("es53-test-css-imports-4.css");
+@import url('es53-test-css-imports-3.css');
+@import 'es53-test-css-imports-4.css';
 
 .shouldbeone { background-color: #000001; }
 .overriderecurse { background-color: #000005; }
