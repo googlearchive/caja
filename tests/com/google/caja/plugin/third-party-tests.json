@@ -1,0 +1,305 @@
+[
+  {
+    "label": "jquery",
+    "driver": "qunit-test-driver.js",
+    "mode": "es5",
+    "guest-template": "/ant-testlib/js/jqueryjs/test/*-uncajoled.html",
+    "comment": [
+      "TODO(kpreid): Make it possible to run ES5 mode only in automated tests",
+      "and have both modes in manual test index."
+    ],
+    "tests": [
+      {
+        "guest": "core",
+        "expected-pass": 1285,
+        "comment": [
+          "Current modifications made to test suite:",
+            "Removed unnecessary octal literal.",
+          "Current failure categories:",
+            "Complaint about lack of PHP server",
+            "TODO(jasvir): window.eval is absent (this includes the",
+             "jQuery('html') failure)",
+            "We don't implement XML yet.",
+            "We don't implement document.styleSheets.",
+            "We don't implement document.getElementsByName.",
+            "(isPlainObject) iframes don't have JS globals."
+        ]
+      },
+      {
+        "guest": "callbacks",
+        "expected-pass": "all",
+        "comment": [
+          "Current modifications made to test suite:",
+            "Adjusted 'context is window' test assuming callee is non-strict"
+        ]
+      },
+      {
+        "guest": "deferred",
+        "expected-pass": "all",
+        "comment": [
+          "Current modifications made to test suite:",
+            "Adjusted tests assuming callee is non-strict"
+        ]
+      },
+      {
+        "guest": "support",
+        "expected-pass": 1,
+        "comment": [
+          "Current failure categories:",
+            "We don't implement src= iframes yet."
+        ]
+      },
+      {
+        "guest": "data",
+        "expected-pass": 290,
+        "comment": [
+          "Current failure categories:",
+            "We don't implement src= iframes yet."
+        ]
+      },
+      {
+        "guest": "queue",
+        "expected-pass": "all"
+      },
+      {
+        "guest": "attributes",
+        "expected-pass": { "firefox": 422, "chrome": 411 },
+        "comment": [
+          "Current failure categories:",
+            "URI rewriting is visible to the guest.",
+            "Simple event handler rewriting is visible to the guest.",
+            "We don't implement XML yet.",
+            "Rejection of HTML5 autofocus attribute assignment is visible.",
+            "Removing style= attributes is misbehaving according to jQuery.",
+            "We don't support tabindex on non-form-elements yet (HTML5).",
+            "We don't support document.createAttribute yet.",
+            "Something to do with multiple-select.",
+            "Expects a form name/id (?) to be reflected on document."
+        ]
+      },
+      {
+        "guest": "event",
+        "expected-pass": 481,
+        "comment": [
+          "Current failure categories:",
+            "Various lost-signal failures:",
+            "   in 'bind(),live(),delegate() with non-null,defined data'",
+            "   live() and delegate() tests",
+            "   trigger() tests",
+            "We don't implement src= iframes yet.",
+            "jQuery reports leak in 'bind(name, false), unbind(name, false)'",
+            "submit listeners not firing in 'trigger(type, [data], [fn])'",
+            "Object [domado object HTMLInputElement] has no method 'click'",
+            "Something about 'quickIs'."
+        ]
+      },
+      {
+        "guest": "selector",
+        "expected-pass": 25,
+        "comment": [
+          "Current failure categories:",
+            "We don't implement src= iframes yet."
+        ]
+      },
+      {
+        "guest": "traversing",
+        "expected-pass": 292,
+        "comment": [
+          "Current failure categories:",
+            "We don't implement src= iframes yet."
+        ]
+      },
+      {
+        "guest": "manipulation",
+        "expected-pass": 488,
+        "comment": [
+          "Current modifications made to test suite:",
+            "Removed SES-incompatible Array.prototype modification; was only",
+            "  for testing jQuery robustness.",
+          "Current failure categories:",
+            "Something wrong with checked radio buttons. (Worse on Firefox)",
+            "Something wrong with jQuery's <script>-based ajax transport.",
+            "We don't make non-JS <script> elements readable/preserved.",
+            "We don't implement XML yet.",
+            "We don't support runtime-created <style> elements, even",
+            "  virtualized?",
+            "Something wrong with 'jQuery.cleanData' test. (Firefox only)",
+            "We don't implement some case of dynamic <script> creation that",
+            "  html() - execute scripts... and html() - script exceptions...",
+            "  are using.",
+            "'window.eval is undefined' in appendTo test -- REGRESSION"
+        ]
+      },
+      {
+        "guest": "css",
+        "expected-pass": 202,
+        "comment": [
+          "Current failure categories:",
+            "We don't implement SVG (fill-opacity CSS property).",
+            "defaultDisplay() doesn't get the intended answer on Firefox, but",
+            "  works on Chrome."
+        ]
+      },
+      {
+        "guest": "ajax",
+        "manual": true,
+        "expected-pass": "all",
+        "comment": [
+          "Requires a PHP server we don't run."
+        ]
+      },
+      {
+        "guest": "effects",
+        "expected-pass": 528,
+        "comment": [
+          "Current modifications made to test suite:",
+            "Fixed maybe-accidental undeclared global 'calls'.",
+          "Current failure categories:",
+            "We don't implement SVG (fill-opacity CSS property)."
+        ]
+      },
+      {
+        "guest": "offset",
+        "expected-pass": { "firefox": 17, "chrome": 18 },
+        "comment": [
+          "Current failure categories:",
+            "We don't implement src= iframes yet."
+        ]
+      },
+      {
+        "guest": "dimensions",
+        "expected-pass": 133,
+        "comment": [
+          "Current modifications made to test suite:",
+            "Fixed nested function in strict mode.",
+          "Current failure categories:",
+            "We don't implement src= iframes yet."
+        ]
+      },
+      {
+        "guest": "exports",
+        "expected-pass": "all"
+      }
+    ]
+  },
+  {
+    "label": "jqueryui",
+    "driver": "qunit-test-driver.js",
+    "mode": "es5",
+    "guest-template": "/third_party/js/jquery-ui/tests/unit/*/*.html",
+    "tests": [
+      {
+        "guest": "accordion",
+        "expected-pass": { "firefox": 285, "chrome": 288 },
+        "comment": [
+          "Current failure categories:",
+            "unexamined"
+        ]
+      },
+      {
+        "guest": "autocomplete",
+        "expected-pass": { "firefox": 120, "chrome": 147 },
+        "comment": [
+          "Current modifications made to test suite:",
+            "Work around lost-signal problems due to lack of event simulation",
+          "Current failure categories:",
+            "keystroke response discrepancies",
+            "unexamined"
+        ]
+      },
+      {
+        "guest": "button",
+        "expected-pass": "all"
+      },
+      {
+        "guest": "core",
+        "expected-pass": 143,
+        "comment": [
+          "Current failure categories:",
+            "Something about focusability"
+        ]
+      },
+      {
+        "guest": "datepicker",
+        "expected-pass": { "firefox": 482, "chrome": 528 },
+        "comment": [
+          "Current failure categories:",
+            "keystroke response discrepancies",
+            "parseDate",
+            "got absolute URL where relative expected"
+        ]
+      },
+      {
+        "guest": "dialog",
+        "expected-pass": { "firefox": 220, "chrome": 227 },
+        "comment": [
+          "Current failure categories:",
+            "What may be event simulation failures",
+            "Some numeric discrepancies"
+        ]
+      },
+      {
+        "guest": "effects",
+        "expected-pass": 208,
+        "comment": [
+          "Current failure categories:",
+            "cssText values in 'animateClass clears style properties when stopped'"
+        ]
+      },
+      {
+        "guest": "menu",
+        "expected-pass": { "firefox": 164, "chrome": 211 },
+        "comment": [
+          "Current failure categories:",
+            "unexamined"
+        ]
+      },
+      {
+        "guest": "position",
+        "expected-pass": { "firefox": 78, "chrome": "all" },
+        "comment": [
+          "Current failure categories:",
+            "unexamined"
+        ]
+      },
+      {
+        "guest": "progressbar",
+        "expected-pass": "all"
+      },
+      {
+        "guest": "slider",
+        "expected-pass": { "firefox": 92, "chrome": 123 },
+        "comment": [
+          "Current failure categories:",
+            "Keyboard events not working"
+        ]
+      },
+      {
+        "guest": "spinner",
+        "expected-pass": { "firefox": 137, "chrome": 467 },
+        "comment": [
+          "Current failure categories:",
+            "unexamined"
+        ]
+      },
+      {
+        "guest": "tabs",
+        "expected-pass": { "firefox": 487, "chrome": 519 },
+        "comment": [
+          "Current modifications made to test suite:",
+            "Work around lost-signal problems due to lack of event simulation",
+          "Current failure categories:",
+            "unexamined"
+        ]
+      },
+      {
+        "guest": "tooltip",
+        "expected-pass": "all"
+      },
+      {
+        "guest": "widget",
+        "expected-pass": "all"
+      }
+    ]
+  }
+]

@@ -15,6 +15,7 @@
 package com.google.caja.util;
 
 import com.google.caja.SomethingWidgyHappenedError;
+import com.google.caja.plugin.BrowserTestCatalog;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -86,6 +87,7 @@ public final class RhinoExecutor implements Executor {
       Character.class.getName(),
       DOMException.class.getName(),
       Double.class.getName(),
+      BrowserTestCatalog.ParserOutput.class.getName(),
       EcmaError.class.getName(),
       EvaluatorException.class.getName(),
       Float.class.getName(),

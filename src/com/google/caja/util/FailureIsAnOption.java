@@ -31,6 +31,10 @@ import java.lang.annotation.Target;
  * Known failing tests will be identified in the test reports, but will not
  * cause the build to fail, and so won't stop {@code myvn submit}.
  *
+ * Use {@link com.google.caja.tools.TestSummary#isFailureAnOption(Class, String, Function)}
+ * to check for failure annotations on dynamically-generated tests as well as
+ * simple method annotations.
+ *
  * @author mikesamuel@gmail.com
  */
 @Retention(RetentionPolicy.RUNTIME)

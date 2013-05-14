@@ -22,8 +22,7 @@
 
 var testFailed = true;
 
-var match = /resources=([^&=]+)/.exec(location.search);
-var resources = match ? match[1] : '/caja';
+var resources = getUrlParam('resources', '/caja');
 
 jsunitRegister('testNeverStarts', function testNeverStarts() {
   caja.initialize({

@@ -34,33 +34,19 @@ import org.openqa.selenium.remote.RemoteWebDriver;
 import com.google.caja.util.TestFlag;
 
 /**
- * Manages WebDriver instances.
+ * Wrapper around a WebDriver instance for our multi-window usage pattern.
  *
- * WebDriver browser setup is kind of slow, so ideally we'd start only one
- * before running tests, then tear it down when tests are done. However,
- * there's no easy way to run something after all tests are done.
- *
- * So what we're doing here is, every BrowserTestCase uses WebDriverHandle,
- * and calls release() when done. WebDriverHandle keeps a static refcount,
- * and tears down its static WebDriver instance when refcount==0.
- *
- * This is kind of gross, but other options are worse. In particular, using
- * Runtime shutdown hooks is flaky because WebDriver also uses shutdown
- * hooks, and we can't guarantee order of execution.
- *
- * If we convert to Junit4, we can use @BeforeClass and @AfterClass instead
- * of refcount.
+ * WebDriver browser setup is kind of slow, so we reuse a browser for an entire
+ * class's worth of tests via @BeforeClass and @AfterClass.
  */
 
 class WebDriverHandle {
-  private static RemoteWebDriver driver = null;
-  private static int refCount = 0;
-  private static String firstWindow = null;
-  private static int windowSeq = 1;
-  private static int keptWindows = 0;
+  private RemoteWebDriver driver = null;
+  private String firstWindow = null;
+  private int windowSeq = 1;
+  private int keptWindows = 0;
 
   WebDriverHandle() {
-    refCount += 1;
   }
 
   WebDriver makeWindow() {
@@ -145,23 +131,19 @@ class WebDriverHandle {
   }
 
   void release() {
-    refCount -= 1;
-    if (refCount <= 0) {
-      refCount = 0;
-      if (driver != null) {
-        if (firstWindow != null) {
-          driver.switchTo().window(firstWindow);
-          firstWindow = null;
-        }
-        if (0 < keptWindows) {
-          // .close() quits the browser if there are no more windows, but
-          // helpers like chromedriver stay running.
-          driver.close();
-        } else {
-          driver.quit();
-        }
-        driver = null;
+    if (driver != null) {
+      if (firstWindow != null) {
+        driver.switchTo().window(firstWindow);
+        firstWindow = null;
       }
+      if (0 < keptWindows) {
+        // .close() quits the browser if there are no more windows, but
+        // helpers like chromedriver stay running.
+        driver.close();
+      } else {
+        driver.quit();
+      }
+      driver = null;
     }
   }
 

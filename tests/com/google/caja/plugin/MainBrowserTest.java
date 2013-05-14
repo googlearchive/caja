@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Google Inc.
+// Copyright (C) 2013 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,24 +14,13 @@
 
 package com.google.caja.plugin;
 
-import org.junit.Test;
-import org.mortbay.jetty.servlet.Context;
-import org.mortbay.jetty.servlet.ServletHolder;
+import org.junit.runner.RunWith;
 
 /**
- * @author ihab.awad@gmail.com
+ * Browser-driving tests for Caja itself.
+ *
+ * @author kpreid@switchb.org
  */
-public class ModulesBrowserTest extends BrowserTestCase {
-  // BrowserTestCase is now JUnit 4-ish, so we use annotations.
-  @Test
-  public final void testModules() throws Exception {
-    runBrowserTest(false, "modules-test.html");
-  }
-
-  @Override
-  protected void addServlets(Context servlets) {
-    servlets.addServlet(
-        new ServletHolder(new JsonTestServlet()),
-       "/jsonTest");
-  }
-}
+@RunWith(CatalogRunner.class)
+@CatalogRunner.CatalogName("browser-tests.json")
+public class MainBrowserTest extends CatalogTestCase {}

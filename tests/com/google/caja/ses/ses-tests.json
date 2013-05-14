@@ -1,0 +1,37 @@
+[
+  {
+    "label": "ses", 
+    "bare": "../ses/test-ses.html",
+    "mode": "none",
+    "tests": [
+      {
+        "label": "basic",
+        "params": { "load": "initSES.js" }
+      },
+      {
+        "label": "basic-min",
+        "params": { "load": "initSES-minified.js" }
+      },
+      {
+        "label": "plus",
+        "params": { "load": "initSESPlus.js" }
+      },
+      {
+        "label": "plus-min",
+        "params": { "load": "initSESPlus-minified.js" }
+      },
+      {
+        "label": "fail-0",
+        "params": { "load": "initSES.js", "failAtStage": "0" }
+      },
+      {
+        "label": "fail-1",
+        "params": { "load": "initSES.js", "failAtStage": "1" }
+      },
+      {
+        "label": "fail-2",
+        "params": { "load": "initSES.js", "failAtStage": "2" }
+      }
+    ]
+  }
+]

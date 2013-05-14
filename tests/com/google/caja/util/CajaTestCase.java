@@ -14,7 +14,6 @@
 
 package com.google.caja.util;
 
-import com.google.caja.AllTests;
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.CssTokenType;
@@ -48,6 +47,7 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageTypeInt;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.tools.TestSummary;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
@@ -55,7 +55,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.io.StringReader;
-import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.regex.Pattern;
 
@@ -484,29 +483,21 @@ public abstract class CajaTestCase extends TestCase {
   }
   
   protected boolean isKnownFailure() {
-    try {
-      Method method = getClass().getMethod(getName(), new Class[0]);
-      return (method.isAnnotationPresent(FailureIsAnOption.class));
-    } catch (NoSuchMethodException ex) {
-      // skip
-      return false;
-    }
+    return TestSummary.isFailureAnOption(getClass(), getName(),
+        new Function<String, Void>() {
+      @Override
+      public Void apply(String msg) {
+        System.err.println(msg);
+        return null;
+      }
+    });
   }
 
   @Override
   protected void runTest() throws Throwable {
-  // Support filtering of test methods via the Java system property
-  // "test.filter.method".  This can be used in conjunction with
-  // "test.filter".
-    String filterGlob = System.getProperty("test.filter.method");
-    if (filterGlob != null) {
-      // TODO: Maybe move globToPattern into util.
-      Pattern methodFilter = Pattern.compile(
-          AllTests.globToPattern(filterGlob), Pattern.DOTALL);
-      if (!methodFilter.matcher(getName()).matches()) {
-        System.err.println("Skipping " + getName());
-        return;
-      }
+    if (!isMethodInFilter()) {
+      System.err.println("Skipping " + getName());
+      return;
     }
 
     // In Eclipse, to suppress known test failures,
@@ -527,5 +518,46 @@ public abstract class CajaTestCase extends TestCase {
       return;
     }
     super.runTest();
+  }
+
+  protected boolean isMethodInFilter() {
+    return isMethodInFilter(getName());
+  }
+
+  public static boolean isMethodInFilter(String name) {
+    // Support running only selected test methods via Java system properties.
+    // This can be used in conjunction with TestFlag.FILTER.
+    String filterGlob = TestFlag.FILTER_METHOD.getString(null);
+    if (filterGlob != null) {
+      Pattern methodFilter = Pattern.compile(
+          globToPattern(filterGlob), Pattern.DOTALL);
+      return methodFilter.matcher(name).matches();
+    } else {
+      return true;
+    }
+  }
+
+  private static String globToPattern(String glob) {
+    StringBuilder sb = new StringBuilder();
+    int pos = 0;
+    for (int i = 0, n = glob.length(); i < n; ++i) {
+      char ch = glob.charAt(i);
+      if (ch == '*') {
+        sb.append(Pattern.quote(glob.substring(pos, i)));
+        pos = i + 1;
+        // ** matches across package boundaries
+        if (pos < n && '*' == glob.charAt(pos)) {
+          ++pos;
+          sb.append(".*");
+        } else {
+          sb.append("[^.]*");
+        }
+      } else if (ch == '?') {
+        sb.append(Pattern.quote(glob.substring(pos, i))).append('.');
+        pos = i + 1;
+      }
+    }
+    sb.append(Pattern.quote(glob.substring(pos)));
+    return sb.toString();
   }
 }

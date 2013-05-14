@@ -35,7 +35,6 @@
   }
 
   var testCase = getUrlParam('test-case');
-  var jQuery = (getUrlParam('jQuery') === 'true');
 
   if (testCase) {
     caja.makeFrameGroup({
@@ -45,7 +44,7 @@
     }, function(frameGroup) {
       frameGroup.makeES5Frame(
           createDiv(),
-          jQuery ? caja.policy.net.ALL : {
+          {
             fetch: caja.policy.net.ALL.fetch,
             rewrite: function (uri, uriEffect, loaderType, hints) {
               if (uri.getPath().indexOf('test-image-41x13.png') !== -1) {
@@ -68,14 +67,10 @@
           },
           function(frame) {
             frame.url(testCase)
-                 .run(jQuery
-                          ? null /* don't define, e.g., $ */
-                          : createExtraImportsForTesting(frameGroup, frame),
+                 .run(createExtraImportsForTesting(frameGroup, frame),
                      function(result) {
-                       if (!jQuery) {
-                         readyToTest();
-                         jsunitRun(null, asyncRequirements.evaluate);
-                       }
+                       readyToTest();
+                       jsunitRun(null, asyncRequirements.evaluate);
                      });
           });
     });

@@ -14,24 +14,28 @@
 
 package com.google.caja.plugin;
 
-import com.google.caja.lexer.escaping.Escaping;
-import com.google.caja.reporting.BuildInfo;
-import com.google.caja.reporting.MessageQueue;
-import com.google.caja.util.CajaTestCase;
-import com.google.caja.util.LocalServer;
-import com.google.caja.util.TestFlag;
-import com.google.caja.util.ThisHostName;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.util.List;
 
-import com.google.common.base.Joiner;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.mortbay.jetty.servlet.Context;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+
+import com.google.caja.lexer.escaping.Escaping;
+import com.google.caja.reporting.BuildInfo;
+import com.google.caja.reporting.MessageQueue;
+import com.google.caja.util.LocalServer;
+import com.google.caja.util.TestFlag;
+import com.google.caja.util.ThisHostName;
+import com.google.common.base.Joiner;
 
 /**
  * Test case class with tools for controlling a web browser running pages from
@@ -40,17 +44,13 @@ import org.openqa.selenium.WebElement;
  * Browser testing is described in more detail at the
  * <a href="http://code.google.com/p/google-caja/wiki/CajaTesting"
  *   >CajaTesting wiki page</a>
- * <p>
- * Type parameter D is for data passed in to subclass overrides of driveBrowser.
  *
  * @author maoziqing@gmail.com (Ziqing Mao)
  * @author kpreid@switchb.org (Kevin Reid)
  */
-public abstract class BrowserTestCase<D> extends CajaTestCase {
-  // We acquire a WebDriverHandle on construction because the test runner
-  // constructs all the TestCase objects before running any of them, and
-  // we want WebDriverHandle's refcount to stay nonzero as long as possible.
-  private final WebDriverHandle wdh = new WebDriverHandle();
+public abstract class BrowserTestCase {
+  // Constructed @BeforeClass to share a single web browser.
+  private static WebDriverHandle wdh;
 
   protected String testBuildVersion = null;
 
@@ -81,17 +81,14 @@ public abstract class BrowserTestCase<D> extends CajaTestCase {
         }
       });
 
-  @Override
-  public void setUp() throws Exception {
-    super.setUp();
+  @BeforeClass
+  public static void setUpClass() throws Exception {
+    wdh = new WebDriverHandle();
   }
 
-  @Override
-  public void tearDown() throws Exception {
-    // WebDriverHandle closes the browser after all tests call release.
+  @AfterClass
+  public static void tearDownClass() throws Exception {
     wdh.release();
-    setTestBuildVersion(null);
-    super.tearDown();
   }
 
   /**
@@ -117,16 +114,7 @@ public abstract class BrowserTestCase<D> extends CajaTestCase {
     return errStream;
   }
 
-  /**
-   * Start the web server and browser, go to pageName, call driveBrowser(driver,
-   * pageName), and then clean up.
-   */
-  protected String runBrowserTest(String pageName, String... params)
-      throws Exception {
-    return runBrowserTest(pageName, null, params);
-  }
-
-  protected String runBrowserTest(String pageName, D data,
+  protected String runBrowserTest(boolean isKnownFailure, String pageName,
       String... params) throws Exception {
     int serverPort = TestFlag.SERVER_PORT.getInt(0);
 
@@ -170,36 +158,18 @@ public abstract class BrowserTestCase<D> extends CajaTestCase {
         Thread.currentThread().join();
       }
 
-      result = driveBrowser(driver, data, pageName);
+      result = driveBrowser(driver);
       passed = true;
     } finally {
       localServer.stop();
       // It's helpful for debugging to keep failed windows open.
-      if (!passed && !isKnownFailure() && !TestFlag.BROWSER_CLOSE.truthy()) {
+      if (!passed && !isKnownFailure && !TestFlag.BROWSER_CLOSE.truthy()) {
         wdh.keepOpen();
       } else {
         wdh.closeWindow();
       }
     }
     return result;
-  }
-
-  protected String runTestDriver(
-      String testDriver, boolean es5, String... params)
-      throws Exception {
-    return runBrowserTest("browser-test-case.html",
-        add(params,
-            "es5=" + es5,
-            "test-driver=" + escapeUri(testDriver)));
-  }
-
-  protected String runTestCase(
-      String testCase, boolean es5, String... params)
-      throws Exception {
-    return runBrowserTest("browser-test-case.html",
-        add(params,
-            "es5=" + es5,
-            "test-case=" + escapeUri(testCase)));
   }
 
   protected static String escapeUri(String s) {
@@ -217,20 +187,8 @@ public abstract class BrowserTestCase<D> extends CajaTestCase {
 
   /**
    * Do what should be done with the browser.
-   *
-   * @param data
-   *          Parameter from runBrowserTest, for use by subclasses; must be null
-   *          but subclasses overriding this method may make use of it.
-   * @param pageName
-   *          The tail of a URL. Unused in this implementation.
    */
-  protected String driveBrowser(
-      final WebDriver driver, final D data, final String pageName) {
-    if (data != null) {
-      throw new IllegalArgumentException(
-          "data parameter is not used and should be null");
-    }
-
+  protected String driveBrowser(final WebDriver driver) {
     // 20s because test-domado-dom startup is very very very slow in es53 mode,
     // and something we're doing is leading to huge unpredictable slowdowns
     // in random test startup; perhaps we're holding onto a lot of ram and
@@ -264,6 +222,20 @@ public abstract class BrowserTestCase<D> extends CajaTestCase {
       }
     });
 
+    // override point
+    waitForCompletion(driver);
+
+    // check the title of the document
+    String title = driver.getTitle();
+    assertTrue("The title shows " + title, title.contains("all tests passed"));
+    return title;
+  }
+
+  /**
+   * After startup and clicking is done, wait an appropriate amount of time
+   * for tests to pass.
+   */
+  protected void waitForCompletion(final WebDriver driver) {
     // 10s because the es53 cajoler is slow the first time it runs.
     countdown(10000, 200, new Countdown() {
       private List<WebElement> waitingList = null;
@@ -281,11 +253,6 @@ public abstract class BrowserTestCase<D> extends CajaTestCase {
         return waitingList.size();
       }
     });
-
-    // check the title of the document
-    String title = driver.getTitle();
-    assertTrue("The title shows " + title, title.contains("all tests passed"));
-    return title;
   }
 
   /**
@@ -350,21 +317,5 @@ public abstract class BrowserTestCase<D> extends CajaTestCase {
 
   public interface Countdown {
     int run();
-  }
-
-  /**
-   * Helper to respond to browser differences.
-   */
-  D firefoxVsChrome(D firefox, D chrome) {
-    String type = wdh.getBrowserType();
-    // In the event that we support testing on more browsers, this should be
-    // redesigned appropriately, rather than being a long if-else.
-    if ("firefox".equals(type)) {
-      return firefox;
-    } else if ("chrome".equals(type)) {
-      return chrome;
-    } else {
-      return firefox;
-    }
   }
 }

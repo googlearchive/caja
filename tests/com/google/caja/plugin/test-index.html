@@ -16,9 +16,38 @@
 -->
 <html>
   <meta charset="utf-8">
+  <title>Caja Tests</title>
+  <style type="text/css">
+    li { margin-bottom: 0.1em; }
+
+    .manual { text-decoration: none; }
+    .comment {
+      background: white;
+      color: #777;
+      font-size: 0.8em;
+      white-space: pre-wrap;
+    }
+    [title] { border-right: .5em solid #ccc; }
+
+    #key { display: table; float: right; background-color: #EEE; padding: 1em; }
+    #key h3 { text-align: center; margin: 0; }
+    #key ul { margin: 0; padding: 0; }
+    #key li { margin: 0; padding: 0; list-style-type: none; }
+  </style>
   <body>
+    <div id="key">
+      <h3>Key</h3>
+      <ul>
+        <li><a href="" class="">Automated</a>
+        <li><a href="" class="manual">Manual only</a>
+        <li><del>Disabled</del></a>
+        <li><a href="" class="" title="Hello world">Hidden comment</a>
+      </ul>
+    </div>
     <h2>End-to-end automated tests</h2>
     <ul id='tests'></ul>
+    <h2>Third-party tests</h2>
+    <ul id='thirdparty'></ul>
     <h2>Manual tools</h2>
     <ul>
       <li><a href="../../../../../src/com/google/caja/ses/explicit.html">
@@ -28,6 +57,7 @@
       </a></li>
       <li><a href="apidiff/analyzer.html">Browser API report/diff</a></li>
     </ul>
+    <script src="catalog-parser.js"></script>
     <script src="test-index.js"></script>
   </body>
 </html>

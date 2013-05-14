@@ -14,10 +14,10 @@
 
 package com.google.caja.tools;
 
-import com.google.caja.util.FailureIsAnOption;
-
 import java.io.File;
 import java.lang.reflect.Method;
+import java.util.List;
+
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
@@ -26,17 +26,24 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import junit.framework.TestCase;
+
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Task;
 import org.apache.tools.ant.types.FileSet;
+import org.junit.runner.Description;
+import org.junit.runner.Request;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import com.google.caja.util.FailureIsAnOption;
+import com.google.caja.util.Function;
 
 /**
  * Generates a test summary that realizes that
@@ -179,19 +186,53 @@ public final class TestSummary extends Task {
   }
 
   private boolean hasFailAnnotation(String className, String methodName) {
-    Method method;
+    Class<?> testClass;
     try {
-      Class<?> testClass = Class.forName(className);
-      method = testClass.getMethod(methodName, new Class[0]);
+      testClass = Class.forName(className);
     } catch (ClassNotFoundException ex) {
       log("Cannot find class " + className, Project.MSG_WARN);
       return false;
-    } catch (NoSuchMethodException ex) {
-      log("Cannot find method " + methodName + " of " + className,
-          Project.MSG_WARN);
-      return false;
     }
-    return method.isAnnotationPresent(FailureIsAnOption.class);
+
+    return isFailureAnOption(testClass, methodName,
+        new Function<String, Void>() {
+      @Override
+      public Void apply(String msg) {
+        log(msg, Project.MSG_WARN);
+        return null;
+      }
+    });
+  }
+
+  /**
+   * Utility to test either type of failure flag.
+   */
+  public static boolean isFailureAnOption(Class<?> testClass, String methodName,
+      Function<String, Void> log) {
+    String className = testClass.getName();
+
+    if (TestCase.class.isAssignableFrom(testClass)) {
+      // JUnit 4's JUnit 3 compatibility does not gather annotations!
+      Method method;
+      try {
+        method = testClass.getMethod(methodName, new Class[0]);
+      } catch (NoSuchMethodException ex) {
+        log.apply("Cannot find method " + methodName + " of " + className);
+        return false;
+      }
+      return method.isAnnotationPresent(FailureIsAnOption.class);
+    } else {
+      List<Description> filtered = Request.method(testClass, methodName)
+          .getRunner().getDescription().getChildren();
+      if (filtered.isEmpty()) {
+        log.apply("Failed to match test for " + methodName + " of " +
+            className);
+        return false;
+      } else {
+        Description methodDesc = filtered.get(0);
+        return methodDesc.getAnnotation(FailureIsAnOption.class) != null;
+      }
+    }
   }
 
   private void hero(String className, String testName) {

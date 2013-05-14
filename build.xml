@@ -121,6 +121,7 @@ For help on building and testing Caja, see:
     <pathelement path="${precajolelib}/light"/>
     <pathelement path="${testlib}"/>
     <pathelement path="${third_party}/java/emma/emma.jar"/>
+    <pathelement path="${third_party}/java/junit/hamcrest-core.jar"/>
     <pathelement path="${third_party}/java/junit/junit.jar"/>
     <pathelement path="${third_party}/java/webdriver/selenium-server-standalone-2.31.0.jar"/>
     <path refid="classpath.main"/>
@@ -141,6 +142,7 @@ For help on building and testing Caja, see:
    classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask">
     <classpath>
       <pathelement path="${third_party}/java/apache_ant/ant-junit.jar"/>
+      <pathelement path="${third_party}/java/junit/hamcrest-core.jar"/>
       <pathelement path="${third_party}/java/junit/junit.jar"/>
     </classpath>
   </taskdef>
@@ -205,7 +207,7 @@ For help on building and testing Caja, see:
     <antcall target="runtests">
       <param name="test.debug.server" value="true"/>
       <!-- Run an arbitrary test to trigger the test.debug logic -->
-      <param name="test.filter" value="Es5BrowserTest"/>
+      <param name="test.filter" value="MainBrowserTest"/>
     </antcall>
   </target>
 
@@ -214,7 +216,7 @@ For help on building and testing Caja, see:
     <antcall target="runtests">
       <param name="test.debug.browser" value="true"/>
       <!-- Run an arbitrary test to trigger the test.debug logic -->
-      <param name="test.filter" value="Es5BrowserTest"/>
+      <param name="test.filter" value="MainBrowserTest"/>
     </antcall>
   </target>
 
@@ -244,25 +246,18 @@ For help on building and testing Caja, see:
     </sequential>
   </macrodef>
 
-  <target name="runjquery" depends="jquery,AllTests">
+  <target name="runtpt" depends="jquery,AllTests"
+      description="Third-party tests under Caja -- $ ant runtpt [-Dtest.filter.method=jquery-\*]">
     <RunSeparateTest>
       <files>
-        <filename name="**/JQueryTest.java"/>
-      </files>
-    </RunSeparateTest>
-  </target>
-
-  <target name="runjqueryui" depends="AllTests">
-    <RunSeparateTest>
-      <files>
-        <filename name="**/JQueryUITest.java"/>
+        <filename name="**/ThirdPartyBrowserTest.java"/>
       </files>
     </RunSeparateTest>
   </target>
 
   <target name="runtests"
       depends="AllTests,RuntestsRun,CacheTestSuccess"
-      description="$ ant runtests [-Dtest.filter=My\*Test]"/>
+      description="Caja tests -- $ ant runtests [-Dtest.filter=My\*Test]"/>
 
   <property name="emma.coverage.out.file"
       value="${reports}/coverage/coverage.ec"/>
@@ -294,8 +289,6 @@ For help on building and testing Caja, see:
         <fileset dir="${tests}">
           <and>
             <not><filename name="**/*BrowserTest.java"/></not>
-            <not><filename name="**/JQueryTest.java"/></not>
-            <not><filename name="**/JQueryUITest.java"/></not>
             <not><filename name="**/${test.exclude}.java"/></not>
             <filename name="**/${test.filter}.java"/>
             <filename regex="/[A-M]"/>
@@ -336,6 +329,7 @@ For help on building and testing Caja, see:
         <fileset dir="${tests}">
           <and>
             <filename name="**/*BrowserTest.java"/>
+            <not><filename name="**/ThirdPartyBrowserTest.java"/></not>
             <not><filename name="**/${test.exclude}.java"/></not>
             <filename name="**/${test.filter}.java"/>
           </and>
@@ -350,7 +344,15 @@ For help on building and testing Caja, see:
       <classpath refid="classpath.tests"/>
       <jvmarg line="${jvmarg}"/>
       <syspropertyset refid="test.propertyset"/>
-      <test todir="${reports}/test.${test.type}" name="com.google.caja.AllTests"/>
+      <batchtest todir="${reports}/test.${test.type}">
+        <fileset dir="${tests}">
+          <and>
+            <not><filename name="**/ThirdPartyBrowserTest.java"/></not>
+            <not><filename name="**/${test.exclude}.java"/></not>
+            <filename name="**/${test.filter}.java"/>
+          </and>
+        </fileset>
+      </batchtest>
     </junit>
   </target>
 
@@ -541,13 +543,6 @@ For help on building and testing Caja, see:
     <taskdef name="precajole"
      classname="com.google.caja.precajole.PrecajoleTask"
      classpathref="classpath.main" />
-
-    <!-- If testlib doesn't exist when summarize is defined, it's
-         dropped from summarize's classpath, which means
-         summarize won't be able to find test class files -->
-    <mkdir dir="${testlib}"/>
-    <taskdef name="summarize" classname="com.google.caja.tools.TestSummary"
-     classpathref="classpath.tests" />
 
     <copy todir="${lib}">
       <fileset dir="${src}">
@@ -1175,6 +1170,12 @@ For help on building and testing Caja, see:
     </javac>
 
     <transform>
+      <output file="${testlib}/catalog-parser.jslint.stamp"
+        language="jslint"/>
+      <input file="${testlib}/com/google/caja/plugin/catalog-parser.js"/>
+    </transform>
+
+    <transform>
       <output file="${testlib}/testglue.jslint.stamp"
         language="jslint" ignore="UNCAUGHT_THROW_DURING_INIT"/>
       <!-- Should be the files loaded by browser-test-case.html, plus the
@@ -1196,6 +1197,7 @@ For help on building and testing Caja, see:
         <include name="**/caja/**/*.html"/>
         <include name="**/caja/**/*.input"/>
         <include name="**/caja/**/*.js"/>
+        <include name="**/caja/**/*.json"/>
         <include name="**/caja/**/*.png"/>
         <include name="**/caja/**/*.txt"/>
         <include name="**/caja/**/*.xml"/>
@@ -1240,6 +1242,9 @@ For help on building and testing Caja, see:
         <include name="js/es5conform/**/*.js"/>
       </fileset>
     </copy>
+
+    <taskdef name="summarize" classname="com.google.caja.tools.TestSummary"
+     classpathref="classpath.tests" />
   </target>
 
   <target name="Version.set">

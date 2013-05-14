@@ -86,6 +86,13 @@
     forceES5Mode: inES5Mode
   });
 
+  jsunitRegister('testCorrectMinified', function testCorrectMinified() {
+    assertEquals(
+        getUrlParam('minified', 'PARAM MISSING'),
+        String(!caja.closureCanary));
+    jsunitPass('testCorrectMinified');
+  });
+
   jsunitRegister('testReinitialization', function testReinitialization() {
     try {
       caja.initialize({

@@ -124,9 +124,10 @@ function urlParamPattern(name) {
   name = name.replace(/[\[]/,"\\[").replace(/[\]]/,"\\]");
   return new RegExp("([\\?&]"+name+"=)([^&#]*)");
 }
-function getUrlParam(name) {
-  var results = urlParamPattern(name).exec(window.location.href);
-  return decodeURIComponent((results == null) ? "" : results[2]);
+function getUrlParam(name, opt_default) {
+  var match = urlParamPattern(name).exec(window.location.href);
+  return match ? decodeURIComponent(match[2]) :
+      opt_default ? opt_default : '';
 }
 
 /**
@@ -205,23 +206,26 @@ window.addEventListener('load', function() {
       link('source', max, withUrlParam('minified', 'false')),
       link('minified', !max, withUrlParam('minified', 'true'))));
 
-  var testModuleParam =
-      getUrlParam('test-driver') ? 'test-driver' : 'test-case';
-  var testModulePath = getUrlParam(testModuleParam);
-  var sourceMatch = (/^\/tests\/com\/google\/caja\/plugin\/(.*)$/
-      .exec(testModulePath));
-  var testModuleBare = sourceMatch ? sourceMatch[1] : testModulePath;
-  var sl;
-  put(widget(
-      link('built', !sourceMatch, withUrlParam(testModuleParam,
-          testModuleBare)),
-      link('from source tree', sourceMatch, withUrlParam(testModuleParam,
-              '/tests/com/google/caja/plugin/' + testModuleBare),
-          'does not work for all tests')));
+  function doModule(testModuleParam) {
+    var testModulePath = getUrlParam(testModuleParam);
+    if (testModulePath === '') { return; }
+    var sourceMatch = (/^\/tests\/com\/google\/caja\/plugin\/(.*)$/
+        .exec(testModulePath));
+    var testModuleBare = sourceMatch ? sourceMatch[1] : testModulePath;
+    var sl;
+    put(widget(
+        link('built', !sourceMatch, withUrlParam(testModuleParam,
+            testModuleBare)),
+        link('from source tree', sourceMatch, withUrlParam(testModuleParam,
+                '/tests/com/google/caja/plugin/' + testModuleBare),
+            'does not work for all tests')));
 
-  put(document.createTextNode(testModuleParam + ': '));
-  put(link(testModuleBare, false, testModulePath,
-      'to verify text / force reload'));
+    put(document.createTextNode(testModuleParam + ': '));
+    put(link(testModuleBare, false, testModulePath,
+        'to verify text / force reload'));
+  }
+  doModule('test-driver');
+  doModule('test-case');
 }, false);
 
 /**

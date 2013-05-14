@@ -14,43 +14,17 @@
 
 package com.google.caja.ses;
 
-import com.google.caja.plugin.BrowserTestCase;
+import org.junit.runner.RunWith;
+
+import com.google.caja.plugin.CatalogRunner;
+import com.google.caja.plugin.CatalogTestCase;
 
 /**
- * Tests for standalone SES.
+ * Browser-driving tests for SES standalone.
  *
  * @author kpreid@switchb.org
  */
-public class SESBrowserTest extends BrowserTestCase<Void> {
-  public final void testBasic() throws Exception {
-    runBrowserTest("../ses/test-ses.html?load=initSES.js");
-  }
-
-  public final void testBasicMin() throws Exception {
-    runBrowserTest("../ses/test-ses.html?load=initSES-minified.js");
-  }
-
-  public final void testPlus() throws Exception {
-    runBrowserTest("../ses/test-ses.html?load=initSESPlus.js");
-  }
-
-  public final void testPlusMin() throws Exception {
-    runBrowserTest("../ses/test-ses.html?load=initSESPlus-minified.js");
-  }
-
-  // Testing failure cases with initSESPlus because it has more code which could
-  // cause problems.
-
-  public final void testPlusFail0() throws Exception {
-    runBrowserTest("../ses/test-ses.html?load=initSESPlus.js&failAtStage=0");
-  }
-
-  public final void testPlusFail1() throws Exception {
-    runBrowserTest("../ses/test-ses.html?load=initSESPlus.js&failAtStage=1");
-  }
-
-  public final void testPlusFail2() throws Exception {
-    runBrowserTest("../ses/test-ses.html?load=initSESPlus.js&failAtStage=2");
-  }
-
+@RunWith(CatalogRunner.class)
+@CatalogRunner.CatalogName("ses-tests.json")
+public class SESBrowserTest extends CatalogTestCase {
 }
