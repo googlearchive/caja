@@ -121,6 +121,20 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
         + "             document.getElementById('test-test').innerHTML);");
   }
 
+  // This would be a test of the html-emitter bug in issue 1589, except
+  // that the bug was in code that's run only when html-emitter has a
+  // domicile from domado, and the Rhino testbed setup lacks domado.
+  public final void testFinishInHead() throws Exception {
+    execGadget(
+        ""
+        + "<html><head> <script>;</script></head>"
+        + "<body><div>2</div></body></html>",
+        "assertEquals('"
+        + "<caja-v-html><caja-v-head> </caja-v-head>"
+        + "<caja-v-body><div>2</div></caja-v-body></caja-v-html>',"
+        + " document.getElementById('test-test').innerHTML);");
+  }
+
   /*
    * https://code.google.com/p/google-caja/issues/detail?id=1717
    * Inappropriate hoisting of a var declaration caused an attempt
@@ -258,6 +272,7 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
             new Executor.Input(getClass(), "html4-defs.js"),
             new Executor.Input(getClass(), "html-sanitizer.js"),
             new Executor.Input(getClass(), "bridal.js"),
+            new Executor.Input(getClass(), "html-schema.js"),
             new Executor.Input(getClass(), "html-emitter.js"),
             new Executor.Input(getClass(), "container.js"),
             // The gadget
@@ -267,9 +282,11 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
           };
         RhinoTestBed.runJs(inputs);
       } catch (Exception e) {
+        System.out.println("Exception " + e);
         System.out.println("Compiled gadget: \n" + staticHtml + "\n" + js);
         throw e;
       } catch (Error e) {
+        System.out.println("Error " + e);
         System.out.println("Compiled gadget: \n" + staticHtml + "\n" + js);
         throw e;
       }

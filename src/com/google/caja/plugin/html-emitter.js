@@ -302,8 +302,6 @@ function HtmlEmitter(makeDOMAccessible, base,
    * See also reopen() below.
    */
   function finish() {
-    notifyEOF();
-    insertionPoint = null;
     if (detached) {
       for (var i = 0, n = detached.length; i < n; i += 2) {
         detached[i + 1].appendChild(detached[i]);
@@ -311,7 +309,31 @@ function HtmlEmitter(makeDOMAccessible, base,
     }
     // Release references so nodes can be garbage collected.
     idMap = detached = null;
+    // At this point we need to close the document, which means
+    // adding html/head/body elements if they're missing.
+    // notifyEOF() will do that, but we have to set
+    // insertionPoint and insertionMode appropriately first.
+    insertionPoint = hasChild(base, 'html') || base;
+    updateInsertionMode();
+    notifyEOF();
+    insertionPoint = null;
     return this;
+  }
+
+  function virtTagName(el) {
+    if (!el) { return ''; }
+    return htmlSchema.realToVirtualElementName(el.tagName).toLowerCase();
+  }
+
+  function hasChild(el, name) {
+    if (!el) { return false; }
+    var child = makeDOMAccessible(el.firstChild);
+    for (; child; child = makeDOMAccessible(child.nextSibling)) {
+      if (child.nodeType === 1 && virtTagName(child) === name) {
+        return child;
+      }
+    }
+    return false;
   }
 
   function signalLoaded() {
@@ -1109,6 +1131,17 @@ function HtmlEmitter(makeDOMAccessible, base,
     var insertionMode = insertionModes.initial;
     var originalInsertionMode = null;
 
+    function docSection(el) {
+      for (;;) {
+        if (!el || el === base) { return ['doc', el]; }
+        var tn = virtTagName(el);
+        if (tn === 'html' || tn === 'head' || tn === 'body') {
+          return [tn, el];
+        }
+        el = el.parentNode;
+      }
+    }
+
     /**
      * Given that attach() has updated the insertionPoint, change the
      * insertionMode to a suitable value.
@@ -1116,34 +1149,39 @@ function HtmlEmitter(makeDOMAccessible, base,
     updateInsertionMode = function updateInsertionMode_() {
       // Note: This algorithm was made from scratch and does NOT reflect the
       // HTML5 specification.
-      if (insertionPoint === base) {
-        if (insertionPoint.lastChild) {
-          insertionMode = insertionModes.afterAfterBody;
-        } else {
-          insertionMode = insertionModes.beforeHtml;
-        }
-      } else {
-        for (var anc = insertionPoint; anc !== base; anc = anc.parentNode) {
-          var tn =
-              htmlSchema.realToVirtualElementName(anc.tagName).toLowerCase();
-          switch (tn) {
-            case 'head': insertionMode = insertionModes.inHead; break;
-            case 'body': insertionMode = insertionModes.inBody; break;
-            case 'html':
-              var prevtn = htmlSchema.realToVirtualElementName(
-                  (anc.lastChild || {}).tagName).toLowerCase();
-              if (prevtn === undefined) {
-                insertionMode = insertionModes.beforeHead;
-              } else {
-                switch (prevtn) {
-                  case 'head': insertionMode = insertionModes.afterHead; break;
-                  case 'body': insertionMode = insertionModes.afterBody; break;
-                }
-              }
-              break;
-            default: break;
+
+      // The basic idea is that every document must have an html
+      // element that contains a head element and a body element,
+      // so the current insertionMode depends on where we are in
+      // the existing document, and also on what already exists
+      // in the document. The complication is we want to do
+      // something sensible if the document is malformed.
+
+      var sect = docSection(insertionPoint);
+      switch (sect[0]) {
+        case 'doc':
+          if (hasChild(sect[1], 'html')) {
+            insertionMode = insertionModes.afterAfterBody;
+          } else {
+            insertionMode = insertionModes.beforeHtml;
           }
-        }
+          break;
+        case 'head':
+          insertionMode = insertionModes.inHead;
+          break;
+        case 'body':
+          insertionMode = insertionModes.inBody;
+          break;
+        case 'html':
+          if (hasChild(sect[1], 'body')) {
+            insertionMode = insertionModes.afterBody;
+          } else if (hasChild(sect[1], 'head')) {
+            insertionMode = insertionModes.afterHead;
+          } else {
+            insertionMode = insertionModes.beforeHead;
+          }
+          break;
+        default: throw new Error('bug');
       }
     };
 

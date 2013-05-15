@@ -21,6 +21,11 @@
     <script type="text/javascript" src="html4-defs.js"></script>
     <script type="text/javascript" src="html-sanitizer.js"></script>
     <script type="text/javascript" src="bridal.js"></script>
+    <script>
+      // htmlSchema requires cajaVM.def. TODO(felix8a): ugly hack
+      var cajaVM = { def: function(o) { return o; } };
+    </script>
+    <script type="text/javascript" src="html-schema.js"></script>
     <script type="text/javascript" src="html-emitter.js"></script>
     <script type="text/javascript" src="jsUnitCore.js"></script>
  </head>

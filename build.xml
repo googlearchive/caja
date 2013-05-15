@@ -1229,6 +1229,7 @@ For help on building and testing Caja, see:
         <include name="**/caja/plugin/sanitizecss.js"/>
         <include name="**/caja/plugin/html-sanitizer.js"/>
         <include name="**/caja/plugin/bridal.js"/>
+        <include name="**/caja/plugin/html-schema.js"/>
         <include name="**/caja/plugin/html-emitter.js"/>
         <include name="**/caja/plugin/html-sanitizer-minified.js"/>
         <include name="**/caja/plugin/html-sanitizer-legacy.js"/>

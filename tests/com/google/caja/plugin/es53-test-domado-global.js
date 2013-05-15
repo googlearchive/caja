@@ -253,6 +253,35 @@
           '</script>');
     })();
 
+    /**
+     * Issue 1589, html-emitter gets confused in a couple ways when
+     * head has script but body doesn't
+     */
+    jsunitRegisterIf(!inES5Mode, 'testHtmlEmitterFinishInHead',
+                   function testHtmlEmitterFinishInHead() {
+      var div = createDiv();
+      caja.load(div, undefined, function(frame) {
+        var imports = createExtraImportsForTesting(caja, frame);
+        frame.api(imports);
+        frame.code(
+          'http://nonexistent/', 'text/html',
+          // note, the space is necessary to trigger the bug
+          '<html><head> <script>;</script></head>'
+            + '<body><div>2</div></body></html>');
+        frame.run(function(result) {
+          var doc = div.firstChild.firstChild;
+          var html = canonInnerHtml(doc.innerHTML);
+          assertEquals(
+            '<caja-v-html>'
+              + '<caja-v-head></caja-v-head>'
+              + '<caja-v-body><div>2</div></caja-v-body>'
+              + '</caja-v-html>',
+            html);
+          jsunitPass('testHtmlEmitterFinishInHead');
+        });
+      });
+    });
+
     readyToTest();
     jsunitRun();
   });
