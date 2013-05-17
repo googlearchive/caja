@@ -90,7 +90,6 @@ For help on building and testing Caja, see:
     <pathelement path="${third_party}/java/jaf/activation.jar"/>
     <pathelement path="${third_party}/java/jakarta_commons/commons-cli.jar"/>
     <pathelement path="${third_party}/java/jakarta_commons/commons-codec-1.4.jar"/>
-    <pathelement path="${third_party}/java/jakarta_commons/commons-fileupload-1.2.1.jar"/>
     <pathelement path="${third_party}/java/jakarta_commons/commons-io-1.4.jar"/>
     <pathelement path="${third_party}/java/javamail/mail.jar"/>
     <pathelement path="${third_party}/java/jchardet/chardet.jar"/>
@@ -100,7 +99,6 @@ For help on building and testing Caja, see:
     <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
     <pathelement path="${third_party}/java/jsonml/jsonml.jar"/>
     <pathelement path="${third_party}/java/jsr305/jsr305.jar"/>
-    <pathelement path="${third_party}/java/rhino/js.jar"/>
     <pathelement path="${third_party}/java/xerces/xercesImpl.jar"/>
   </path>
 
@@ -123,6 +121,7 @@ For help on building and testing Caja, see:
     <pathelement path="${third_party}/java/emma/emma.jar"/>
     <pathelement path="${third_party}/java/junit/hamcrest-core.jar"/>
     <pathelement path="${third_party}/java/junit/junit.jar"/>
+    <pathelement path="${third_party}/java/rhino/js.jar"/>
     <pathelement path="${third_party}/java/webdriver/selenium-server-standalone-2.31.0.jar"/>
     <path refid="classpath.main"/>
     <path refid="classpath.gwt"/>
@@ -679,7 +678,6 @@ For help on building and testing Caja, see:
     <copy todir="${jars}">
       <fileset dir="${third_party}/java/jakarta_commons">
         <include name="commons-cli.jar"/>
-        <include name="commons-fileupload-1.2.1.jar"/>
         <include name="commons-io-1.4.jar"/>
         <include name="commons-codec-1.4.jar"/>
       </fileset>
@@ -698,9 +696,6 @@ For help on building and testing Caja, see:
       <fileset dir="${third_party}/java/jsdk2.1">
         <include name="servlet.jar"/>
       </fileset>
-      <fileset dir="${third_party}/java/rhino">
-        <include name="js.jar"/>
-      </fileset>
       <fileset dir="${third_party}/java/jetty/lib">
         <include name="jetty.jar"/>
         <include name="jetty-util.jar"/>
@@ -710,9 +705,6 @@ For help on building and testing Caja, see:
       </fileset>
       <fileset dir="${third_party}/java/xerces">
         <include name="xercesImpl.jar"/>
-      </fileset>
-      <fileset dir="${third_party}/java/rhino">
-        <include name="js.jar"/>
       </fileset>
     </copy>
     <jar destfile="${jars}/pluginc.jar">
@@ -1605,9 +1597,6 @@ For help on building and testing Caja, see:
       <fileset dir="${third_party}/java/jakarta_commons/">
         <include name="commons-io-1.4.jar" />
         <include name="commons-codec-1.4.jar" />
-      </fileset>
-      <fileset dir="${third_party}/java/jakarta_commons/">
-        <include name="commons-fileupload-1.2.1.jar" />
       </fileset>
     </copy>
     <copy todir="${war}/WEB-INF"
