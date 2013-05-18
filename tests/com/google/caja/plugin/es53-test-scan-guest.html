@@ -1,0 +1,68 @@
+<!--
+ - Copyright (C) 2013 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+<style>
+  #testUniverse-report {
+    margin: 0;
+    padding: 0.2em;
+    background: white; color: black;
+  }
+  .scan-error, .scan-gap { font-weight: bold; }
+  .scan-log   { background: inherit; color: #444; }
+  .scan-gap   { background: inherit; color: #000; }
+  .scan-error { background: inherit; color: #F00; }
+  .scan-hide-non-errors .scan-log { display: none; }
+
+  #testUniverse-running-controls {
+    display: block;
+    text-align: center;
+    margin: .2em 0;
+  }
+  #testUniverse-running-controls progress {
+    display: inline-block;
+    width: 80%;
+  }
+</style>
+<body>
+<script src="es53-test-scan-guest.js"></script>
+
+<div class="testcontainer" id="testScanner"></div>
+<script>
+  jsunitRegister('testScanner', testScanner);
+</script>
+
+<form>
+  <input type="text" id="scan-only" value="" size="100">
+  <button type="button" onclick="
+      modifyUrlParam('scan-only', document.getElementById('scan-only').value);
+  ">Scan only paths with this prefix</button>
+</form>
+<script>
+  document.getElementById('scan-only').value = getUrlParam('scan-only');
+</script>
+<form>
+  <label><input id="hide-non-errors-checkbox" type="checkbox"> Show only errors</label>
+</form>
+
+<div class="testcontainer" id="testUniverse">
+  <pre id="testUniverse-report"></pre>
+  <div id="testUniverse-running-controls">
+  <progress id="testUniverse-progress" value=0></progress>
+  <button id="testUniverse-stop">Stop</button>
+  </div>
+</div>
+<script type="text/javascript">
+  jsunitRegister('testUniverse', testUniverse);
+</script>

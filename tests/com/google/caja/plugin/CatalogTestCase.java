@@ -24,7 +24,7 @@ import org.junit.runner.RunWith;
  */
 @RunWith(value = CatalogRunner.class)
 public abstract class CatalogTestCase extends BrowserTestCase {
-  BrowserTestCatalog.Entry entry;
+  protected BrowserTestCatalog.Entry entry;
 
   void setCatalogEntry(BrowserTestCatalog.Entry entry) {
     this.entry = entry;

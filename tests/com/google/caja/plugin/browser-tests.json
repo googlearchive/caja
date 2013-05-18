@@ -118,7 +118,8 @@
       { "mode": "es53", "failureIsAnOption":
           "Cajoler fails to handle relative urls in external CSS" },
       { "mode": "es5" }
-    ]}
+    ]},
+    { "guest": "es53-test-scan-guest.html" }
   ]},
   { "label": "taming", "tests": [
     { "driver": "es53-test-taming-tamed.js" },

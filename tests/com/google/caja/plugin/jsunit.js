@@ -393,8 +393,8 @@ function jsunitPass(id) {
   jsunit.pass(id);
 }
 
-function jsunitFail(id) {
-  jsunit.fail(id);
+function jsunitFail(id, error) {
+  jsunit.fail(id, error);
   fail(id);
 }
 

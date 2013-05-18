@@ -100,10 +100,9 @@
  *  [ TODO(ihab.awad): Document more as we determine they are useful. ]
  *
  * TODO(kpreid): Clean up stuff not intended to be exported.
- * @requires document, window, setInterval, setTimeout, clearInterval, Proxy,
- *     console,
+ * @requires document, setInterval, setTimeout, clearInterval, Proxy, console,
  *     jsunit, jsunitRegisterAuxiliaryStatus, jsunitRun, jsunitRegister,
- *     jsunitRegisterIf, jsunitCallback, jsunitPass, expectFailure,
+ *     jsunitRegisterIf, jsunitCallback, jsunitPass, jsunitFail, expectFailure,
  *     JsUnitException, assertFailsSafe, fail,
  *     bridalMaker
  * @provides cajaBuildVersion, getUrlParam, withUrlParam, readyToTest,
@@ -111,6 +110,7 @@
  *     asyncRequirements,
  *     canonInnerHtml, assertStringContains, assertStringDoesNotContain,
  *     splitHtmlAndScript, pageLoaded___, urlParamPattern, fetch
+ * @overrides window
  */
 function setUp() { }
 function tearDown() { }
@@ -468,6 +468,8 @@ function createExtraImportsForTesting(frameGroup, frame) {
   standardImports.pass =
       standardImports.jsunitPass =
       frame.tame(frame.markFunction(jsunitPass));
+  standardImports.jsunitFail =
+      frame.tame(frame.markFunction(jsunitFail));
   standardImports.jsunitCallback =
       frame.tame(frame.markFunction(function(cb, opt_id) {
         return jsunitCallback(cb, opt_id, frame);
@@ -506,6 +508,9 @@ function createExtraImportsForTesting(frameGroup, frame) {
     log: frame.markFunction(function () {
       Function.prototype.apply.call(console.log, console, arguments);
     }),
+    info: frame.markFunction(function () {
+      Function.prototype.apply.call(console.info, console, arguments);
+    }),
     warn: frame.markFunction(function () {
       Function.prototype.apply.call(console.warn, console, arguments);
     }),
@@ -532,6 +537,12 @@ function createExtraImportsForTesting(frameGroup, frame) {
       ? typeof Proxy !== 'undefined'
       // ES5/3 provides proxies.
       : true;
+
+  standardImports.getUrlParam = frame.tame(frame.markFunction(getUrlParam));
+  standardImports.modifyUrlParam = frame.tame(frame.markFunction(
+      function(name, value) {
+    window.location = withUrlParam(name, value);
+  }));
 
   var ___ = frame.iframe.contentWindow.___;
 
@@ -598,6 +609,15 @@ function createExtraImportsForTesting(frameGroup, frame) {
     // Test if a given feral object has a property
     feralFeatureTest: function(tame, jsProp) {
       return jsProp in frame.untame(tame);
+    },
+    evalInHostFrame: function(code) {
+      return new Function('return (' + code + ');')();
+    },
+    evalInTamingFrame: function(code) {
+      return frameGroup.iframe.contentWindow.eval(code);
+    },
+    scrollToEnd: function() {
+      window.scrollTo(0, document.body.offsetHeight);
     }
   };
 
@@ -611,6 +631,9 @@ function createExtraImportsForTesting(frameGroup, frame) {
   makeCallable(directAccess.getBodyNode);
   makeCallable(directAccess.getComputedStyle);
   makeCallable(directAccess.makeUnattachedScriptNode);
+  makeCallable(directAccess.evalInHostFrame);
+  makeCallable(directAccess.evalInTamingFrame);
+  makeCallable(directAccess.scrollToEnd);
 
   if (!inES5Mode) {
     // TODO(kpreid): This wrapper could be replaced by the 'makeDOMAccessible'

@@ -1179,6 +1179,9 @@ For help on building and testing Caja, see:
       <!-- uri.js and bridal.js are linted as non-test code -->
       <input file="${testlib}/com/google/caja/plugin/browser-test-case.js"/>
       <input file="${testlib}/com/google/caja/plugin/default-test-driver.js"/>
+
+      <!-- an interestingly complicated test program -->
+      <input file="${testlib}/com/google/caja/plugin/es53-test-scan-guest.js"/>
     </transform>
 
     <copy todir="${testlib}">

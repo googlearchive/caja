@@ -236,8 +236,7 @@ public abstract class BrowserTestCase {
    * for tests to pass.
    */
   protected void waitForCompletion(final WebDriver driver) {
-    // 10s because the es53 cajoler is slow the first time it runs.
-    countdown(10000, 200, new Countdown() {
+    countdown(waitForCompletionTimeout(), 200, new Countdown() {
       private List<WebElement> waitingList = null;
       @Override public String toString() {
         return "completion (Remaining elements = " +
@@ -253,6 +252,12 @@ public abstract class BrowserTestCase {
         return waitingList.size();
       }
     });
+  }
+
+  /** Override point */
+  protected int waitForCompletionTimeout() {
+    // 10s because the es53 cajoler is slow the first time it runs.
+    return 10000;
   }
 
   /**
