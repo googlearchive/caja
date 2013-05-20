@@ -1,0 +1,108 @@
+<!--
+ - Copyright (C) 2013 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<div id="testShim" class="testcontainer">Test Iframe Shim</div>
+<script type="text/javascript">
+  jsunitRegister('testShim',
+                 function testShim() {
+    // Tests that iframes can be used as visual layout tools, as some HTML in
+    // the wild does. Historical note: This test was written to test a
+    // specialized attribute-blacklisting case for HTMLIFrameElement, which no
+    // longer exists; all of this is now the default behavior for
+    // non-whitelisted attributes, but as it is important to security this
+    // specific test remains.
+    var ifr = document.createElement('iframe');
+    ifr.height = 5;
+    ifr.width = 6;
+    ifr.frameBorder = 1;
+    ifr.name = 'test';
+    ifr.src = 'http://www.google.com';
+    ifr.setAttribute('application', 'yes');
+    document.getElementById('testShim').appendChild(ifr);
+    assertEquals('5', ifr.getAttribute('height'));
+    assertEquals('6', ifr.getAttribute('width'));
+    assertEquals('1', ifr.getAttribute('frameBorder'));
+    // Hazardous attributes are virtualized normally...
+    assertEquals('test', ifr.getAttribute('name'));
+    assertEquals('http://www.google.com', ifr.getAttribute('src'));
+    // ...but do not actually get set.
+    assertEquals(null, directAccess.getAttribute(ifr, 'name'));
+    assertEquals(null, directAccess.getAttribute(ifr, 'src'));
+    pass('testShim');
+  });
+</script>
+
+<div id="testDocument" class="testcontainer">Test Iframe Document</div>
+<script type="text/javascript">
+  jsunitRegister('testDocument',
+                 function testDocument() {
+    var container = document.getElementById('testDocument');
+    var ifr = document.createElement('iframe');
+    container.appendChild(ifr);
+
+    // existence
+    assertEvaluatesToTrue('contentDocument', ifr.contentDocument);
+    assertEvaluatesToTrue('contentWindow', ifr.contentWindow);
+
+    // functionality and distinctness from container
+    ifr.contentDocument.body.innerHTML =
+        '<p class="testcontainer">Hello framed world</p>';
+    var elems = ifr.contentDocument.getElementsByClassName('testcontainer');
+    assertEquals(1, elems.length);
+
+    // document.write (will reopen the document)
+    ifr.contentDocument.write('');
+    assertEquals(0, ifr.contentDocument.childNodes.length);
+    ifr.contentDocument.write('replacement');
+    assertEquals(1, ifr.contentDocument.childNodes.length);
+    assertEquals('<head></head><body>replacement</body>',
+        ifr.contentDocument.documentElement.innerHTML);
+
+    pass('testDocument');
+  });
+</script>
+
+<!-- Tests for detailed functionality *in* iframes -->
+
+<div id="testMutation" class="testcontainer">testMutation</div>
+<script type="text/javascript">
+  jsunitRegister('testMutation',
+                 function testMutation() {
+    var i = document.getElementById('testMutation').appendChild(
+        document.createElement('iframe')).contentWindow;
+
+    // regression test: lack of editability due to a policy bug w/
+    // container-node-is-document vdocs
+    i.document.body.appendChild(i.document.createElement('p'));
+
+    pass('testMutation');
+  });
+</script>
+
+<div id="testGeometry" class="testcontainer">testGeometry</div>
+<script type="text/javascript">
+  jsunitRegister('testGeometry',
+                 function testGeometry() {
+    var i = document.getElementById('testGeometry').appendChild(
+        document.createElement('iframe')).contentWindow;
+
+    // getBoundingClientRect doesn't crash
+    // TODO(kpreid): add value tests
+    i.document.body.getBoundingClientRect();
+
+    pass('testGeometry');
+  });
+</script>

@@ -93,11 +93,12 @@
   },
   { "label": "guest", "tests": [
     { "guest": "es53-test-basic-functions-guest.html" },
-    { "guest": "es53-test-domado-canvas-guest.html" },
     { "guest": "es53-test-domado-dom-guest.html" },
     { "driver": "es53-test-domado-global.js" },
     { "driver": "es53-test-domado-events.js" },
+    { "guest": "es53-test-domado-canvas-guest.html" },
     { "guest": "es53-test-domado-forms-guest.html" },
+    { "guest": "es53-test-domado-iframe-guest.html" },
     { "driver": "es53-test-domado-special.js" },
     { "driver": "es53-test-domado-foreign.js" },
     { "guest": "es53-test-language-guest.html" },

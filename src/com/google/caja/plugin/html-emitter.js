@@ -64,10 +64,7 @@ function HtmlEmitter(makeDOMAccessible, base,
   // 'insertion point', which is not this; this is the 'current node' and
   // implicitly the 'stack of open elements' via parents.
   var insertionPoint = base;
-  var bridal = bridalMaker(makeDOMAccessible,
-      base.nodeType === 9  // Document node
-          ? base
-          : base.ownerDocument);
+  var bridal = bridalMaker(makeDOMAccessible, base);
 
   // TODO: Take into account <base> elements.
 

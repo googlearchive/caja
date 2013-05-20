@@ -1685,8 +1685,9 @@ var Domado = (function() {
           ? containerNode
           : containerNode.ownerDocument;
       document = makeDOMAccessible(document);
-      var docEl = makeDOMAccessible(document.documentElement);
       var bridal = bridalMaker(makeDOMAccessible, document);
+      var elementForFeatureTests =
+          makeDOMAccessible(document.createElement('div'));
 
       var window = bridalMaker.getWindow(containerNode, makeDOMAccessible);
       window = makeDOMAccessible(window);
@@ -3489,7 +3490,7 @@ var Domado = (function() {
         });
       });
 
-      if (docEl.contains) {  // typeof is 'object' on IE
+      if (elementForFeatureTests.contains) {  // typeof is 'object' on IE
         TameBackedNode.prototype.contains = nodeAmp(function(privates, other) {
           if (other === null || other === void 0) { return false; }
           return nodeAmplify(other, function(otherPriv) {
@@ -3498,7 +3499,7 @@ var Domado = (function() {
         });
       }
       if ('function' ===
-          typeof docEl.compareDocumentPosition) {
+          typeof elementForFeatureTests.compareDocumentPosition) {
         /**
          * Speced in <a href="http://www.w3.org/TR/DOM-Level-3-Core/core.html#Node3-compareDocumentPosition">DOM-Level-3</a>.
          */
@@ -3774,13 +3775,13 @@ var Domado = (function() {
       });
       // IE-specific method.  Sets the element that will have focus when the
       // window has focus, without focusing the window.
-      if (docEl.setActive) {
+      if (elementForFeatureTests.setActive) {
         TameElement.prototype.setActive = nodeAmp(function(privates) {
           return domicile.handlingUserAction && privates.feral.setActive();
         });
       }
       // IE-specific method.
-      if (docEl.hasFocus) {
+      if (elementForFeatureTests.hasFocus) {
         TameElement.prototype.hasFocus = nodeAmp(function(privates) {
           return privates.feral.hasFocus();
         });
@@ -3867,13 +3868,13 @@ var Domado = (function() {
           nodeAmp(function(privates, className) {
         return tameGetElementsByClassName(privates.feral, className);
       });
-      if (docEl.querySelector) {
+      if (elementForFeatureTests.querySelector) {
         TameElement.prototype.querySelector =
             nodeAmp(function(privates, selector) {
           return tameQuerySelector(privates.feral, selector, false);
         });
       }
-      if (docEl.querySelectorAll) {
+      if (elementForFeatureTests.querySelectorAll) {
         TameElement.prototype.querySelectorAll =
             nodeAmp(function(privates, selector) {
           return tameQuerySelector(privates.feral, selector, true);
@@ -5787,14 +5788,14 @@ var Domado = (function() {
         return tameGetElementsByClassName(
             privates.feralContainerNode, className);
       });
-      if (docEl.querySelector) {
+      if (elementForFeatureTests.querySelector) {
         TameHTMLDocument.prototype.querySelector =
             nodeAmp(function(privates, selector) {
           return tameQuerySelector(privates.feralContainerNode, selector,
               false);
         });
       }
-      if (docEl.querySelectorAll) {
+      if (elementForFeatureTests.querySelectorAll) {
         TameHTMLDocument.prototype.querySelectorAll =
             nodeAmp(function(privates, selector) {
           return tameQuerySelector(privates.feralContainerNode, selector, true);
@@ -6093,7 +6094,7 @@ var Domado = (function() {
 
       function buildTameStyle() {
 
-        var aStyleForCPC = docEl.style;
+        var aStyleForCPC = elementForFeatureTests.style;
         aStyleForCPC = makeDOMAccessible(aStyleForCPC);
         var allCssProperties = domitaModules.CssPropertiesCollection(
             aStyleForCPC);

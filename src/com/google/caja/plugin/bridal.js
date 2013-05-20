@@ -37,10 +37,14 @@ if ('I'.toLowerCase() !== 'i') { throw 'I/i problem'; }
  *     running in an environment such that unmodified DOM objects cannot be
  *     touched. makeDOMAccessible may either modify its argument (should be
  *     idempotent) or return a different object.
- * @param {HTMLDocument} document
+ * @param {Node} targetDocNode The document to manipulate, or some node owned
+ *     by it.
  */
-var bridalMaker = function (makeDOMAccessible, document) {
-  document = makeDOMAccessible(document);
+var bridalMaker = function (makeDOMAccessible, targetDocNode) {
+  targetDocNode = makeDOMAccessible(targetDocNode);
+  var document = targetDocNode.nodeType === 9 ? targetDocNode :
+      makeDOMAccessible(targetDocNode.ownerDocument);
+
   var window = makeDOMAccessible(
       bridalMaker.getWindow(document, makeDOMAccessible));
   var navigator      = makeDOMAccessible(window.navigator);
@@ -558,12 +562,16 @@ var bridalMaker = function (makeDOMAccessible, document) {
   /**
    * See <a href="http://www.w3.org/TR/cssom-view/#the-getclientrects"
    *      >ElementView.getBoundingClientRect()</a>.
+   * @param {Node} el An element or document.
    * @return {Object} duck types as a TextRectangle with numeric fields
    *    {@code left}, {@code right}, {@code top}, and {@code bottom}.
    */
   function getBoundingClientRect(el) {
-    makeDOMAccessible(el);
-    var doc = el.ownerDocument;
+    el = makeDOMAccessible(el);
+    if (el.nodeType === 9 /* Document */) {
+      el = makeDOMAccessible(el.documentElement);
+    }
+    var doc = makeDOMAccessible(el.ownerDocument);
     // Use the native method if present.
     if (el.getBoundingClientRect) {
       var cRect = el.getBoundingClientRect();
