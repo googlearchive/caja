@@ -4301,9 +4301,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   var nativeProxies = Proxy && (function () {
       var obj = {0: 'hi'};
       var p = Proxy.create({
-          get: function () {
-            var P = arguments[0];
-            if (typeof P !== 'string') { P = arguments[1]; }
+          get: function(O, P) {
             return obj[P];
           }
         });
@@ -4367,6 +4365,24 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         }
         return void 0;
       };
+    var get = function(O, P) {
+        // Optional trap implemented for efficiency.
+        // If P is 'length' or a number, handle the lookup; otherwise
+        // pass it on to Object.prototype.
+        P = '' + P;
+        if (P === 'length') {
+          return lengthGetter.f___(O, []);
+        } else if (isNumericName(P)) {
+          var getter = itemMap.get(O);
+          return getter ? getter.i___(+P) : void 0;
+        } else {
+          // Note: if Object.prototype had accessors, this code would pass
+          // incorrect 'this'.
+          // Note: It is correct that this is a raw access (not .v___) because
+          // this is a handler for a *native* Proxy.
+          return Object.prototype[P];
+        }
+      };
     var has = function (P) {
         // The proxy has a length, numeric indices, and behaves
         // as though it inherits from Object.prototype.
@@ -4401,6 +4417,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     ArrayLike.prototype = Proxy.create({
         getPropertyDescriptor: propDesc,
         getOwnPropertyDescriptor: ownPropDesc,
+        get: get,
         has: has,
         hasOwn: hasOwn,
         getPropertyNames: gpn,

@@ -986,9 +986,7 @@ ses.startSES = function(global,
       var nativeProxies = global.Proxy && (function () {
         var obj = {0: 'hi'};
         var p = global.Proxy.create({
-          get: function () {
-            var P = arguments[0];
-            if (typeof P !== 'string') { P = arguments[1]; }
+          get: function(O, P) {
             return obj[P];
           }
         });
@@ -1033,6 +1031,19 @@ ses.startSES = function(global,
               return gopd(Object.prototype, P);
             }
           }
+          function get(O, P) {
+            P = '' + P;
+            if (P === 'length') {
+              return lengthGetter.call(O);
+            } else if (typeof P === 'number' || P === '' + (+P)) {
+              var getter = itemMap.get(O);
+              return getter ? getter(+P) : void 0;
+            } else {
+              // Note: if Object.prototype had accessors, this code would pass
+              // incorrect 'this'.
+              return Object.prototype[P];
+            }
+          }
           function has(P) {
             P = '' + P;
             return (P === 'length') ||
@@ -1067,6 +1078,7 @@ ses.startSES = function(global,
           ArrayLike.prototype = global.Proxy.create({
             getPropertyDescriptor: propDesc,
             getOwnPropertyDescriptor: ownPropDesc,
+            get: get,
             has: has,
             hasOwn: hasOwn,
             getPropertyNames: getPN,

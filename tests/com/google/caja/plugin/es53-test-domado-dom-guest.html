@@ -2241,7 +2241,9 @@ After
     }
 
     // sanity check that we're not testing nothing
-    assertTrue('sampleObjects nonempty', sampleObjects.length > 0);
+    assertTrue('sampleObjects nonempty',
+        sampleObjects && sampleObjects.length > 0);
+
     sampleObjects.forEach(function(record) {
       record.typenames.forEach(function(typename) {
         assertInstanceof(typename, record.sample);
@@ -2267,7 +2269,8 @@ After
     // inert constructors, which cannot be used. If they are not, they are
     // likely to be taming constructors, which are potentially dangerous to
     // invoke on guest objects.
-    assertTrue('sampleObjects nonempty', sampleObjects.length > 0);
+    assertTrue('sampleObjects nonempty',
+        sampleObjects && sampleObjects.length > 0);
     sampleObjects.forEach(function(record) {
       var note = record.note;
       var constructor = record.sample.constructor;
