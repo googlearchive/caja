@@ -2061,7 +2061,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
 
     StringBuilder importsSetup = new StringBuilder();
     importsSetup.append(
-        "var testImports = ___.copy(___.whitelistAll(___.sharedImports));");
+        "var testImports = ___.copy(___.sharedImports);");
     for (String f : assertFunctions) {
       importsSetup
           .append("testImports.DefineOwnProperty___('" + f + "', " + 

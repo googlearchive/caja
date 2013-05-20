@@ -5559,6 +5559,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       USELESS: USELESS,
       manifest: manifest,
       allKeys: allKeys
+      // sharedImports: sharedImports -- assigned later due to circularity
     });
 
   function readImport(imports, name) {
@@ -5598,7 +5599,12 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     return parseInt(n, radix);
   }
 
-  var sharedImports = whitelistAll({
+  // Note: sharedImports is frozen, even though ES5/3 in general does not freeze
+  // things automatically, because at the time we decided to expose it on
+  // cajaVM, it was not clear whether there were any implications of allowing
+  // guest code to modify the sharedImports in its own ES5/3 frame. The taming
+  // frame would be safe due to def()ing everything.
+  var sharedImports = snowWhite({
       cajaVM: cajaVM,
 
       'null': null,
@@ -5639,6 +5645,13 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
 
       // ES-Harmony future features
       WeakMap: WeakMap
+    });
+  // Circular ref between cajaVM and sharedImports must be done by mutation
+  cajaVM.DefineOwnProperty___('sharedImports', {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: sharedImports
     });
 
   Object.prototype.m___ = function (name, as) {

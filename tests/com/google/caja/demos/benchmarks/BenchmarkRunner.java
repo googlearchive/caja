@@ -125,7 +125,7 @@ public class BenchmarkRunner extends CajaTestCase {
         new Executor.Input(
             // Set up the imports environment.
             ""
-            + "var imports = ___.copy(___.whitelistAll(___.sharedImports));"
+            + "var imports = ___.copy(___.sharedImports);"
             + "imports.onerror = ___.markFunc(function(x){ return true; });"
             + "___.setLogFunc(imports.onerror);"
             + "imports.benchmark = ___.whitelistAll({startTime:0});"

@@ -1081,8 +1081,7 @@
       functionArgs.setByPathSuffix(p, g);
       return g;
     }
-    var tamingEnv = directAccess.evalInTamingFrame(
-        'cajaVM.sharedImports || ___.sharedImports');
+    var tamingEnv = directAccess.evalInTamingFrame('cajaVM.sharedImports');
     function argsByAnyFrame(code, g) {
       // actually, any _should-be-visible_ frame, i.e. guest and taming.
 

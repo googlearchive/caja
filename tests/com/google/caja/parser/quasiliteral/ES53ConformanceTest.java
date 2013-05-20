@@ -861,7 +861,7 @@ public class ES53ConformanceTest extends RewriterTestCase {
 
     StringBuilder importsSetup = new StringBuilder();
     importsSetup.append(
-        "var testImports = ___.copy(___.whitelistAll(___.sharedImports));");
+        "var testImports = ___.copy(___.sharedImports);");
     for (String f : assertFunctions) {
       importsSetup
           .append("testImports." + f + " = ___.markFunc(" + f + ");")

@@ -141,7 +141,7 @@
       es53Win.___.allKeys(es53Obj).forEach(function(prop) {
         if (es53Obj[prop + '_e___'] ||
             hop.call(expected, prop) ||
-            (es53Obj === es53Win.___.sharedImports &&
+            (es53Obj === es53Win.cajaVM.sharedImports &&
                 !hop.call(sesWin.Object.prototype, prop))) {
           props[prop] = (props[prop] || 0) | ON_ES53;
         }
@@ -237,7 +237,6 @@
         // evaluation support
         // TODO(kpreid): Add to ES5/3 for consistency and reflection support
         makeImports: ON_SES,
-        sharedImports: ON_SES,
         copyToImports: ON_SES,
 
         // SES-specific details
@@ -260,7 +259,7 @@
       }
     };
 
-    compare(sesWin.cajaVM.sharedImports, es53Win.___.sharedImports, expected,
+    compare(sesWin.cajaVM.sharedImports, es53Win.cajaVM.sharedImports, expected,
         '');
 
     if (noDiscrepancies) {

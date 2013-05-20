@@ -140,9 +140,7 @@
 
     var roots = {
       Object: getTamingFrameObject('Object'),
-      Function: inES5Mode
-          ? getTamingFrameObject('Function')
-          : getTamingFrameObject('___.sharedImports.Function'),
+      Function: getTamingFrameObject('cajaVM.sharedImports.Function'),
       Array: getTamingFrameObject('Array'),
       Error: getTamingFrameObject('Error')
     };
