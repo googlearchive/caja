@@ -2892,12 +2892,15 @@ Test row cell
   });
 </script>
 
-<p class="testcontainer" id="testToString"><!--Test comment-->
-    Non-toxic toString</p>
+<p class="testcontainer" id="testToString">testToString</p>
 <script type="text/javascript">
   jsunitRegister('testToString',
                 function testToString() {
-    // These all used to throw a "toxic function" exception in ES5/3.
+    // Except as noted, all Domado objects we're checking here should toString
+    // like the native DOM nodes with the extra marker "domado ".
+
+    // Nodes
+    // Printing the nodeName is non-standard
     assertEquals('[domado object HTMLBodyElement BODY]',
         document.body.toString());
     assertEquals('[domado object Text #text]',
@@ -2908,6 +2911,21 @@ Test row cell
         document.createElement('div').toString());
     assertEquals('[domado object HTMLDocument #document]',
         document.toString());
+
+    // Collections
+    assertEquals('getElementsByTagName', '[domado object NodeList]',
+        document.getElementsByTagName('form').toString());
+    assertEquals('getElementsByClassName', '[domado object NodeList]',
+        document.getElementsByClassName('testcontainer').toString());
+    assertEquals('getElementsByClassName stub', '[domado object NodeList]',
+        document.getElementsByClassName('').toString());  // mildly special case
+    assertEquals('attributes', '[domado object NamedNodeMap]',
+        document.createElement('div').attributes.toString());
+    assertEquals('forms', '[domado object HTMLCollection]',
+        document.forms.toString());
+    assertEquals('options', '[domado object HTMLOptionsCollection]',
+        document.createElement('select').options.toString());
+
     pass('testToString');
   });
 </script>

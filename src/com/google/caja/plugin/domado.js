@@ -132,6 +132,7 @@ var Domado = (function() {
   domitaModules.proxiesInterceptNumeric = domitaModules.proxiesAvailable &&
       (function() {
     var handler = {
+      toString: function() { return 'proxiesInterceptNumeric test handler'; },
       getOwnPropertyDescriptor: function(name) {
         return {value: name === '1' ? 'ok' : 'other'};
       }
@@ -602,6 +603,9 @@ var Domado = (function() {
       ProxyHandler.call(this, target);
     }
     inherit(CollectionProxyHandler, ProxyHandler);
+    CollectionProxyHandler.prototype.toString = function() {
+      return '[CollectionProxyHandler]';
+    };
     CollectionProxyHandler.prototype.getOwnPropertyDescriptor =
         function (name) {
       var lookup;
@@ -2829,11 +2833,40 @@ var Domado = (function() {
        * @param opt_superCtor If provided, must be itself registered.
        */
       function registerArrayLikeClass(constructor, opt_superCtor) {
+        inertCtor(constructor, opt_superCtor || cajaVM.makeArrayLike(0),
+            undefined, true);
+        var definedPrototype = constructor.prototype;
+        // Caller will install properties on this prototype.
+
         function updater(ArrayLike) {
+          // Replace prototype with one inheriting from new ArrayLike.
           inertCtor(constructor, opt_superCtor || ArrayLike, undefined, true);
-          Object.freeze(constructor.prototype);
+          var newPrototype = constructor.prototype;
+          // Copy properties from old prototype.
+          assert(Object.isFrozen(definedPrototype));
+          Object.getOwnPropertyNames(definedPrototype).forEach(function(name) {
+            if (name === 'constructor') { return; }
+            Object.defineProperty(newPrototype, name,
+                Object.getOwnPropertyDescriptor(definedPrototype, name));
+          });
+          // and defend.
+          cajaVM.def(newPrototype);
         }
         arrayLikeCtorUpdaters.push(updater);
+      }
+      function finishArrayLikeClass(constructor) {
+        // Cannot def() the constructor because its .prototype is reassigned
+        // (and browsers don't let us make it an accessor), so do only the
+        // prototype.
+        // Cannot def() the prototype because some ArrayLike impls can't be
+        // frozen, so do its pieces (except for it's [[Prototype]]).
+        var proto = constructor.prototype;
+        cajaVM.tamperProof(proto);
+        Object.getOwnPropertyNames(proto).forEach(function(prop) {
+          if (prop !== 'constructor') {
+            cajaVM.def(proto[prop]);
+          }
+        });
       }
       function constructArrayLike(ctor, getItem, getLength) {
         var len = +getLength();
@@ -2861,7 +2894,10 @@ var Domado = (function() {
         return result;
       }
       registerArrayLikeClass(TameNodeList);
-      // not def'd - prototype is replaced
+      setOwn(TameNodeList.prototype, 'toString', cajaVM.def(function() {
+        return '[domado object NodeList]';
+      }));
+      finishArrayLikeClass(TameNodeList);
 
       // NamedNodeMap is a NodeList + live string-named properties; therefore we
       // can't just use ArrayLike.
@@ -2897,6 +2933,9 @@ var Domado = (function() {
         };
         // TODO(kpreid): Reorder code so exporting the name works
         inertCtor(TameNamedNodeMap, Object /*, 'NamedNodeMap' */);
+        setOwn(TameNamedNodeMap.prototype, 'toString', cajaVM.def(function() {
+          return '[domado object NamedNodeMap]';
+        }));
         cajaVM.def(TameNamedNodeMap);
         var NamedNodeMapProxyHandler = function NamedNodeMapProxyHandler_(
               feral, mapping, visibleList, target) {
@@ -2906,6 +2945,9 @@ var Domado = (function() {
           CollectionProxyHandler.call(this, target);
         };
         inherit(NamedNodeMapProxyHandler, CollectionProxyHandler);
+        NamedNodeMapProxyHandler.prototype.toString = function() {
+          return '[NamedNodeMapProxyHandler]';
+        };
         NamedNodeMapProxyHandler.prototype.col_lookup = function(name) {
           if (isNumericName(name)) {
             return this.visibleList.item(+name);
@@ -2955,6 +2997,10 @@ var Domado = (function() {
           return self;
         };
         registerArrayLikeClass(TameNamedNodeMap, TameNodeList);
+        setOwn(TameNamedNodeMap.prototype, 'toString', cajaVM.def(function() {
+          return '[domado object NamedNodeMap]';
+        }));
+        finishArrayLikeClass(TameNamedNodeMap);
       }
 
       function TameOptionsList(nodeList, opt_tameNodeCtor) {
@@ -2972,15 +3018,21 @@ var Domado = (function() {
         return result;
       }
       registerArrayLikeClass(TameOptionsList);
-      // not def'd - prototype is replaced
+      setOwn(TameOptionsList.prototype, 'toString', cajaVM.def(function() {
+        return '[domado object HTMLOptionsCollection]';
+      }));
+      finishArrayLikeClass(TameOptionsList);
 
       /**
        * Return a fake node list containing tamed nodes.
        * @param {Array.<TameNode>} array of tamed nodes.
+       * @param {String} typename either 'NodeList' or 'HTMLCollection'
        * @return an array that duck types to a node list.
        */
-      function fakeNodeList(array) {
+      function fakeNodeList(array, typename) {
         array.item = cajaVM.constFunc(function(i) { return array[+i]; });
+        array.toString = cajaVM.constFunc(
+            function() { return '[domado object ' + typename + ']'; });
         return Object.freeze(array);
       }
 
@@ -3019,7 +3071,7 @@ var Domado = (function() {
         for (var name in tameNodesByName) {
           var tameNodes = tameNodesByName[name];
           if (tameNodes.length > 1) {
-            tamed[name] = fakeNodeList(tameNodes);
+            tamed[name] = fakeNodeList(tameNodes, 'NodeList');
           } else {
             tamed[name] = tameNodes[0];
           }
@@ -3090,7 +3142,7 @@ var Domado = (function() {
           //     htmlEl.ownerDocument.getElementsByClassName(htmlEl.className)
           // will return an HtmlCollection containing htmlElement iff
           // htmlEl.className contains a non-space character.
-          return fakeNodeList([]);
+          return fakeNodeList([], 'NodeList');
         }
 
         // "unordered set of unique space-separated tokens representing classes"
@@ -3144,7 +3196,7 @@ var Domado = (function() {
             }
           }
           // "the method must return a live NodeList object"
-          return fakeNodeList(matches);
+          return fakeNodeList(matches, 'NodeList');
         }
       }
 
@@ -3391,7 +3443,7 @@ var Domado = (function() {
           if (privates.policy.childrenVisible) {
             return new TameNodeList(f, defaultTameNode);
           } else {
-            return fakeNodeList([]);
+            return fakeNodeList([], 'NodeList');
           }
         })),
         attributes: NP.TameMemoIf(namedNodeMapsAreLive, 'attributes',
@@ -3411,7 +3463,7 @@ var Domado = (function() {
             });
           } else {
             // TODO(kpreid): no namedItem interface
-            return fakeNodeList([]);
+            return fakeNodeList([], 'HTMLCollection');
           }
         }))
       });
@@ -3566,12 +3618,12 @@ var Domado = (function() {
       TameForeignNode.prototype.getElementsByTagName =
           innocuous(function(tagName) {
         // needed because TameForeignNode doesn't inherit TameElement
-        return fakeNodeList([]);
+        return fakeNodeList([], 'NodeList');
       });
       TameForeignNode.prototype.getElementsByClassName =
           innocuous(function(className) {
         // needed because TameForeignNode doesn't inherit TameElement
-        return fakeNodeList([]);
+        return fakeNodeList([], 'HTMLCollection');
       });
       cajaVM.def(TameForeignNode);
 
@@ -4894,6 +4946,9 @@ var Domado = (function() {
         CollectionProxyHandler.call(this, target);
       }
       inherit(FormElementProxyHandler, CollectionProxyHandler);
+      FormElementProxyHandler.prototype.toString = function() {
+        return '[FormElementProxyHandler]';
+      };
       FormElementProxyHandler.prototype.col_lookup = function(name) {
         return nodeAmplify(this.target, function(privates) {
           return makeDOMAccessible(
@@ -5321,7 +5376,7 @@ var Domado = (function() {
             if (privates.policy.childrenVisible) {
               return new TameNodeList(f, defaultTameNode);
             } else {
-              return fakeNodeList([]);
+              return fakeNodeList([], 'NodeList');
             }
           })),
           tHead: NP_tameDescendant,
@@ -5688,7 +5743,7 @@ var Domado = (function() {
           return privates.tameContainerNode.childNodes;
         })},
         attributes: { enumerable: true, get: innocuous(function() {
-          return fakeNodeList([]);
+          return fakeNodeList([], 'HTMLCollection');
         })},
         parentNode: P_constant(null),
         body: { enumerable: true, get: innocuous(function() {
@@ -5731,7 +5786,7 @@ var Domado = (function() {
             // this node's virtual document.
             if (tameForm !== null) { tameForms.push(tameForm); }
           }
-          return fakeNodeList(tameForms);
+          return fakeNodeList(tameForms, 'HTMLCollection');
         })},
         title: {
           // TODO(kpreid): get the title element pointer in conformant way

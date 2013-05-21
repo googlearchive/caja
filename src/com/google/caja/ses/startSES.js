@@ -1076,6 +1076,7 @@ ses.startSES = function(global,
           }
 
           ArrayLike.prototype = global.Proxy.create({
+            toString: function() { return '[SES ArrayLike proxy handler]'; },
             getPropertyDescriptor: propDesc,
             getOwnPropertyDescriptor: ownPropDesc,
             get: get,
