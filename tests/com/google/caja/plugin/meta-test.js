@@ -172,5 +172,29 @@ jsunitRegister('testPanic', function testPanic() {
   });
 });
 
+jsunitRegister('testNoTests', function testNoTests() {
+  var w = makeMetaTestFrame('case', 'meta-test-no-tests.js');
+  pollStatus(w, function(state, pass, fail, total) {
+    assertNotEquals('pass', state);
+    if (state === 'fail') {
+      assertEquals('pass', 0, pass);
+      assertEquals('fail', 1, fail);
+      jsunitPass('testNoTests');
+    }
+  });
+});
+
+jsunitRegister('testOnlySkippedTests', function testOnlySkippedTests() {
+  var w = makeMetaTestFrame('case', 'meta-test-skipped-test.js');
+  pollStatus(w, function(state, pass, fail, total) {
+    assertNotEquals('fail', state);
+    if (state === 'pass') {
+      assertEquals('pass', 0, pass);
+      assertEquals('fail', 0, fail);
+      jsunitPass('testOnlySkippedTests');
+    }
+  });
+});
+
 readyToTest();
 jsunitRun();

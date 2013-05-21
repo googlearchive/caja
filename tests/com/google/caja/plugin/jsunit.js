@@ -37,6 +37,7 @@ jsunit.tests = {};
 jsunit.testCount = 0;
 jsunit.passCount = 0;
 jsunit.failCount = 0;
+jsunit.skippedCount = 0;
 jsunit.testIdStack = [];
 jsunit.baseTitle = undefined;
 jsunit.asyncPoll = 50;
@@ -174,6 +175,7 @@ function jsunitRegisterIf(shouldRun, testName, test, opt_idClass) {
     // interact with the resultContainer
     jsunitFinished(testName, 'skipped');
     delete jsunit.tests[testName];
+    jsunit.skippedCount++;
   }
 }
 
@@ -258,7 +260,7 @@ function jsunitRun(opt_testNames, opt_asyncEval) {
     }
   }
 
-  if (jsunit.testCount === 0) {
+  if (jsunit.testCount === 0 && jsunit.skippedCount === 0) {
     jsunit.panic('No tests registered!', true);
   }
 
