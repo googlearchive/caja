@@ -162,7 +162,21 @@
           '      document.getElementsByTagName("head")[0].innerHTML);' +
           '};</script>');
     
-      // TODO(kpreid): Test document.body
+      // Behavior of document.body without any *document* element present.
+      registerGuestTest('testNoElementBodyProp',
+          '<body>old body' +
+          '<script>window.globalGuestTest =' +
+          '    function globalGuestTest() {' +
+          '  document.removeChild(document.documentElement);' +
+          '  assertTrue("null", null === document.body);' +
+          '  var newBody = document.createElement("body");' +
+          '  expectFailure(function() { document.body = newBody; });' +
+          '  document.appendChild(document.createElement("html"));' +
+          '  document.body = newBody;' +
+          '  assertEquals(document.documentElement.innerHTML, ' +
+          '    "<body></body>");' +
+          '  assertTrue("final body", document.body === newBody);' +
+          '};</script>');
     })();
 
     /**

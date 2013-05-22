@@ -5746,14 +5746,60 @@ var Domado = (function() {
           return fakeNodeList([], 'HTMLCollection');
         })},
         parentNode: P_constant(null),
-        body: { enumerable: true, get: innocuous(function() {
-          for (var n = this.documentElement.firstChild; n; n = n.nextSibling) {
-            // Note: Standard def. also includes FRAMESET elements but we don't
-            // currently support them.
-            if (n.nodeName === "BODY") { return n; }
-          }
-          return null;
-        })},
+        body: {
+          enumerable: true,
+          get: innocuous(function() {
+            // "The body element of a document is the first child of the html
+            // element that is either a body element or a frameset element. If
+            // there is no such element, it is null."
+            // TODO(kpreid): should be internal .documentElement getter only
+            var htmlEl = this.documentElement;
+            if (!htmlEl) { return null; }
+            for (var n = htmlEl.firstChild; n; n = n.nextSibling) {
+              if (n.nodeName === 'BODY' || n.nodeName === 'FRAMESET') {
+                return n;
+              }
+            }
+            return null;
+          }),
+          set: innocuous(function(newBody) {
+            // "If the new value is not a body or frameset element, then throw a
+            // HierarchyRequestError exception and abort these steps."
+            newBody = TameNodeT.coerce(newBody);
+            if (!(newBody.nodeName === 'BODY' ||
+                newBody.nodeName === 'FRAMESET')) {
+              // should be HierarchyRequestError
+              throw new Error(
+                  'Cannot set document.body except to <body> or <frameset>.');
+            }
+            // "Otherwise, if the new value is the same as the body element, do
+            // nothing. Abort these steps."
+            // TODO(kpreid): should be internal .body getter only
+            var currentBody = this.body;
+            if (newBody === currentBody) { return; }
+            // "Otherwise, if the body element is not null, then replace that
+            // element with the new value in the DOM, as if the root element's
+            // replaceChild() method had been called with the new value and the
+            // incumbent body element as its two arguments respectively, then
+            // abort these steps."
+            // TODO(kpreid): should be internal .documentElement getter only
+            var htmlEl = this.documentElement;
+            if (currentBody !== null) {
+              htmlEl.replaceChild(newBody, currentBody);
+              return;
+            }
+            // "Otherwise, if there is no root element, throw a
+            // HierarchyRequestError exception and abort these steps."
+            if (!htmlEl) {
+              // should be HierarchyRequestError
+              throw new Error(
+                  'Cannot set document.body with no <html>.');
+            }
+            // "Otherwise, the body element is null, but there's a root element.
+            // Append the new value to the root element."
+            htmlEl.appendChild(newBody);
+          })
+        },
         documentElement: {
           enumerable: true,
           get: innocuous(function() {
