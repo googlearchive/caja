@@ -91,7 +91,12 @@ var caja = (function () {
       },
       'NO_NETWORK': {
         'rewrite': function () { return null; },
-        'fetch': function() { }
+        'fetch': function(url, mime, callback) {
+          setTimeout(function() {
+            // TODO(kpreid): correct error response (define one if needed)
+            callback({});
+          }, 0);
+        }
       },
       'ALL': {
         'rewrite': function (uri) { return String(uri); },

@@ -1338,8 +1338,8 @@ document.write(
     // by some other whitespace processing we're not implementing.
     assertEquals(
         '\n' +
-        '    <a href="http://example.com/?effect=NEW_DOCUMENT&amp;loader=' +
-        'UNSANDBOXED&amp;uri=http%3A%2F%2F' + location.hostname +
+        '    <a href="http://caja-test-url.test/?effect=NEW_DOCUMENT' +
+        '&amp;loader=UNSANDBOXED&amp;uri=http%3A%2F%2F' + location.hostname +
         '%3A' + location.port + '%2Fant-testlib%2F' +
         'com%2Fgoogle%2Fcaja%2Fplugin%2Ffoo">bar</a>\n' +
         '    <span>Hello world</span>\n' +
@@ -2860,12 +2860,12 @@ Test row cell
     assertEquals(
         (''
          + '<map name="foo-' + directAccess.getIdSuffix() + '">'
-         + '<area href="http://example.com/'
+         + '<area href="http://caja-test-url.test/'
          + '?effect=NEW_DOCUMENT&amp;loader=UNSANDBOXED'
          + '&amp;uri=(base)/areatarget.html" target="_blank">'
          + '</map>'
          + '<img'
-         + ' src="http://example.com/'
+         + ' src="http://caja-test-url.test/'
          + '?effect=SAME_DOCUMENT&amp;loader=SANDBOXED'
          + '&amp;uri=(base)/mappic.gif" usemap="#foo-'
          + directAccess.getIdSuffix() + '"'

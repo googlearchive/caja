@@ -45,7 +45,13 @@
       frameGroup.makeES5Frame(
           createDiv(),
           {
-            fetch: caja.policy.net.ALL.fetch,
+            fetch: function(uri, mime, callback) {
+              if (/^http:\/\/caja-test-url.test/.test(uri)) {
+                return caja.policy.net.NO_NETWORK.fetch(uri, mime, callback);
+              } else {
+                return caja.policy.net.ALL.fetch(uri, mime, callback);
+              }
+            },
             rewrite: function (uri, uriEffect, loaderType, hints) {
               if (uri.getPath().indexOf('test-image-41x13.png') !== -1) {
                 // used by es53-test-domado-dom-guest.html
@@ -54,7 +60,8 @@
               return URI.create(
                   'http',
                   null,
-                  'example.com',
+                  // .test is reserved by RFC 2606
+                  'caja-test-url.test',
                   null,
                   '/',
                   [

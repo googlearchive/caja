@@ -271,19 +271,38 @@
 
   jsunitRegister('testBuilderApiNetNone', function testBuilderApiNetNone() {
     var div = createDiv();
-    caja.load(div, caja.policy.net.NO_NETWORK, function (frame) {
+    caja.load(div, caja.policy.net.NO_NETWORK, jsunitCallback(function(frame) {
+      var xhrRes = [];
       frame.code(
           location.protocol + '//' + location.host + '/',
           'text/html',
           '<a href="http://fake1.url/foo">fake1</a>' + 
-          '<a href="http://fake2.url/foo">fake2</a>'
+          '<a href="http://fake2.url/foo">fake2</a>' +
+          // script should not stall execution, just not load.
+          '<script src="http://bogus.invalid/foo.js"></script>' +
+          // xhr should indicate error response
+          '<script>' +
+          'r("init");' +
+          'var xhr = new XMLHttpRequest();' +
+          'try { xhr.open("http://localhost/"); } catch (e) { r("" + e); }' +
+          'xhr.onreadystatechange = function() {' +
+          '  r(xhr.readyState + xhr.responseText);' +
+          '};' +
+          'xhr.send();' +
+          '</script>'
           )
-        .run(function (result) {
+        .api({r: frame.tame(frame.markFunction(
+            function(val) { xhrRes.push(val); }))})
+        .run(jsunitCallback(function(result) {
           assertStringDoesNotContain('http://fake1.url/foo', div.innerHTML);
           assertStringDoesNotContain('http://fake2.url/foo', div.innerHTML);
+          // we don't actually care that this is specifically the error, but
+          // we want to make sure we do get a specific error and not a lost
+          // signal
+          assertEquals('init,URI violates security policy', String(xhrRes));
           jsunitPass('testBuilderApiNetNone');
-        });
-    });
+        }));
+    }));
   });
 
   jsunitRegister('testBuilderApiNetAll', function testBuilderApiNetAll() {
