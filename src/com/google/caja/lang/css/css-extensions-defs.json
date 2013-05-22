@@ -217,6 +217,15 @@
       "source": "http://www.w3.org/TR/css3-fonts/#font-stretch"
     },
 
+    { "key": "list-style-type",
+      "signature": "decimal | decimal-leading-zero | cjk-decimal | lower-roman | upper-roman | armenian | georgian | hebrew | lower-alpha | lower-latin | upper-alpha | upper-latin | lower-greek | hiragana | hiragana-iroha | katakana | katakana-iroha | disc | circle | square | disclosure-open | disclosure-closed | japanese-informal | japanese-formal | korean-hangul-formal | korean-hanja-informal | korean-hanja-formal | simp-chinese-informal | simp-chinese-formal | trad-chinese-informal | trad-chinese-formal | ethiopic-numeric | none | inherit",
+      "signature-comment": "from http://www.w3.org/TR/css-counter-styles-3/ as of 2013-05-22",
+      "default": "disc",
+      "appliesTo": { "include": ["display: list-item"] },
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "listStyleType" },
+
     { "key": "max-height",
       "signature": "<length:0,> | <percentage:0,> | none | inherit | auto",
       "default": "none",
