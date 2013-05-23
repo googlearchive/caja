@@ -4152,7 +4152,6 @@ var Domado = (function() {
               sanitizedHtml = sanitizeHtml(htmlFragmentString);
             }
             node.innerHTML = sanitizedHtml;
-            return htmlFragment;
           })
         },
         offsetParent: {
