@@ -160,7 +160,7 @@
         // work around SES patching frozen value properties into accessors
         /defProp\(this, name, \{/.exec(String(desc.set)) ||
         // or Domado doing the same, slightly differently
-        getFunctionName(desc.get) === 'setOwnGetter');
+        getFunctionName(desc.get) === 'overrideGetter');
   }
 
   function getFunctionName(fun) {

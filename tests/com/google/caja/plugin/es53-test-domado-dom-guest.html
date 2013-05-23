@@ -2303,8 +2303,8 @@ After
 <script type="text/javascript">
   jsunitRegister('testSizeProperties',
                  function testSizeProperties() {
-    assertEquals('number', typeof window.pageXOffset);
-    assertEquals('number', typeof window.pageYOffset);
+    assertEquals('pageXOffset', 'number', typeof window.pageXOffset);
+    assertEquals('pageYOffset', 'number', typeof window.pageYOffset);
     assertTrue('sign of pageXOffset', window.pageXOffset >= 0);
     assertTrue('sign of pageYOffset', window.pageYOffset >= 0);
 

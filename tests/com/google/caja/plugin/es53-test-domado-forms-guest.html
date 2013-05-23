@@ -14,6 +14,10 @@
  - limitations under the License.
 -->
 
+<script>
+  function $(id) { return document.getElementById(id); }
+</script>
+
 <!-- form element named 'id' triggers bug 1090. -->
 <!-- NOTE, this form must be first, otherwise ff3.5.x will produce
      false passes due to an optimizer bug.

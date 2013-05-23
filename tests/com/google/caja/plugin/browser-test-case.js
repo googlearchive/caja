@@ -525,12 +525,6 @@ function createExtraImportsForTesting(frameGroup, frame) {
 
   standardImports.console = frame.tame(fakeConsole);
 
-  if (frame.div) {
-    standardImports.$ = frame.tame(frame.markFunction(function(id) {
-      return frame.untame(frame.imports.document.getElementById(id));
-    }));
-  }
-  
   standardImports.inES5Mode = inES5Mode;
   standardImports.proxiesAvailableToTamingCode = inES5Mode
       // In ES5, Domado runs in the taming frame's real global env
