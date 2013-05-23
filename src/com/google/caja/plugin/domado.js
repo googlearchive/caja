@@ -4450,15 +4450,14 @@ var Domado = (function() {
 
       // http://dev.w3.org/html5/spec/Overview.html#the-canvas-element
       (function() {
-        // If the host browser does not have getContext, then it must not
-        // usefully
-        // support canvas, so we don't either; skip registering the canvas
-        // element
-        // class.
         // TODO(felix8a): need to call bridal.initCanvasElement
         var canvasTest = makeDOMAccessible(document.createElement('canvas'));
-        if (typeof canvasTest.getContext !== 'function')
+        if (typeof canvasTest.getContext !== 'function') {
+          // If the host browser does not have getContext, then it must not
+          // usefully support canvas, so we don't either; skip registering the
+          // canvas element class.
           return;
+        }
 
         // TODO(kpreid): snitched from Caja runtime; review whether we actually
         // need this (the Canvas spec says that invalid values should be ignored
@@ -4474,13 +4473,11 @@ var Domado = (function() {
          */
         function enforceType(specimen, typename, opt_name) {
           if (typeof specimen !== typename) {
-            throw new Error('expected ', typename, ' instead of ',
-                typeof specimen, ': ', (opt_name || specimen));
+            throw new Error('expected ' + typename + ' instead of ' +
+                typeof specimen + ': ' + (opt_name || specimen));
           }
           return specimen;
         }
-
-        var TameContext2DConf = new Confidence('TameContext2D');
 
         function matchesStyleFully(cssPropertyName, value) {
           if (typeof value !== "string") { return false; }
@@ -4627,30 +4624,32 @@ var Domado = (function() {
           return Object.freeze(tameImageData);
         }
         function TameGradient(gradient) {
-          gradient = makeDOMAccessible(gradient);
-          var tameGradient = {
-            toString: innocuous(function() {
-              return '[domado object CanvasGradient]';
-            }),
-            addColorStop: innocuous(function(offset, color) {
-              try {
-                enforceType(offset, 'number', 'color stop offset');
-                if (!(0 <= offset && offset <= 1)) {
-                  throw new Error(INDEX_SIZE_ERROR);
-                  // TODO(kpreid): should be a DOMException per spec
-                }
-                if (!isColor(color)) {
-                  throw new Error("SYNTAX_ERR");
-                  // TODO(kpreid): should be a DOMException per spec
-                }
-                gradient.addColorStop(offset, color);
-              } catch (e) { throw tameException(e); }
-            })
-          };
-          TameGradientConf.confide(tameGradient, taming);
-          taming.tamesTo(gradient, tameGradient);
-          return Object.freeze(tameGradient);
+          TameGradientConf.confide(this, taming);
+          TameGradientConf.amplify(this, function(privates) {
+            privates.feral = makeDOMAccessible(gradient);
+          });
+          taming.tamesTo(gradient, this);
+          Object.freeze(this);
         }
+        inertCtor(TameGradient, Object, 'CanvasGradient');
+        Props.define(TameGradient.prototype, TameGradientConf, {
+          toString: Props.plainMethod(function() {
+             return '[domado object CanvasGradient]';
+          }),
+          addColorStop: tameMethodCustom(function(privates, offset, color) {
+            enforceType(offset, 'number', 'color stop offset');
+            if (!(0 <= offset && offset <= 1)) {
+              throw new Error(INDEX_SIZE_ERROR);
+              // TODO(kpreid): should be a DOMException per spec
+            }
+            if (!isColor(color)) {
+              throw new Error('SYNTAX_ERR');
+              // TODO(kpreid): should be a DOMException per spec
+            }
+            privates.feral.addColorStop(offset, color);
+          })
+        });
+
         function enforceFinite(value, name) {
           enforceType(value, 'number', name);
           if (!isFinite(value)) {
@@ -4659,8 +4658,123 @@ var Domado = (function() {
           }
         }
 
+        // Design note: We generally reject the wrong number of arguments,
+        // unlike default JS behavior. This is because we are just passing data
+        // through to the underlying implementation, but we don't want to pass
+        // on anything which might be an extension we don't know about, and it
+        // is better to fail explicitly than to leave the client wondering about
+        // why their extension usage isn't working.
+
+        // TODO(kpreid): Consolidate this with tameNoArgEditMethod and friends.
+        var tameSimpleOp = Props.markPropMaker(function (env) {
+          var prop = env.prop;
+          return {
+            enumerable: true,
+            value: env.amplifying(function(privates) {
+              if (arguments.length !== 1) {
+                throw new Error(prop + ' takes no args, not ' +
+                    (arguments.length - 1));
+              }
+              privates.feral[prop]();
+            })
+          };
+        });
+
+        function tameFloatsOp(count) {
+          return Props.markPropMaker(function(env) {
+            var prop = env.prop;
+            return {
+              enumerable: true,
+              value: env.amplifying(function(privates) {
+                if (arguments.length - 1 !== count) {
+                  throw new Error(prop + ' takes ' + count +
+                      ' args, not ' + (arguments.length - 1));
+                }
+                var args = new Array(count);
+                for (var i = 0; i < count; i++) {
+                  args[+i] = enforceType(arguments[+i + 1], 'number',
+                      prop + ' argument ' + i);
+                }
+                // The copy-into-array is necessary in ES5/3 because host DOM
+                // won't take an arguments object from inside of ES53.
+                var feral = privates.feral;
+                // TODO(kpreid): Needing to do this not good. A normal mDA isn't
+                // sufficient because we're using .apply for varargs
+                makeDOMAccessible(feral[prop]).apply(feral, args);
+              })
+            };
+          });
+        }
+
+        function tameRectMethod(resultFn) {
+          return Props.markPropMaker(function(env) {
+            var prop = env.prop;
+            return {
+              enumerable: true,
+              value: env.amplifying(function(privates, x, y, w, h) {
+                if (arguments.length !== 5) {
+                  throw new Error(prop + ' takes 4 args, not ' +
+                                  (arguments.length - 1));
+                }
+                enforceType(x, 'number', 'x');
+                enforceType(y, 'number', 'y');
+                enforceType(w, 'number', 'width');
+                enforceType(h, 'number', 'height');
+                return resultFn(privates.feral[prop](x, y, w, h));
+              })
+            };
+          });
+        }
+
+        var tameDrawText = Props.markPropMaker(function(env) {
+          var prop = env.prop;
+          return {
+            enumerable: true,
+            value: env.amplifying(function(
+                privates, text, x, y, maxWidth) {
+              enforceType(text, 'string', 'text');
+              enforceType(x, 'number', 'x');
+              enforceType(y, 'number', 'y');
+              switch (arguments.length - 1) {
+              case 3:
+                privates.feral[prop](text, x, y);
+                return;
+              case 4:
+                enforceType(maxWidth, 'number', 'maxWidth');
+                privates.feral[prop](text, x, y, maxWidth);
+                return;
+              default:
+                throw new Error(prop + ' cannot accept ' +
+                    (arguments.length - 1) + ' arguments');
+              }
+            })
+          };
+        });
+
+        // TODO(kpreid): Consolidate this with tameNoArgEditMethod and friends.
+        function tameMethodCustom(baseFunc, dontCheckLength) {
+          var expectedLength = baseFunc.length - 1; // remove 'privates' arg
+          return Props.markPropMaker(function(env) {
+            var prop = env.prop;
+            var ampFn = env.amplifying(baseFunc);
+            function argCheckingWrapper() {
+              if (arguments.length !== expectedLength) {
+                throw new Error(env + ' takes ' + expectedLength +
+                    ' args, not ' + arguments.length);
+              }
+              return ampFn.apply(this, arguments);
+            }
+            return {
+              enumerable: true,
+              value: dontCheckLength ? ampFn : argCheckingWrapper
+            };
+          });
+        }
+
         function TameTextMetrics(feralMetrics) {
           feralMetrics = makeDOMAccessible(feralMetrics);
+          // TextMetrics just acts as a record, so we don't need any forwarding
+          // wrapper; copying the data is sufficient.
           [
             'actualBoundingBoxAscent',
             'actualBoundingBoxDescent',
@@ -4681,456 +4795,296 @@ var Domado = (function() {
         }
         inertCtor(TameTextMetrics, Object, 'TextMetrics');
 
-        function TameCanvasElement(node) {
-          // TODO(kpreid): review whether this can use defineElement
-          TameElement.call(this, node);
-
-          // helpers for tame context
-          var context = makeDOMAccessible(node.getContext('2d'));
-          function tameFloatsOp(count, verb) {
-            var m = makeFunctionAccessible(context[verb]);
-            return cajaVM.constFunc(function() {
-              if (arguments.length !== count) {
-                throw new Error(verb + ' takes ' + count + ' args, not ' +
-                                arguments.length);
-              }
-              for (var i = 0; i < count; i++) {
-                enforceType(arguments[+i], 'number', verb + ' argument ' + i);
-              }
-              try {
-                // The copy-into-array is necessary in ES5/3 because host DOM
-                // won't take an arguments object from inside of ES53.
-                m.apply(context, Array.prototype.slice.call(arguments));
-              } catch (e) { throw tameException(e); }
-            });
-          }
-          function tameRectMethod(m, hasResult) {
-            makeFunctionAccessible(m);
-            return cajaVM.constFunc(function(x, y, w, h) {
-              if (arguments.length !== 4) {
-                throw new Error(m + ' takes 4 args, not ' +
-                                arguments.length);
-              }
-              enforceType(x, 'number', 'x');
-              enforceType(y, 'number', 'y');
-              enforceType(w, 'number', 'width');
-              enforceType(h, 'number', 'height');
-              try {
-                if (hasResult) {
-                  return m.call(context, x, y, w, h);
-                } else {
-                  m.call(context, x, y, w, h);
-                }
-              } catch (e) { throw tameException(e); }
-            });
-          }
-          function tameDrawText(m) {
-            makeFunctionAccessible(m);
-            return cajaVM.constFunc(function(text, x, y, maxWidth) {
-              enforceType(text, 'string', 'text');
-              enforceType(x, 'number', 'x');
-              enforceType(y, 'number', 'y');
-              try {
-                switch (arguments.length) {
-                case 3:
-                  m.apply(context, Array.prototype.slice.call(arguments));
-                  return;
-                case 4:
-                  enforceType(maxWidth, 'number', 'maxWidth');
-                  m.apply(context, Array.prototype.slice.call(arguments));
-                  return;
-                default:
-                  throw new Error(m + ' cannot accept ' + arguments.length +
-                                      ' arguments');
-                }
-              } catch (e) { throw tameException(e); }
-            });
-          }
-          function tameGetMethod(prop) {
-            return cajaVM.constFunc(function() {
-              try {
-                return context[prop];
-              } catch (e) { throw tameException(e); }
-            });
-          }
-          function tameSetMethod(prop, validator) {
-            return cajaVM.constFunc(function(newValue) {
-              try {
-                if (validator(newValue)) {
-                  context[prop] = newValue;
-                }
-              } catch (e) { throw tameException(e); }
-              return newValue;
-            });
-          }
-          var CP_STYLE = Props.markPropMaker(function(env) {
-            var prop = env.prop;
-            return {
-              enumerable: true,
-              get: cajaVM.constFunc(function() {
-                try {
-                  var value = context[prop];
-                  if (typeof(value) === 'string') {
-                    return canonColor(value);
-                  } else if (cajaVM.passesGuard(TameGradientT,
-                                                taming.tame(value))) {
-                    return taming.tame(value);
-                  } else {
-                    throw new Error('Internal: Can\'t tame value ' + value +
-                        ' of ' + prop);
-                  }
-                } catch (e) { throw tameException(e); }
-              }),
-              set: cajaVM.constFunc(function(newValue) {
-                try {
-                  if (isColor(newValue)) {
-                    context[prop] = newValue;
-                  } else if (typeof(newValue) === "object" &&
-                             cajaVM.passesGuard(TameGradientT, newValue)) {
-                    context[prop] = taming.untame(newValue);
-                  } // else do nothing
-                  return newValue;
-                } catch (e) { throw tameException(e); }
-              })
-            };
-          });
-          function tameSimpleOp(m) {  // no return value
-            makeFunctionAccessible(m);
-            return cajaVM.constFunc(function() {
-              if (arguments.length !== 0) {
-                throw new Error(m + ' takes no args, not ' + arguments.length);
-              }
-              try {
-                m.call(context);
-              } catch (e) { throw tameException(e); }
-            });
-          }
-
-          // Design note: We generally reject the wrong number of arguments,
-          // unlike default JS behavior. This is because we are just passing
-          // data
-          // through to the underlying implementation, but we don't want to pass
-          // on anything which might be an extension we don't know about, and it
-          // is better to fail explicitly than to leave the client wondering
-          // about
-          // why their extension usage isn't working.
-
-          // http://dev.w3.org/html5/2dcontext/
-          // TODO(kpreid): Review this for converting to prototypical objects
-          var tameContext2d = {
-            toString: innocuous(function() {
-              return '[domado object CanvasRenderingContext2D]';
-            }),
-
-            save: tameSimpleOp(context.save),
-            restore: tameSimpleOp(context.restore),
-
-            scale: tameFloatsOp(2, 'scale'),
-            rotate: tameFloatsOp(1, 'rotate'),
-            translate: tameFloatsOp(2, 'translate'),
-            transform: tameFloatsOp(6, 'transform'),
-            setTransform: tameFloatsOp(6, 'setTransform'),
-
-            createLinearGradient: function (x0, y0, x1, y1) {
-              if (arguments.length !== 4) {
-                throw new Error('createLinearGradient takes 4 args, not ' +
-                                arguments.length);
-              }
-              enforceType(x0, 'number', 'x0');
-              enforceType(y0, 'number', 'y0');
-              enforceType(x1, 'number', 'x1');
-              enforceType(y1, 'number', 'y1');
-              try {
-                return new TameGradient(
-                  context.createLinearGradient(x0, y0, x1, y1));
-              } catch (e) { throw tameException(e); }
-            },
-            createRadialGradient: function (x0, y0, r0, x1, y1, r1) {
-              if (arguments.length !== 6) {
-                throw new Error('createRadialGradient takes 6 args, not ' +
-                                arguments.length);
-              }
-              enforceType(x0, 'number', 'x0');
-              enforceType(y0, 'number', 'y0');
-              enforceType(r0, 'number', 'r0');
-              enforceType(x1, 'number', 'x1');
-              enforceType(y1, 'number', 'y1');
-              enforceType(r1, 'number', 'r1');
-              try {
-                return new TameGradient(context.createRadialGradient(
-                  x0, y0, r0, x1, y1, r1));
-              } catch (e) { throw tameException(e); }
-            },
-
-            createPattern: function (imageElement, repetition) {
-              // Consider what policy to have wrt reading the pixels from image
-              // elements before implementing this.
-              throw new Error(
-                  'Domita: canvas createPattern not yet implemented');
-            },
-
-            clearRect:  tameRectMethod(context.clearRect,  false),
-            fillRect:   tameRectMethod(context.fillRect,   false),
-            strokeRect: tameRectMethod(context.strokeRect, false),
-
-            beginPath: tameSimpleOp(context.beginPath),
-            closePath: tameSimpleOp(context.closePath),
-            moveTo: tameFloatsOp(2, 'moveTo'),
-            lineTo: tameFloatsOp(2, 'lineTo'),
-            quadraticCurveTo: tameFloatsOp(4, 'quadraticCurveTo'),
-            bezierCurveTo: tameFloatsOp(6, 'bezierCurveTo'),
-            arcTo: tameFloatsOp(5, 'arcTo'),
-            rect: tameFloatsOp(4, 'rect'),
-            arc: function (x, y, radius, startAngle, endAngle, anticlockwise) {
-              if (arguments.length !== 6) {
-                throw new Error('arc takes 6 args, not ' + arguments.length);
-              }
-              enforceType(x, 'number', 'x');
-              enforceType(y, 'number', 'y');
-              enforceType(radius, 'number', 'radius');
-              enforceType(startAngle, 'number', 'startAngle');
-              enforceType(endAngle, 'number', 'endAngle');
-              enforceType(anticlockwise, 'boolean', 'anticlockwise');
-              if (radius < 0) {
-                throw new Error(INDEX_SIZE_ERROR);
-                // TODO(kpreid): should be a DOMException per spec
-              }
-              try {
-                context.arc(x, y, radius, startAngle, endAngle, anticlockwise);
-              } catch (e) { throw tameException(e); }
-            },
-            fill: tameSimpleOp(context.fill),
-            stroke: tameSimpleOp(context.stroke),
-            clip: tameSimpleOp(context.clip),
-
-            isPointInPath: function (x, y) {
-              enforceType(x, 'number', 'x');
-              enforceType(y, 'number', 'y');
-              try {
-                return enforceType(context.isPointInPath(x, y), 'boolean');
-              } catch (e) { throw tameException(e); }
-            },
-
-            fillText: tameDrawText(context.fillText),
-            strokeText: tameDrawText(context.strokeText),
-            measureText: function (string) {
-              if (arguments.length !== 1) {
-                throw new Error('measureText takes 1 arg, not ' +
-                    arguments.length);
-              }
-              enforceType(string, 'string', 'measureText argument');
-              try {
-                return new TameTextMetrics(context.measureText(string));
-              } catch (e) { throw tameException(e); }
-            },
-
-            drawImage: function (imageElement) {
-              // Consider what policy to have wrt reading the pixels from image
-              // elements before implementing this.
-              throw new Error('Domita: canvas drawImage not yet implemented');
-            },
-
-            createImageData: function (sw, sh) {
-              if (arguments.length !== 2) {
-                throw new Error('createImageData takes 2 args, not ' +
-                                arguments.length);
-              }
-              enforceType(sw, 'number', 'sw');
-              enforceType(sh, 'number', 'sh');
-              try {
-                return new TameImageData(context.createImageData(sw, sh));
-              } catch (e) { throw tameException(e); }
-            },
-            getImageData: tameRectMethod(function (sx, sy, sw, sh) {
-              return TameImageData(context.getImageData(sx, sy, sw, sh));
-            }, true),
-            putImageData: function
-                (tameImageData, dx, dy, dirtyX, dirtyY,
-                    dirtyWidth, dirtyHeight) {
-              tameImageData = TameImageDataT.coerce(tameImageData);
-              enforceFinite(dx, 'dx');
-              enforceFinite(dy, 'dy');
-              switch (arguments.length) {
-              case 3:
-                dirtyX = 0;
-                dirtyY = 0;
-                dirtyWidth = tameImageData.width;
-                dirtyHeight = tameImageData.height;
-                break;
-              case 7:
-                enforceFinite(dirtyX, 'dirtyX');
-                enforceFinite(dirtyY, 'dirtyY');
-                enforceFinite(dirtyWidth, 'dirtyWidth');
-                enforceFinite(dirtyHeight, 'dirtyHeight');
-                break;
-              default:
-                throw 'putImageData cannot accept ' + arguments.length +
-                    ' arguments';
-              }
-              TameImageDataConf.amplify(tameImageData, function(imageDataPriv) {
-                var tamePixelArray = imageDataPriv.tamePixelArray;
-                if (tamePixelArray) {
-                  tamePixelArray._d_canvas_writeback();
-                }
-                context.putImageData(imageDataPriv.feral,
-                                     dx, dy, dirtyX, dirtyY,
-                                     dirtyWidth, dirtyHeight);
-              });
-            }
-          };
-
-          if ("drawFocusRing" in context) {
-            // TODO(kpreid): drawFocusRing is not provided in current browsers
-            // and is renamed/revised in current spec.
-            tameContext2d.drawFocusRing = function
-                (tameElement, x, y, canDrawCustom) {
-              switch (arguments.length) {
-              case 3:
-                canDrawCustom = false;
-                break;
-              case 4:
-                break;
-              default:
-                throw 'drawFocusRing cannot accept ' + arguments.length +
-                    ' arguments';
-              }
-              enforceType(x, 'number', 'x');
-              enforceType(y, 'number', 'y');
-              enforceType(canDrawCustom, 'boolean', 'canDrawCustom');
-              return nodeAmplify(tameElement, function(elemPriv) {
-                // On safety of using the untamed node here: The only
-                // information drawFocusRing takes from the node is whether it
-                // is focused. Note that the nodeAmp also provides exception
-                // taming.
-                return enforceType(
-                    context.drawFocusRing(elemPriv.feral, x, y,
-                                          canDrawCustom),
-                    'boolean');
-              });
-            };
-          }
-
-          Props.define(tameContext2d, TameContext2DConf, {
-            // We filter the values supplied to setters in case some browser
-            // extension makes them more powerful, e.g. containing scripting or
-            // a URL.
-            // TODO(kpreid): Do we want to filter the *getters* as well?
-            // Scenarios: (a) canvas shared with innocent code, (b) browser
-            // quirks?? If we do, then what should be done with a bad value?
-            globalAlpha: PT.RWCond(
-                function (v) { return typeof v === "number" &&
-                                      0.0 <= v && v <= 1.0;     }),
-            globalCompositeOperation: PT.RWCond(
-                StringTest([
-                  "source-atop",
-                  "source-in",
-                  "source-out",
-                  "source-over",
-                  "destination-atop",
-                  "destination-in",
-                  "destination-out",
-                  "destination-over",
-                  "lighter",
-                  "copy",
-                  "xor"
-                ])),
-            strokeStyle: CP_STYLE,
-            fillStyle: CP_STYLE,
-            lineWidth: PT.RWCond(
-                function (v) { return typeof v === "number" &&
-                                      0.0 < v && v !== Infinity; }),
-            lineCap: PT.RWCond(
-                StringTest([
-                  "butt",
-                  "round",
-                  "square"
-                ])),
-            lineJoin: PT.RWCond(
-                StringTest([
-                  "bevel",
-                  "round",
-                  "miter"
-                ])),
-            miterLimit: PT.RWCond(
-                  function (v) { return typeof v === "number" &&
-                                        0 < v && v !== Infinity; }),
-            shadowOffsetX: PT.RWCond(
-                  function (v) {
-                    return typeof v === "number" && isFinite(v); }),
-            shadowOffsetY: PT.RWCond(
-                  function (v) {
-                    return typeof v === "number" && isFinite(v); }),
-            shadowBlur: PT.RWCond(
-                  function (v) { return typeof v === "number" &&
-                                        0.0 <= v && v !== Infinity; }),
-            shadowColor: Props.markPropMaker(function(env) {
-              return {
-                enumerable: true,
-                // TODO(kpreid): Better tools for deriving descriptors
-                get: CP_STYLE(env).get,
-                set: PT.RWCond(isColor)(env).set
-              };
-            }),
-
-            font: PT.RWCond(isFont),
-            textAlign: PT.RWCond(
-                StringTest([
-                  "start",
-                  "end",
-                  "left",
-                  "right",
-                  "center"
-                ])),
-            textBaseline: PT.RWCond(
-                StringTest([
-                  "top",
-                  "hanging",
-                  "middle",
-                  "alphabetic",
-                  "ideographic",
-                  "bottom"
-                ]))
-          });
-
-          var policy;
-          nodeAmplify(this, function(privates) {
-            privates.tameContext2d = tameContext2d;
-            policy = privates.policy;
-          });
-
-          TameContext2DConf.confide(tameContext2d, taming);
-          TameContext2DConf.amplify(tameContext2d, function(privates) {
+        // http://dev.w3.org/html5/2dcontext/
+        var TameContext2DConf = new Confidence('TameContext2D');
+        function TameContext2D(feralContext, policy) {
+          // policy is needed for the PropertyTaming accessors
+          feralContext = makeDOMAccessible(feralContext);
+          TameContext2DConf.confide(this, taming);
+          TameContext2DConf.amplify(this, function(privates) {
+            privates.feral = feralContext;
             privates.policy = policy;
-            privates.feral = context;
             Object.preventExtensions(privates);
           });
-          cajaVM.def(tameContext2d);
-          taming.tamesTo(context, tameContext2d);
-        }  // end of TameCanvasElement
-        inertCtor(TameCanvasElement, TameElement, 'HTMLCanvasElement');
-        Props.define(TameCanvasElement.prototype, TameNodeConf, {
-          height: PT.filter(false, identity, false, Number),
-          width: PT.filter(false, identity, false, Number),
-          getContext: Props.ampMethod(function(privates, contextId) {
-            // TODO(kpreid): We can refine this by inventing a ReadOnlyCanvas
-            // object to return in this situation, which allows getImageData and
-            // so on but not any drawing. Not bothering to do that for now; if
-            // you have a use for it let us know.
-            privates.policy.requireEditable();
+        }
+        inertCtor(TameContext2D, Object, 'CanvasRenderingContext2D');
+        // TODO(kpreid): have inertCtor automatically install an appropriate
+        // toString method.
+        TameContext2D.prototype.toString = cajaVM.constFunc(function() {
+          return '[Domado CanvasRenderingContext2D]';
+        });
+        Props.define(TameContext2D.prototype, TameContext2DConf, {
+          save: tameSimpleOp,
+          restore: tameSimpleOp,
 
-            enforceType(contextId, 'string', 'contextId');
-            switch (contextId) {
-              case '2d':
-                // TODO(kpreid): Need to be lazy once we support other context
-                // types.
-                return privates.tameContext2d;
-              default:
-                // http://dev.w3.org/html5/spec/the-canvas-element.html#the-canvas-element
-                // "If contextId is not the name of a context supported by the
-                // user agent, return null and abort these steps."
-                return null;
+          scale: tameFloatsOp(2),
+          rotate: tameFloatsOp(1),
+          translate: tameFloatsOp(2),
+          transform: tameFloatsOp(6),
+          setTransform: tameFloatsOp(6),
+
+          createLinearGradient: tameMethodCustom(
+              function(privates, x0, y0, x1, y1) {
+            enforceType(x0, 'number', 'x0');
+            enforceType(y0, 'number', 'y0');
+            enforceType(x1, 'number', 'x1');
+            enforceType(y1, 'number', 'y1');
+            return new TameGradient(
+                privates.feral.createLinearGradient(x0, y0, x1, y1));
+          }),
+
+          createRadialGradient: tameMethodCustom(
+              function(privates, x0, y0, r0, x1, y1, r1) {
+            enforceType(x0, 'number', 'x0');
+            enforceType(y0, 'number', 'y0');
+            enforceType(r0, 'number', 'r0');
+            enforceType(x1, 'number', 'x1');
+            enforceType(y1, 'number', 'y1');
+            enforceType(r1, 'number', 'r1');
+            return new TameGradient(privates.feral.createRadialGradient(
+              x0, y0, r0, x1, y1, r1));
+          }),
+
+          createPattern: tameMethodCustom(
+              function(privates, imageElement, repetition) {
+            // Consider what policy to have wrt reading the pixels from image
+            // elements before implementing this.
+            throw new Error(
+                'Domado: canvas createPattern not yet implemented');
+          }),
+
+          clearRect:  tameRectMethod(function() {}),
+          fillRect:   tameRectMethod(function() {}),
+          strokeRect: tameRectMethod(function() {}),
+
+          beginPath: tameSimpleOp,
+          closePath: tameSimpleOp,
+          moveTo: tameFloatsOp(2),
+          lineTo: tameFloatsOp(2),
+          quadraticCurveTo: tameFloatsOp(4),
+          bezierCurveTo: tameFloatsOp(6),
+          arcTo: tameFloatsOp(5),
+          rect: tameFloatsOp(4),
+          arc: tameMethodCustom(function(
+              privates, x, y, radius, startAngle, endAngle, anticlockwise) {
+            enforceType(x, 'number', 'x');
+            enforceType(y, 'number', 'y');
+            enforceType(radius, 'number', 'radius');
+            enforceType(startAngle, 'number', 'startAngle');
+            enforceType(endAngle, 'number', 'endAngle');
+            enforceType(anticlockwise, 'boolean', 'anticlockwise');
+            if (radius < 0) {
+              throw new Error(INDEX_SIZE_ERROR);
+              // TODO(kpreid): should be a DOMException per spec
             }
-          })
+            privates.feral.arc(
+                x, y, radius, startAngle, endAngle, anticlockwise);
+          }),
+
+          fill: tameSimpleOp,
+          stroke: tameSimpleOp,
+          clip: tameSimpleOp,
+
+          // TODO(kpreid): Generic type-checking wrapper to eliminate the need
+          // for this code
+          isPointInPath: tameMethodCustom(function(privates, x, y) {
+            enforceType(x, 'number', 'x');
+            enforceType(y, 'number', 'y');
+            return enforceType(privates.feral.isPointInPath(x, y), 'boolean');
+          }),
+
+          fillText: tameDrawText,
+          strokeText: tameDrawText,
+
+          measureText: tameMethodCustom(function(privates, string) {
+            enforceType(string, 'string', 'measureText argument');
+            return new TameTextMetrics(privates.feral.measureText(string));
+          }),
+
+          drawImage: tameMethodCustom(function(privates, imageElement) {
+            // Consider what policy to have wrt reading the pixels from image
+            // elements before implementing this.
+            throw new Error('Domita: canvas drawImage not yet implemented');
+          }),
+
+          createImageData: tameMethodCustom(function(privates, sw, sh) {
+            enforceType(sw, 'number', 'sw');
+            enforceType(sh, 'number', 'sh');
+            // TODO(kpreid): taming membrane? or is this best considered a copy?
+            return new TameImageData(privates.feral.createImageData(sw, sh));
+          }),
+          getImageData: tameRectMethod(TameImageData),
+          putImageData: tameMethodCustom(function(privates,
+              tameImageData, dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight) {
+            tameImageData = TameImageDataT.coerce(tameImageData);
+            enforceFinite(dx, 'dx');
+            enforceFinite(dy, 'dy');
+            switch (arguments.length - 1) {
+            case 3:
+              dirtyX = 0;
+              dirtyY = 0;
+              dirtyWidth = tameImageData.width;
+              dirtyHeight = tameImageData.height;
+              break;
+            case 7:
+              enforceFinite(dirtyX, 'dirtyX');
+              enforceFinite(dirtyY, 'dirtyY');
+              enforceFinite(dirtyWidth, 'dirtyWidth');
+              enforceFinite(dirtyHeight, 'dirtyHeight');
+              break;
+            default:
+              throw 'putImageData cannot accept ' + (arguments.length - 1) +
+                  ' arguments';
+            }
+            TameImageDataConf.amplify(tameImageData, function(imageDataPriv) {
+              var tamePixelArray = imageDataPriv.tamePixelArray;
+              if (tamePixelArray) {
+                tamePixelArray._d_canvas_writeback();
+              }
+              privates.feral.putImageData(imageDataPriv.feral,
+                  dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight);
+            });
+          }, true)
+        });
+        var CP_STYLE = Props.markPropMaker(function(env) {
+          var prop = env.prop;
+          return {
+            enumerable: true,
+            get: env.amplifying(function(privates) {
+              var value = privates.feral[prop];
+              if (typeof(value) === 'string') {
+                return canonColor(value);
+              } else if (cajaVM.passesGuard(TameGradientT,
+                                            taming.tame(value))) {
+                return taming.tame(value);
+              } else {
+                throw new Error('Internal: Can\'t tame value ' + value +
+                    ' of ' + prop);
+              }
+            }),
+            set: env.amplifying(function(privates, newValue) {
+              if (isColor(newValue)) {
+                privates.feral[prop] = newValue;
+              } else if (typeof(newValue) === 'object' &&
+                         cajaVM.passesGuard(TameGradientT, newValue)) {
+                privates.feral[prop] = taming.untame(newValue);
+              } // else do nothing
+              return newValue;
+            })
+          };
+        });
+        Props.define(TameContext2D.prototype, TameContext2DConf, {
+          // We filter the values supplied to setters in case some browser
+          // extension makes them more powerful, e.g. containing scripting or
+          // a URL.
+          // TODO(kpreid): Do we want to filter the *getters* as well?
+          // Scenarios: (a) canvas shared with innocent code, (b) browser
+          // quirks?? If we do, then what should be done with a bad value?
+          globalAlpha: PT.RWCond(
+              function (v) { return typeof v === 'number' &&
+                                    0.0 <= v && v <= 1.0;     }),
+          globalCompositeOperation: PT.RWCond(
+              StringTest([
+                'source-atop',
+                'source-in',
+                'source-out',
+                'source-over',
+                'destination-atop',
+                'destination-in',
+                'destination-out',
+                'destination-over',
+                'lighter',
+                'copy',
+                'xor'
+              ])),
+          strokeStyle: CP_STYLE,
+          fillStyle: CP_STYLE,
+          lineWidth: PT.RWCond(
+              function (v) { return typeof v === 'number' &&
+                                    0.0 < v && v !== Infinity; }),
+          lineCap: PT.RWCond(
+              StringTest([
+                'butt',
+                'round',
+                'square'
+              ])),
+          lineJoin: PT.RWCond(
+              StringTest([
+                'bevel',
+                'round',
+                'miter'
+              ])),
+          miterLimit: PT.RWCond(
+              function (v) { return typeof v === 'number' &&
+                                    0 < v && v !== Infinity; }),
+          shadowOffsetX: PT.RWCond(
+              function (v) {
+                return typeof v === 'number' && isFinite(v); }),
+          shadowOffsetY: PT.RWCond(
+              function (v) {
+                return typeof v === 'number' && isFinite(v); }),
+          shadowBlur: PT.RWCond(
+              function (v) { return typeof v === 'number' &&
+                                    0.0 <= v && v !== Infinity; }),
+          shadowColor: Props.markPropMaker(function(env) {
+            return {
+              enumerable: true,
+              // TODO(kpreid): Better tools for deriving descriptors
+              get: CP_STYLE(env).get,
+              set: PT.RWCond(isColor)(env).set
+            };
+          }),
+
+          font: PT.RWCond(isFont),
+          textAlign: PT.RWCond(
+              StringTest([
+                'start',
+                'end',
+                'left',
+                'right',
+                'center'
+              ])),
+          textBaseline: PT.RWCond(
+              StringTest([
+                'top',
+                'hanging',
+                'middle',
+                'alphabetic',
+                'ideographic',
+                'bottom'
+              ]))
+        });
+        cajaVM.def(TameContext2D);
+
+        defineElement({
+          domClass: 'HTMLCanvasElement',
+          properties: {
+            height: PT.filter(false, identity, false, Number),
+            width: PT.filter(false, identity, false, Number),
+            getContext: Props.ampMethod(function(privates, contextId) {
+              // TODO(kpreid): We can refine this by adding policy checks to the
+              // canvas taming, which allow getImageData and so on but not any
+              // drawing. Not bothering to do that for now; if you have a use
+              // for it let us know.
+              privates.policy.requireEditable();
+
+              enforceType(contextId, 'string', 'contextId');
+              switch (contextId) {
+                case '2d':
+                  var feralContext = privates.feral.getContext('2d');
+                  if (!taming.hasTameTwin(feralContext)) {
+                    taming.tamesTo(feralContext, cajaVM.def(new TameContext2D(
+                        feralContext, privates.policy)));
+                  }
+                  return taming.tame(feralContext);
+                default:
+                  // http://dev.w3.org/html5/spec/the-canvas-element.html#the-canvas-element
+                  // "If contextId is not the name of a context supported by the
+                  // user agent, return null and abort these steps."
+                  return null;
+              }
+            })
+          }
         });
       })();
 

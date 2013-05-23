@@ -527,56 +527,6 @@
   });
 </script>
 
-<div id="testCanvasContextFocus" class="testcontainer">
-  Canvas drawFocusRing
-  <canvas id="testCanvasContextFocus-canvas" height="20" width="50">
-    <form>
-      <input type="text" id="testCanvasContextFocus-field-1">
-      <input type="text" id="testCanvasContextFocus-field-2">
-    </form>
-  </canvas>
-</div>
-<script type="text/javascript">
-  jsunitRegister('testCanvasContextFocus',
-                 function testCanvasContextFocus() {
-    var context = document.getElementById('testCanvasContextFocus-canvas')
-                          .getContext('2d');
-
-    if ("drawFocusRing" in context) {
-      var focusElem1 =
-          document.getElementById('testCanvasContextFocus-field-1');
-      var focusElem2 =
-          document.getElementById('testCanvasContextFocus-field-2');
-
-      // Establish a path
-      context.beginPath();
-      context.rect(0, 0, 10, 10);
-
-      focusElem1.focus();
-      focusElem1.blur();
-      // nothing of ours is focused
-
-      var res;
-
-      res = context.drawFocusRing(focusElem1, 5, 5);
-      assertFalse('drawFocusRing without canDrawCustom without focus', res);
-
-      res = context.drawFocusRing(focusElem1, 5, 5, true);
-      assertFalse('drawFocusRing with canDrawCustom without focus', res);
-
-      focusElem1.focus();
-      res = context.drawFocusRing(focusElem1, 5, 5, true);
-      assertTrue('drawFocusRing with canDrawCustom with focus', res);
-      // Might be false, per the spec, but it's more relevant to test this case
-      // than the chance the 'user requires focus rings' case holds
-    } else {
-      console.log("no drawFocusRing, skipping test.");
-    }
-
-    pass('testCanvasContextFocus');
-  });
-</script>
-
 <p id="testCanvasNotEditable" class="testcontainer">
   Canvas context without editability
   <canvas id="testCanvasNotEditable-canvas"

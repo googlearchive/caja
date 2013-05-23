@@ -24,7 +24,7 @@
  *     assertTrue, assertEquals, pass, jsunitFail,
  *     Event, HTMLInputElement, HTMLTableRowElement, HTMLTableSectionElement,
  *     HTMLTableElement, Image, Option, XMLHttpRequest, Window, Document, Node,
- *     Attr, Text,
+ *     Attr, Text, CanvasRenderingContext2D, CanvasGradient
  * @overrides window
  */
 
@@ -1071,7 +1071,10 @@
         return null;
       }
     });
-    var argsByIdentity = functionArgs.setByIdentity;
+    function argsByIdentity(obj, g) {
+      functionArgs.setByIdentity(obj, g);
+      return g;
+    }
     function argsByProp(p, g) {
       functionArgs.setByPropertyName(p, g);
       functionArgs.setByPropertyName('get ' + p + '<THIS>()', g);
@@ -1431,54 +1434,65 @@
         genMethod(genEventName, G.value(function stubL() {}), genBoolean)));
 
     // 2D context (and friends) methods
-    // TODO(kpreid): Better matching strategy so these are specific to context,
-    // or class-ify canvas taming so we can take the .prototype methods.
+    var canvas2DProto = CanvasRenderingContext2D.prototype;
     function imageDataResult(calls) {
       return annotate(calls, function(context, thrown) {
         expectedUnfrozen.setByIdentity(context.get().data, true);
       });
     }
-    argsByProp('arc', genMethodAlt(genNumbers(5)));
-    argsByProp('arcTo', genMethodAlt(genNumbers(5)));
-    argsByProp('beginPath', genNoArgMethod);
-    argsByProp('bezierCurveTo', genMethodAlt(genNumbers(6)));
-    argsByProp('clearRect', argsByProp('fillRect', argsByProp('strokeRect',
-        genMethodAlt(genNumbers(4)))));
-    argsByProp('clip', genNoArgMethod); // TODO(kpreid): Path obj
-    argsByProp('closePath', genNoArgMethod);
-    argsByProp('createImageData', imageDataResult(genMethodAlt(G.value(
-        // restricting size in order to avoid large pixel arrays
-        [2, 2], [-1, 2], [1, NaN]))));
-    argsByProp('createLinearGradient', genMethodAlt(G.value([0, 1, 2, 3])));
-    argsByProp('createRadialGradient', genMethodAlt(
-        G.value([0, 1, 2, 3, 4, 5])));
-    argsByProp('createPattern', genMethodAlt(G.value([null, null])));
-        // TODO(kpreid): args for createPattern (not implemented yet though)
-    argsByProp('drawImage', genMethodAlt(G.none)); // TODO(kpreid): unstub
-    argsByProp('ellipse', genMethodAlt(genNumbers(7)));
-    argsByProp('fill', genNoArgMethod); // TODO(kpreid): Path obj
-    argsByProp('fillText', argsByProp('strokeText',
-        genMethodAlt(genConcat(G.tuple(genString), genNumbers(3)))));
-    argsByProp('getImageData', imageDataResult(genMethodAlt(genConcat(
-        // restricting size in order to avoid large pixel arrays
-        genNumbers(2), G.value([2, 2])))));
-    argsByProp('lineTo', genMethodAlt(genNumbers(2)));
-    argsByProp('measureText', genMethod(genString));
-    argsByProp('moveTo', genMethodAlt(genNumbers(2)));
-    argsByProp('quadraticCurveTo', genMethodAlt(genNumbers(4)));
-    argsByProp('rect', genMethodAlt(genNumbers(4)));
-    argsByProp('save', genNoArgMethod);
-    argsByProp('scale', genMethodAlt(genNumbers(2)));
-    argsByProp('stroke', genNoArgMethod); // TODO(kpreid): Path obj
-    argsByProp('restore', genNoArgMethod);
-    argsByProp('rotate', genMethodAlt(genNumbers(2)));
-    argsByProp('isPointInPath', genMethodAlt(genNumbers(2)));
+    argsByIdentity(canvas2DProto.arc, genMethodAlt(genNumbers(5)));
+    argsByIdentity(canvas2DProto.arcTo, genMethodAlt(genNumbers(5)));
+    argsByIdentity(canvas2DProto.beginPath, genNoArgMethod);
+    argsByIdentity(canvas2DProto.bezierCurveTo, genMethodAlt(genNumbers(6)));
+    argsByIdentity(canvas2DProto.clearRect,
+        argsByIdentity(canvas2DProto.fillRect,
+            argsByIdentity(canvas2DProto.strokeRect,
+                genMethodAlt(genNumbers(4)))));
+    argsByIdentity(canvas2DProto.clip, genNoArgMethod);
         // TODO(kpreid): Path obj
-    argsByProp('putImageData', genMethodAlt(G.none)); // TODO(kpreid): unstub
-    argsByProp('setTransform', genMethodAlt(genNumbers(6)));
-    argsByProp('translate', genMethodAlt(genNumbers(2)));
-    argsByProp('transform', genMethodAlt(genNumbers(6)));
-    argsByProp('addColorStop', genMethod(genSmallInteger, genCSSColor));
+    argsByIdentity(canvas2DProto.closePath, genNoArgMethod);
+    argsByIdentity(canvas2DProto.createImageData,
+        imageDataResult(genMethodAlt(G.value(
+            // restricting size in order to avoid large pixel arrays
+            [2, 2], [-1, 2], [1, NaN]))));
+    argsByIdentity(canvas2DProto.createLinearGradient,
+        genMethodAlt(G.value([0, 1, 2, 3])));
+    argsByIdentity(canvas2DProto.createRadialGradient,
+        genMethodAlt(G.value([0, 1, 2, 3, 4, 5])));
+    argsByIdentity(canvas2DProto.createPattern,
+        genMethodAlt(G.value([null, null])));
+        // TODO(kpreid): args for createPattern (not implemented yet though)
+    argsByIdentity(canvas2DProto.drawImage, genMethodAlt(G.none));
+        // TODO(kpreid): unstub
+    argsByIdentity(canvas2DProto.ellipse, genMethodAlt(genNumbers(7)));
+    argsByIdentity(canvas2DProto.fill, genNoArgMethod);
+        // TODO(kpreid): Path obj
+    argsByIdentity(canvas2DProto.fillText, argsByProp('strokeText',
+        genMethodAlt(genConcat(G.tuple(genString), genNumbers(3)))));
+    argsByIdentity(canvas2DProto.getImageData, 
+        imageDataResult(genMethodAlt(genConcat(
+            // restricting size in order to avoid large pixel arrays
+              genNumbers(2), G.value([2, 2])))));
+    argsByIdentity(canvas2DProto.lineTo, genMethodAlt(genNumbers(2)));
+    argsByIdentity(canvas2DProto.measureText, genMethod(genString));
+    argsByIdentity(canvas2DProto.moveTo, genMethodAlt(genNumbers(2)));
+    argsByIdentity(canvas2DProto.quadraticCurveTo, genMethodAlt(genNumbers(4)));
+    argsByIdentity(canvas2DProto.rect, genMethodAlt(genNumbers(4)));
+    argsByIdentity(canvas2DProto.save, genNoArgMethod);
+    argsByIdentity(canvas2DProto.scale, genMethodAlt(genNumbers(2)));
+    argsByIdentity(canvas2DProto.stroke, genNoArgMethod);
+        // TODO(kpreid): Path obj
+    argsByIdentity(canvas2DProto.restore, genNoArgMethod);
+    argsByIdentity(canvas2DProto.rotate, genMethodAlt(genNumbers(2)));
+    argsByIdentity(canvas2DProto.isPointInPath, genMethodAlt(genNumbers(2)));
+        // TODO(kpreid): Path obj
+    argsByIdentity(canvas2DProto.putImageData, genMethodAlt(G.none));
+        // TODO(kpreid): unstub
+    argsByIdentity(canvas2DProto.setTransform, genMethodAlt(genNumbers(6)));
+    argsByIdentity(canvas2DProto.translate, genMethodAlt(genNumbers(2)));
+    argsByIdentity(canvas2DProto.transform, genMethodAlt(genNumbers(6)));
+    argsByIdentity(CanvasGradient.prototype.addColorStop,
+          genMethod(genSmallInteger, genCSSColor));
     argsByProp('_d_canvas_writeback', G.none);  // TODO(kpreid): hide
 
     // Event methods
@@ -1583,6 +1597,11 @@
     obtainInstance.define(ArrayLike, ArrayLike(
       Object.create(ArrayLike.prototype),
       function() { return 100; }, function(i) { return i; }));
+    obtainInstance.define(CanvasRenderingContext2D,
+        document.createElement('canvas').getContext('2d'));
+    obtainInstance.define(CanvasGradient,
+        document.createElement('canvas').getContext('2d').createLinearGradient(
+            0, 1, 2, 3));
 
     var output = document.getElementById('testUniverse-report');
     function write(var_args) {
@@ -1654,10 +1673,10 @@
       if (problemCount === 0 && gapCount === 0) {
         pass('testUniverse');
       } else {
+        toggleNonErrors(true);
         jsunitFail('testUniverse',
             'Failed: ' + problemCount + ' problems and ' + gapCount +
             ' coverage gaps.');
-        toggleNonErrors(true);
       }
     }
   };
@@ -1688,7 +1707,7 @@
   var hideCheckbox;
   function toggleNonErrors(opt_state) {
     var el = document.getElementById('testUniverse-report');
-    var hide = opt_state !== undefined ? opt_state : !hideCheckbox.checked;
+    var hide = opt_state !== undefined ? opt_state : hideCheckbox.checked;
     if (hide) {
       el.className = el.className + ' scan-hide-non-errors';
     } else {
@@ -1696,7 +1715,7 @@
     }
     hideCheckbox.checked = hide;
   }
-  document.addEventListener('load', function() {
+  document.addEventListener('DOMContentLoaded', function() {
     hideCheckbox = document.getElementById('hide-non-errors-checkbox');
     hideCheckbox.onclick = function() { toggleNonErrors(); };
   }, false);
