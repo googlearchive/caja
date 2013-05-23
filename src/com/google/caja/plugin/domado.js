@@ -4664,9 +4664,16 @@ var Domado = (function() {
         // on anything which might be an extension we don't know about, and it
         // is better to fail explicitly than to leave the client wondering about
         // why their extension usage isn't working.
+        //
+        // TODO(kpreid): I no longer think this is a good idea; it deviates from
+        // JavaScript conventions and increases code complexity, and requires
+        // distinct taming wrappers from the rest of Domado. Remove all of the
+        // argument length checking and simultaneously use conformant
+        // coerce/ignore behavior for NaN and non-floats rather than strict
+        // type checks.
 
         // TODO(kpreid): Consolidate this with tameNoArgEditMethod and friends.
-        var tameSimpleOp = Props.markPropMaker(function (env) {
+        var tameNoArgOp = Props.markPropMaker(function (env) {
           var prop = env.prop;
           return {
             enumerable: true,
@@ -4796,6 +4803,7 @@ var Domado = (function() {
         inertCtor(TameTextMetrics, Object, 'TextMetrics');
 
         // http://dev.w3.org/html5/2dcontext/
+        // http://www.whatwg.org/specs/web-apps/current-work/multipage/the-canvas-element.html#2dcontext
         var TameContext2DConf = new Confidence('TameContext2D');
         function TameContext2D(feralContext, policy) {
           // policy is needed for the PropertyTaming accessors
@@ -4811,17 +4819,18 @@ var Domado = (function() {
         // TODO(kpreid): have inertCtor automatically install an appropriate
         // toString method.
         TameContext2D.prototype.toString = cajaVM.constFunc(function() {
-          return '[Domado CanvasRenderingContext2D]';
+          return '[domado object CanvasRenderingContext2D]';
         });
         Props.define(TameContext2D.prototype, TameContext2DConf, {
-          save: tameSimpleOp,
-          restore: tameSimpleOp,
+          save: tameNoArgOp,
+          restore: tameNoArgOp,
 
           scale: tameFloatsOp(2),
           rotate: tameFloatsOp(1),
           translate: tameFloatsOp(2),
           transform: tameFloatsOp(6),
           setTransform: tameFloatsOp(6),
+          // TODO(kpreid): whatwg has resetTransform
 
           createLinearGradient: tameMethodCustom(
               function(privates, x0, y0, x1, y1) {
@@ -4857,13 +4866,14 @@ var Domado = (function() {
           fillRect:   tameRectMethod(function() {}),
           strokeRect: tameRectMethod(function() {}),
 
-          beginPath: tameSimpleOp,
-          closePath: tameSimpleOp,
+          beginPath: tameNoArgOp,
+          closePath: tameNoArgOp,
           moveTo: tameFloatsOp(2),
           lineTo: tameFloatsOp(2),
           quadraticCurveTo: tameFloatsOp(4),
           bezierCurveTo: tameFloatsOp(6),
           arcTo: tameFloatsOp(5),
+          // TODO(kpreid): whatwg adds 2 optional args to arcTo
           rect: tameFloatsOp(4),
           arc: tameMethodCustom(function(
               privates, x, y, radius, startAngle, endAngle, anticlockwise) {
@@ -4872,21 +4882,20 @@ var Domado = (function() {
             enforceType(radius, 'number', 'radius');
             enforceType(startAngle, 'number', 'startAngle');
             enforceType(endAngle, 'number', 'endAngle');
+            anticlockwise = anticlockwise || false;
             enforceType(anticlockwise, 'boolean', 'anticlockwise');
-            if (radius < 0) {
-              throw new Error(INDEX_SIZE_ERROR);
-              // TODO(kpreid): should be a DOMException per spec
-            }
             privates.feral.arc(
                 x, y, radius, startAngle, endAngle, anticlockwise);
           }),
 
-          fill: tameSimpleOp,
-          stroke: tameSimpleOp,
-          clip: tameSimpleOp,
+          // TODO(kpreid): Path objects for filling/stroking
+          fill: tameNoArgOp,
+          stroke: tameNoArgOp,
+          clip: tameNoArgOp,
 
           // TODO(kpreid): Generic type-checking wrapper to eliminate the need
           // for this code
+          // TODO(kpreid): implement spec'd optional args
           isPointInPath: tameMethodCustom(function(privates, x, y) {
             enforceType(x, 'number', 'x');
             enforceType(y, 'number', 'y');
@@ -4902,9 +4911,10 @@ var Domado = (function() {
           }),
 
           drawImage: tameMethodCustom(function(privates, imageElement) {
-            // Consider what policy to have wrt reading the pixels from image
-            // elements before implementing this.
-            throw new Error('Domita: canvas drawImage not yet implemented');
+            // TODO(kpreid): Implement. Original concern was reading image data,
+            // but Caja's general policy is NOT to reimplement same-origin
+            // restrictions.
+            throw new Error('Domado: canvas drawImage not yet implemented');
           }),
 
           createImageData: tameMethodCustom(function(privates, sw, sh) {
