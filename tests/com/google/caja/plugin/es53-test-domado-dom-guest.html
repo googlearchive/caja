@@ -1524,6 +1524,14 @@ document.write(
     assertPropEq(200, scroll, 'scrollTop');  // can scroll
     assertPropEq(100, scroll, 'scrollLeft');
 
+    // Firefox remembers scroll position across page reload, which causes
+    // spurious failures if we don't reset the position to what we're expecting.
+    // It would be more robust to do this reset at the beginning of the test,
+    // but that might hide bugs in the actual initial state.
+    scroll.scrollTop = 0;
+    scroll.scrollLeft = 0;
+    console.log('reset!');
+
     pass('testDimensionProperties');
   });
 </script>
