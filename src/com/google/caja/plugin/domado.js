@@ -572,7 +572,7 @@ var Domado = (function() {
         setOwn(amplifierMethod, 'toString', cajaVM.constFunc(function() {
           return '[' + typename + ']' + method.toString();
         }));
-        return cajaVM.def(amplifierMethod);
+        return cajaVM.constFunc(amplifierMethod);
       };
 
       /**
@@ -3038,7 +3038,8 @@ var Domado = (function() {
         cajaVM.tamperProof(proto);
         Object.getOwnPropertyNames(proto).forEach(function(prop) {
           if (prop !== 'constructor') {
-            cajaVM.def(proto[prop]);
+            // transitively def the value or getter/setter, whichever exists
+            cajaVM.def(Object.getOwnPropertyDescriptor(proto, prop));
           }
         });
       }
@@ -3394,6 +3395,101 @@ var Domado = (function() {
           return defaultTameNode(
               rootFeralNode.querySelector(
                   historyInsensitiveVirtualizedSelectors));
+        }
+      }
+
+      /**
+       * DOMTokenList taming.
+       */
+      var TokenListConf = new Confidence('TameDOMTokenList');
+      function TameDOMTokenList(feral, getTransform, setTransform) {
+        feral = makeDOMAccessible(feral);
+        function getItem(i) {
+          return TameDOMTokenList.prototype.item.call(self, i);
+        }
+        function getLength() { return feral.length; }
+        var self = constructArrayLike(this.constructor, getItem, getLength);
+        TokenListConf.confide(self, taming);
+        TokenListConf.amplify(self, function(privates) {
+          privates.feral = feral;
+          privates.getT = getTransform;
+          privates.setT = setTransform;
+        });
+        return self;
+      }
+      registerArrayLikeClass(TameDOMTokenList);
+      Props.define(TameDOMTokenList.prototype, TokenListConf, {
+        length: PT.ro,
+        item: Props.ampMethod(function(privates, i) {
+          var ftoken = privates.feral.item(i);
+          return ftoken === null ? null : privates.getT(ftoken);
+        }),
+        contains: Props.ampMethod(function(privates, ttoken) {
+          var ftoken = privates.setT(String(ttoken));
+          if (ftoken === null) { return false; }
+          return !!privates.feral.contains(ftoken);
+        }),
+        add: Props.ampMethod(function(privates, ttoken) {
+          var ftoken = privates.setT(String(ttoken));
+          if (ftoken === null) { return; }
+          privates.feral.add(ftoken);
+        }),
+        remove: Props.ampMethod(function(privates, ttoken) {
+          var ftoken = privates.setT(String(ttoken));
+          if (ftoken === null) { return; }
+          privates.feral.remove(ftoken);
+        }),
+        toggle: Props.ampMethod(function(privates, ttoken) {
+          var ftoken = privates.setT(String(ttoken));
+          if (ftoken === null) { return false; }
+          return !!privates.feral.toggle(ftoken);
+        }),
+        toString: Props.ampMethod(function(privates) {
+          return privates.feral.toString().replace(/[^ \t\n\r\f]+/g,
+              function(ftoken) {
+            var ttoken = privates.getT(ftoken);
+            if (ttoken === null) { return ''; }
+            return ttoken;
+          });
+        })
+      });
+      finishArrayLikeClass(TameDOMTokenList);
+
+      function TameDOMSettableTokenList(feral, getTransform, setTransform) {
+        return TameDOMTokenList.call(this, feral, getTransform, setTransform);
+      }
+      registerArrayLikeClass(TameDOMSettableTokenList, TameDOMTokenList);
+      if (elementForFeatureTests.classList && makeDOMAccessible(
+          elementForFeatureTests.classList).value !== undefined) {
+        Props.define(TameDOMSettableTokenList.prototype, TokenListConf, {
+          value: {
+            get: TokenListConf.amplifying(function(privates) {
+              return privates.feral.value.replace(/[^ \t\n\r\f]+/g,
+                    function(s) {
+                var ttoken = privates.getT(s);
+                if (ttoken === null) { return ''; }
+                return ttoken;
+              });
+            }),
+            set: TokenListConf.amplifying(function(privates, val) {
+              privates.feral.value = val.replace(/[^ \t\n\r\f]+/g, function(s) {
+                var ftoken = privates.setT(s);
+                if (ftoken === null) { return ''; }
+                return ftoken;
+              });
+            })
+          }
+        });
+      }
+      finishArrayLikeClass(TameDOMSettableTokenList);
+
+      function tameTokenList(feral, getTransform, setTransform) {
+        makeDOMAccessible(feral);
+        if ('value' in feral) {
+          return new TameDOMSettableTokenList(feral, getTransform,
+              setTransform);
+        } else {
+          return new TameDOMTokenList(feral, getTransform, setTransform);
         }
       }
 
@@ -4261,6 +4357,22 @@ var Domado = (function() {
         addEventListener: Props.overridable(true, tameAddEventListener),
         removeEventListener: Props.overridable(true, tameRemoveEventListener)
       });
+      if ('classList' in elementForFeatureTests) {
+        Props.define(TameElement.prototype, TameNodeConf, {
+          classList: PT.TameMemoIf(true, 'classList',
+                         nodeAmp(function(privates, feralList) {
+            var element = this;
+            return new TameDOMSettableTokenList(feralList,
+                function classListGetTransform(token) {
+                  return virtualizeAttributeValue(html4.atype.CLASSES, token);
+                },
+                function classListSetTransform(token) {
+                  return rewriteAttribute(element.tagName, 'class',
+                      html4.atype.CLASSES, token);
+                });
+          }))
+        });
+      }
       cajaVM.def(TameElement);  // and its prototype
 
       /**

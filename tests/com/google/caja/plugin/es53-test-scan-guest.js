@@ -1428,10 +1428,15 @@
         undefined, null, 'testUniverse', 'not an/id')));
     argsByProp('getElementsByTagName', freshResult(genMethod(genElementName)));
     argsByProp('getElementsByClassName', freshResult(genMethod(genClassName)));
-    argsByProp('item', genMethod(genSmallInteger));
-    argsByProp('namedItem', genMethod(genString));
     argsByProp('addEventListener', argsByProp('removeEventListener',
         genMethod(genEventName, G.value(function stubL() {}), genBoolean)));
+
+    // NodeList and friends (currently have no exported type)
+    argsByProp('item', genMethod(genSmallInteger));
+    argsByProp('namedItem', genMethod(genString));
+    argsByProp('add', genMethod(genString));
+    argsByProp('remove', genMethod(genString));
+    argsByProp('toggle', genMethod(genString));
 
     // 2D context (and friends) methods
     var canvas2DProto = CanvasRenderingContext2D.prototype;

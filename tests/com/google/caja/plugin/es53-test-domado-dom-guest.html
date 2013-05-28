@@ -1727,7 +1727,21 @@ After
       assertEquals(note + ' className', className, el.className);
       assertEquals(note + ' getAttribute', className, el.getAttribute('class'));
       assertTrue(note + ' hasAttribute', el.hasAttribute('class'));
+
+      var classList = el.classList;
+      assertTrue('classList', !!classList);
+      var ourList = className.trim().split(/\s+/);
+      if (ourList.length === 1 && ourList[0] === "") { ourList = []; }
+      for (var i = 0; i < Math.max(classList.length, ourList.length); i++) {
+        assertEquals(note + ' classList[' + i + ']', ourList[i], classList[i]);
+        assertTrue(note + ' classList.contains ' + i,
+            classList.contains(ourList[i]));
+      }
+      assertTrue(note + ' !classList.contains',
+          !classList.contains('nonexistent'));
     }
+
+    // test modifying classes
 
     var el = document.getElementById('testClassNames');
     assertEquals('before class added',
@@ -1739,14 +1753,45 @@ After
         'inline', window.getComputedStyle(el, null).display);
     assertClassIs('testcontainer inline', el);
 
+    // syntax
+
     el.className = '$-.:;()[]=';
     assertClassIs('$-.:;()[]=', el);
 
     el.className = '!@{} ok__1';
     assertClassIs('!@{} ok__1', el);
 
+    // simple case, and classList interface
+
+    var classList = el.classList;
+    assertTrue('one classList', classList === el.classList);
+
     el.setAttribute('class', 'foo');
     assertClassIs('foo', el);
+
+    classList.add('bar');
+    assertClassIs('foo bar', el);
+
+    classList.remove('foo');
+    assertClassIs('bar', el);
+
+    var r = classList.toggle('foo');
+    assertEquals('toggle add', true, r);
+    assertClassIs('bar foo', el);
+
+    assertEquals('tokenList stringify', 'bar foo', classList.toString());
+
+    r = classList.toggle('bar');
+    assertEquals('toggle remove', false, r);
+    assertClassIs('foo', el);
+
+    if ('value' in classList) {  // in HTML5 spec, not impl in Chrome
+      assertEquals('classList.value', 'foo', classList.value);
+      classList.value = 'bar';
+      assertEquals('className after value set', 'bar', el.className);
+    }
+
+    // rejections
 
     el.className = 'simple';
     assertClassIs('simple', el);
@@ -1771,6 +1816,13 @@ After
 
     el.setAttribute('class', '');
     assertClassIs('', el, 'setAttribute class ""');
+
+    el.className = 'initial';
+    classList.add('bad__');
+    assertClassIs('initial', el, 'classList.add bad')
+    classList.toggle('bad__');
+    assertClassIs('initial', el, 'classList.add bad')
+    assertEquals(false, classList.contains('bad__'));
 
     pass('testClassNames');
   });
