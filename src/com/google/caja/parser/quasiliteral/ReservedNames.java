@@ -33,14 +33,6 @@ public class ReservedNames {
    * not declared within the module.
    */
   public static final String IMPORTS = "IMPORTS___";
-  /** Trademarks a string as HTML PCDATA. */
-  public static final String BLESS_HTML = "blessHtml___";
-  /** Trademarks a string as CSS properties. */
-  public static final String BLESS_CSS = "blessCss___";
-  /** Escapes a string to an HTML attribute. */
-  public static final String HTML_ATTR = "htmlAttr___";
-  /** Escapes a string to a HTML PCDATA. */
-  public static final String HTML = "html___";
   /**
    * A property on {@link #IMPORTS} that resolves to an instance of HtmlEmitter
    * as defined in html-emitter.js.
@@ -58,10 +50,6 @@ public class ReservedNames {
    * TODO(kpreid): Pretty sure this comment is false or obsolete.
    */
   public static final String IDENT = "ident___";
-  /** Coerces the argument to a CSS number. */
-  public static final String CSS_NUMBER = "cssNumber___";
-  /** Coerces the argument to a CSS color. */
-  public static final String CSS_COLOR = "cssColor___";
   /** Coerces the argument to a CSS URI by applying the PluginEnvironment. */
   public static final String CSS_URI = "cssUri___";
   /** An output buffer for a compiled template. */

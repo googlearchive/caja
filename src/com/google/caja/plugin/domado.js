@@ -745,9 +745,9 @@ var Domado = (function() {
     }
 
     /**
-     * Alias a property spec: it executes as if given the mapName.
+     * A property which behaves as if as it was named the mapName.
      */
-    function rename(mapName, propSpec) {
+    function actAs(mapName, propSpec) {
       return markPropMaker(function(env) {
         return specToDesc(
           Object.create(env, {
@@ -758,7 +758,11 @@ var Domado = (function() {
     }
 
     /**
-     * Make this property a getter/setter which forwards to the other name.
+     * A getter/setter which forwards to the other-named property of this
+     * object.
+     *
+     * Remember that the other property could have been overridden by the caller
+     * if it is inherited!
      */
     function alias(enumerable, otherProp) {
       return {
@@ -850,20 +854,17 @@ var Domado = (function() {
     }
 
     /**
-     * Only define the property if the condition is true, or choose between
-     * two specs based on the condition.
+     * Only define the property if the condition is true.
+     *
+     * For more complex cases use regular conditionals and NO_PROPERTY.
      */
-    function cond(condition, specThen, specElse) {
-      if (condition) {
-        return specThen;
-      } else {
-        return specElse === undefined ? NO_PROPERTY : specElse;
-      }
+    function cond(condition, specThen) {
+      return condition ? specThen : NO_PROPERTY;
     }
 
     return {
       define: define,
-      rename: rename,
+      actAs: actAs,
       alias: alias,
       overridable: overridable,
       addOverride: addOverride,
@@ -871,6 +872,7 @@ var Domado = (function() {
       ampMethod: ampMethod,
       ampGetter: ampGetter,
       cond: cond,
+      NO_PROPERTY: NO_PROPERTY,
       markPropMaker: markPropMaker
     };
   })();
@@ -1408,34 +1410,6 @@ var Domado = (function() {
     var TameGradientConf = new Confidence('TameGradient');
     var TameGradientT = TameGradientConf.guard;
 
-    // Define a wrapper type for known safe HTML, and a trademarker.
-    // This does not actually use the trademarking functions since trademarks
-    // cannot be applied to strings.
-    var safeHTMLTable = new WeakMap(true);
-    function Html(htmlFragment) {
-      // Intentionally using == rather than ===.
-      var h = String(htmlFragment == null ? '' : htmlFragment);
-      safeHTMLTable.put(this, htmlFragment);
-      return cajaVM.def(this);
-    }
-    function htmlToString() {
-      return safeHTMLTable.get(this);
-    }
-    setOwn(Html.prototype, 'valueOf', htmlToString);
-    setOwn(Html.prototype, 'toString', htmlToString);
-    function safeHtml(htmlFragment) {
-      // Intentionally using == rather than ===.
-      return (htmlFragment instanceof Html)
-          ? safeHTMLTable.get(htmlFragment)
-          : html.escapeAttrib(String(htmlFragment == null ? '' : htmlFragment));
-    }
-    function blessHtml(htmlFragment) {
-      return (htmlFragment instanceof Html)
-          ? htmlFragment
-          : new Html(htmlFragment);
-    }
-    cajaVM.def([Html, safeHtml, blessHtml]);
-
     var XML_SPACE = '\t\n\r ';
 
     var JS_SPACE = '\t\n\r ';
@@ -1510,8 +1484,6 @@ var Domado = (function() {
         throw new Error("Domita assertion failed");
       }
     }
-
-    var cssSealerUnsealerPair = cajaVM.makeSealerUnsealerPair();
 
     /*
      * Implementations of setTimeout, setInterval, clearTimeout, and
@@ -2323,26 +2295,7 @@ var Domado = (function() {
             }
             return null;
           case html4.atype.STYLE:
-            if ('function' !== typeof value) {
-              return sanitizeStyleAttrValue(String(value));
-            }
-            var cssPropertiesAndValues = cssSealerUnsealerPair.unseal(value);
-            if (!cssPropertiesAndValues) { return null; }
-
-            var css = [];
-            for (var i = 0; i < cssPropertiesAndValues.length; i += 2) {
-              var propName = cssPropertiesAndValues[+i];
-              var propValue = cssPropertiesAndValues[i + 1];
-              // If the propertyName differs between DOM and CSS, there will
-              // be a semicolon between the two.
-              // E.g., 'background-color;backgroundColor'
-              // See CssTemplate.toPropertyValueList.
-              var semi = propName.indexOf(';');
-              if (semi >= 0) { propName = propName.substring(0, semi); }
-              css.push(propName + ' : ' + propValue);
-            }
-            return css.join(' ; ');
-          // Frames are ambient, so disallow reference.
+            return sanitizeStyleAttrValue(String(value));
           case html4.atype.FRAME_TARGET:
             return getSafeTargetAttribute(tagName, attribName, value);
           default:
@@ -3788,20 +3741,22 @@ var Domado = (function() {
             return bitmask & 0x1f;
           });
         })),
-        contains: Props.cond(containsAvailable,
-            Props.ampMethod(function(privates, other) {
-              if (other === null || other === void 0) { return false; }
-              return nodeAmplify(other, function(otherPriv) {
-                return privates.feral.contains(otherPriv.feral);
-              });
-            }),
-            Props.cond(compareDocumentPositionAvailable,
+        contains:
+            containsAvailable ?
+                Props.ampMethod(function(privates, other) {
+                  if (other === null || other === void 0) { return false; }
+                  return nodeAmplify(other, function(otherPriv) {
+                    return privates.feral.contains(otherPriv.feral);
+                  });
+                }) :
+            compareDocumentPositionAvailable ?
                 Props.ampMethod(function(other) {
                   // http://www.quirksmode.org/blog/archives/2006/01/contains_for_mo.html
                   if (other === null || other === void 0) { return false; }
                   var docPos = this.compareDocumentPosition(other);
                   return !(!(docPos & 0x10) && docPos);
-                })))
+                }) :
+            Props.NO_PROPERTY
       });
       /** Is it OK to make 'child' a child of 'parent'? */
       function checkAdoption(parentPriv, childPriv) {
@@ -3852,7 +3807,7 @@ var Domado = (function() {
         TameBackedNode.call(this, node);
       }
       inertCtor(TameTextNode, TameBackedNode, 'Text');
-      var textAccessor = Props.rename('nodeValue', PT.filterProp(identity,
+      var textAccessor = Props.actAs('nodeValue', PT.filterProp(identity,
           function(value) { return String(value || ''); }));
       Props.define(TameTextNode.prototype, TameNodeConf, {
         nodeValue: textAccessor,
@@ -4138,9 +4093,7 @@ var Domado = (function() {
             }
             var isRCDATA = schemaElem.contentIsRCDATA;
             var htmlFragmentString;
-            if (!isRCDATA && htmlFragment instanceof Html) {
-              htmlFragmentString = '' + safeHtml(htmlFragment);
-            } else if (htmlFragment === null) {
+            if (htmlFragment === null) {
               htmlFragmentString = '';
             } else {
               htmlFragmentString = '' + htmlFragment;
@@ -4304,26 +4257,6 @@ var Domado = (function() {
                       bottom: elRect.bottom - vdocTop
                     });
           });
-        }),
-        updateStyle: Props.ampMethod(function(privates, style) {
-          // TODO(kpreid): This is a non-standard method and looks like a relic
-          // of some older Domado design. Look into deleting it.
-          privates.policy.requireEditable();
-          var cssPropertiesAndValues = cssSealerUnsealerPair.unseal(style);
-          if (!cssPropertiesAndValues) { throw new Error(); }
-
-          var styleNode = privates.feral.style;
-          for (var i = 0; i < cssPropertiesAndValues.length; i += 2) {
-            var propName = cssPropertiesAndValues[+i];
-            var propValue = cssPropertiesAndValues[i + 1];
-            // If the propertyName differs between DOM and CSS, there will
-            // be a semicolon between the two.
-            // E.g., 'background-color;backgroundColor'
-            // See CssTemplate.toPropertyValueList.
-            var semi = propName.indexOf(';');
-            if (semi >= 0) { propName = propName.substring(semi + 1); }
-            styleNode[propName] = propValue;
-          }
         }),
         addEventListener: Props.overridable(true, tameAddEventListener),
         removeEventListener: Props.overridable(true, tameRemoveEventListener)
@@ -5361,7 +5294,7 @@ var Domado = (function() {
       defineElement({
         domClass: 'HTMLLabelElement',
         properties: {
-          htmlFor: Props.rename('for', PT.filterAttr(identity, identity))
+          htmlFor: Props.actAs('for', PT.filterAttr(identity, identity))
         }
       });
 
@@ -6173,18 +6106,6 @@ var Domado = (function() {
       domicile.tameNode = cajaVM.def(defaultTameNode);
       domicile.feralNode = cajaVM.def(toFeralNode);
       domicile.tameEvent = cajaVM.def(tameEvent);
-      domicile.blessHtml = cajaVM.def(blessHtml);
-      domicile.blessCss = cajaVM.constFunc(function(var_args) {
-        var arr = [];
-        for (var i = 0, n = arguments.length; i < n; ++i) {
-          arr[+i] = arguments[+i];
-        }
-        return cssSealerUnsealerPair.seal(arr);
-      });
-      domicile.htmlAttr = cajaVM.constFunc(function(s) {
-        return html.escapeAttrib(String(s || ''));
-      });
-      domicile.html = cajaVM.def(safeHtml);
       domicile.fetchUri = cajaVM.constFunc(function(uri, mime, callback) {
         uriFetch(naiveUriPolicy,
             URI.utils.resolve(domicile.pseudoLocation.href, uri),
@@ -6203,6 +6124,20 @@ var Domado = (function() {
             html4.ueffects.SAME_DOCUMENT,
             html4.ltypes.SANDBOXED,
             opt_hints || {});
+      });
+      // note: referenced reflectively by HtmlEmitter
+      domicile.cssUri = cajaVM.constFunc(function(uri, mimeType, prop) {
+        uri = String(uri);
+        if (!naiveUriPolicy) { return null; }
+        return uriRewrite(
+            naiveUriPolicy,
+            uri,
+            html4.ueffects.SAME_DOCUMENT,
+            html4.ltypes.SANDBOXED,
+            {
+              "TYPE": "CSS",
+              "CSS_PROP": prop
+            });
       });
       domicile.suffix = cajaVM.constFunc(function(nmtokens) {
         var p = String(nmtokens).replace(/^\s+|\s+$/g, '').split(/\s+/g);
@@ -6457,52 +6392,6 @@ var Domado = (function() {
               naiveUriPolicy,
               function () { return domicile.pseudoLocation.href; })));
 
-      /**
-       * given a number, outputs the equivalent css text.
-       * @param {number} num
-       * @return {string} an CSS representation of a number suitable for both html
-       *    attribs and plain text.
-       */
-      domicile.cssNumber = cajaVM.constFunc(function(num) {
-        if ('number' === typeof num && isFinite(num) && !isNaN(num)) {
-          return '' + num;
-        }
-        throw new Error(num);
-      });
-      /**
-       * given a number as 24 bits of RRGGBB, outputs a properly formatted CSS
-       * color.
-       * @param {number} num
-       * @return {string} a CSS representation of num suitable for both html
-       *    attribs and plain text.
-       */
-      domicile.cssColor = cajaVM.constFunc(function(color) {
-        // TODO: maybe whitelist the color names defined for CSS if the arg is a
-        // string.
-        if ('number' !== typeof color || (color != (color | 0))) {
-          throw new Error(color);
-        }
-        var hex = '0123456789abcdef';
-        return '#' + hex.charAt((color >> 20) & 0xf)
-            + hex.charAt((color >> 16) & 0xf)
-            + hex.charAt((color >> 12) & 0xf)
-            + hex.charAt((color >> 8) & 0xf)
-            + hex.charAt((color >> 4) & 0xf)
-            + hex.charAt(color & 0xf);
-      });
-      domicile.cssUri = cajaVM.constFunc(function(uri, mimeType, prop) {
-        uri = String(uri);
-        if (!naiveUriPolicy) { return null; }
-        return uriRewrite(
-            naiveUriPolicy,
-            uri,
-            html4.ueffects.SAME_DOCUMENT,
-            html4.ltypes.SANDBOXED,
-            {
-              "TYPE": "CSS",
-              "CSS_PROP": prop
-            });
-      });
 
       /**
        * Create a CSS stylesheet with the given text and append it to the DOM.
