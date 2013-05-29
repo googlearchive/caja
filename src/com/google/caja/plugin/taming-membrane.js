@@ -254,23 +254,20 @@ function TamingMembrane(privilegedAccess, schema) {
    */
   function tame(f) {
     if (f !== Object(f)) {
-      // Language primitive
+      // Primitive value; tames to self
       return f;
     }
     var ftype = typeof f;
-    if (ftype !== 'function' && ftype !== 'object') {
-      // Primitive value; tames to self
-      return f;
-    } else if (Array.isArray(f)) {
+    if (Array.isArray(f)) {
       // No tamesTo(...) for arrays; we copy across the membrane
       return tameArray(f);
     }
-    if (tameByFeral.has(f)) { return tameByFeral.get(f); }
+    var t = tameByFeral.get(f);
+    if (t) { return t; }
     if (feralByTame.has(f)) {
       throw new TypeError('Tame object found on feral side of taming membrane: '
           + f + '. The membrane has previously been compromised.');
     }
-    var t = void 0;
     if (ftype === 'object') {
       var ctor = privilegedAccess.directConstructor(f);
       if (ctor === void 0) {
@@ -554,18 +551,16 @@ function TamingMembrane(privilegedAccess, schema) {
    */
   function untame(t) {
     if (t !== Object(t)) {
-      // language primitive
+      // Primitive value; untames to self
       return t;
     }
     var ttype = typeof t;
-    if (ttype !== 'function' && ttype !== 'object') {
-      // Primitive value; untames to self
-      return t;
-    } else if (Array.isArray(t)) {
+    if (Array.isArray(t)) {
       // No tamesTo(...) for arrays; we copy across the membrane
       return untameArray(t);
     }
-    if (feralByTame.has(t)) { return feralByTame.get(t); }
+    var f = feralByTame.get(t);
+    if (f) { return f; }
     if (tameByFeral.has(t)) {
       throw new TypeError('Feral object found on tame side of taming membrane: '
           + t + '. The membrane has previously been compromised.');
@@ -573,7 +568,6 @@ function TamingMembrane(privilegedAccess, schema) {
     if (!privilegedAccess.isDefinedInCajaFrame(t)) {
       throw new TypeError('Host object leaked without being tamed');
     }
-    var f = void 0;
     if (ttype === 'object') {
       var ctor = privilegedAccess.directConstructor(t);
       if (ctor === privilegedAccess.BASE_OBJECT_CONSTRUCTOR) {
