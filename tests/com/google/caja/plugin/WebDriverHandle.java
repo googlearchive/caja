@@ -26,10 +26,11 @@ import org.openqa.selenium.NoSuchWindowException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.safari.SafariDriver;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
+import org.openqa.selenium.safari.SafariDriver;
 
 import com.google.caja.util.TestFlag;
 
@@ -52,8 +53,8 @@ class WebDriverHandle {
   WebDriver makeWindow() {
     if (driver == null) {
       driver = makeDriver();
-      reportVersion(driver);
       firstWindow = driver.getWindowHandle();
+      reportVersion(driver);
       try {
         driver.manage().timeouts().pageLoadTimeout(15, TimeUnit.SECONDS);
       } catch (WebDriverException e) {
@@ -116,6 +117,12 @@ class WebDriverHandle {
   void closeWindow() {
     if (driver == null) { return; }
     driver.close();
+    if (firstWindow == null) {
+      // we failed sometime during initialization; quit and try again.
+      driver.quit();
+      driver = null;
+      return;
+    }
     try {
       driver.switchTo().window(firstWindow);
     } catch (NoSuchWindowException e) {
@@ -150,16 +157,28 @@ class WebDriverHandle {
   private RemoteWebDriver makeDriver() {
     DesiredCapabilities dc = new DesiredCapabilities();
 
-    // Chrome driver is odd in that the path to Chrome is specified
-    // by a desiredCapability when you start a session. The other
-    // browser drivers will read a java system property on start.
-    String chrome = TestFlag.CHROME_BINARY.getString(null);
-    if (chrome != null) {
-      dc.setCapability("chrome.binary", chrome);
+    String browserType = getBrowserType();
+
+    if ("chrome".equals(browserType)) {
+      // Chrome driver is odd in that the path to Chrome is specified
+      // by a desiredCapability when you start a session. The other
+      // browser drivers will read a java system property on start.
+      // This applies to both remote Chrome and local Chrome.
+      ChromeOptions chromeOpts = new ChromeOptions();
+      String chromeBin = TestFlag.CHROME_BINARY.getString(null);
+      if (chromeBin != null) {
+        chromeOpts.setBinary(chromeBin);
+      }
+      String chromeArgs = TestFlag.CHROME_ARGS.getString(null);
+      if (chromeArgs!= null) {
+        String[] args = chromeArgs.split(";");
+        chromeOpts.addArguments(args);
+      }
+      dc.setCapability(ChromeOptions.CAPABILITY, chromeOpts);
     }
 
-    String browserType = getBrowserType();
     String webdriver = TestFlag.WEBDRIVER_URL.getString("");
+
     if (!"".equals(webdriver)) {
       dc.setBrowserName(browserType);
       dc.setJavascriptEnabled(true);

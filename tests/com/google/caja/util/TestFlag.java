@@ -34,6 +34,8 @@ public enum TestFlag {
       "test.browser"),
   BROWSER_CLOSE(
       "test.browser.close"),
+  CHROME_ARGS(
+      "test.chrome.args"),
   CHROME_BINARY(
       "test.chrome.binary"),
   DEBUG(
