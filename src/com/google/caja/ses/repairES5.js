@@ -1976,6 +1976,8 @@ var ses;
     'lineNumber',
     'message',
     'stack',
+    // at least FF 21
+    'columnNumber',
 
     // at least Safari, WebKit 5.1
     'line',
@@ -1998,6 +2000,17 @@ var ses;
     errorInstanceWhiteMap.set(name, true);
   });
 
+  // Properties specifically invisible-until-touched to gOPN on Firefox, but
+  // otherwise harmless.
+  var errorInstanceKnownInvisibleList = [
+    'message',
+    'fileName',
+    'lineNumber',
+    'columnNumber',
+    'stack'
+  ];
+
+  // Property names to check for unexpected behavior.
   var errorInstanceBlacklist = [
     // seen in a Firebug on FF
     'category',
@@ -2043,12 +2056,15 @@ var ses;
   /**
    * On Firefox 14+ (and probably earlier), error instances have magical
    * properties that do not appear in getOwnPropertyNames until you refer
-   * to the property.  This makes test_UNEXPECTED_ERROR_PROPERTIES
-   * unreliable, so we can't assume that passing that test is safe.
+   * to the property.  We have been informed of the specific list at
+   * <https://bugzilla.mozilla.org/show_bug.cgi?id=724768#c12>.
    */
   function test_ERRORS_HAVE_INVISIBLE_PROPERTIES() {
     var gopn = Object.getOwnPropertyNames;
     var gopd = Object.getOwnPropertyDescriptor;
+
+    var checks = errorInstanceWhitelist.concat(errorInstanceBlacklist);
+    var needRepair = false;
 
     var errors = [new Error('e1')];
     try { null.foo = 3; } catch (err) { errors.push(err); }
@@ -2059,20 +2075,23 @@ var ses;
         found.set(prop, true);
       });
       var j, prop;
-      for (j = 0; j < errorInstanceWhitelist.length; j++) {
-        prop = errorInstanceWhitelist[j];
+      // Check known props
+      for (j = 0; j < errorInstanceKnownInvisibleList.length; j++) {
+        prop = errorInstanceKnownInvisibleList[j];
         if (gopd(err, prop) && !found.get(prop)) {
-          return true;
+          needRepair = true;
+          found.set(prop, true);  // don't treat as new symptom
         }
       }
-      for (j = 0; j < errorInstanceBlacklist.length; j++) {
-        prop = errorInstanceBlacklist[j];
+      // Check for new symptoms
+      for (j = 0; j < checks.length; j++) {
+        prop = checks[j];
         if (gopd(err, prop) && !found.get(prop)) {
-          return true;
+          return 'Unexpectedly invisible Error property: ' + prop;
         }
       }
     }
-    return false;
+    return needRepair;
   }
 
   /**
@@ -3032,6 +3051,28 @@ var ses;
     }
   }
 
+  function repair_ERRORS_HAVE_INVISIBLE_PROPERTIES() {
+    var baseGOPN = Object.getOwnPropertyNames;
+    var baseGOPD = Object.getOwnPropertyDescriptor;
+    var errorPattern = /^\[object [\w$]*Error\]$/;
+
+    function touch(name) {
+      // the forEach will invoke this function with this === the error instance
+      baseGOPD(this, name);
+    }
+
+    Object.defineProperty(Object, 'getOwnPropertyNames', {
+      writable: true,  // allow other repairs to stack on
+      value: function repairedErrorInvisGOPN(object) {
+        // Note: not adequate in future ES6 world (TODO(erights): explain why)
+        if (errorPattern.test(objToString.call(object))) {
+          errorInstanceKnownInvisibleList.forEach(touch, object);
+        }
+        return baseGOPN(object);
+      }
+    });
+  }
+
   ////////////////////// Kludge Records /////////////////////
   //
   // Each kludge record has a <dl>
@@ -3730,11 +3771,11 @@ var ses;
     },
     {
       id: 'ERRORS_HAVE_INVISIBLE_PROPERTIES',
-      description: 'Error instances may have invisible properties',
+      description: 'Error instances have invisible properties',
       test: test_ERRORS_HAVE_INVISIBLE_PROPERTIES,
-      repair: void 0,
-      preSeverity: severities.NOT_ISOLATED,
-      canRepair: false,
+      repair: repair_ERRORS_HAVE_INVISIBLE_PROPERTIES,
+      preSeverity: severities.SAFE_SPEC_VIOLATION,
+      canRepair: true,
       urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=726477',
              'https://bugzilla.mozilla.org/show_bug.cgi?id=724768'],
       sections: [],
