@@ -30,7 +30,8 @@ jsunitRegister('testMinorVersionSkew', function testMinorVersionSkew() {
         cajaBuildVersion + 'M2');
     caja.initialize({
       cajaServer: '/caja',
-      debug: true
+      debug: true,
+      es5Mode: false
     });
     caja.load(undefined, undefined, function (frame) {
       caja.iframe.contentWindow.console = console;

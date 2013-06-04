@@ -29,7 +29,8 @@ jsunitRegister('testVersionSkew', function testVersionSkew() {
         '0000');
     caja.initialize({
       cajaServer: '/caja',
-      debug: true
+      debug: true,
+      es5Mode: false
     });
     caja.load(undefined, undefined, function (frame) {
       caja.iframe.contentWindow.console = console;
