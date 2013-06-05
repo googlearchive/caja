@@ -159,6 +159,20 @@
     <uri>http://code.jquery.com/jquery-1.9.0.min.js</uri>
   </precajole>
 
+  <!-- 2013-06-05: latest versions. -->
+  <precajole file="jquery/1.10.1/jquery-1.10.1.js">
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.js</uri>
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js</uri>
+    <uri>http://code.jquery.com/jquery-1.10.1.js</uri>
+    <uri>http://code.jquery.com/jquery-1.10.1.min.js</uri>
+  </precajole>
+  <precajole file="jquery/2.0.2/jquery-2.0.2.js">
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.js</uri>
+    <uri>http://ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js</uri>
+    <uri>http://code.jquery.com/jquery-2.0.2.js</uri>
+    <uri>http://code.jquery.com/jquery-2.0.2.min.js</uri>
+  </precajole>
+
   <!-- 2012-06-07: latest version on google's cdn -->
   <precajole file="jqueryui/1.8.18/jquery-ui.js">
     <uri>http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.js</uri>
