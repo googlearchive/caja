@@ -17,7 +17,10 @@
  * "cajaVM.compileExpr", except that it returns a promise for the
  * outcome of attempting to compile the argument expression.
  *
+ * //requires ses.ok, ses.securableWrapperSrc, ses.atLeastFreeVarNames,
+ * //requires ses.makeCompiledExpr,
  * //provides ses.compileExprLater
+ * //provides ses.redeemResolver for its own use
  * @author Mark S. Miller
  * @overrides ses
  * @requires Q, cajaVM, document, URI
@@ -50,12 +53,15 @@ var ses;
     * be one that sends the expression back up the server to be
     * cajoled.
     */
-   function compileExprLaterFallback(exprSrc, opt_sourcePosition) {
+   function compileExprLaterFallback(exprSrc,
+                                     opt_mitigateOpts,
+                                     opt_sourcePosition) {
      // Coercing an object to a string may observably run code, so do
      // this now rather than in any later turn.
      exprSrc = ''+exprSrc;
 
-     return Q(cajaVM).send('compileExpr', exprSrc, opt_sourcePosition);
+     return Q(cajaVM).send('compileExpr',
+                           exprSrc, opt_mitigateOpts, opt_sourcePosition);
    }
 
    if (typeof document === 'undefined') {
@@ -79,14 +85,15 @@ var ses;
    };
 
    /**
-    *
+    * Implements an eventual compileExpr using injected script tags
     */
-   function compileLaterInScript(exprSrc, opt_sourceUrl) {
+   function compileLaterInScript(exprSrc, opt_mitigateOpts, opt_sourceUrl) {
 
      var result = Q.defer();
 
      // The portion of the pattern in compileExpr which is appropriate
      // here as well.
+     var options = ses.resolveOptions(opt_mitigateOpts);
      var wrapperSrc = ses.securableWrapperSrc(exprSrc, opt_sourceUrl);
      var freeNames = ses.atLeastFreeVarNames(exprSrc);
 
@@ -97,10 +104,11 @@ var ses;
      var resolverTicket = getResolverTicket(result.resolve);
 
      var scriptSrc = 'ses.redeemResolver(' + resolverTicket + ')(' +
-       'Object.freeze(ses.makeCompiledExpr(' + wrapperSrc + ',\n' +
-       // Freenames consist solely of identifier characters (\w|\$)+
-       // which do not need to be escaped further
-       '["' + freeNames.join('", "') + '"])));';
+         'Object.freeze(ses.makeCompiledExpr(' + wrapperSrc + ',\n' +
+         // Freenames consist solely of identifier characters (\w|\$)+
+         // which do not need to be escaped further
+         '["' + freeNames.join('", "') + '"], ' +
+         JSON.stringify(options) + ')));';
 
      if (opt_sourceUrl) {
        // See http://code.google.com/p/google-caja/wiki/SES#typeof_variable

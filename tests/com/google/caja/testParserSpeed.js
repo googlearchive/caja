@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+var ses;
+
 (function() {
 
   ses.logger = console;
@@ -42,11 +44,12 @@
     console.log('=== Running ' + name + ' ===');
     var mitigated;
     var tmg = time(name + ' - mitigate gotchas', function() {
-      mitigated = ses.mitigateGotchas(src, {
+      var options = ses.resolveOptions({
         rewriteTopLevelVars: true,
         rewriteTopLevelFuncs: true,
         rewriteTypeof: true
       });
+      mitigated = ses.mitigateSrcGotchas(src, options, ses.logger);
     });
     var parsed;
     var tp = time(name + ' - parse', function() {
@@ -87,6 +90,3 @@
   */
 
 })();
-
-
-

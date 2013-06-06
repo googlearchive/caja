@@ -179,7 +179,7 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
 
     var makeSimpleAMDLoaderP = Q(makeSimpleAMDLoaderSrcP).then(function(src) {
       var exprSrc = '(function() {' + src + '}).call(this)';
-      var compiledExprP = ses.compileExprLater(exprSrc, url);
+      var compiledExprP = ses.compileExprLater(exprSrc, void 0, url);
       return Q(compiledExprP).then(function(compiledExpr) {
         compiledExpr(imports);
         return imports.makeSimpleAMDLoader;

@@ -32,8 +32,7 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
     throw new Error('wrong frame');
   }
 
-  // TODO(kpreid): make sure mitigator is applied to guest code only
-  tamingWin.ses.mitigateGotchas = additionalParams.mitigateGotchas;
+  tamingWin.ses.mitigateSrcGotchas = additionalParams.mitigateSrcGotchas;
 
   var USELESS = Object.freeze({ USELESS: 'USELESS' });
   var BASE_OBJECT_CONSTRUCTOR = Object.freeze({});

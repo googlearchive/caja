@@ -24,17 +24,21 @@
  * Note that the parse tree manipulated in this file uses the SpiderMonkey
  * AST format
  * (https://developer.mozilla.org/en-US/docs/SpiderMonkey/Parser_API)
- * 
+ *
+ * //requires ses.rewriter_
+ * //provides ses.mitigateSrcGotchas
  * @author Jasvir Nagra (jasvir@google.com)
  * @overrides ses
  */
+
+var ses;
 
 (function() {
   function introducesVarScope(node) {
     return node.type === 'FunctionExpression' ||
            node.type === 'FunctionDeclaration';
   }
-  
+
   function isTypeOf(node) {
     return (node.type === 'UnaryExpression' &&
             node.operator === 'typeof' &&
@@ -44,7 +48,7 @@
   function isId(node) {
     return node.type === 'Identifier';
   }
-  
+
   function isVariableDecl(node) {
     return (node.type === 'VariableDeclaration');
   }
@@ -79,10 +83,10 @@
   /**
    * Rewrite var decls in place into assignments on the global object
    * turning variable declaration "var x, y = 2, z" to an expression
-   * statement: 
+   * statement:
    * "this.x = this.x, this.y = this.y, this.y = 2, this.z = this.z"
    * The rewrite also rewrites var declarations that appear in a for-loop
-   * initializer "for (var x = 1;;) {}" into an expression: 
+   * initializer "for (var x = 1;;) {}" into an expression:
    * "for (this.x = this.x, this.x = 1;;) {}"
    */
   function rewriteVars(node, parent) {
@@ -126,7 +130,7 @@
       };
     }
   }
-  
+
   function globalVarAst(varName) {
     return {
       'type': 'MemberExpression',
@@ -136,7 +140,7 @@
       'property': varName
     };
   }
-  
+
   /**
    * Rewrite node in place turning expression "typeof x" to
    * (function() {
@@ -195,31 +199,6 @@
         }
     };
   }
-  
-  function resolveOptions(options, logger) {
-    function resolve(opt, defaultOption) {
-      return (options && opt in options) ? options[opt] : defaultOption;
-    }
-    var resolved = {};
-    if (options === undefined || options === null) {
-      resolved.parseProgram = true;
-      resolved.rewriteTopLevelVars = true;
-      resolved.rewriteTopLevelFuncs = true;
-      resolved.rewriteTypeOf = true;
-    } else {
-      if (options.parseProgram === false) {
-        logger.warn('Refused to disable parsing for safety on all browsers');
-      }
-      // TODO(jasvir): This should only be necessary if a to-be-added
-      // test in repairES5.js indicates that this platform has the
-      // Function constructor bug
-      resolved.parseProgram = true;
-      resolved.rewriteTopLevelVars = resolve('rewriteTopLevelVars', true);
-      resolved.rewriteTopLevelFuncs = resolve('rewriteTopLevelFuncs', true);
-      resolved.rewriteTypeOf = resolve('rewriteTypeOf', true);
-    }
-    return resolved;
-  }
 
   function needsRewriting(options) {
     return options.rewriteTopLevelVars ||
@@ -227,8 +206,11 @@
       options.rewriteTypeOf;
   }
 
-  ses.mitigateGotchas = function(programSrc, options, logger) {
-    options = resolveOptions(options, logger);
+  /**
+   * Assumes {@code options} have already been safely canonicalized by
+   * startSES's {@code resolveOptions}.
+   */
+  ses.mitigateSrcGotchas = function(programSrc, options, logger) {
     if (!options.parseProgram) {
       return programSrc;
     }
@@ -278,7 +260,9 @@
             + "/*\n"
             + " * Program rewritten to mitigate differences between\n"
             + " * Caja and strict-mode JavaScript.\n"
-            + " * For more see http://code.google.com/p/google-caja/wiki/SES\n"
+            + " * For more see "
+            + " * https://code.google.com/p/google-caja/wiki/SES#"
+            + "Source-SES_vs_Target-SES\n"
             + " */\n"
             + ses.rewriter_.generate(ast);
       } else {

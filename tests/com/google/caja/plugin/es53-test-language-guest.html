@@ -691,12 +691,16 @@ testTopLevelVarsInCatch
 <script>
   jsunitRegister('testReferenceError',
                  function testReferenceError() {
-    expectFailure(function() {
-      testReferenceError_thisIsUndefined;
-    }, null, function(e) {
-      return e instanceof ReferenceError && e.message ===
+    if (inES5Mode) {
+      assertEquals(void 0, testReferenceError_thisIsUndefined);
+    } else {
+      expectFailure(function() {
+        testReferenceError_thisIsUndefined;
+      }, null, function(e) {
+        return e instanceof ReferenceError && e.message ===
           '"testReferenceError_thisIsUndefined" is not defined in this scope.';
-    });
+      });
+    }
     pass('testReferenceError');
   });
 </script>

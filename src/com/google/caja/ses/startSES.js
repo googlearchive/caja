@@ -18,7 +18,9 @@
  * <p>Assumes ES5 plus a WeakMap that conforms to the anticipated ES6
  * WeakMap spec. Compatible with ES5-strict or anticipated ES6.
  *
- * //provides ses.startSES
+ * //optionally requires ses.mitigateSrcGotchas
+ * //provides ses.startSES ses.resolveOptions, ses.securableWrapperSrc
+ * //provides ses.makeCompiledExpr
  * @author Mark S. Miller,
  * @author Jasvir Nagra
  * @requires WeakMap
@@ -269,18 +271,62 @@ ses.startSES = function(global,
   }
 
   /**
-   * The function ses.mitigateGotchas, if defined, is a function which
-   * given the sourceText for a strict Program, returns rewritten
-   * program with the same semantics as the original but with as
-   * many of the ES5 gotchas removed as possible.  {@code options} is
-   * a record of which gotcha-rewriting-stages to use or omit.
-   * Passing no option performs all the default mitigations.
+   * {@code opt_mitigateOpts} is an alleged record of which gotchas to
+   * mitigate. Passing no {@code opt_mitigateOpts} performs all the
+   * default mitigations. Returns a well behaved options record.
+   *
+   * <p>See {@code compileExpr} for documentation of the mitigation
+   * options and their effects.
    */
-  function mitigateGotchas(programSrc, options) {
+  function resolveOptions(opt_mitigateOpts) {
+    function resolve(opt, defaultOption) {
+      return (opt_mitigateOpts && opt in opt_mitigateOpts) ?
+        opt_mitigateOpts[opt] : defaultOption;
+    }
+    var options = {};
+    if (opt_mitigateOpts === undefined || opt_mitigateOpts === null) {
+      options.maskReferenceError = true;
+
+      options.parseProgram = true;
+      options.rewriteTopLevelVars = true;
+      options.rewriteTopLevelFuncs = true;
+      options.rewriteFunctionCalls = true;
+      options.rewriteTypeOf = false;
+    } else {
+      options.maskReferenceError = resolve('maskReferenceError', true);
+
+      if (opt_mitigateOpts.parseProgram === false) {
+        ses.logger.warn(
+          'Refused to disable parsing for safety on all browsers');
+      }
+      // TODO(jasvir): This should only be necessary if a to-be-added
+      // test in repairES5.js indicates that this platform has the
+      // Function constructor bug
+      options.parseProgram = true;
+      options.rewriteTopLevelVars = resolve('rewriteTopLevelVars', true);
+      options.rewriteTopLevelFuncs = resolve('rewriteTopLevelFuncs', true);
+      options.rewriteFunctionCalls = resolve('rewriteFunctionCalls', true);
+      options.rewriteTypeOf = resolve('rewriteTypeOf',
+                                      !options.maskReferenceError);
+    }
+    return options;
+  }
+  ses.resolveOptions = resolveOptions;
+
+  /**
+   * The function ses.mitigateSrcGotchas, if defined, is a function
+   * which, given the sourceText for a strict Program, returns a
+   * rewritten program with the same semantics as the original but
+   * with some of the ES5 gotchas mitigated -- those that can be
+   * mitigated by source analysis or source-to-source rewriting. The
+   * {@code options} are assumed to already be canonicalized by {@code
+   * resolveOptions} and says which mitigations to apply.
+   */
+  function mitigateSrcGotchas(programSrc, options) {
     var safeError;
-    if ('function' === typeof ses.mitigateGotchas) {
+    if ('function' === typeof ses.mitigateSrcGotchas) {
       try {
-        return ses.mitigateGotchas(programSrc, options, ses.logger);
+        return ses.mitigateSrcGotchas(programSrc, options, ses.logger);
       } catch (error) {
         // Shouldn't throw, but if it does, the exception is potentially from a
         // different context with an undefended prototype chain; don't allow it
@@ -288,7 +334,8 @@ ses.startSES = function(global,
         try {
           safeError = new Error(error.message);
         } catch (metaerror) {
-          throw new Error('Could not safely obtain error from mitigateGotchas');
+          throw new Error(
+            'Could not safely obtain error from mitigateSrcGotchas');
         }
         throw safeError;
       }
@@ -311,7 +358,6 @@ ses.startSES = function(global,
    * Obtain the ES5 singleton [[ThrowTypeError]].
    */
   function getThrowTypeError() {
-    "use strict";
     return Object.getOwnPropertyDescriptor(getThrowTypeError, "arguments").get;
   }
 
@@ -565,7 +611,7 @@ ses.startSES = function(global,
      * access to any {@code freeNames} other than those found on the.
      * {@code imports}.
      */
-    function makeScopeObject(imports, freeNames) {
+    function makeScopeObject(imports, freeNames, options) {
       var scopeObject = createNullIfPossible();
       // createNullIfPossible safety: The inherited properties should
       // always be shadowed by defined properties if they are relevant
@@ -590,21 +636,23 @@ ses.startSES = function(global,
           desc = {
             get: function scopedGet() {
               if (name in imports) {
-                var result = imports[name];
-                if (typeof result === 'function') {
-                  // If it were possible to know that the getter call
-                  // was on behalf of a simple function call to the
-                  // gotten function, we could instead return that
-                  // function as bound to undefined. Unfortunately,
-                  // without parsing (or possibly proxies?), that isn't
-                  // possible.
-                }
-                return result;
+                // Note that, if this GET is on behalf of an
+                // unmitigated function call expression, this function
+                // will be called with a this-binding of the scope
+                // object rather than undefined.
+                return imports[name];
               }
-              // if it were possible to know that the getter call was on
-              // behalf of a typeof expression, we'd return the string
-              // "undefined" here instead. Unfortunately, without
-              // parsing or proxies, that isn't possible.
+              if (options.maskReferenceError) {
+                // if it were possible to know that the getter call
+                // was on behalf of a typeof expression, we'd return
+                // {@code void 0} here only for that
+                // case. Unfortunately, without parsing or proxies,
+                // that isn't possible. To fix this more accurately by
+                // parsing and rewriting instead, when available, set
+                // maskReferenceError to false and rewriteTypeOf to
+                // true.
+                return void 0;
+              }
               throw new ReferenceError('"' + name +
                   '" is not defined in this scope.');
             },
@@ -632,7 +680,7 @@ ses.startSES = function(global,
             throw new Error('New symptom: ' + name + ' in null-proto object');
           }
         }
-        
+
         defProp(scopeObject, name, desc);
       });
       return freeze(scopeObject);
@@ -645,7 +693,7 @@ ses.startSES = function(global,
      * surround it with a prelude and postlude.
      *
      * <p>Evaluating the resulting expression return a function that
-     * <i>can</i>be called to execute the original expression safely,
+     * <i>can</i> be called to execute the original expression safely,
      * in a controlled scope. See "makeCompiledExpr" for precisely the
      * pattern that must be followed to call the resulting function
      * safely.
@@ -700,11 +748,11 @@ ses.startSES = function(global,
      * all its free variable references that appear in freeNames are
      * redirected to the corresponding property of imports.
      */
-    function makeCompiledExpr(wrapper, freeNames) {
+    function makeCompiledExpr(wrapper, freeNames, options) {
       if (dirty) { fail('Initial cleaning failed'); }
 
       function compiledCode(imports) {
-        var scopeObject = makeScopeObject(imports, freeNames);
+        var scopeObject = makeScopeObject(imports, freeNames, options);
         return wrapper.call(scopeObject).call(imports);
       };
       compiledCode.prototype = null;
@@ -719,20 +767,45 @@ ses.startSES = function(global,
      * bound to that {@code imports}, and whose free variables
      * refer only to the properties of that {@code imports}.
      *
-     * The optional {@code opt_mitigateOpts} can be used to control
-     * which transformations are applied to src, if they are available.
-     * If {@code opt_mitigateOpts} is:
-     *   - undefined || null then all default transformations are applied.
-     * else the following option keys can be used.
-     *   - parseProgram: check the program is syntactically valid
-     *   - rewriteTopLevelVars: transform vars to properties of global object
-     *   - rewriteTopLevelFuncs: transform funcs to properties of global object
-     *   - rewriteTypeOf: rewrite program to support typeof barevar
+     * <p>The optional {@code opt_mitigateOpts} can be used to control
+     * which transformations are applied to src, if they are
+     * available. If {@code opt_mitigateOpts} is {@code undefined ||
+     * null} then all default transformations are applied. Otherwise
+     * the following option keys can be used.
+     * <ul>
+     * <li>maskReferenceError: Getting a free variable name that is
+     *     absent on the imports object will throw a ReferenceError,
+     *     even if gotten by an unmitigated {@code typeof}. With this
+     *     set to true (the default), getting an absent variable will
+     *     result in {@code undefined} which fixes the behavior of
+     *     unmitigated {@code typeof} but masks normal ReferenceError
+     *     cases. This is a less correct but faster alternative to
+     *     rewriteTypeOf that also works when source mitigations are
+     *     not available.
+     * <li>parseProgram: check the program is syntactically
+     *     valid.
+     * <li>rewriteTopLevelVars: transform vars to properties of global
+     *     object. Defaults to true.
+     * <li>rewriteTopLevelFuncs: transform funcs to properties of
+     *     global object. Defaults to true.
+     * <li>rewriteFunctionCalls: transform function calls, e.g.,
+     *     {@code f()}, into calls ensuring that the function gets
+     *     called with a this-binding of {@code undefined}, e.g.,
+     *     {@code (1,f)()}. Defaults to true. <a href=
+     *     "https://code.google.com/p/google-caja/issues/detail?id=1755"
+     *     >Currently unimplemented</a>.
+     * <li>rewriteTypeOf: rewrite program to support typeof
+     *     barevar. rewriteTypeOf is only needed if maskReferenceError
+     *     is false. If omitted, it defaults to the opposite of
+     *     maskReferenceError.
+     * </ul>
      *
-     * Currently for security, parseProgram is always true and cannot be unset
-     * because of the Function constructor bug
-     * (https://code.google.com/p/v8/issues/detail?id=2470)
-     * 
+     * <p>Currently for security, parseProgram is always true and
+     * cannot be unset because of the <a href=
+     * "https://code.google.com/p/v8/issues/detail?id=2470"
+     * >Function constructor bug</a>. TODO(jasvir): On platforms not
+     * suffering from this bug, parseProgram should default to false.
+     *
      * <p>When SES is provided primitively, it should provide an
      * analogous {@code compileProgram} function that accepts a
      * Program and return a function that evaluates it to the
@@ -748,7 +821,9 @@ ses.startSES = function(global,
     function compileExpr(src, opt_mitigateOpts, opt_sourcePosition) {
       // Force src to be parsed as an expr
       var exprSrc = '(' + src + '\n)';
-      exprSrc = mitigateGotchas(exprSrc, opt_mitigateOpts);
+
+      var options = resolveOptions(opt_mitigateOpts);
+      exprSrc = mitigateSrcGotchas(exprSrc, options);
 
       // This is a workaround for a bug in the escodegen renderer that
       // renders expressions as expression statements
@@ -758,7 +833,7 @@ ses.startSES = function(global,
       var wrapperSrc = securableWrapperSrc(exprSrc, opt_sourcePosition);
       var wrapper = unsafeEval(wrapperSrc);
       var freeNames = atLeastFreeVarNames(exprSrc);
-      var result = makeCompiledExpr(wrapper, freeNames);
+      var result = makeCompiledExpr(wrapper, freeNames, options);
       return freeze(result);
     }
 
@@ -822,7 +897,7 @@ ses.startSES = function(global,
      *
      * For documentation on {@code opt_mitigateOpts} see the
      * corresponding parameter in compileExpr.
-     * 
+     *
      * <p>In addition, in case the module source happens to begin with
      * a streotyped prelude of the CommonJS module system, the
      * function resulting from module compilation has an additional
@@ -847,15 +922,16 @@ ses.startSES = function(global,
     function compileModule(modSrc, opt_mitigateOpts, opt_sourcePosition) {
       // Note the EOL after modSrc to prevent trailing line comment in modSrc
       // eliding the rest of the wrapper.
+      var options = resolveOptions(opt_mitigateOpts);
       var exprSrc =
           '(function() {' +
-          mitigateGotchas(modSrc, opt_mitigateOpts) +
+          mitigateSrcGotchas(modSrc, options) +
           '\n}).call(this)';
       // Follow the pattern in compileExpr
       var wrapperSrc = securableWrapperSrc(exprSrc, opt_sourcePosition);
       var wrapper = unsafeEval(wrapperSrc);
       var freeNames = atLeastFreeVarNames(exprSrc);
-      var moduleMaker = makeCompiledExpr(wrapper, freeNames);
+      var moduleMaker = makeCompiledExpr(wrapper, freeNames, options);
 
       moduleMaker.requirements = getRequirements(modSrc);
       return freeze(moduleMaker);
@@ -1276,7 +1352,7 @@ ses.startSES = function(global,
           configurable: false,
 
           // See https://bugzilla.mozilla.org/show_bug.cgi?id=787262
-          enumerable: desc.enumerable 
+          enumerable: desc.enumerable
         };
         try {
           defProp(global, name, newDesc);
@@ -1393,7 +1469,7 @@ ses.startSES = function(global,
       // 6.0.2 (8536.26.17), and Opera 12.14 include '__proto__' in the
       // result of Object.getOwnPropertyNames. However, the meaning of
       // deleting this isn't clear, so here we effectively whitelist
-      // it on all objects. 
+      // it on all objects.
       //
       // We do not whitelist it in whitelist.js, as that would involve
       // creating a property {@code __proto__: '*'} which, on some

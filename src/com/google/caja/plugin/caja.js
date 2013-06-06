@@ -328,7 +328,7 @@ var caja = (function () {
     initFeralFrame(window);
     globalConfig = config = resolveConfig(config);
     caja['server'] = config['server'];
-    if (config['es5Mode'] === false || 
+    if (config['es5Mode'] === false ||
         (config['es5Mode'] !== true && unableToSES())) {
       initES53(config, frameGroupReady, onFailure);
     } else {
@@ -358,10 +358,10 @@ var caja = (function () {
     } else {
       full['es5Mode'] =
         partial['es5Mode'] === undefined ? GUESS : !!partial['es5Mode'];
-      full['maxAcceptableSeverity'] = 
+      full['maxAcceptableSeverity'] =
         String(partial['maxAcceptableSeverity'] || 'SAFE_SPEC_VIOLATION');
     }
-     
+
     if (partial['console']) {
       // Client supplies full 'console' object, which we use
       full['console'] = partial['console'];
@@ -430,13 +430,13 @@ var caja = (function () {
     var sesMaker = makeFrameMaker(config, 'ses-single-frame');
 
     loadCajaFrame(config, 'utility-frame', function (mitigateWin) {
-      var mitigateGotchas = mitigateWin['ses']['mitigateGotchas'];
+      var mitigateSrcGotchas = mitigateWin['ses']['mitigateSrcGotchas'];
       sesMaker['make'](function (tamingWin) {
         var mustSES = config['es5Mode'] === true;
         if (canSES(tamingWin['ses'], config['maxAcceptableSeverity'])) {
           var fg = tamingWin['SESFrameGroup'](
               cajaInt, config, tamingWin, window,
-              { 'mitigateGotchas': mitigateGotchas });
+              { 'mitigateSrcGotchas': mitigateSrcGotchas });
           frameGroupReady(fg, true /* es5Mode */);
         } else if (!mustSES) {
           config['console']['log']('Unable to use SES.  Switching to ES53.');
@@ -571,7 +571,7 @@ var caja = (function () {
       // * match the innermost such element using .caja-vdoc-inner
       // This scheme has been chosen to be potentially forward-compatible in the
       // event that we switch to more or less than 2 wrappers.
-      
+
       inner = div.ownerDocument.createElement('div');
       inner.className = 'caja-vdoc-inner caja-vdoc-wrapper';
       inner.style.display = 'block';
