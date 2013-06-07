@@ -6158,17 +6158,21 @@ var Domado = (function() {
         var parsed = URI.parse(base);
         var host = null;
         if (parsed.hasDomain()) {
-          host = parsed.hasPort() ? parsed.getDomain() + ':' + parsed.getPort() : null;
+          host = parsed.hasPort() ? parsed.getDomain() + ':' + parsed.getPort()
+              : parsed.getDomain();
+        }
+        if (!parsed.hasPath()) {
+          parsed.setRawPath('/');
         }
         domicile.pseudoLocation = {
           href: parsed.toString(),
-          hash: parsed.getFragment(),
+          hash: parsed.hasFragment() ? '#' + parsed.getRawFragment() : '',
           host: host,
           hostname: parsed.getDomain(),
-          port: parsed.getPort(),
+          port: parsed.hasPort() ? parsed.getPort() : '',
           protocol: parsed.hasScheme() ? parsed.getScheme() + ':' : null,
-          pathname: parsed.getPath(),
-          search: parsed.getQuery()
+          pathname: parsed.getRawPath(),
+          search: parsed.hasQuery() ? '?' + parsed.getRawQuery() : ''
         };
       });
 
@@ -6613,7 +6617,8 @@ var Domado = (function() {
             enumerable: true,
             get: innocuous(function() {
               try {
-                return String(domicile.pseudoLocation[f] || dflt);
+                var v = domicile.pseudoLocation[f];
+                return String(v !== null ? v : dflt);
               } catch (e) {
                 // paranoia - domicile.pseudoLocation is potentially replaceable
                 // by the host. TODO(kpreid): put pseudoLocation somewhere not

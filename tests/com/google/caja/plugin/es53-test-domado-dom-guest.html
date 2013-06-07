@@ -2990,58 +2990,6 @@ Test row cell
   });
 </script>
 
-<div id="testLocation" class="testcontainer">
-  testLocation
-</div>
-<script type="text/javascript">
-  jsunitRegister('testLocation',
-                 function testLocation() {
-    assertEquals(
-        window.location.host,
-        window.location.hostname + ':' + window.location.port);
-    assertEquals(
-        window.location.href,
-        window.location.protocol + '//' + window.location.hostname
-        + ':' + window.location.port + window.location.pathname
-        + window.location.search + window.location.hash);
-    assertEquals(
-        'http://' + window.location.hostname
-        + ':' + window.location.port
-        + '/ant-testlib/com/google/caja/plugin/'
-        + 'es53-test-domado-dom-guest.html',
-        window.location.href);
-    assertEquals(
-        '',
-        window.location.hash);
-    assertEquals(
-        window.location.hostname + ':' + window.location.port,
-        window.location.host);
-    assertEquals(''
-        + '/ant-testlib/com/google/caja/plugin/'
-        + 'es53-test-domado-dom-guest.html',
-        window.location.pathname);
-    assertTrue(
-        /^[1-9][0-9]+$/.test(window.location.port));
-    assertEquals(
-        'http:',
-        window.location.protocol);
-    assertEquals(
-        '',
-        window.location.search);
-    // TODO(jasvir): Uncomment after wiring up document.domain
-    // by untangling the cyclic dependence between
-    // TameWindow and TameDocument
-    //    assertEquals(
-    //        window.location.hostname,
-    //        document.domain);
-    
-    // document.location is an identical property to window.location
-    assertTrue('document.location', window.location === document.location);
-    
-    pass('testLocation');
-  });
-</script>
-
 <div id="testNavigator" class="testcontainer">testNavigator </div>
 <script type="text/javascript">
   jsunitRegister('testNavigator',

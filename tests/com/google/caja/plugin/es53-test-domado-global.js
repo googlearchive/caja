@@ -26,35 +26,51 @@
     forceES5Mode: inES5Mode
   });
 
-  function registerGuestTest(testName, html, varargs) {
-    var guestTestArgs = Array.prototype.slice.call(arguments, 2);
-
-    jsunitRegister(testName,
-        function guestTestWrapper() {
+  function registerGlobalTest(cond, testName, url, html, callback) {
+    jsunitRegisterIf(cond, testName, function globalTestWrapper() {
       var div = createDiv();
-      caja.load(div, undefined, function (frame) {
-        frame.code(
-            location.protocol + '//' + location.host + '/',
-            'text/html',
-            html)
+      // Load callback is NOT a jsunitCallback because that would be mostly
+      // noise.
+      caja.load(div, undefined, function(frame) {
+        frame.code(url, 'text/html', html)
           .run(createExtraImportsForTesting(caja, frame),
-              jsunitCallback(function(result) {
-                // Domado delays onload handlers with setTimeout(,0),
-                // so we have to delay globalGuestTest to make sure
-                // it's run after all the onloads fire.
-                window.setTimeout(function() {
-                  var tameGT = frame.imports.globalGuestTest;
-                  assertEquals('typeof globalGuestTest', 'function',
-                      typeof tameGT);
-                  frame.untame(tameGT).apply(undefined, guestTestArgs);
-                  jsunitPass(testName);
-                }, 0);
+              jsunitCallback(function() {
+                callback(frame);
               }, testName, frame));
       });
     });
   }
 
-  fetch('es53-test-domado-global-html-guest.js', function (htmlGuestJs) {
+  function registerGuestTest(testName, html, varargs) {
+    var guestTestArgs = Array.prototype.slice.call(arguments, 2);
+    registerGlobalTest(
+        true,
+        testName,
+        location.protocol + '//' + location.host + '/',
+        html,
+        function(frame) {
+          // Domado delays onload handlers with setTimeout(,0),
+          // so we have to delay globalGuestTest to make sure
+          // it's run after all the onloads fire.
+          window.setTimeout(function() {
+            var tameGT = frame.imports.globalGuestTest;
+            assertEquals('typeof globalGuestTest', 'function',
+                typeof tameGT);
+            frame.untame(tameGT).apply(undefined, guestTestArgs);
+            jsunitPass(testName);
+          }, 0);
+        });
+  }
+
+  function fetches(callback) {
+    fetch('es53-test-domado-global-html-guest.js', function(htmlGuestJs) {
+      fetch('es53-test-domado-global-location.js', function(locationJs) {
+        callback(htmlGuestJs, locationJs);
+      });
+    });
+  }
+
+  fetches(function(htmlGuestJs, locationJs) {
     /**
      * Tests of how Caja handles omitted structure in HTML document inputs.
      */
@@ -99,24 +115,15 @@
           '', 'b$');
 
       // Test that a completely empty document still produces structure.
-      // TODO(kpreid): refactor registerGuestTest so this can be shorter.
-      jsunitRegister('testEmptyInput',
-          function testEmptyInput() {
-        var div = createDiv();
-        caja.load(div, undefined, function (frame) {
-          frame.code(
-              location.protocol + '//' + location.host + '/',
-              'text/html',
-              '')
-            .run(createExtraImportsForTesting(caja, frame),
-                jsunitCallback(function(result) {
-                  var guestHtml = ('<html><head></head><body></body></html>'
-                      .replace(/<\/?/g, function(m) { return m + 'caja-v-'; }));
-                  assertEquals(guestHtml, frame.innerContainer.innerHTML);
-                  jsunitPass('testEmptyInput');
-                }, 'testEmptyInput', frame));
-        });
-      });
+      registerGlobalTest(true, 'testEmptyInput',
+          location.protocol + '//' + location.host + '/',
+          '',
+          function(frame) {
+            var guestHtml = ('<html><head></head><body></body></html>'
+                .replace(/<\/?/g, function(m) { return m + 'caja-v-'; }));
+            assertEquals(guestHtml, frame.innerContainer.innerHTML);
+            jsunitPass('testEmptyInput');
+          });
 
       registerStructureTest('testEmptyVirtualizedElementInHead',
           // Regression test for <body> getting embedded in <head> due to
@@ -271,19 +278,13 @@
      * Issue 1589, html-emitter gets confused in a couple ways when
      * head has script but body doesn't
      */
-    jsunitRegisterIf(!inES5Mode, 'testHtmlEmitterFinishInHead',
-                   function testHtmlEmitterFinishInHead() {
-      var div = createDiv();
-      caja.load(div, undefined, function(frame) {
-        var imports = createExtraImportsForTesting(caja, frame);
-        frame.api(imports);
-        frame.code(
-          'http://nonexistent/', 'text/html',
-          // note, the space is necessary to trigger the bug
-          '<html><head> <script>;</script></head>'
-            + '<body><div>2</div></body></html>');
-        frame.run(function(result) {
-          var doc = div.firstChild.firstChild;
+    registerGlobalTest(!inES5Mode, 'testHtmlEmitterFinishInHead',
+        'http://nonexistent/',
+        // note, the space is necessary to trigger the bug
+        '<html><head> <script>;</script></head>'
+            + '<body><div>2</div></body></html>',
+        function(frame) {
+          var doc = frame.div.firstChild.firstChild;
           var html = canonInnerHtml(doc.innerHTML);
           assertEquals(
             '<caja-v-html>'
@@ -293,8 +294,39 @@
             html);
           jsunitPass('testHtmlEmitterFinishInHead');
         });
-      });
-    });
+
+    /**
+     * Tests of window.location.
+     */
+    (function() {
+      function registerLocationTest(tag, url, opt_specific) {
+        var testName = 'testLocation-' + tag;
+        registerGlobalTest(true, testName,
+            url,
+            '<script>' + locationJs + '</script>',
+            function(frame) {
+              frame.untame(frame.imports.testLocation)(opt_specific);
+              jsunitPass(testName);
+            });
+      }
+
+      registerLocationTest('original',
+          'http://localhost:8000/ant-testlib/com/google/caja/plugin/'
+          + 'es53-test-domado-dom-guest.html',
+          true);
+
+      registerLocationTest('noPath',
+          'https://nopath.test');
+
+      registerLocationTest('path',
+          'http://path.test/foo/bar%2Fbaz');
+
+      registerLocationTest('search',
+          'http://search.test/foo?bar=ba%26z');
+
+      registerLocationTest('hash',
+          'http://hash.test/foo#bar%23baz');
+    })();
 
     readyToTest();
     jsunitRun();
