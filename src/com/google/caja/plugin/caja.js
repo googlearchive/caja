@@ -358,8 +358,16 @@ var caja = (function () {
     } else {
       full['es5Mode'] =
         partial['es5Mode'] === undefined ? GUESS : !!partial['es5Mode'];
-      full['maxAcceptableSeverity'] =
-        String(partial['maxAcceptableSeverity'] || 'SAFE_SPEC_VIOLATION');
+      var severity = String(partial['maxAcceptableSeverity'] ||
+          'SAFE_SPEC_VIOLATION');
+      if (severity === 'NO_KNOWN_EXPLOIT_SPEC_VIOLATION') {
+        // Special severity level which SES itself no longer implements
+        // TODO(kpreid): Should acceptNoKnownExploitProblems be part of our
+        // public interface?
+        severity = 'SAFE_SPEC_VIOLATION';
+        full['acceptNoKnownExploitProblems'] = true;
+      }
+      full['maxAcceptableSeverity'] = severity;
     }
 
     if (partial['console']) {
@@ -427,13 +435,35 @@ var caja = (function () {
   }
 
   function trySES(config, frameGroupReady, onFailure) {
-    var sesMaker = makeFrameMaker(config, 'ses-single-frame');
+    function frameInit(frameWin) {
+      var ses = frameWin['ses'] || (frameWin['ses'] = {});
+      ses['maxAcceptableSeverityName'] = config['maxAcceptableSeverity'];
+      if (config['acceptNoKnownExploitProblems']) {
+        ses['acceptableProblems'] = {
+          'DEFINING_READ_ONLY_PROTO_FAILS_SILENTLY': { 'permit': true },
+
+          // we don't use partly-unmodifiable arrays, and the repair for push
+          // is too slow
+          'PUSH_IGNORES_SEALED': { 'permit': true, 'doNotRepair': true },
+          'PUSH_IGNORES_FROZEN': { 'doNotRepair': true },
+          'PUSH_DOES_NOT_THROW_ON_FROZEN_ARRAY':
+              { 'permit': true, 'doNotRepair': true },
+          'ARRAYS_DELETE_NONCONFIGURABLE': { 'permit': true },
+          'ARRAYS_MODIFY_READONLY': { 'permit': true },
+
+          // safe given that we use exactly one SES frame
+          'FREEZE_IS_FRAME_DEPENDENT': { 'permit': true }
+        };
+      }
+    }
+
+    var sesMaker = makeFrameMaker(config, 'ses-single-frame', frameInit);
 
     loadCajaFrame(config, 'utility-frame', function (mitigateWin) {
       var mitigateSrcGotchas = mitigateWin['ses']['mitigateSrcGotchas'];
       sesMaker['make'](function (tamingWin) {
         var mustSES = config['es5Mode'] === true;
-        if (canSES(tamingWin['ses'], config['maxAcceptableSeverity'])) {
+        if (tamingWin['ses']['ok']()) {
           var fg = tamingWin['SESFrameGroup'](
               cajaInt, config, tamingWin, window,
               { 'mitigateSrcGotchas': mitigateSrcGotchas });
@@ -454,10 +484,6 @@ var caja = (function () {
     });
   }
 
-  function canSES(ses, severity) {
-    return ses['ok'](ses['severities'][severity]);
-  }
-
   // Fast rejection of SES.  If this works, repairES5 might still fail, and
   // we'll fall back to ES53 then.
   function unableToSES() {
@@ -471,7 +497,7 @@ var caja = (function () {
    * Calling frameMaker.preload() will start creation of a new frame now,
    * and make it available to a later call to frameMaker.make().
    */
-  function makeFrameMaker(config, filename) {
+  function makeFrameMaker(config, filename, opt_frameCreated) {
     var IDLE = 'IDLE', LOADING = 'LOADING', WAITING = 'WAITING';
     var preState = IDLE, preWin, preReady;
     var self = {
@@ -482,7 +508,7 @@ var caja = (function () {
           loadCajaFrame(config, filename, function (win) {
             preWin = win;
             consumeIfReady();
-          });
+          }, opt_frameCreated);
         }
       },
       'make': function (onReady) {
@@ -491,7 +517,7 @@ var caja = (function () {
           preReady = onReady;
           consumeIfReady();
         } else {
-          loadCajaFrame(config, filename, onReady);
+          loadCajaFrame(config, filename, onReady, opt_frameCreated);
         }
       }
     };
@@ -511,7 +537,7 @@ var caja = (function () {
 
   //----------------
 
-  function loadCajaFrame(config, filename, frameReady) {
+  function loadCajaFrame(config, filename, frameReady, opt_frameCreated) {
     var frameWin = createFrame(filename);
     // debuggable or minified.  ?debug=1 inhibits compilation in shindig
     var suffix = config['debug'] ? '.js?debug=1' : '.opt.js?debug=1';
@@ -526,6 +552,7 @@ var caja = (function () {
         versionCheck(config, frameWin, filename);
         frameReady(frameWin);
       };
+      if (opt_frameCreated) { opt_frameCreated(frameWin); }
       // TODO(jasvir): Test what the latency doing this on all browsers is
       // and why its necessary
       setTimeout(function () {

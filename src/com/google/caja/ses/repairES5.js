@@ -31,6 +31,7 @@
  * //provides ses.makeCallerHarmless, ses.makeArgumentsHarmless
  * //provides ses.severities, ses.maxSeverity, ses.updateMaxSeverity
  * //provides ses.maxAcceptableSeverityName, ses.maxAcceptableSeverity
+ * //provides ses.acceptableProblems
  *
  * @author Mark S. Miller
  * @requires ___global_test_function___, ___global_valueOf_function___
@@ -96,9 +97,6 @@ var ses;
    *   <dt>SAFE_SPEC_VIOLATION</dt>
    *     <dd>safe (in an integrity sense) even if unrepaired. May
    *         still lead to inappropriate failures.</dd>
-   *   <dt>NO_KNOWN_EXPLOIT_SPEC_VIOLATION</dt>
-   *     <dd>known to introduce an indirect safety issue which,
-   *     however, is not known to be exploitable.</dd>
    *   <dt>UNSAFE_SPEC_VIOLATION</dt>
    *     <dd>a safety issue only indirectly, in that this spec
    *         violation may lead to the corruption of assumptions made
@@ -120,8 +118,6 @@ var ses;
     MAGICAL_UNICORN:       { level: -1, description: 'Testing only' },
     SAFE:                  { level: 0, description: 'Safe' },
     SAFE_SPEC_VIOLATION:   { level: 1, description: 'Safe spec violation' },
-    NO_KNOWN_EXPLOIT_SPEC_VIOLATION: {
-        level: 2, description: 'Unsafe spec violation but no known exploits' },
     UNSAFE_SPEC_VIOLATION: { level: 3, description: 'Unsafe spec violation' },
     NOT_OCAP_SAFE:         { level: 4, description: 'Not ocap safe' },
     NOT_ISOLATED:          { level: 5, description: 'Not isolated' },
@@ -139,6 +135,9 @@ var ses;
    *     <dd>test failed before and after repair attempt.</dd>
    *   <dt>NOT_REPAIRED</dt>
    *     <dd>test failed before and after, with no repair to attempt.</dd>
+   *   <dt>REPAIR_SKIPPED</dt>
+   *     <dd>test failed before and after, and ses.acceptableProblems
+   *         specified not to repair it.</dd>
    *   <dt>REPAIRED_UNSAFELY</dt>
    *     <dd>test failed before and passed after repair attempt, but
    *         the repair is known to be inadequate for security, so the
@@ -159,6 +158,7 @@ var ses;
     ALL_FINE:                          'All fine',
     REPAIR_FAILED:                     'Repair failed',
     NOT_REPAIRED:                      'Not repaired',
+    REPAIR_SKIPPED:                    'Repair skipped',
     REPAIRED_UNSAFELY:                 'Repaired unsafely',
     REPAIRED:                          'Repaired',
     ACCIDENTALLY_REPAIRED:             'Accidentally repaired',
@@ -207,6 +207,9 @@ var ses;
    * have the choice of using SES on those platforms which we judge to
    * be adequately repairable, or otherwise falling back to Caja's
    * ES5/3 translator.
+   *
+   * <p>See also {@code ses.acceptableProblems} for overriding the
+   * severity of specific known problems.
    */
   ses.maxAcceptableSeverityName =
     validateSeverityName(ses.maxAcceptableSeverityName);
@@ -231,6 +234,62 @@ var ses;
   }
   function severityNameToLevel(severityName) {
     return ses.severities[validateSeverityName(severityName)];
+  }
+
+  /**
+   * An object whose enumerable keys are problem names and whose values
+   * are records containing the following boolean properties, defaulting
+   * to false if omitted:
+   * <dl>
+   *
+   * <dt>{@code permit}
+   * <dd>If this problem is not repaired, continue even if its severity
+   * would otherwise be too great (maxSeverity will be as if this
+   * problem does not exist). Use this for problems which are known
+   * to be acceptable for the particular use case of SES.
+   *
+   * <p>THIS CONFIGURATION IS POTENTIALLY EXTREMELY DANGEROUS. Ignoring
+   * problems can make SES itself insecure in subtle ways even if you
+   * do not use any of the affected features in your own code. Do not
+   * use it without full understanding of the implications.
+   *
+   * <p>TODO(kpreid): Add a flag to kludge records to indicate whether
+   * the problems may be ignored and check it here.
+   * </dd>
+   *
+   * <dt>{@code doNotRepair}
+   * <dd>Do not attempt to repair this problem.
+   * Use this for problems whose repairs have unacceptable disadvantages.
+   *
+   * <p>Observe that if {@code permit} is also false, then this means to
+   * abort rather than repairing, whereas if {@code permit} is true then
+   * this means to continue without repairing the problem even if it is
+   * repairable.
+   *
+   * </dl>
+   */
+  ses.acceptableProblems = validateAcceptableProblems(ses.acceptableProblems);
+
+  function validateAcceptableProblems(opt_problems) {
+    var validated = {};
+    if (opt_problems) {
+      for (var problem in opt_problems) {
+        // TODO(kpreid): Validate problem names.
+        var flags = opt_problems[problem];
+        if (typeof flags !== 'object') {
+          throw new Error('ses.acceptableProblems["' + problem + '"] is not' +
+              ' an object, but ' + flags);
+        }
+        var valFlags = {permit: false, doNotRepair: false};
+        for (var flag in flags) {
+          if (valFlags.hasOwnProperty(flag)) {
+            valFlags[flag] = Boolean(flags[flag]);
+          }
+        }
+        validated[problem] = valFlags;
+      }
+    }
+    return validated;
   }
 
   /**
@@ -2962,6 +3021,21 @@ var ses;
       writable: true
     });
   }
+  
+  function repair_PUSH_IGNORES_SEALED() {
+    var push = Array.prototype.push;
+    var sealed = Object.isSealed;
+    Object.defineProperty(Array.prototype, 'push', {
+      value: function(compareFn) {
+        if (sealed(this)) {
+          throw new TypeError('Cannot push onto a sealed object.');
+        }
+        return push.apply(this, arguments);
+      },
+      configurable: true,
+      writable: true
+    });
+  }
 
   // error message is matched elsewhere (for tighter bounds on catch)
   var NO_CREATE_NULL =
@@ -3590,7 +3664,7 @@ var ses;
       description: 'Defining __proto__ on non-extensible object fails silently',
       test: test_DEFINING_READ_ONLY_PROTO_FAILS_SILENTLY,
       repair: repair_DEFINE_PROPERTY,
-      preSeverity: severities.NO_KNOWN_EXPLOIT_SPEC_VIOLATION,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
       canRepair: true,
       urls: ['http://code.google.com/p/v8/issues/detail?id=2441'],
       sections: ['8.6.2'],
@@ -3683,9 +3757,9 @@ var ses;
       id: 'PUSH_IGNORES_SEALED',
       description: 'Array.prototype.push ignores sealing',
       test: test_PUSH_IGNORES_SEALED,
-      repair: undefined, // workaround is too slow
-      preSeverity: severities.NO_KNOWN_EXPLOIT_SPEC_VIOLATION,
-      canRepair: false,
+      repair: repair_PUSH_IGNORES_SEALED,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      canRepair: true,
       urls: ['http://code.google.com/p/v8/issues/detail?id=2412'],
       sections: ['15.4.4.11'],
       tests: [] // TODO(erights): Add to test262
@@ -3694,9 +3768,9 @@ var ses;
       id: 'PUSH_DOES_NOT_THROW_ON_FROZEN_ARRAY',
       description: 'Array.prototype.push does not throw on a frozen array',
       test: test_PUSH_DOES_NOT_THROW_ON_FROZEN_ARRAY,
-      repair: undefined,
-      preSeverity: severities.NO_KNOWN_EXPLOIT_SPEC_VIOLATION,
-      canRepair: false,
+      repair: repair_PUSH_IGNORES_SEALED,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      canRepair: true,
       urls: [],
       sections: ['15.2.3.9'],
       tests: [] // TODO(erights): Add to test262
@@ -3705,9 +3779,9 @@ var ses;
       id: 'PUSH_IGNORES_FROZEN',
       description: 'Array.prototype.push ignores frozen',
       test: test_PUSH_IGNORES_FROZEN,
-      repair: undefined,
+      repair: repair_PUSH_IGNORES_SEALED,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: false,
+      canRepair: true,
       urls: [],
       sections: ['15.2.3.9'],
       tests: [] // TODO(erights): Add to test262
@@ -3717,7 +3791,7 @@ var ses;
       description: 'Setting [].length can delete non-configurable elements',
       test: test_ARRAYS_DELETE_NONCONFIGURABLE,
       repair: void 0,
-      preSeverity: severities.NO_KNOWN_EXPLOIT_SPEC_VIOLATION,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
       canRepair: false,
       urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=590690'],
       sections: ['15.4.5.2'],
@@ -3728,7 +3802,7 @@ var ses;
       description: 'Extending an array can modify read-only array length',
       test: test_ARRAYS_MODIFY_READONLY,
       repair: void 0,
-      preSeverity: severities.NO_KNOWN_EXPLOIT_SPEC_VIOLATION,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
       canRepair: false,
       urls: ['http://code.google.com/p/v8/issues/detail?id=2379'],
       sections: ['15.4.5.1.3.f'],
@@ -3750,8 +3824,7 @@ var ses;
       description: 'Object.freeze falsely succeeds on other-frame objects',
       test: test_FREEZE_IS_FRAME_DEPENDENT,
       repair: repair_FREEZE_IS_FRAME_DEPENDENT,
-      // NO_KNOWN_EXPLOITness depends on using exactly one SES frame
-      preSeverity: severities.NO_KNOWN_EXPLOIT_SPEC_VIOLATION,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
       canRepair: false,  // repair is useful but inadequate
       urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=784892',
              'https://bugzilla.mozilla.org/show_bug.cgi?id=674195'],
@@ -3869,6 +3942,12 @@ var ses;
 
   var aboutTo = void 0;
 
+  var defaultDisposition = { permit: false, doNotRepair: false };
+  function disposition(kludge) {
+    return ses.acceptableProblems.hasOwnProperty(kludge.id)
+        ? ses.acceptableProblems[kludge.id] : defaultDisposition;
+  }
+
   /**
    * Run a set of tests & repairs, and report results.
    *
@@ -3885,7 +3964,7 @@ var ses;
     });
     var repairs = [];
     strictForEachFn(kludges, function(kludge, i) {
-      if (beforeFailures[i]) {
+      if (beforeFailures[i] && !disposition(kludge).doNotRepair) {
         var repair = kludge.repair;
         if (repair && repairs.lastIndexOf(repair) === -1) {
           aboutTo = ['repair: ', kludge.description];
@@ -3913,7 +3992,10 @@ var ses;
       var afterFailure = afterFailures[i];
       if (beforeFailure) { // failed before
         if (afterFailure) { // failed after
-          if (kludge.repair) {
+          if (disposition(kludge).doNotRepair) {
+            postSeverity = kludge.preSeverity;
+            status = statuses.REPAIR_SKIPPED;
+          } else if (kludge.repair) {
             postSeverity = kludge.preSeverity;
             status = statuses.REPAIR_FAILED;
           } else {
@@ -3923,7 +4005,7 @@ var ses;
             status = statuses.NOT_REPAIRED;
           }
         } else { // succeeded after
-          if (kludge.repair) {
+          if (kludge.repair && !disposition(kludge).doNotRepair) {
             if (!kludge.canRepair) {
               // repair for development, not safety
               postSeverity = kludge.preSeverity;
@@ -3955,7 +4037,12 @@ var ses;
         postSeverity = severities.NEW_SYMPTOM;
       }
 
-      ses.updateMaxSeverity(postSeverity);
+      if (postSeverity !== severities.SAFE && disposition(kludge).permit) {
+        logger.warn('Problem ignored by configuration (' +
+            postSeverity.description + '): ' + kludge.description);
+      } else {
+        ses.updateMaxSeverity(postSeverity);
+      }
 
       return {
         id:            kludge.id,
