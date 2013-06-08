@@ -245,7 +245,7 @@ For help on building and testing Caja, see:
     </sequential>
   </macrodef>
 
-  <target name="runtpt" depends="jquery,AllTests"
+  <target name="runtpt" depends="AllTests"
       description="Third-party tests under Caja -- $ ant runtpt [-Dtest.filter.method=jquery-\*]">
     <RunSeparateTest>
       <files>
@@ -722,115 +722,6 @@ For help on building and testing Caja, see:
   <target name="jars" depends="jars-no-src"
    description="Builds Caja jars.">
     <jar destfile="${jars}/pluginc-src.jar" basedir="${src}"/>
-  </target>
-
-  <!-- Suppress lint/warnings we can't fix. Some of these might be
-       fixable, so use -Djquery.cajole.ignore='' to see them all. -->
-  <property name="jquery.cajole.ignore"
-      value="DISALLOWED_ATTRIBUTE_VALUE \
-             DISALLOWED_URI \
-             FAILED_TO_LOAD_EXTERNAL_URL \
-             MALFORMED_CSS_PROPERTY_VALUE \
-             MASKING_SYMBOL \
-             SEMICOLON_INSERTED \
-             TOP_LEVEL_FUNC_INCOMPATIBLE_WITH_CAJA \
-             UNSAFE_ATTRIBUTE \
-             UNSAFE_CSS_PROPERTY \
-             UNSAFE_CSS_PSEUDO_SELECTOR"/>
-
-  <macrodef name="JQueryTestCase">
-    <attribute name="testcase" />
-    <sequential>
-        <copy file="${tests}/com/google/caja/jquery/index-template.html" tofile="${testlib}/js/jqueryjs/test/@{testcase}-uncajoled.html" />
-        <replace file="${testlib}/js/jqueryjs/test/@{testcase}-uncajoled.html" value="@{testcase}">
-            <replacetoken><![CDATA[@jquery-testcase@]]></replacetoken>
-        </replace>
-        <copy file="${tests}/com/google/caja/jquery/hostpage-template.html" tofile="${testlib}/js/jqueryjs/test/@{testcase}.html" />
-        <replace file="${testlib}/js/jqueryjs/test/@{testcase}.html" value="@{testcase}">
-            <replacetoken><![CDATA[@jquery-testcase@]]></replacetoken>
-        </replace>
-        <transform>
-            <input file="${testlib}/js/jqueryjs/test/@{testcase}-uncajoled.html" />
-            <output file="${testlib}/js/jqueryjs/test/@{testcase}-cajoled.js"
-                    onlyJsEmitted="true"
-                    language="caja"
-                    ignore="${jquery.cajole.ignore}"
-                    canLink="http://simon.incutio.com/archive/2003/03/25#getElementsBySelector \
-                           http://www.google.com/ \
-                           http://groups.google.com/ \
-                           http://smin/ \
-                           http://diveintomark.org/ \
-                           http://www.yahoo.com/ \
-                           http://simon.incutio.com/"
-                    />
-
-            <depend file="${testlib}/js/jqueryjs/test/data/ua.txt"/>
-            <depend file="${testlib}/js/jqueryjs/test/qunit/qunit/qunit.css"/>
-            <depend file="${testlib}/js/jqueryjs/test/data/testsuite.css"/>
-            <depend file="${testlib}/js/jqueryjs/test/data/testinit.js"/>
-            <depend file="${testlib}/js/jqueryjs/test/qunit/qunit/qunit.js"/>
-            <depend file="${testlib}/js/jqueryjs/test/data/testrunner.js"/>
-            <depend file="${testlib}/js/jqueryjs/dist/jquery.js"/>
-            <depend file="${testlib}/js/jqueryjs/test/unit/core.js"/>
-            <depend file="${testlib}/js/jqueryjs/test/unit/callbacks.js"/>
-            <depend file="${testlib}/js/jqueryjs/test/unit/deferred.js"/>
-            <depend file="${testlib}/js/jqueryjs/test/unit/support.js"/>
-            <depend file="${testlib}/js/jqueryjs/test/unit/data.js"/>
-            <depend file="${testlib}/js/jqueryjs/test/unit/queue.js"/>
-            <depend file="${testlib}/js/jqueryjs/test/unit/attributes.js"/>
-            <depend file="${testlib}/js/jqueryjs/test/unit/event.js"/>
-            <depend file="${testlib}/js/jqueryjs/src/sizzle/test/unit/selector.js"/>
-            <depend file="${testlib}/js/jqueryjs/test/unit/selector.js"/>
-            <depend file="${testlib}/js/jqueryjs/test/unit/traversing.js"/>
-            <depend file="${testlib}/js/jqueryjs/test/unit/manipulation.js"/>
-            <depend file="${testlib}/js/jqueryjs/test/unit/css.js"/>
-            <depend file="${testlib}/js/jqueryjs/test/unit/ajax.js"/>
-            <depend file="${testlib}/js/jqueryjs/test/unit/effects.js"/>
-            <depend file="${testlib}/js/jqueryjs/test/unit/offset.js"/>
-            <depend file="${testlib}/js/jqueryjs/test/unit/dimensions.js"/>
-            <depend file="${testlib}/js/jqueryjs/test/unit/exports.js"/>
-        </transform>
-    </sequential>
-</macrodef>
-
-  <target name="jquery" depends="CajoledDomado">
-    <!-- The root files of the Domita test cases are statically cajoled -->
-    <copy todir="${testlib}">
-      <fileset dir="${third_party}">
-        <include name="js/jqueryjs/**/*"/>
-        <exclude name="**/*.jar"/>
-      </fileset>
-    </copy>
-    <JQueryTestCase testcase="core" />
-    <JQueryTestCase testcase="callbacks" />
-    <JQueryTestCase testcase="deferred" />
-    <JQueryTestCase testcase="support" />
-    <JQueryTestCase testcase="data" />
-    <JQueryTestCase testcase="queue" />
-    <JQueryTestCase testcase="attributes" />
-    <JQueryTestCase testcase="event" />
-    <JQueryTestCase testcase="../../src/sizzle/test/unit/selector" />
-    <JQueryTestCase testcase="selector" />
-    <JQueryTestCase testcase="traversing" />
-    <JQueryTestCase testcase="manipulation" />
-    <JQueryTestCase testcase="css" />
-    <JQueryTestCase testcase="ajax" />
-    <JQueryTestCase testcase="effects" />
-    <JQueryTestCase testcase="offset" />
-    <JQueryTestCase testcase="dimensions" />
-    <JQueryTestCase testcase="exports" />
-    <copy todir="${war}/jquery">
-      <fileset file="${tests}/com/google/caja/jquery/index.html" />
-    </copy>
-    <copy todir="${war}/jquery/test">
-      <fileset dir="${testlib}/js/jqueryjs/test/" />
-    </copy>
-    <copy todir="${war}/jquery/src">
-      <fileset dir="${testlib}/js/jqueryjs/src/" />
-    </copy>
-    <copy todir="${war}/jquery/dist">
-      <fileset dir="${testlib}/js/jqueryjs/dist/" />
-    </copy>
   </target>
 
   <!-- Cajoles test resources that contain es53 to javascript. -->
@@ -1683,7 +1574,7 @@ For help on building and testing Caja, see:
     <appcfg action="update" war="${war}" />
   </target>
 
-  <target name="runserver" depends="playground,photon,jquery,trycaja"
+  <target name="runserver" depends="playground,photon,trycaja"
     description="Starts the development server.">
     <dev_appserver war="${war}">
       <options>

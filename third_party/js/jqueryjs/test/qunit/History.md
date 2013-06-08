@@ -1,3 +1,87 @@
+1.11.0 / 2013-01-20
+==================
+
+  * Diff: Fix exception on property "constructor". Fixes #394.
+  * Composite Add-on: Test suites can be named by including an obj with name & path props within array param for .testSuites()
+  * Fix URL generator to take protocol and host into account to fix usage with file protocol in IE7/8
+  * Fix issue with Error.prototype.toString in IE 7
+  * Refactor jsDump for "node". Fixes #381.
+  * Show contents of text nodes in jsDump.node. Fixes #380.
+  * Escape text. Fixes #379.
+  * Rewrote most of the JUnitLogger addon as it was in bad shape: unused variables, duplicate effort that QUnit handles internally (e.g. tallying number of total assertions, failed assertions, etc.), sub-optimal XmlWriter implementation, etc.
+  * Phantomjs: Include source in assertion details
+  * Phantomjs: Removed the polling mechanism in favor of PhantomJS 1.6+'s `WebPage#onCallback`
+  * Delay start() until init() happened. Fixes #358. Closes #373.
+  * urlConfig: Fix checkbox event for oldIE. Fixes #369. Closes #370.
+  * Issue #365: Fix module picker for oldIE. Closes #366.
+  * Fixes #344 - Capture and show test duration.
+  * Rename tests to assertions in summary. Fixes #336 - Summary counts assertions but mentions 'tests'.
+  * Assert: Implement propEqual and notPropEqual. Fixes #317.
+  * Canvas addon: Use 0.6 as alpha value to avoid inconsistencies between browsers. Fixes #342
+  * Remove global variable "assert". Fixes #341.
+  * Add a test for loading tests asynchronously
+  * Improve start()-called-too-often fix, initialize semaphore at 1, fixes autostart=false case. Also provide stack for the offending start() call
+  * There's type-free objects in Firefox, extend objectType() to allow null match. Fixes #315
+  * Push a failing assertion when calling start() while already running. Resets anyway to keep other tests going. Fixes #314
+  * Adds Ninja Theme
+  * Extend jsdump to output Error objects as such, including the message property. Extend throws to provide 'expected' value when possible. Fixes #307
+  * Use classes to collapse assertion groups. Fixes #269
+  * Readme for junitlogger addon
+  * Better readme for composite addon
+  * Make `throws` ES3 compatible
+  * Composite: Adds test whether iframe contains content. Fixes #318 - Composite: Raises "global failure" in Opera
+  * Apply the same exception handling for test and teardown try/catch as for setup
+
+1.10.0 / 2012-08-30
+==================
+
+  * Simplify licensing: Only MIT, no more MIT/GPL dual licensing.
+  * Scroll the window back to top after tests finished running. Fixes #304
+  * Simplify phantomjs runner to use module property in testDone callback
+  * Adds module and test name to the information that is returned in the callback provided to QUnit.log(Function). Fixes #296
+  * Make QUnit.expect() (without arguments) a getter. Fixes #226
+  * Compare the ES6 sticky (y) property for RegExp. Can't add to tests yet. Fixes #284 - deepEqual for RegExp should compare
+  * onerror: force display of global errors despite URL parameters. Fixes #288 - Global failures can be filtered out by test-limiting URL parameters
+  * Remove conditional codepath based on jQuery presence from reset().
+  * Add module filter to UI
+  * Keep a local reference to Date. Fixes #283.
+  * Update copyright to jQuery Foundation.
+
+1.9.0 / 2012-07-11
+==================
+  * added jsdoc for QUnit.assert functions
+  * Styling: radius to 5px and small pass/error border, remove inner shadow
+  * Move checkboxes into toolbar and give them labels and descriptions (as tooltip). Fixes #274 - Improve urlFilter API and UI
+  * Where we recieve no exception in throws() use a relevant message.
+  * Also make module filter case-insensitive. Follow-up to #252
+  * Banner: Link should ignore "testNumber" and "module". Fixes #270
+  * Rename assert.raises to assert.throws. Fixes #267
+  * Change package.json name property to 'qunitjs' to avoid conflicht with node-qunit; will publish next release to npm
+
+1.8.0 / 2012-06-14
+==================
+  * Improve window.onerror handling
+  * (issue #260) config.current should be reset at the right time.
+  * Filter: Implement 'module' url parameter. Fixes #252
+  * raises: ignore global exceptions stemming from test. Fixes #257 - Globally-executed errors sneak past raises in IE
+
+1.7.0 / 2012-06-07
+==================
+
+  * Add config.requireExpects. Fixes #207 - Add option to require all tests to call expect().
+  * Improve extractStacktrace() implementation. Fixes #254 - Include all relevant stack lines
+  * Make filters case-insensitive. Partial fix for #252
+  * is() expects lowercase types. Fixes #250 - Expected Date value is not displayed properly
+  * Fix phantomjs addon header and add readme. Fixes #239
+  * Add some hints to composite addon readme. Fixes #251
+  * Track tests by the order in which they were run and create rerun links based on that number. Fixes #241 - Make Rerun link run only a single test.
+  * Use QUnit.push for raises implementation. Fixes #243
+  * CLI runner for phantomjs
+  * Fix jshint validation until they deal with /** */ comments properly
+  * Update validTest() : Simplify logic, clarify vars and add comments
+  * Refactor assertion helpers into QUnit.assert (backwards compatible)
+  * Add Rerun link to placeholders. Fixes #240
+
 1.6.0 / 2012-05-04
 ==================
 

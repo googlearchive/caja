@@ -1,18 +1,23 @@
-/*jshint multistr:true*/
+/*jshint multistr:true, quotmark:false */
 
-window['jQuery'] = this.jQuery || "jQuery"; // For testing .noConflict()
-window['$'] = this.$ || "$";
-window['originaljQuery'] = jQuery;
-window['original$'] = $;
-window['hasPHP'] = false;
-window['amdDefined'] = undefined;
+var amdDefined, fireNative,
+	originaljQuery = this.jQuery || "jQuery",
+	original$ = this.$ || "$",
+	hasPHP = true,
+	isLocal = window.location.protocol === "file:",
+	// see RFC 2606
+	externalHost = "example.com";
+
+// For testing .noConflict()
+this.jQuery = originaljQuery;
+this.$ = original$;
 
 /**
  * Set up a mock AMD define function for testing AMD registration.
  */
-window['define'] = function define( name, dependencies, callback ) {
+function define( name, dependencies, callback ) {
 	amdDefined = callback();
-};
+}
 
 define.amd = {
 	jQuery: true
@@ -23,7 +28,7 @@ define.amd = {
  * @example q("main", "foo", "bar")
  * @result [<div id="main">, <span id="foo">, <input id="bar">]
  */
-window['q'] = function q() {
+function q() {
 	var r = [],
 		i = 0;
 
@@ -31,7 +36,7 @@ window['q'] = function q() {
 		r.push( document.getElementById( arguments[i] ) );
 	}
 	return r;
-};
+}
 
 /**
  * Asserts that a select matches the given IDs
@@ -41,7 +46,7 @@ window['q'] = function q() {
  * @example t("Check for something", "//[a]", ["foo", "baar"]);
  * @result returns true if "//[a]" return two elements with the IDs 'foo' and 'baar'
  */
-window['t'] = function t( a, b, c ) {
+function t( a, b, c ) {
 	var f = jQuery(b).get(),
 		s = "",
 		i = 0;
@@ -51,14 +56,14 @@ window['t'] = function t( a, b, c ) {
 	}
 
 	deepEqual(f, q.apply( q, c ), a + " (" + b + ")");
-};
+}
 
-window['createDashboardXML'] = function() {
+function createDashboardXML() {
 	var string = '<?xml version="1.0" encoding="UTF-8"?> \
 	<dashboard> \
 		<locations class="foo"> \
 			<location for="bar" checked="different"> \
-				<infowindowtab> \
+				<infowindowtab normal="ab" mixedCase="yes"> \
 					<tab title="Location"><![CDATA[blabla]]></tab> \
 					<tab title="Users"><![CDATA[blublu]]></tab> \
 				</infowindowtab> \
@@ -67,19 +72,19 @@ window['createDashboardXML'] = function() {
 	</dashboard>';
 
 	return jQuery.parseXML(string);
-};
+}
 
-window['createWithFriesXML'] = function() {
+function createWithFriesXML() {
 	var string = '<?xml version="1.0" encoding="UTF-8"?> \
 	<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" \
 		xmlns:xsd="http://www.w3.org/2001/XMLSchema" \
 		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"> \
 		<soap:Body> \
-			<jsconf xmlns="http://www.example.com/ns1"> \
-				<response xmlns:ab="http://www.example.com/ns2"> \
+			<jsconf xmlns="http://{{ externalHost }}/ns1"> \
+				<response xmlns:ab="http://{{ externalHost }}/ns2"> \
 					<meta> \
 						<component id="seite1" class="component"> \
-							<properties xmlns:cd="http://www.example.com/ns3"> \
+							<properties xmlns:cd="http://{{ externalHost }}/ns3"> \
 								<property name="prop1"> \
 									<thing /> \
 									<value>1</value> \
@@ -96,22 +101,34 @@ window['createWithFriesXML'] = function() {
 		</soap:Body> \
 	</soap:Envelope>';
 
-	return jQuery.parseXML(string);
-};
+	return jQuery.parseXML( string.replace( /\{\{\s*externalHost\s*\}\}/g, externalHost ) );
+}
 
-window['fireNative'] = undefined;
-if ( document.createEvent ) {
-	fireNative = function( node, type ) {
+function createXMLFragment() {
+	var xml, frag;
+	if ( window.ActiveXObject ) {
+		xml = new ActiveXObject("msxml2.domdocument");
+	} else {
+		xml = document.implementation.createDocument( "", "", null );
+	}
+
+	if ( xml ) {
+		frag = xml.createElement("data");
+	}
+
+	return frag;
+}
+
+fireNative = document.createEvent ?
+	function( node, type ) {
 		var event = document.createEvent('HTMLEvents');
 		event.initEvent( type, true, true );
 		node.dispatchEvent( event );
-	};
-} else {
-	fireNative = function( node, type ) {
+	} :
+	function( node, type ) {
 		var event = document.createEventObject();
 		node.fireEvent( 'on' + type, event );
 	};
-}
 
 /**
  * Add random number to url to stop caching
@@ -122,57 +139,77 @@ if ( document.createEvent ) {
  * @example url("data/test.php?foo=bar")
  * @result "data/test.php?foo=bar&10538358345554"
  */
-window['url'] = function url( value ) {
-	return value + (/\?/.test(value) ? "&" : "?") + new Date().getTime() + "" + parseInt(Math.random()*100000);
-};
+function url( value ) {
+	return value + (/\?/.test(value) ? "&" : "?") + new Date().getTime() + "" + parseInt(Math.random() * 100000, 10);
+}
+
+// Ajax testing helper
+function ajaxTest( title, expect, options ) {
+	var requestOptions;
+	if ( jQuery.isFunction( options ) ) {
+		options = options();
+	}
+	options = options || [];
+	requestOptions = options.requests || options.request || options;
+	if ( !jQuery.isArray( requestOptions ) ) {
+		requestOptions = [ requestOptions ];
+	}
+	asyncTest( title, expect, function() {
+		if ( options.setup ) {
+			options.setup();
+		}
+
+		var completed = false,
+			remaining = requestOptions.length,
+			complete = function() {
+				if ( !completed && --remaining === 0 ) {
+					completed = true;
+					delete ajaxTest.abort;
+					if ( options.teardown ) {
+						options.teardown();
+					}
+					start();
+				}
+			},
+			requests = jQuery.map( requestOptions, function( options ) {
+				var request = ( options.create || jQuery.ajax )( options ),
+					callIfDefined = function( deferType, optionType ) {
+						var handler = options[ deferType ] || !!options[ optionType ];
+						return function( _, status ) {
+							if ( !completed ) {
+								if ( !handler ) {
+									ok( false, "unexpected " + status );
+								} else if ( jQuery.isFunction( handler ) ) {
+									handler.apply( this, arguments );
+								}
+							}
+						};
+					};
+
+				if ( options.afterSend ) {
+					options.afterSend( request );
+				}
+
+				return request
+					.done( callIfDefined( "done", "success" ) )
+					.fail( callIfDefined( "fail", "error" ) )
+					.always( complete );
+			});
+
+		ajaxTest.abort = function( reason ) {
+			if ( !completed ) {
+				completed = true;
+				delete ajaxTest.abort;
+				ok( false, "aborted " + reason );
+				jQuery.each( requests, function( i, request ) {
+					request.abort();
+				});
+			}
+		};
+	});
+}
 
 (function () {
-	// Store the old counts so that we only assert on tests that have actually leaked,
-	// instead of asserting every time a test has leaked sometime in the past
-	var oldCacheLength = 0,
-		oldFragmentsLength = 0,
-		oldTimersLength = 0,
-		oldActive = 0;
-
-	/**
-	 * Ensures that tests have cleaned up properly after themselves. Should be passed as the
-	 * teardown function on all modules' lifecycle object.
-	 */
-	this.moduleTeardown = function () {
-		var i, fragmentsLength = 0, cacheLength = 0;
-
-		// Allow QUnit.reset to clean up any attached elements before checking for leaks
-		QUnit.reset();
-
-		for ( i in jQuery.cache ) {
-			++cacheLength;
-		}
-
-		jQuery.fragments = {};
-
-		for ( i in jQuery.fragments ) {
-			++fragmentsLength;
-		}
-
-		// Because QUnit doesn't have a mechanism for retrieving the number of expected assertions for a test,
-		// if we unconditionally assert any of these, the test will fail with too many assertions :|
-		if ( cacheLength !== oldCacheLength ) {
-			equal( cacheLength, oldCacheLength, "No unit tests leak memory in jQuery.cache" );
-			oldCacheLength = cacheLength;
-		}
-		if ( fragmentsLength !== oldFragmentsLength ) {
-			equal( fragmentsLength, oldFragmentsLength, "No unit tests leak memory in jQuery.fragments" );
-			oldFragmentsLength = fragmentsLength;
-		}
-		if ( jQuery.timers && jQuery.timers.length !== oldTimersLength ) {
-			equal( jQuery.timers.length, oldTimersLength, "No timers are still running" );
-			oldTimersLength = jQuery.timers.length;
-		}
-		if ( jQuery.active !== oldActive ) {
-			equal( jQuery.active, 0, "No AJAX requests are still active" );
-			oldActive = jQuery.active;
-		}
-	};
 
 	this.testIframe = function( fileName, name, fn ) {
 
@@ -198,9 +235,8 @@ window['url'] = function url( value ) {
 
 		function loadFixture() {
 			var src = url("./data/" + fileName + ".html"),
-				iframe = jQuery("<iframe />").css({
-					width: 500, height: 500, position: "absolute", top: -600, left: -600, visibility: "hidden"
-				}).appendTo("body")[0];
+				iframe = jQuery("<iframe />").appendTo("body")[0];
+				iframe.style.cssText = "width: 500px; height: 500px; position: absolute; top: -600px; left: -600px; visibility: hidden;";
 			iframe.contentWindow.location = src;
 			return iframe;
 		}
@@ -224,16 +260,11 @@ window['url'] = function url( value ) {
 				}, 0 );
 			};
 			iframe = jQuery( "<div/>" ).append(
-				jQuery( "<iframe/>" ).attr( "src", url("./data/" + fileName + ".html") )
+				jQuery( "<iframe/>" ).attr( "src", url( "./data/" + fileName ) )
 			).appendTo( "body" );
 		});
-	}
-}).call(window);
-
-// Sandbox start for great justice
-(function() {
-	var oldStart = window.start;
-	window.start = function() {
-		oldStart();
 	};
-})();
+
+	window.iframeCallback = undefined;
+	// Patched for Caja - strict mode this
+}.call(this));

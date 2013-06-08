@@ -3,26 +3,19 @@
     "label": "jquery",
     "driver": "qunit-test-driver.js",
     "mode": "es5",
-    "guest-template": "/ant-testlib/js/jqueryjs/test/*-uncajoled.html",
-    "comment": [
-      "TODO(kpreid): Make it possible to run ES5 mode only in automated tests",
-      "and have both modes in manual test index."
-    ],
+    "guest-template": "/third_party/js/jqueryjs/test/index.html?module=*",
     "tests": [
       {
         "guest": "core",
-        "expected-pass": 1285,
+        "expected-pass": 377,
         "comment": [
-          "Current modifications made to test suite:",
-            "Removed unnecessary octal literal.",
           "Current failure categories:",
-            "Complaint about lack of PHP server",
-            "TODO(jasvir): window.eval is absent (this includes the",
-             "jQuery('html') failure)",
+            "window.eval not enabled for testing",
             "We don't implement XML yet.",
-            "We don't implement document.styleSheets.",
             "We don't implement document.getElementsByName.",
-            "(isPlainObject) iframes don't have JS globals."
+            "jQuery.proxy is not getting a thisArg it wants - this one may",
+            "  actually be a strict-mode incompatibility in jQuery itself.",
+            "Other unexamined."
         ]
       },
       {
@@ -30,7 +23,11 @@
         "expected-pass": "all",
         "comment": [
           "Current modifications made to test suite:",
-            "Adjusted 'context is window' test assuming callee is non-strict"
+            "Adjusted 'context is window' test assuming callee is non-strict",
+          "Current failure categories:",
+            "'No callback iteration' test fails -- not obvious why, but",
+            "  suggesting type/identity issues.",
+            ".has() test fails -- may be related."
         ]
       },
       {
@@ -38,106 +35,115 @@
         "expected-pass": "all",
         "comment": [
           "Current modifications made to test suite:",
-            "Adjusted tests assuming callee is non-strict"
+            "Adjusted tests assuming callee is non-strict",
+          "Current failure categories:",
+            "Some jQuery promises not having notify/reject/resolve methods."
         ]
       },
       {
         "guest": "support",
-        "expected-pass": 1,
+        "expected-pass": 27,
         "comment": [
           "Current failure categories:",
-            "We don't implement src= iframes yet."
+            "We don't implement src= iframes yet.",
+            "Support tests expecting different things than it actually gets",
+            "  from the browser, presumably due to Domado unsupported features."
         ]
       },
       {
         "guest": "data",
-        "expected-pass": 290,
+        "expected-pass": 286,
         "comment": [
           "Current failure categories:",
-            "We don't implement src= iframes yet."
+            "'Triggering the removeData should not throw exceptions.' is",
+            "  getting its hands on what looks like the tameContainerNode of",
+            "  an iframe and thus noting the absence of addEventListener."
         ]
       },
       {
         "guest": "queue",
-        "expected-pass": "all"
+        "expected-pass": "all",
+        "comment": [
+          "Current failure categories:",
+            "foo.animate is not a function"
+        ]
       },
       {
         "guest": "attributes",
-        "expected-pass": { "firefox": 422, "chrome": 411 },
+        "expected-pass": 415,
         "comment": [
           "Current failure categories:",
-            "URI rewriting is visible to the guest.",
-            "Simple event handler rewriting is visible to the guest.",
+            "Seeing absolute instead of relative URLs (visible rewriting).",
+            "target= rewriting is visible to the guest.",
             "We don't implement XML yet.",
-            "Rejection of HTML5 autofocus attribute assignment is visible.",
-            "Removing style= attributes is misbehaving according to jQuery.",
-            "We don't support tabindex on non-form-elements yet (HTML5).",
-            "We don't support document.createAttribute yet.",
-            "Something to do with multiple-select.",
-            "Expects a form name/id (?) to be reflected on document."
+            ".checked is affecting checked= when it shouldn't.",
+            "We don't implement document.createAttribute yet.",
+            "Removing style= attributes is misbehaving.",
+            "Something about retrieving tabindex.",
+            "Other mismatches."
         ]
       },
       {
         "guest": "event",
-        "expected-pass": 481,
+        "expected-pass": 376,
         "comment": [
           "Current failure categories:",
-            "Various lost-signal failures:",
-            "   in 'bind(),live(),delegate() with non-null,defined data'",
-            "   live() and delegate() tests",
-            "   trigger() tests",
-            "We don't implement src= iframes yet.",
-            "jQuery reports leak in 'bind(name, false), unbind(name, false)'",
-            "submit listeners not firing in 'trigger(type, [data], [fn])'",
             "Object [domado object HTMLInputElement] has no method 'click'",
-            "Something about 'quickIs'."
+            "At least one lost-signal failure.",
+            "Other unexamined."
         ]
       },
       {
         "guest": "selector",
-        "expected-pass": 25,
+        "expected-pass": 22,
         "comment": [
           "Current failure categories:",
-            "We don't implement src= iframes yet."
+            "Something wrong with attribute selectors."
         ]
       },
       {
         "guest": "traversing",
-        "expected-pass": 292,
+        "expected-pass": { "firefox": 297, "chrome": 280 },
         "comment": [
           "Current failure categories:",
-            "We don't implement src= iframes yet."
+            "We don't implement src= iframes yet.",
+            "Other unexamined."
         ]
       },
       {
         "guest": "manipulation",
-        "expected-pass": 488,
+        "expected-pass": { "firefox": 588, "chrome": 559 },
         "comment": [
           "Current modifications made to test suite:",
             "Removed SES-incompatible Array.prototype modification; was only",
             "  for testing jQuery robustness.",
           "Current failure categories:",
-            "Something wrong with checked radio buttons. (Worse on Firefox)",
-            "Something wrong with jQuery's <script>-based ajax transport.",
-            "We don't make non-JS <script> elements readable/preserved.",
+            "We don't implement element.click().",
+            "Something wrong with jquery appending/inserting nodes.",
             "We don't implement XML yet.",
-            "We don't support runtime-created <style> elements, even",
-            "  virtualized?",
+            "Failures in 'disconnected node should be a no-op' tests.",
+            "We don't make non-JS <script> elements readable/preserved.",
             "Something wrong with 'jQuery.cleanData' test. (Firefox only)",
             "We don't implement some case of dynamic <script> creation that",
             "  html() - execute scripts... and html() - script exceptions...",
             "  are using.",
-            "'window.eval is undefined' in appendTo test -- REGRESSION"
+            "Other unexamined."
         ]
       },
       {
         "guest": "css",
-        "expected-pass": 202,
+        "expected-pass": { "firefox": 234, "chrome": 240 },
         "comment": [
           "Current failure categories:",
-            "We don't implement SVG (fill-opacity CSS property).",
-            "defaultDisplay() doesn't get the intended answer on Firefox, but",
-            "  works on Chrome."
+            "Not yet examined."
+        ]
+      },
+      {
+        "guest": "serialize",
+        "expected-pass": 26,
+        "comment": [
+          "Current failure categories:",
+            "Missing form fields."
         ]
       },
       {
@@ -150,31 +156,19 @@
       },
       {
         "guest": "effects",
-        "expected-pass": 528,
+        "expected-pass": 552,
         "comment": [
-          "Current modifications made to test suite:",
-            "Fixed maybe-accidental undeclared global 'calls'.",
           "Current failure categories:",
-            "We don't implement SVG (fill-opacity CSS property)."
+            "fill-opacity SVG-only CSS property."
         ]
       },
       {
         "guest": "offset",
-        "expected-pass": { "firefox": 17, "chrome": 18 },
-        "comment": [
-          "Current failure categories:",
-            "We don't implement src= iframes yet."
-        ]
+        "expected-pass": { "firefox": 23, "chrome": 24 }
       },
       {
         "guest": "dimensions",
-        "expected-pass": 133,
-        "comment": [
-          "Current modifications made to test suite:",
-            "Fixed nested function in strict mode.",
-          "Current failure categories:",
-            "We don't implement src= iframes yet."
-        ]
+        "expected-pass": 141
       },
       {
         "guest": "exports",
@@ -256,7 +250,7 @@
       },
       {
         "guest": "position",
-        "expected-pass": { "firefox": 78, "chrome": "all" },
+        "expected-pass": "all",
         "comment": [
           "Current failure categories:",
             "unexamined"

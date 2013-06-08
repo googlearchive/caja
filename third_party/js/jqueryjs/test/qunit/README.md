@@ -1,4 +1,4 @@
-[QUnit](http://docs.jquery.com/QUnit) - A JavaScript Unit Testing framework.
+[QUnit](http://qunitjs.com) - A JavaScript Unit Testing framework.
 ================================
 
 QUnit is a powerful, easy-to-use, JavaScript test suite. It's used by the jQuery
@@ -23,9 +23,6 @@ If you are interested in helping developing QUnit, you are in the right place.
 For related discussions, visit the
 [QUnit and Testing forum](http://forum.jquery.com/qunit-and-testing).
 
-Planning for a qunitjs.com site and other testing tools related work now happens
-on the [jQuery Testing Team planning wiki](http://jquerytesting.pbworks.com/w/page/41556026/FrontPage).
-
 Development
 -----------
 
@@ -35,14 +32,31 @@ the change, run `grunt` to lint and test it, then commit, push and create a pull
 Include some background for the change in the commit message and `Fixes #nnn`, referring
 to the issue number you're addressing.
 
-To run `grunt`, you need `node` and `npm`, then `npm install grunt -g`.
+To run `grunt`, you need `node` and `npm`, then `npm install grunt -g`. That gives you a global
+grunt binary. For additional grunt tasks, also run `npm install`.
 
 Releases
 --------
 
 Install git-extras and run `git changelog` to update History.md.
-Update qunit/qunit.js|css to the release version, commit and tag, update them
-again to the next version, commit and push commits and tags.
+Update qunit/qunit.js|css and package.json to the release version, commit and
+tag, update them again to the next version, commit and push commits and tags
+(`git push --tags origin master`).
 
-Put the 'v' in front of the tag (unlike the 1.1.0 release). Clean up the changelog,
-removing merge commits or whitespace cleanups.
+Put the 'v' in front of the tag, e.g. `v1.8.0`. Clean up the changelog, removing merge commits
+or whitespace cleanups.
+
+To upload to code.jquery.com (replace $version accordingly), ssh to code.origin.jquery.com:
+
+	cp qunit/qunit.js /var/www/html/code.jquery.com/qunit/qunit-$version.js
+	cp qunit/qunit.css /var/www/html/code.jquery.com/qunit/qunit-$version.css
+
+Then update /var/www/html/code.jquery.com/index.html and purge it with:
+
+	curl -s http://code.origin.jquery.com/?reload
+
+Update web-base-template to link to those files for qunitjs.com.
+
+Publish to npm via
+
+	npm publish
