@@ -23,6 +23,9 @@ foo[attr = 'bar'] {}
 foo[attr = "bar"] {}
 foo[attr ~= 'bar baz'] {}
 foo[attr |= 'bar-baz'] {}
+foo[attr ^= 'bar-baz'] {}
+foo[attr $= 'bar-baz'] {}
+foo[attr *= 'bar-baz'] {}
 
 /* The RHS of the attribute comparison operator in the following cases
  * will parse to an IdentLiteral since it is unquoted. */

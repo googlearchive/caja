@@ -317,14 +317,14 @@ final class CssSplitter implements TokenStream<CssTokenType> {
         //               *yytext
         type = CssTokenType.PUNCTUATION;
       }
-    } else if ('~' == ch || '|' == ch) {
-      if (end < limit && '=' == buf[end]) {
-        // "~="          INCLUDES
-        // "|="          DASHMATCH
-        ++end;
-      } else {
-        //        .      *yytext
-      }
+    } else if (end < limit && '=' == buf[end] &&
+        ('~' == ch || '|' == ch || '^' == ch || '$' == ch || '*' == ch)) {
+      // "~="          INCLUDES
+      // "|="          DASHMATCH
+      // "^="          HEADMATCH
+      // "$="          TAILMATCH
+      // "*="          SUBSTRINGMATCH
+      ++end;
       type = CssTokenType.PUNCTUATION;
 
     } else if (ch == '\'' || ch == '"') {

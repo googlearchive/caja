@@ -712,6 +712,9 @@ public abstract class CssTree extends AbstractParseTreeNode {
     EQUAL("="),
     INCLUDES("~="),
     DASHMATCH("|="),
+    HEADMATCH("^="),
+    TAILMATCH("$="),
+    SUBSTRINGMATCH("*="),
     ;
     private final String op;
     AttribOperator(String op) { this.op = op; }

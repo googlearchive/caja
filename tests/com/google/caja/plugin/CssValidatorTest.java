@@ -1344,7 +1344,7 @@ public final class CssValidatorTest extends CajaTestCase {
                                            + "::loose-quotable-words\n"
             + "          IdentLiteral : Arial\n"
             );
-    
+
     runTest("p { font-family: 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i' }",
             "StyleSheet\n"
             + "  RuleSet\n"
@@ -1657,6 +1657,9 @@ public final class CssValidatorTest extends CajaTestCase {
     fails("zork[type='radio'] { font-weight: bold }");
     fails("zork[type~='radio'] { font-weight: bold }");
     fails("zork[type|='radio'] { font-weight: bold }");
+    fails("zork[type^='radio'] { font-weight: bold }");
+    fails("zork[type$='radio'] { font-weight: bold }");
+    fails("zork[type*='radio'] { font-weight: bold }");
     // now try tags in the schema, but which we disallow
     fails("link[type] { font-weight: bold }");
     fails("object[type] { font-weight: bold }");

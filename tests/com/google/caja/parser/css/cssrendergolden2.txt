@@ -25,6 +25,12 @@ foo[attr ~= 'bar baz'] {
 }
 foo[attr |= 'bar-baz'] {
 }
+foo[attr ^= 'bar-baz'] {
+}
+foo[attr $= 'bar-baz'] {
+}
+foo[attr *= 'bar-baz'] {
+}
 foo[attr = bar] {
 }
 foo[attr |= bar-baz] {

@@ -595,6 +595,18 @@ public final class CssParser {
         op = new CssTree.AttribOperation(
             t.pos, CssTree.AttribOperator.DASHMATCH);
         tq.advance();
+      } else if ("^=".equals(t.text)) {
+        op = new CssTree.AttribOperation(
+            t.pos, CssTree.AttribOperator.HEADMATCH);
+        tq.advance();
+      } else if ("$=".equals(t.text)) {
+        op = new CssTree.AttribOperation(
+            t.pos, CssTree.AttribOperator.TAILMATCH);
+        tq.advance();
+      } else if ("*=".equals(t.text)) {
+        op = new CssTree.AttribOperation(
+            t.pos, CssTree.AttribOperator.SUBSTRINGMATCH);
+        tq.advance();
       }
     }
     CssTree.CssLiteral value = null;

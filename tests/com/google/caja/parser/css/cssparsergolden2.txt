@@ -122,6 +122,30 @@ StyleSheet
       SimpleSelector
         IdentLiteral : foo
         Attrib : attr
+          AttribOperation : HEADMATCH
+          StringLiteral : bar-baz
+    EmptyDeclaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : foo
+        Attrib : attr
+          AttribOperation : TAILMATCH
+          StringLiteral : bar-baz
+    EmptyDeclaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : foo
+        Attrib : attr
+          AttribOperation : SUBSTRINGMATCH
+          StringLiteral : bar-baz
+    EmptyDeclaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : foo
+        Attrib : attr
           AttribOperation : EQUAL
           IdentLiteral : bar
     EmptyDeclaration

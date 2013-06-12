@@ -24,6 +24,7 @@ import com.google.caja.parser.ParseTreeNodeVisitor;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssPropertySignature;
 import com.google.caja.parser.css.CssTree;
+import com.google.caja.parser.css.CssTree.AttribOperator;
 import com.google.caja.parser.css.CssTree.Combinator;
 import com.google.caja.parser.html.AttribKey;
 import com.google.caja.parser.html.ElKey;
@@ -346,7 +347,8 @@ public final class CssValidator {
       valid = false;
     }
     if (null != attr.getOperation()) {
-      switch (attr.getOperation().getValue()) {
+      AttribOperator opType = attr.getOperation().getValue();
+      switch (opType) {
         case EQUAL:
           valid &= validateAttribValueEqual(elId, htmlAttribute, attr);
           break;
@@ -354,13 +356,17 @@ public final class CssValidator {
           valid &= validateAttribValueIncludes(elId, htmlAttribute, attr);
           break;
         case DASHMATCH:
+        case HEADMATCH:
+        case TAILMATCH:
+        case SUBSTRINGMATCH:
           mq.addMessage(
-              PluginMessageType.CSS_DASHMATCH_ATTRIBUTE_OPERATOR_NOT_ALLOWED,
-              invalidNodeMessageLevel, attr.getFilePosition());
+              PluginMessageType.CSS_ATTRIBUTE_OPERATOR_NOT_ALLOWED,
+              invalidNodeMessageLevel, attr.getFilePosition(),
+              MessagePart.Factory.valueOf(opType.getToken()));
           valid = false;
           break;
         default:
-          return false;  // Unreachable
+          throw new SomethingWidgyHappenedError("attribute op " + opType);
       }
     }
     return valid;
