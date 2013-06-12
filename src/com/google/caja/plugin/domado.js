@@ -1932,10 +1932,6 @@ var Domado = (function() {
       var nodeAmp = TameNodeConf.amplifying;
       var nodeAmplify = TameNodeConf.amplify;
 
-      // A map from tame nodes to their expando proxies, used when only the tame
-      // node is available and the proxy is needed to return to the client.
-      var tamingProxies = new WeakMap();
-
       var tameException = taming.tameException;
 
       /**
@@ -1956,7 +1952,6 @@ var Domado = (function() {
             delete privates.proxyHandler;  // no longer needed
 
             TameNodeConf.confide(proxiedNode, taming, node);
-            tamingProxies.set(node, proxiedNode);
 
             // special case for ES5/3 lack of interposition on 'length'
             rulebreaker.copyLengthPropertyIfUninterceptable(node, proxiedNode);
