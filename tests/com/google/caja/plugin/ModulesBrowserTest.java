@@ -25,7 +25,7 @@ public class ModulesBrowserTest extends BrowserTestCase {
   // BrowserTestCase is now JUnit 4-ish, so we use annotations.
   @Test
   public final void testModules() throws Exception {
-    runBrowserTest(false, "modules-test.html");
+    runBrowserTest("testModules", false, "modules-test.html");
   }
 
   @Override

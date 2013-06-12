@@ -31,6 +31,6 @@ public abstract class CatalogTestCase extends BrowserTestCase {
   }
 
   public void runTest() throws Exception {
-    runBrowserTest(entry.mayFail(), entry.getURL());
+    runBrowserTest(entry.getLabel(), entry.mayFail(), entry.getURL());
   }
 }

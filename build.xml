@@ -324,6 +324,7 @@ For help on building and testing Caja, see:
       <formatter type="xml"/>
       <jvmarg line="${jvmarg}"/>
       <syspropertyset refid="test.propertyset"/>
+      <sysproperty key="test.capture.to" value="${reports}/test.${test.type}"/>
       <batchtest todir="${reports}/test.${test.type}">
         <fileset dir="${tests}">
           <and>

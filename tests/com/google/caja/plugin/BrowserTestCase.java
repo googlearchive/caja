@@ -114,7 +114,8 @@ public abstract class BrowserTestCase {
     return errStream;
   }
 
-  protected String runBrowserTest(boolean isKnownFailure, String pageName,
+  protected String runBrowserTest(
+      String label, boolean isKnownFailure, String pageName,
       String... params) throws Exception {
     int serverPort = TestFlag.SERVER_PORT.getInt(0);
 
@@ -161,6 +162,7 @@ public abstract class BrowserTestCase {
       result = driveBrowser(driver);
       passed = true;
     } finally {
+      wdh.captureResults(label);
       localServer.stop();
       // It's helpful for debugging to keep failed windows open.
       if (!passed && !isKnownFailure && !TestFlag.BROWSER_CLOSE.truthy()) {

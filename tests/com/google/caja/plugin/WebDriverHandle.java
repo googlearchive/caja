@@ -16,22 +16,31 @@ package com.google.caja.plugin;
 
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.NoSuchWindowException;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.logging.LogEntries;
+import org.openqa.selenium.logging.LogEntry;
+import org.openqa.selenium.logging.LogType;
+import org.openqa.selenium.logging.Logs;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.safari.SafariDriver;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.util.TestFlag;
 
 /**
@@ -170,20 +179,20 @@ class WebDriverHandle {
         chromeOpts.setBinary(chromeBin);
       }
       String chromeArgs = TestFlag.CHROME_ARGS.getString(null);
-      if (chromeArgs!= null) {
+      if (chromeArgs != null) {
         String[] args = chromeArgs.split(";");
         chromeOpts.addArguments(args);
       }
       dc.setCapability(ChromeOptions.CAPABILITY, chromeOpts);
     }
 
-    String webdriver = TestFlag.WEBDRIVER_URL.getString("");
+    String url = TestFlag.WEBDRIVER_URL.getString("");
 
-    if (!"".equals(webdriver)) {
+    if (!"".equals(url)) {
       dc.setBrowserName(browserType);
       dc.setJavascriptEnabled(true);
       try {
-        return new RemoteWebDriver(new URL(webdriver), dc);
+        return new RemoteWebDriver(new URL(url), dc);
       } catch (MalformedURLException e) {
         throw new RuntimeException(e);
       }
@@ -197,6 +206,67 @@ class WebDriverHandle {
     } else {
       throw new RuntimeException("No local driver for browser type '"
           + browserType + "'");
+    }
+  }
+
+  public void captureResults(String name) {
+    if (driver == null) { return; }
+    String dir = TestFlag.CAPTURE_TO.getString("");
+    if ("".equals(dir)) { return; }
+    if (!dir.endsWith("/")) { dir = dir + "/"; }
+
+    // Try to capture the final html
+    String source = driver.getPageSource();
+    if (source != null) {
+      saveToFile(dir + name + ".capture.html", source);
+    }
+
+    // Try to capture a screenshot
+    if (driver instanceof TakesScreenshot) {
+      TakesScreenshot ss = (TakesScreenshot) driver;
+      try {
+        byte[] bytes = ss.getScreenshotAs(OutputType.BYTES);
+        saveToFile(dir + name + ".capture.png", bytes);
+      } catch (WebDriverException e) {
+        log("screenshot failed: " + e);
+      }
+    }
+
+    // Try to capture logs
+    // This is currently not really useful.
+    // - ChromeDriver doesn't support log capture at all
+    // - FirefoxDriver gives you Error Console messages not Web Console
+    Logs logs = driver.manage().logs();
+    if (logs != null) {
+      if (logs.getAvailableLogTypes().contains(LogType.BROWSER)) {
+        LogEntries entries = logs.get(LogType.BROWSER);
+        if (entries != null) {
+          StringBuilder sb = new StringBuilder();
+          for (LogEntry e : entries) {
+            sb.append(e.toString() + "\n");
+          }
+          saveToFile(dir + name + ".capture.log", sb.toString());
+        }
+      }
+    }
+  }
+
+  private void saveToFile(String fileName, String str) {
+    try {
+      saveToFile(fileName, str.getBytes("UTF-8"));
+    } catch (UnsupportedEncodingException e) {
+      throw new SomethingWidgyHappenedError(e);
+    }
+  }
+
+  private void saveToFile(String fileName, byte[] bytes) {
+    FileOutputStream out = null;
+    try {
+      out = new FileOutputStream(fileName);
+      out.write(bytes);
+      out.close();
+    } catch (IOException e) {
+      throw new SomethingWidgyHappenedError(e);
     }
   }
 }
