@@ -27,12 +27,20 @@
       font-size: 0.8em;
       white-space: pre-wrap;
     }
+
     [title] { border-right: .5em solid #ccc; }
 
     #key { display: table; float: right; background-color: #EEE; padding: 1em; }
     #key h3 { text-align: center; margin: 0; }
     #key ul { margin: 0; padding: 0; }
     #key li { margin: 0; padding: 0; list-style-type: none; }
+
+    .testlist li {
+      list-style-type: none;
+    }
+    .testlist, .testlist ul, .comment {
+      padding-left: 2em;
+    }
   </style>
   <body>
     <div id="key">
@@ -45,9 +53,9 @@
       </ul>
     </div>
     <h2>End-to-end automated tests</h2>
-    <ul id='tests'></ul>
+    <ul id='tests' class='testlist'></ul>
     <h2>Third-party tests</h2>
-    <ul id='thirdparty'></ul>
+    <ul id='thirdparty' class='testlist'></ul>
     <h2>Manual tools</h2>
     <ul>
       <li><a href="../../../../../src/com/google/caja/ses/explicit.html">

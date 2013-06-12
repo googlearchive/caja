@@ -30,15 +30,16 @@
     return {
       addGroup: function(label, comment) {
         var entry = list.appendChild(document.createElement('li'));
-        entry.appendChild(document.createTextNode(label));
+        entry.appendChild(document.createTextNode(label + '-'));
         headerComment(entry, comment);
         var sublist = entry.appendChild(document.createElement('ul'));
         return makeCatalogOutput(sublist);
       },
       addMiniGroup: function(label, comment) {
         var entry = list.appendChild(document.createElement('li'));
+        entry.appendChild(document.createTextNode(label + '- {'));
         var sublist = entry.appendChild(document.createElement('span'));
-        entry.appendChild(document.createTextNode(' ' + label));
+        entry.appendChild(document.createTextNode('}'));
         headerComment(entry, comment);
         return makeMiniOutput(sublist);
       },
@@ -69,9 +70,9 @@
       space();
       var entry = list.appendChild(document.createElement('span'));
       hiddenComment(entry, comment);
-      entry.appendChild(document.createTextNode(label + '['));
+      entry.appendChild(document.createTextNode(label + '- {'));
       var sublist = entry.appendChild(document.createElement('span'));
-      entry.appendChild(document.createTextNode(']'));
+      entry.appendChild(document.createTextNode('}'));
       return makeMiniOutput(sublist);
     }
     return {
