@@ -2303,16 +2303,15 @@ var ses;
    */
   function repair_DEFINE_PROPERTY() {
     function repairedDefineProperty(base, name, desc) {
-      if (typeof base === 'function' &&
-          name === 'prototype' &&
+      if (name === 'prototype' &&
+          typeof base === 'function' &&
           'value' in desc) {
         try {
           base.prototype = desc.value;
         } catch (err) {
           logger.warn('prototype fixup failed', err);
         }
-      }
-      if (!isExtensible(base) && name === '__proto__') {
+      } else if (name === '__proto__' && !isExtensible(base)) {
         throw TypeError('Cannot redefine __proto__ on a non-extensible object');
       }
       return unsafeDefProp(base, name, desc);

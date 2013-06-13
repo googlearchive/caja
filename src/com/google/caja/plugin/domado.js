@@ -396,39 +396,15 @@ var Domado = (function() {
   }
 
   /**
-   * Identical to Object.defineProperty except that if used to define a
-   * non-writable data property, it converts it to an accessor as cajaVM.def
-   * does.
+   * Alias for a common pattern: non-enumerable toString method.
    */
-  function definePropertyAllowOverride(obj, prop, desc) {
-    var existing = Object.getOwnPropertyDescriptor(obj, prop);
-    // .configurable test is necessary for e.g. <function>.prototype which is
-    // always own and non-configurable data.
-    if (!existing || existing.configurable) {
-      desc = allowNonWritableOverride(obj, prop, desc);
-    }
-    return Object.defineProperty(obj, prop, desc);
+  function setToString(obj, fn) {
+    Object.defineProperty(obj, 'toString',
+        allowNonWritableOverride(obj, 'toString', {value: fn}));
   }
 
   /**
-   * Like object[propName] = value, but DWIMs enumerability and allows override.
-   *
-   * The property's enumerability is inherited from the ancestor's property's
-   * descriptor. The property is not writable or configurable.
-   */
-  function setOwn(object, prop, value) {
-    prop += '';
-    // IE<=8, DOM objects are missing 'valueOf' property'
-    var desc = domitaModules.getPropertyDescriptor(object, prop);
-    definePropertyAllowOverride(object, prop, {
-      enumerable: desc ? desc.enumerable : false,
-      value: value
-    });
-  }
-
-  /**
-   * Shortcut for an unmodifiable property. Currently used only where
-   * overriding is not of interest, so doesn't do definePropertyAllowOverride.
+   * Shortcut for a single unmodifiable property. No provision for override.
    */
   function setFinal(object, prop, value) {
     Object.defineProperty(object, prop, {
@@ -456,10 +432,12 @@ var Domado = (function() {
     //});
     // Workaround:
     if (opt_writableProto) {
-      // TODO(kpreid): Wrongly enumerable, see above.
       subCtor.prototype = inheritingProto;
     } else {
-      setOwn(subCtor, 'prototype', inheritingProto);
+      Object.defineProperty(subCtor, 'prototype', {
+        enumerable: false,
+        value: inheritingProto
+      });
     }
 
     Object.defineProperty(subCtor.prototype, 'constructor', {
@@ -569,9 +547,9 @@ var Domado = (function() {
             throw 'can\'t happen';
           }
         }
-        setOwn(amplifierMethod, 'toString', cajaVM.constFunc(function() {
+        amplifierMethod.toString = innocuous(function() {
           return '[' + typename + ']' + method.toString();
-        }));
+        });
         return cajaVM.constFunc(amplifierMethod);
       };
 
@@ -597,9 +575,9 @@ var Domado = (function() {
 
       this.typename = typename;
     }
-    setOwn(Confidence.prototype, "toString", Object.freeze(function () {
+    Confidence.prototype.toString = cajaVM.constFunc(function() {
       return this.typename + 'Confidence';
-    }));
+    });
 
     return cajaVM.def(Confidence);
   })();
@@ -1257,7 +1235,9 @@ var Domado = (function() {
       });
       inert.prototype = tamingCtor.prototype;
       Object.freeze(inert);  // not def, because inert.prototype must remain
-      setOwn(tamingCtor.prototype, "constructor", inert);
+      Object.defineProperty(tamingCtor.prototype, 'constructor', {
+        value: inert
+      });
 
       if (opt_name !== undefined) {
         setFinal(tamingCtors, opt_name, tamingCtor);
@@ -1796,7 +1776,7 @@ var Domado = (function() {
     //function TracedNodePolicy(policy, note, source) {
     //  var wrap = Object.create(policy);
     //  wrap.trace = [note, source].concat(source && source.trace || []);
-    //  setOwn(wrap, 'toString', function() {
+    //  wrap.toString = function() {
     //    return policy.toString() + "<<" + wrap.trace + ">>";
     //  });
     //  return wrap;
@@ -2692,21 +2672,24 @@ var Domado = (function() {
       var NP_noArgEditMethodReturningNode = NP_NoArgEditMethod(defaultTameNode);
 
       var nodeClassNoImplWarnings = {};
-
+      var elementTamerCache = {};
       function makeTameNodeByType(node) {
         switch (node.nodeType) {
           case 1:  // Element
-            var tagName = node.tagName.toLowerCase();
+            var rawTagName = node.tagName;
+            if (Object.prototype.hasOwnProperty.call(
+                elementTamerCache, rawTagName)) {
+              return new elementTamerCache[rawTagName](node);
+            }
+            var tamer;
+            var tagName = rawTagName.toLowerCase();
             var schemaElem = htmlSchema.element(tagName);
             if (schemaElem.allowed || tagName === 'script') {
               // <script> is specifically allowed because we make provisions
               // for controlling its content and src.
               var domInterfaceName = schemaElem.domInterface;
-              var specificTamer =
-                  tamingClassTable.getTamingCtor(domInterfaceName);
-              if (specificTamer) {
-                return new specificTamer(node);
-              } else {
+              tamer = tamingClassTable.getTamingCtor(domInterfaceName);
+              if (!tamer) {
                 if (!nodeClassNoImplWarnings[domInterfaceName]) {
                   nodeClassNoImplWarnings[domInterfaceName] = true;
                   if (typeof console !== 'undefined') {
@@ -2716,15 +2699,17 @@ var Domado = (function() {
                         htmlSchema.realToVirtualElementName(tagName) + ">.");
                   }
                 }
-                return new TameElement(node);
+                tamer = TameElement;
               }
             } else {
               // If an unrecognized or unsafe node, return a
               // placeholder that doesn't prevent tree navigation,
               // but that doesn't allow mutation or leak attribute
               // information.
-              return new TameOpaqueNode(node);
+              tamer = TameOpaqueNode;
             }
+            elementTamerCache[rawTagName] = tamer;
+            return new tamer(node);
           case 2:  // Attr
             // Cannot generically wrap since we must have access to the
             // owner element
@@ -3045,7 +3030,10 @@ var Domado = (function() {
           arrayLikeCtorUpdaters.forEach(function(f) { f(ArrayLike); });
         }
         var instance = ArrayLike(ctor.prototype, getItem, getLength);
-        setOwn(instance, 'item', cajaVM.constFunc(getItem));
+        Object.defineProperty(instance, 'item', {
+          enumerable: true, // checked against browser
+          value: cajaVM.constFunc(getItem)
+        });
         return instance;
       }
 
@@ -3064,7 +3052,7 @@ var Domado = (function() {
         return result;
       }
       registerArrayLikeClass(TameNodeList);
-      setOwn(TameNodeList.prototype, 'toString', cajaVM.def(function() {
+      setToString(TameNodeList.prototype, innocuous(function() {
         return '[domado object NodeList]';
       }));
       finishArrayLikeClass(TameNodeList);
@@ -3103,7 +3091,7 @@ var Domado = (function() {
         };
         // TODO(kpreid): Reorder code so exporting the name works
         inertCtor(TameNamedNodeMap, Object /*, 'NamedNodeMap' */);
-        setOwn(TameNamedNodeMap.prototype, 'toString', cajaVM.def(function() {
+        setToString(TameNamedNodeMap.prototype, innocuous(function() {
           return '[domado object NamedNodeMap]';
         }));
         cajaVM.def(TameNamedNodeMap);
@@ -3167,7 +3155,7 @@ var Domado = (function() {
           return self;
         };
         registerArrayLikeClass(TameNamedNodeMap, TameNodeList);
-        setOwn(TameNamedNodeMap.prototype, 'toString', cajaVM.def(function() {
+        setToString(TameNamedNodeMap.prototype, innocuous(function() {
           return '[domado object NamedNodeMap]';
         }));
         finishArrayLikeClass(TameNamedNodeMap);
@@ -3188,7 +3176,7 @@ var Domado = (function() {
         return result;
       }
       registerArrayLikeClass(TameOptionsList);
-      setOwn(TameOptionsList.prototype, 'toString', cajaVM.def(function() {
+      setToString(TameOptionsList.prototype, innocuous(function() {
         return '[domado object HTMLOptionsCollection]';
       }));
       finishArrayLikeClass(TameOptionsList);
@@ -4383,6 +4371,9 @@ var Domado = (function() {
        *     should have (in the format accepted by Props.define).
        * @param {function} record.construct Code to invoke at the end of
        *     construction; takes and returns self.
+       * @param {?boolean} record.virtualized Whether it should be expected that
+       *     elements tamed with this class should have virtualized names.
+       *     If null, no restriction.
        * @param {boolean} record.forceChildrenNotEditable Whether to force the
        *     child node list and child nodes to not be mutable.
        * @return {function} The constructor.
@@ -4396,12 +4387,14 @@ var Domado = (function() {
         var opt_policy = record.forceChildrenNotEditable
             ? nodePolicyReadOnlyChildren : null;
         function TameSpecificElement(node) {
-          var isVirtualized = htmlSchema.isVirtualizedElementName(node.tagName);
-          if (shouldBeVirtualized !== null &&
-              !isVirtualized !== !shouldBeVirtualized) {
-            throw new Error("Domado internal inconsistency: " + node.tagName +
-                " has inconsistent virtualization state with class " +
-                record.domClass);
+          if (shouldBeVirtualized !== null) {
+            var isVirtualized =
+                htmlSchema.isVirtualizedElementName(node.tagName);
+            if (!isVirtualized !== !shouldBeVirtualized) {
+              throw new Error('Domado internal inconsistency: ' + node.tagName +
+                  ' has inconsistent virtualization state with class ' +
+                  record.domClass);
+            }
           }
           superclass.call(this, node, opt_policy, proxyType);
           construct.call(this);
@@ -6366,10 +6359,10 @@ var Domado = (function() {
               cssPropertyName);
           return privates.readByCanonicalName(canonName);
         });
-        setOwn(TameStyle.prototype, 'toString', innocuous(function() {
-          return '[domado object Style]';
-        }));
         Props.define(TameStyle.prototype, TameStyleConf, {
+          toString: Props.overridable(false, innocuous(function() {
+            return '[domado object Style]';
+          })),
           cssText: {
             enumerable: true,
             set: TameStyleConf.amplifying(function(privates, value) {
@@ -6631,8 +6624,9 @@ var Domado = (function() {
         defineLocationField('port', '80');
         defineLocationField('protocol', 'http:');
         defineLocationField('search', '');
-        setOwn(tameLocation, 'toString',
-          cajaVM.constFunc(function() { return tameLocation.href; }));
+        setToString(tameLocation, cajaVM.constFunc(function() {
+          return tameLocation.href;
+        }));
       }
       inertCtor(TameLocation, Object, 'Location');
       var tameLocation = new TameLocation();
