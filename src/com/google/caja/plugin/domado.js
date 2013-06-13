@@ -124,13 +124,8 @@ var Domado = (function() {
     });
   }
 
-  // TODO(kpreid): If not used for the upcoming modularity-of-element-tamings
-  // refactoring, eliminate the domitaModules object.
-  var domitaModules = {};
-
-  domitaModules.proxiesAvailable = typeof Proxy !== 'undefined';
-  domitaModules.proxiesInterceptNumeric = domitaModules.proxiesAvailable &&
-      (function() {
+  var proxiesAvailable = typeof Proxy !== 'undefined';
+  var proxiesInterceptNumeric = proxiesAvailable && (function() {
     var handler = {
       toString: function() { return 'proxiesInterceptNumeric test handler'; },
       getOwnPropertyDescriptor: function(name) {
@@ -159,14 +154,14 @@ var Domado = (function() {
     }
   })();
 
-  domitaModules.getPropertyDescriptor = function (o, n) {
+  function getPropertyDescriptor(o, n) {
     if (o === null || o === undefined) {
       return undefined;
     } else {
       return Object.getOwnPropertyDescriptor(o, n)
-          || domitaModules.getPropertyDescriptor(Object.getPrototypeOf(o), n);
+          || getPropertyDescriptor(Object.getPrototypeOf(o), n);
     }
-  };
+  }
 
   /**
    * The Caja WeakMap emulation magic property name.
@@ -320,7 +315,7 @@ var Domado = (function() {
   // Find the weakMapMagicName. This occurs after ProxyHandler is defined
   // because it uses ProxyHandler.
   (function() {
-    if (!domitaModules.proxiesAvailable) {
+    if (!proxiesAvailable) {
       // unobservable so doesn't matter
       return;
     }
@@ -456,13 +451,12 @@ var Domado = (function() {
    *
    * @param aCallback some user-supplied "function-like" callback.
    */
-  domitaModules.ensureValidCallback =
-      function (aCallback) {
+  function ensureValidCallback(aCallback) {
 
     if ('function' !== typeof aCallback) {
       throw new Error('Expected function not ' + typeof aCallback);
     }
-  };
+  }
 
   /**
    * This combines trademarks with amplification, and is really a thin wrapper
@@ -481,7 +475,7 @@ var Domado = (function() {
    * ability for one object to access the private state of other similar
    * objects).
    */
-  domitaModules.Confidence = (function () {
+  var Confidence = (function () {
     function Confidence(typename) {
       var table = new WeakMap();
 
@@ -911,7 +905,7 @@ var Domado = (function() {
   }());
 
   /** XMLHttpRequest or an equivalent on IE 6. */
-  domitaModules.XMLHttpRequestCtor = function (makeDOMAccessible,
+  function XMLHttpRequestCtor(makeDOMAccessible,
       XMLHttpRequest, ActiveXObject, XDomainRequest) {
     if (XMLHttpRequest &&
       makeDOMAccessible(new XMLHttpRequest()).withCredentials !== undefined) {
@@ -967,15 +961,14 @@ var Domado = (function() {
     } else {
       throw new Error('ActiveXObject not available');
     }
-  };
+  }
 
-  domitaModules.TameXMLHttpRequest = function(
+  function TameXMLHttpRequest(
       taming,
       rulebreaker,
       xmlHttpRequestMaker,
       naiveUriPolicy,
       getBaseURL) {
-    var Confidence = domitaModules.Confidence;
     // See http://www.w3.org/TR/XMLHttpRequest/
 
     // TODO(ihab.awad): Improve implementation (interleaving, memory leaks)
@@ -1147,12 +1140,12 @@ var Domado = (function() {
       }))
     });
     return cajaVM.def(TameXMLHttpRequest);
-  };
+  }
 
   // TODO(kpreid): Review whether this has unnecessary features (as we're
   // statically generating Style accessors rather than proxy/handler-ing
   // Domita did).
-  domitaModules.CssPropertiesCollection = function(aStyleObject) {
+  function CssPropertiesCollection(aStyleObject) {
     var canonicalStylePropertyNames = {};
     // Maps style property names, e.g. cssFloat, to property names, e.g. float.
     var cssPropertyNames = {};
@@ -1199,7 +1192,7 @@ var Domado = (function() {
         }
       }
     };
-  };
+  }
 
   function TamingClassTable() {
     var hop = Object.prototype.hasOwnProperty;
@@ -1295,8 +1288,6 @@ var Domado = (function() {
     };
   }
 
-  cajaVM.def(domitaModules);
-
   var NOT_EDITABLE = "Node not editable.";
   var UNSAFE_TAGNAME = "Unsafe tag name.";
   var UNKNOWN_TAGNAME = "Unknown tag name.";
@@ -1363,8 +1354,6 @@ var Domado = (function() {
 
     var makeDOMAccessible = rulebreaker.makeDOMAccessible;
     var makeFunctionAccessible = rulebreaker.makeFunctionAccessible;
-
-    var Confidence = domitaModules.Confidence;
 
     // value transforming/trivial functions
     function noop() { return undefined; }
@@ -1923,7 +1912,7 @@ var Domado = (function() {
        */
       function finishNode(node) {
         nodeAmplify(node, function(privates) {
-          if (domitaModules.proxiesAvailable && privates.proxyHandler) {
+          if (proxiesAvailable && privates.proxyHandler) {
             // The proxy construction is deferred until now because the ES5/3
             // implementation of proxies requires that the proxy's prototype is
             // frozen.
@@ -3060,8 +3049,7 @@ var Domado = (function() {
       // NamedNodeMap is a NodeList + live string-named properties; therefore we
       // can't just use ArrayLike.
       var TameNamedNodeMap, namedNodeMapsAreLive;
-      if (domitaModules.proxiesAvailable &&
-          domitaModules.proxiesInterceptNumeric) {
+      if (proxiesAvailable && proxiesInterceptNumeric) {
         namedNodeMapsAreLive = true;
         /**
          * @param {NamedNodeMap} feral
@@ -3477,7 +3465,7 @@ var Domado = (function() {
       }
 
       function makeEventHandlerWrapper(thisNode, listener) {
-        domitaModules.ensureValidCallback(listener);
+        ensureValidCallback(listener);
         function wrapper(event) {
           return plugin_dispatchEvent(
               thisNode, event, rulebreaker.getId(tameWindow), listener,
@@ -3677,7 +3665,7 @@ var Domado = (function() {
         nodeAmplify(this, function(privates) {
           privates.feral = node;
 
-          if (domitaModules.proxiesAvailable && opt_proxyType) {
+          if (proxiesAvailable && opt_proxyType) {
             privates.proxyHandler = new opt_proxyType(this);
           }
         });
@@ -6038,7 +6026,7 @@ var Domado = (function() {
         addEventListener: Props.ampMethod(
             function(privates, name, listener, useCapture) {
           if (name === 'DOMContentLoaded') {
-            domitaModules.ensureValidCallback(listener);
+            ensureValidCallback(listener);
             privates.onDCLListeners.push(listener);
           } else {
             return privates.tameContainerNode.addEventListener(
@@ -6313,8 +6301,7 @@ var Domado = (function() {
 
         var aStyleForCPC = elementForFeatureTests.style;
         aStyleForCPC = makeDOMAccessible(aStyleForCPC);
-        var allCssProperties = domitaModules.CssPropertiesCollection(
-            aStyleForCPC);
+        var allCssProperties = CssPropertiesCollection(aStyleForCPC);
 
         // Sealed internals for TameStyle objects, not to be exposed.
         var TameStyleConf = new Confidence('Style');
@@ -6485,10 +6472,10 @@ var Domado = (function() {
       // Note: XMLHttpRequest is a ctor that *can* be directly
       // called by cajoled code, so we do not use inertCtor().
       tamingClassTable.registerSafeCtor('XMLHttpRequest',
-          cajaVM.def(domitaModules.TameXMLHttpRequest(
+          cajaVM.def(TameXMLHttpRequest(
               taming,
               rulebreaker,
-              domitaModules.XMLHttpRequestCtor(
+              XMLHttpRequestCtor(
                   makeDOMAccessible,
                   makeFunctionAccessible(window.XMLHttpRequest),
                   makeFunctionAccessible(window.ActiveXObject),
@@ -6711,12 +6698,12 @@ var Domado = (function() {
         addEventListener: Props.plainMethod(
             function(name, listener, useCapture) {
           if (name === 'load') {
-            domitaModules.ensureValidCallback(listener);
+            ensureValidCallback(listener);
             nodeAmplify(tameDocument, function(privates) {
               privates.onLoadListeners.push(listener);
             });
           } else if (name === 'DOMContentLoaded') {
-            domitaModules.ensureValidCallback(listener);
+            ensureValidCallback(listener);
             nodeAmplify(tameDocument, function(privates) {
               privates.onDCLListeners.push(listener);
             });
