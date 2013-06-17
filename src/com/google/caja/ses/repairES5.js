@@ -219,7 +219,7 @@ var ses;
     if (severityName) {
       var sev = ses.severities[severityName];
       if (sev && typeof sev.level === 'number' &&
-        sev.level >= ses.severities.SAFE.level &&
+        sev.level >= ses.severities.MAGICAL_UNICORN.level &&
         sev.level < ses.severities.NOT_SUPPORTED.level) {
         // do nothing
       } else {
@@ -4036,7 +4036,8 @@ var ses;
         postSeverity = severities.NEW_SYMPTOM;
       }
 
-      if (postSeverity !== severities.SAFE && disposition(kludge).permit) {
+      if (postSeverity.level > severities.SAFE.level
+          && disposition(kludge).permit) {
         logger.warn('Problem ignored by configuration (' +
             postSeverity.description + '): ' + kludge.description);
       } else {
