@@ -1,0 +1,29 @@
+<!doctype html>
+<title>Caja in-the-sandbox</title>
+<div id="dummy" style="display: none;"></div>
+<script>
+  jsunitRegister('dummy', function() { pass(); });
+</script><pre id="out">
+
+</pre>
+<form onsubmit="
+  (function() {
+    var i = document.getElementById('in');
+    var text = i.value;
+    var o = document.getElementById('out');
+    var r;
+    try {
+      r = String(cajaVM.compileExpr(text)(window));
+    } catch (e) {
+      r = String(e);
+    }
+    i.select();
+    o.appendChild(document.createTextNode('\n> ' + text + '\n' + r + '\n'));
+  }());
+  return false;
+">
+  <code>
+    &gt;&nbsp;<input
+        type="text" id="in" style="width: 90%; font-family: monospace;">
+  </code>
+</form>

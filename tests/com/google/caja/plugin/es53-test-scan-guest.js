@@ -24,7 +24,8 @@
  *     assertTrue, assertEquals, pass, jsunitFail,
  *     Event, HTMLInputElement, HTMLTableRowElement, HTMLTableSectionElement,
  *     HTMLTableElement, Image, Option, XMLHttpRequest, Window, Document, Node,
- *     Attr, Text, CanvasRenderingContext2D, CanvasGradient
+ *     Attr, Text, CSSStyleDeclaration, CanvasRenderingContext2D,
+ *     CanvasGradient, ImageData, Location
  * @overrides window
  */
 
@@ -660,7 +661,7 @@
           }
         }
         // TODO(kpreid): factor out recognition
-        if (typeof object === 'function' && frameOfObject === 'taming' &&
+        if (typeof object === 'function' &&
             /function Tame(?!XMLHttpRequest|OptionFun|ImageFun)/
                 .test(object.toString())) {
           noteProblem('Object is a taming ctor', context);
@@ -1047,13 +1048,17 @@
       if (/^\[domado inert constructor(?:.*)\]$/.test(str)) {
         // inert ctor -- should throw
         return G.tuple(G.value(CONSTRUCT), G.tuple());
-      } else if (/\.get \w+$/.test(path)) {
+      } else if (/(\.|^)get \w+$/.test(path)) {
         // TODO(kpreid): Test invocation with an alternate this?
         return G.value([THIS, []]);
-      } else if (/\.set on\w+$/.test(path)) {
+      } else if (/(\.|^)set on\w+$/.test(path)) {
         // Event handler accessor
         return genEventHandlerSet;
-      } else if (/\.set (\w+)$/.test(path)) {
+      } else if (name === 'tamingClassSetter') {
+        // Don't invoke these setters because they notably mangle the global
+        // environment.
+        return G.none;
+      } else if (/(\.|^)set (\w+)$/.test(path)) {
         var isLive = false;
         var thisArg = context.getThisArg();
         try { isLive = isLive || thisArg.parentNode; } catch (e) {}
@@ -1440,11 +1445,6 @@
 
     // 2D context (and friends) methods
     var canvas2DProto = CanvasRenderingContext2D.prototype;
-    function imageDataResult(calls) {
-      return annotate(calls, function(context, thrown) {
-        expectedUnfrozen.setByIdentity(context.get().data, true);
-      });
-    }
     argsByIdentity(canvas2DProto.arc, genMethodAlt(genNumbers(5)));
     argsByIdentity(canvas2DProto.arcTo, genMethodAlt(genNumbers(5)));
     argsByIdentity(canvas2DProto.beginPath, genNoArgMethod);
@@ -1456,10 +1456,9 @@
     argsByIdentity(canvas2DProto.clip, genNoArgMethod);
         // TODO(kpreid): Path obj
     argsByIdentity(canvas2DProto.closePath, genNoArgMethod);
-    argsByIdentity(canvas2DProto.createImageData,
-        imageDataResult(genMethodAlt(G.value(
-            // restricting size in order to avoid large pixel arrays
-            [2, 2], [-1, 2], [1, NaN]))));
+    argsByIdentity(canvas2DProto.createImageData, genMethodAlt(G.value(
+        // restricting size in order to avoid large pixel arrays
+        [2, 2], [-1, 2], [1, NaN])));
     argsByIdentity(canvas2DProto.createLinearGradient,
         genMethodAlt(G.value([0, 1, 2, 3])));
     argsByIdentity(canvas2DProto.createRadialGradient,
@@ -1474,10 +1473,9 @@
         // TODO(kpreid): Path obj
     argsByIdentity(canvas2DProto.fillText, argsByProp('strokeText',
         genMethodAlt(genConcat(G.tuple(genString), genNumbers(3)))));
-    argsByIdentity(canvas2DProto.getImageData, 
-        imageDataResult(genMethodAlt(genConcat(
-            // restricting size in order to avoid large pixel arrays
-              genNumbers(2), G.value([2, 2])))));
+    argsByIdentity(canvas2DProto.getImageData, genMethodAlt(genConcat(
+        // restricting size in order to avoid large pixel arrays
+        genNumbers(2), G.value([2, 2]))));
     argsByIdentity(canvas2DProto.lineTo, genMethodAlt(genNumbers(2)));
     argsByIdentity(canvas2DProto.measureText, genMethod(genString));
     argsByIdentity(canvas2DProto.moveTo, genMethodAlt(genNumbers(2)));
@@ -1497,7 +1495,13 @@
     argsByIdentity(canvas2DProto.translate, genMethodAlt(genNumbers(2)));
     argsByIdentity(canvas2DProto.transform, genMethodAlt(genNumbers(6)));
     argsByIdentity(CanvasGradient.prototype.addColorStop,
-          genMethod(genSmallInteger, genCSSColor));
+        genMethod(genSmallInteger, genCSSColor));
+    argsByIdentity(
+        Object.getOwnPropertyDescriptor(ImageData.prototype, 'data').get,
+        annotate(G.value([THIS, []]), function(context, thrown) {
+          // Pixel arrays are not frozen
+          expectedUnfrozen.setByIdentity(context.get(), true);
+        }));
     argsByProp('_d_canvas_writeback', G.none);  // TODO(kpreid): hide
 
     // Event methods
@@ -1593,12 +1597,15 @@
     obtainInstance.define(Text, document.createTextNode('foo'));
     obtainInstance.define(Document, document); // TODO(kpreid): createDocument
     obtainInstance.define(Window, window);
+    obtainInstance.define(Location, window.location);
     obtainInstance.define(Event, document.createEvent('HTMLEvents'));
     obtainInstance.define(Attr, (function() {
           var el = document.createElement('span');
           el.className = 'foo';
           return el.attributes[0];
         }()));
+    obtainInstance.define(CSSStyleDeclaration,
+        document.createElement('div').style);
     obtainInstance.define(ArrayLike, ArrayLike(
       Object.create(ArrayLike.prototype),
       function() { return 100; }, function(i) { return i; }));
@@ -1607,6 +1614,9 @@
     obtainInstance.define(CanvasGradient,
         document.createElement('canvas').getContext('2d').createLinearGradient(
             0, 1, 2, 3));
+    obtainInstance.define(ImageData,
+        document.createElement('canvas').getContext('2d').createImageData(
+            2, 2));
 
     var output = document.getElementById('testUniverse-report');
     function write(var_args) {

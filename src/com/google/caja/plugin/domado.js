@@ -1195,13 +1195,47 @@ var Domado = (function() {
   }
 
   function TamingClassTable() {
+    var self = this;
+
     var hop = Object.prototype.hasOwnProperty;
 
-    // would be Object.create(null) but not supported by ES5/3
-    var tamingCtors = {};
-    var safeCtors = {};
+    // TODO(kpreid): When ES5/3 and the relevant Chrome bug are dead, make this
+    // Object.create(null).
+    var thunks = {};
 
     var prototypeNames = new WeakMap();
+
+    /**
+     * Register a lazy-initialized taming ctor. The builder function should
+     * return the taming ctor.
+     */
+    this.registerLazy = function registerLazy(name, builder) {
+      if (Object.prototype.hasOwnProperty.call(thunks, name)) {
+        throw new Error('TamingClassTable: duplicate registration of ' + name);
+      }
+      var result = undefined;
+      thunks[name] = function tamingClassMemoThunk() {
+        if (!result) {
+          var tamingCtor = builder();
+          var inert = tamingCtor.prototype.constructor;
+          // TODO(kpreid): Validate that the inert ctor is in fact inert
+          result = {
+            tamingCtor: tamingCtor,  // special applications need lack of def
+                // here
+            guestCtor: cajaVM.def(inert)
+          };
+
+          // Registering multiple names is allowed. However, if we ever stop
+          // having multiple names (HTMLElement vs. Element, HTMLDocument vs.
+          // Document), which would be technically correct, this should become a
+          // failure case.
+          if (!prototypeNames.has(inert.prototype)) {
+            prototypeNames.set(inert.prototype, name);
+          }
+        }
+        return result;
+      };
+    };
 
     /**
      * This does three things:
@@ -1213,6 +1247,7 @@ var Domado = (function() {
      * checks).
      *
      * Register the inert ctor under the given name if not undefined.
+     * TODO(kpreid): Review deprecating that entirely in favor of laziness.
      */
     this.inertCtor = function inertCtor(
         tamingCtor, someSuper, opt_name, opt_writableProto) {
@@ -1233,54 +1268,60 @@ var Domado = (function() {
       });
 
       if (opt_name !== undefined) {
-        setFinal(tamingCtors, opt_name, tamingCtor);
-        setFinal(safeCtors, opt_name, inert);
-        prototypeNames.set(inert.prototype, opt_name);
+        self.registerLazy(opt_name, function() { return tamingCtor; });
       }
 
       return inert;
     };
 
+    // TODO(kpreid): Remove uses of this -- all for the wrong multiple names.
     this.registerSafeCtor = function registerSafeCtor(name, safeCtor) {
-      setFinal(tamingCtors, name, undefined);  // prohibit inconsistency
-      setFinal(safeCtors, name, safeCtor);
-      // Registering multiple names is allowed. However, if we ever stop having
-      // multiple names (HTMLElement vs. Element, HTMLDocument vs. Document),
-      // which would be technically correct, this should become a failure case.
-      if (!prototypeNames.has(safeCtor.prototype)) {
-        prototypeNames.set(safeCtor.prototype, name);
-      }
+      self.registerLazy(name, function() {
+        function stubTamingCtor() {
+          throw new Error('Should not have been called');
+        }
+        stubTamingCtor.prototype = { constructor: safeCtor };
+        return stubTamingCtor;
+      });
     };
 
-    this.defAllAndFinish = function defAllAndFinish() {
-      for (var name in safeCtors) {
-        var ctor = safeCtors[name];
-        cajaVM.def(ctor);
-      }
-
-      // prohibit late additions
-      Object.freeze(tamingCtors);
-      Object.freeze(safeCtors);
+    this.finish = function finish() {
+      Object.freeze(thunks);
     };
 
     this.exportTo = function exportTo(imports) {
-      if (Object.isExtensible(safeCtors)) {
+      if (Object.isExtensible(thunks)) {
         throw new Error(
             'TamingClassTable: exportTo called before defAllAndFinish');
       }
-      for (var name in safeCtors) {
-        var ctor = safeCtors[name];
+      Object.getOwnPropertyNames(thunks).forEach(function(name) {
+        var thunk = thunks[name];
         Object.defineProperty(imports, name, {
           enumerable: true,
           configurable: true,
-          writable: true,
-          value: ctor
+          get: cajaVM.constFunc(function tamingClassGetter() {
+            return thunk().guestCtor;
+          }),
+          set: cajaVM.constFunc(function tamingClassSetter(newValue) {
+            // This differs from the makeOverrideSetter setter in that it allows
+            // override on the object itself, not just objects inheriting this
+            // descriptor.
+            Object.defineProperty(this, name, {
+              value: newValue,
+              writable: true,
+              enumerable: true,
+              configurable: true
+            });
+          })
         });
-      }
+      });
     };
 
     this.getTamingCtor = function(name) {
-      return hop.call(tamingCtors, name) ? tamingCtors[name] : undefined;
+      // TODO(kpreid): When we no longer need to support platforms without
+      // Object.create(null) (ES5/3, some Chrome), we should throw out this
+      // hasOwnProperty.
+      return hop.call(thunks, name) ? thunks[name]().tamingCtor : undefined;
     };
 
     this.getNameOfPrototype = function(prototype) {
@@ -2705,9 +2746,9 @@ var Domado = (function() {
             throw 'Internal: Attr nodes cannot be generically wrapped';
           case 3:  // Text
           case 4:  // CDATA Section Node
-            return new TameTextNode(node);
+            return new (tamingClassTable.getTamingCtor('Text'))(node);
           case 8:  // Comment
-            return new TameCommentNode(node);
+            return new (tamingClassTable.getTamingCtor('Comment'))(node);
           case 9: // Document (not well supported)
             return new TameBackedNode(node);
           case 11: // Document Fragment
@@ -3869,27 +3910,31 @@ var Domado = (function() {
 
       // Non-element node types:
 
-      function TameTextNode(node) {
-        assert(node.nodeType === 3);
-        TameBackedNode.call(this, node);
-      }
-      inertCtor(TameTextNode, TameBackedNode, 'Text');
-      var textAccessor = Props.actAs('nodeValue', PT.filterProp(identity,
-          function(value) { return String(value || ''); }));
-      Props.define(TameTextNode.prototype, TameNodeConf, {
-        nodeValue: textAccessor,
-        textContent: textAccessor,
-        innerText: textAccessor,
-        data: textAccessor
+      tamingClassTable.registerLazy('Text', function() {
+        function TameTextNode(node) {
+          assert(node.nodeType === 3);
+          TameBackedNode.call(this, node);
+        }
+        inertCtor(TameTextNode, TameBackedNode);
+        var textAccessor = Props.actAs('nodeValue', PT.filterProp(identity,
+            function(value) { return String(value || ''); }));
+        Props.define(TameTextNode.prototype, TameNodeConf, {
+          nodeValue: textAccessor,
+          textContent: textAccessor,
+          innerText: textAccessor,
+          data: textAccessor
+        });
+        return cajaVM.def(TameTextNode);  // and defend its prototype
       });
-      cajaVM.def(TameTextNode);  // and its prototype
 
-      function TameCommentNode(node) {
-        assert(node.nodeType === 8);
-        TameBackedNode.call(this, node);
-      }
-      inertCtor(TameCommentNode, TameBackedNode, 'Comment');
-      cajaVM.def(TameCommentNode);  // and its prototype
+      tamingClassTable.registerLazy('Comment', function() {
+        function TameCommentNode(node) {
+          assert(node.nodeType === 8);
+          TameBackedNode.call(this, node);
+        }
+        inertCtor(TameCommentNode, TameBackedNode);
+        return cajaVM.def(TameCommentNode);  // and defend its prototype
+      });
 
       // Note that our tame attribute nodes bake in the notion of what element
       // they belong to (in order to implement virtualization policy).
@@ -3907,90 +3952,91 @@ var Domado = (function() {
         } else if (taming.hasTameTwin(node)) {
           return taming.tame(node);
         } else {
-          var self = new TameBackedAttributeNode(node, ownerElement);
+          var self = new (tamingClassTable.getTamingCtor('Attr'))(
+              node, ownerElement);
           taming.tamesTo(node, self);
           return self;
         }
       }
-      /**
-       * Plays the role of an Attr node for TameElement objects.
-       */
-      function TameBackedAttributeNode(node, ownerElement) {
-        node = makeDOMAccessible(node);
-        if ('ownerElement' in node && node.ownerElement !== ownerElement) {
-          throw new Error('Inconsistent ownerElement');
+      tamingClassTable.registerLazy('Attr', function() {
+        function TameBackedAttributeNode(node, ownerElement) {
+          node = makeDOMAccessible(node);
+          if ('ownerElement' in node && node.ownerElement !== ownerElement) {
+            throw new Error('Inconsistent ownerElement');
+          }
+
+          var ownerPolicy = nodeAmplify(defaultTameNode(ownerElement),
+              function(ownerPriv) {
+            return ownerPriv.policy;
+          });
+
+          TameBackedNode.call(this, node, ownerPolicy);
+
+          nodeAmplify(this, function(privates) {
+            privates.ownerElement = ownerElement;
+          });
         }
-
-        var ownerPolicy = nodeAmplify(defaultTameNode(ownerElement),
-            function(ownerPriv) {
-          return ownerPriv.policy;
+        inertCtor(TameBackedAttributeNode, TameBackedNode);
+        var nameAccessor = PT.ROView(function(name) {
+          if (cajaPrefRe.test(name)) {
+            name = name.substring(cajaPrefix.length);
+          }
+          return name;
         });
-
-        TameBackedNode.call(this, node, ownerPolicy);
-
-        nodeAmplify(this, function(privates) {
-          privates.ownerElement = ownerElement;
-        });
-      }
-      inertCtor(TameBackedAttributeNode, TameBackedNode, 'Attr');
-      var nameAccessor = PT.ROView(function(name) {
-        if (cajaPrefRe.test(name)) {
-          name = name.substring(cajaPrefix.length);
-        }
-        return name;
-      });
-      var valueAccessor = {
-        enumerable: true,
-        get: innocuous(function() {
-           return this.ownerElement.getAttribute(this.name);
-        }),
-        set: innocuous(function(value) {
-          return this.ownerElement.setAttribute(this.name, value);
-        })
-      };
-      var notImplementedNodeMethod = {
-        enumerable: true,
-        value: innocuous(function() {
-          throw new Error('Not implemented.');
-        })
-      };
-      Props.define(TameBackedAttributeNode.prototype, TameNodeConf, {
-        nodeName: nameAccessor,
-        name: nameAccessor,
-        specified: {
+        var valueAccessor = {
           enumerable: true,
           get: innocuous(function() {
-            return this.ownerElement.hasAttribute(this.name);
+             return this.ownerElement.getAttribute(this.name);
+          }),
+          set: innocuous(function(value) {
+            return this.ownerElement.setAttribute(this.name, value);
           })
-        },
-        nodeValue: valueAccessor,
-        value: valueAccessor,
-        ownerElement: {
+        };
+        var notImplementedNodeMethod = {
           enumerable: true,
-          get: nodeAmp(function(privates) {
-            return defaultTameNode(privates.ownerElement);
+          value: innocuous(function() {
+            throw new Error('Not implemented.');
           })
-        },
-        nodeType: P_constant(2),
-        firstChild:      P_UNIMPLEMENTED,
-        lastChild:       P_UNIMPLEMENTED,
-        nextSibling:     P_UNIMPLEMENTED,
-        previousSibling: P_UNIMPLEMENTED,
-        parentNode:      P_UNIMPLEMENTED,
-        childNodes:      P_UNIMPLEMENTED,
-        attributes:      P_UNIMPLEMENTED,
-        cloneNode: Props.ampMethod(function(privates, deep) {
-          var clone = bridal.cloneNode(privates.feral, Boolean(deep));
-          // From http://www.w3.org/TR/DOM-Level-2-Core/core.html#ID-3A0ED0A4
-          //   "Note that cloning an immutable subtree results in a mutable copy"
-          return tameAttributeNode(clone, privates.ownerElement);
-        }),
-        appendChild: notImplementedNodeMethod,
-        insertBefore: notImplementedNodeMethod,
-        removeChild: notImplementedNodeMethod,
-        replaceChild: notImplementedNodeMethod
+        };
+        Props.define(TameBackedAttributeNode.prototype, TameNodeConf, {
+          nodeName: nameAccessor,
+          name: nameAccessor,
+          specified: {
+            enumerable: true,
+            get: innocuous(function() {
+              return this.ownerElement.hasAttribute(this.name);
+            })
+          },
+          nodeValue: valueAccessor,
+          value: valueAccessor,
+          ownerElement: {
+            enumerable: true,
+            get: nodeAmp(function(privates) {
+              return defaultTameNode(privates.ownerElement);
+            })
+          },
+          nodeType: P_constant(2),
+          firstChild:      P_UNIMPLEMENTED,
+          lastChild:       P_UNIMPLEMENTED,
+          nextSibling:     P_UNIMPLEMENTED,
+          previousSibling: P_UNIMPLEMENTED,
+          parentNode:      P_UNIMPLEMENTED,
+          childNodes:      P_UNIMPLEMENTED,
+          attributes:      P_UNIMPLEMENTED,
+          cloneNode: Props.ampMethod(function(privates, deep) {
+            var clone = bridal.cloneNode(privates.feral, Boolean(deep));
+            // From http://www.w3.org/TR/DOM-Level-2-Core/core.html#ID-3A0ED0A4
+            //   "Note that cloning an immutable subtree results in a mutable
+            //    copy"
+            return tameAttributeNode(clone, privates.ownerElement);
+          }),
+          appendChild: notImplementedNodeMethod,
+          insertBefore: notImplementedNodeMethod,
+          removeChild: notImplementedNodeMethod,
+          replaceChild: notImplementedNodeMethod
+        });
+        return cajaVM.def(TameBackedAttributeNode);  // and defend its prototype
       });
-      cajaVM.def(TameBackedAttributeNode);  // and its prototype
 
       // Register set handlers for onclick, onmouseover, etc.
       function registerElementScriptAttributeHandlers(tameElementPrototype) {
@@ -4030,6 +4076,9 @@ var Domado = (function() {
 
       // Elements in general and specific elements:
 
+      // TODO(kpreid): See if it's feasible to make TameElement lazy constructed
+      // for guests that don't do any DOM manipulation until after load. Will
+      // require deferring the tameContainerNode.
       /**
        * @constructor
        */
@@ -4133,9 +4182,8 @@ var Domado = (function() {
         style: {
           enumerable: true,
           get: nodeAmp(function(privates) {
-            TameStyle || buildTameStyle();
-            return new TameStyle(privates.feral.style, privates.policy.editable,
-                this);
+            return new (tamingClassTable.getTamingCtor('CSSStyleDeclaration'))(
+                privates.feral.style, privates.policy.editable, this);
           }),
           set: innocuous(function(value) {
             this.setAttribute('style', value);
@@ -4349,14 +4397,16 @@ var Domado = (function() {
       /**
        * Define a taming class for a subclass of HTMLElement.
        *
-       * @param {Array} record.superclass The tame superclass constructor
-       *     (defaults to TameElement) with parameters (this, node, policy,
-       *     opt_proxyType).
+       * @param {function|string} record.superclass The tame superclass
+       *     constructor (defaults to TameElement) with parameters (this, node,
+       *     policy, opt_proxyType). May be specified as a string which will be
+       *     looked up in the tamingClassTable.
        * @param {Array} record.names The element names which should be tamed
        *     using this class.
-       * @param {String} record.domClass The DOM-specified class name.
-       * @param {Object} record.properties The custom properties this class
-       *     should have (in the format accepted by Props.define).
+       * @param {string} record.domClass The DOM-specified class name.
+       * @param {function} record.properties A function returning the custom
+       *     properties this class should have (in the format accepted by
+       *     Props.define). (Is a function for laziness.)
        * @param {function} record.construct Code to invoke at the end of
        *     construction; takes and returns self.
        * @param {?boolean} record.virtualized Whether it should be expected that
@@ -4364,35 +4414,46 @@ var Domado = (function() {
        *     If null, no restriction.
        * @param {boolean} record.forceChildrenNotEditable Whether to force the
        *     child node list and child nodes to not be mutable.
-       * @return {function} The constructor.
        */
       function defineElement(record) {
-        var superclass = record.superclass || TameElement;
+        var domClass = record.domClass;
+        if (!domClass) {
+          throw new Error('Anonymous element classes are useless');
+        }
+        var superclassRef = record.superclass || 'HTMLElement';
         var proxyType = record.proxyType;
         var construct = record.construct || identity;
         var shouldBeVirtualized = "virtualized" in record
             ? record.virtualized : false;
         var opt_policy = record.forceChildrenNotEditable
             ? nodePolicyReadOnlyChildren : null;
-        function TameSpecificElement(node) {
-          if (shouldBeVirtualized !== null) {
-            var isVirtualized =
-                htmlSchema.isVirtualizedElementName(node.tagName);
-            if (!isVirtualized !== !shouldBeVirtualized) {
-              throw new Error('Domado internal inconsistency: ' + node.tagName +
-                  ' has inconsistent virtualization state with class ' +
-                  record.domClass);
+        function defineElementThunk() {
+          var superclass = typeof superclassRef === 'string'
+              ? tamingClassTable.getTamingCtor(superclassRef)
+              : superclassRef;
+          function TameSpecificElement(node) {
+            if (shouldBeVirtualized !== null) {
+              var isVirtualized =
+                  htmlSchema.isVirtualizedElementName(node.tagName);
+              if (!isVirtualized !== !shouldBeVirtualized) {
+                throw new Error('Domado internal inconsistency: ' + node.tagName
+                    + ' has inconsistent virtualization state with class ' +
+                    record.domClass);
+              }
             }
+            superclass.call(this, node, opt_policy, proxyType);
+            construct.call(this);
           }
-          superclass.call(this, node, opt_policy, proxyType);
-          construct.call(this);
+          inertCtor(TameSpecificElement, superclass);
+          if (record.properties) {
+            Props.define(TameSpecificElement.prototype, TameNodeConf,
+                (0,record.properties)());
+          }
+          // Note: cajaVM.def will be applied to all registered node classes
+          // later, so users of defineElement don't need to.
+          return cajaVM.def(TameSpecificElement);
         }
-        inertCtor(TameSpecificElement, superclass, record.domClass);
-        Props.define(TameSpecificElement.prototype, TameNodeConf,
-            record.properties || {});
-        // Note: cajaVM.def will be applied to all registered node classes
-        // later, so users of defineElement don't need to.
-        return TameSpecificElement;
+        tamingClassTable.registerLazy(domClass, defineElementThunk);
       }
       cajaVM.def(defineElement);
       
@@ -4402,12 +4463,12 @@ var Domado = (function() {
        * warning).
        */
       function defineTrivialElement(domClass) {
-        return defineElement({domClass: domClass});
+        defineElement({domClass: domClass});
       }
 
       defineElement({
         domClass: 'HTMLAnchorElement',
-        properties: {
+        properties: function() { return {
           hash: PT.filter(
             false,
             function (value) { return unsuffix(value, idSuffix, value); },
@@ -4416,15 +4477,15 @@ var Domado = (function() {
             identity),
           // TODO(felix8a): fragment rewriting?
           href: PT.filter(false, identity, true, identity)
-        }
+        }; }
       });
 
       defineTrivialElement('HTMLBRElement');
 
-      var TameBodyElement = defineElement({
+      defineElement({
         virtualized: true,
         domClass: 'HTMLBodyElement',
-        properties: {
+        properties: function() { return {
           setAttribute: Props.overridable(true, innocuous(
               function(attrib, value) {
             TameElement.prototype.setAttribute.call(this, attrib, value);
@@ -4466,7 +4527,7 @@ var Domado = (function() {
               }
             }
           }))
-        }
+        }; }
       });
 
       // http://dev.w3.org/html5/spec/Overview.html#the-canvas-element
@@ -4565,110 +4626,113 @@ var Domado = (function() {
           // only as #hhhhhh, not as names.
           return colorNameTable[" " + colorString] || colorString;
         }
-        function TameImageData(imageData) {
-          imageData = makeDOMAccessible(imageData);
-          var p = function() { throw 'obsolete'; };
+        
+        tamingClassTable.registerLazy('ImageData', function() {
+          function TameImageData(imageData) {
+            imageData = makeDOMAccessible(imageData);
 
-          // Since we can't interpose indexing, we can't wrap the
-          // CanvasPixelArray
-          // so we have to copy the pixel data. This is horrible, bad, and
-          // awful.
-          // TODO(kpreid): No longer true in ES5-land; we can interpose but not
-          // under ES5/3. Use proxies conditional on the same switch that
-          // controls
-          // liveness of node lists.
-          var tameImageData = {
-            toString: innocuous(function() {
-              return '[domado object ImageData]';
-            }),
-            width: Number(imageData.width),
-            height: Number(imageData.height)
-          };
-          TameImageDataConf.confide(tameImageData, taming);
-          taming.permitUntaming(tameImageData);
+            // Since we can't interpose indexing, we can't wrap the
+            // CanvasPixelArray
+            // so we have to copy the pixel data. This is horrible, bad, and
+            // awful.
+            // TODO(kpreid): No longer true in ES5-land; we can interpose but
+            // not under ES5/3. Use proxies conditional on the same switch that
+            // controls liveness of node lists.
 
-          TameImageDataConf.amplify(tameImageData, function(privates) {
-            // used to unwrap for passing to putImageData
-            privates.feral = imageData;
+            TameImageDataConf.confide(this, taming);
+            taming.permitUntaming(this);
 
-            // lazily constructed tame copy, backs .data accessor; also used to
-            // test whether we need to write-back the copy before a putImageData
-            privates.tamePixelArray = undefined;
+            this.width = Number(imageData.width);
+            this.height = Number(imageData.height);
 
-            Props.define(tameImageData, TameNodeConf, {
-              data: {
-                enumerable: true,
-                // Accessor used so we don't need to copy if the client is just
-                // blitting (getImageData -> putImageData) rather than
-                // inspecting the pixels.
-                get: cajaVM.constFunc(function() {
-                  if (!privates.tamePixelArray) {
+            TameImageDataConf.amplify(this, function(privates) {
+              // used to unwrap for passing to putImageData
+              privates.feral = imageData;
 
-                    var bareArray = imageData.data;
-                    // Note: On Firefox 4.0.1, at least, pixel arrays cannot
-                    // have added properties (such as our w___). Therefore, for
-                    // writing,
-                    // we use a special routine, and we don't do
-                    // makeDOMAccessible
-                    // because it would have no effect. An alternative approach
-                    // would be to muck with the "Uint8ClampedArray" prototype.
+              // lazily constructed tame copy, backs .data accessor; also used
+              // to test whether we need to write-back the copy before a
+              // putImageData
+              privates.tamePixelArray = undefined;
 
-                    var length = bareArray.length;
-                    var tamePixelArray = { // not frozen, user-modifiable
-                      // TODO: Investigate whether it would be an optimization
-                      // to make this an array with properties added.
-                      toString: innocuous(function() {
-                        return '[domado object CanvasPixelArray]';
-                      }),
-                      _d_canvas_writeback: innocuous(function() {
-                        // This is invoked just before each putImageData
-
-                        // TODO(kpreid): shouldn't be a public method (but is
-                        // harmless).
-
-                        rulebreaker.writeToPixelArray(
-                          tamePixelArray, bareArray, length);
-                      })
-                    };
-                    for (var i = length-1; i >= 0; i--) {
-                      tamePixelArray[+i] = bareArray[+i];
-                    }
-                    privates.tamePixelArray = tamePixelArray;
-                  }
-                  return privates.tamePixelArray;
-                })
-              }
+              Object.preventExtensions(privates);
             });
+            Object.freeze(this);
+          }
+          inertCtor(TameImageData, Object);
+          Props.define(TameImageData.prototype, TameImageDataConf, {
+            toString: Props.overridable(false, innocuous(function() {
+              return '[domado object ImageData]';
+            })),
+            // Accessor used so we don't need to copy if the client is
+            // just blitting (getImageData -> putImageData) rather than
+            // inspecting the pixels.
+            data: Props.ampGetter(function(privates) {
+              if (!privates.tamePixelArray) {
 
-            Object.preventExtensions(privates);
+                var bareArray = privates.feral.data;
+                // Note: On Firefox 4.0.1, at least, pixel arrays cannot
+                // have added properties (such as our w___). Therefore,
+                // for writing, we use a special routine, and we don't do
+                // makeDOMAccessible because it would have no effect. An
+                // alternative approach would be to muck with the
+                // "Uint8ClampedArray" prototype.
+
+                var length = bareArray.length;
+                var tamePixelArray = { // not frozen, user-modifiable
+                  // TODO: Investigate whether it would be an optimization
+                  // to make this an array with properties added.
+                  toString: innocuous(function() {
+                    return '[domado object CanvasPixelArray]';
+                  }),
+                  _d_canvas_writeback: innocuous(function() {
+                    // This is invoked just before each putImageData
+
+                    // TODO(kpreid): shouldn't be a public method (but is
+                    // harmless).
+
+                    rulebreaker.writeToPixelArray(
+                      tamePixelArray, bareArray, length);
+                  })
+                };
+                for (var i = length-1; i >= 0; i--) {
+                  tamePixelArray[+i] = bareArray[+i];
+                }
+                privates.tamePixelArray = tamePixelArray;
+              }
+              return privates.tamePixelArray;
+            })
           });
-          return Object.freeze(tameImageData);
-        }
-        function TameGradient(gradient) {
-          TameGradientConf.confide(this, taming);
-          TameGradientConf.amplify(this, function(privates) {
-            privates.feral = makeDOMAccessible(gradient);
+          return cajaVM.def(TameImageData);
+        });
+
+        tamingClassTable.registerLazy('CanvasGradient', function() {
+          function TameGradient(gradient) {
+            TameGradientConf.confide(this, taming);
+            TameGradientConf.amplify(this, function(privates) {
+              privates.feral = makeDOMAccessible(gradient);
+            });
+            taming.tamesTo(gradient, this);
+            Object.freeze(this);
+          }
+          inertCtor(TameGradient, Object);
+          Props.define(TameGradient.prototype, TameGradientConf, {
+            toString: Props.plainMethod(function() {
+               return '[domado object CanvasGradient]';
+            }),
+            addColorStop: tameMethodCustom(function(privates, offset, color) {
+              enforceType(offset, 'number', 'color stop offset');
+              if (!(0 <= offset && offset <= 1)) {
+                throw new Error(INDEX_SIZE_ERROR);
+                // TODO(kpreid): should be a DOMException per spec
+              }
+              if (!isColor(color)) {
+                throw new Error('SYNTAX_ERR');
+                // TODO(kpreid): should be a DOMException per spec
+              }
+              privates.feral.addColorStop(offset, color);
+            })
           });
-          taming.tamesTo(gradient, this);
-          Object.freeze(this);
-        }
-        inertCtor(TameGradient, Object, 'CanvasGradient');
-        Props.define(TameGradient.prototype, TameGradientConf, {
-          toString: Props.plainMethod(function() {
-             return '[domado object CanvasGradient]';
-          }),
-          addColorStop: tameMethodCustom(function(privates, offset, color) {
-            enforceType(offset, 'number', 'color stop offset');
-            if (!(0 <= offset && offset <= 1)) {
-              throw new Error(INDEX_SIZE_ERROR);
-              // TODO(kpreid): should be a DOMException per spec
-            }
-            if (!isColor(color)) {
-              throw new Error('SYNTAX_ERR');
-              // TODO(kpreid): should be a DOMException per spec
-            }
-            privates.feral.addColorStop(offset, color);
-          })
+          return cajaVM.def(TameGradient);
         });
 
         function enforceFinite(value, name) {
@@ -4799,297 +4863,308 @@ var Domado = (function() {
           });
         }
 
-        function TameTextMetrics(feralMetrics) {
-          feralMetrics = makeDOMAccessible(feralMetrics);
-          // TextMetrics just acts as a record, so we don't need any forwarding
-          // wrapper; copying the data is sufficient.
-          [
-            'actualBoundingBoxAscent',
-            'actualBoundingBoxDescent',
-            'actualBoundingBoxLeft',
-            'actualBoundingBoxRight',
-            'alphabeticBaseline',
-            'emHeightAscent',
-            'emHeightDescent',
-            'fontBoundingBoxAscent',
-            'fontBoundingBoxDescent',
-            'hangingBaseline',
-            'ideographicBaseline',
-            'width'
-          ].forEach(function(prop) {
-            this[prop] = +feralMetrics[prop];
-          }, this);
-          Object.freeze(this);
-        }
-        inertCtor(TameTextMetrics, Object, 'TextMetrics');
-
-        // http://dev.w3.org/html5/2dcontext/
-        // http://www.whatwg.org/specs/web-apps/current-work/multipage/the-canvas-element.html#2dcontext
-        var TameContext2DConf = new Confidence('TameContext2D');
-        function TameContext2D(feralContext, policy) {
-          // policy is needed for the PropertyTaming accessors
-          feralContext = makeDOMAccessible(feralContext);
-          TameContext2DConf.confide(this, taming);
-          TameContext2DConf.amplify(this, function(privates) {
-            privates.feral = feralContext;
-            privates.policy = policy;
-            Object.preventExtensions(privates);
-          });
-        }
-        inertCtor(TameContext2D, Object, 'CanvasRenderingContext2D');
-        // TODO(kpreid): have inertCtor automatically install an appropriate
-        // toString method.
-        TameContext2D.prototype.toString = cajaVM.constFunc(function() {
-          return '[domado object CanvasRenderingContext2D]';
+        tamingClassTable.registerLazy('TextMetrics', function() {
+          function TameTextMetrics(feralMetrics) {
+            feralMetrics = makeDOMAccessible(feralMetrics);
+            // TextMetrics just acts as a record, so we don't need any forwarding
+            // wrapper; copying the data is sufficient.
+            [
+              'actualBoundingBoxAscent',
+              'actualBoundingBoxDescent',
+              'actualBoundingBoxLeft',
+              'actualBoundingBoxRight',
+              'alphabeticBaseline',
+              'emHeightAscent',
+              'emHeightDescent',
+              'fontBoundingBoxAscent',
+              'fontBoundingBoxDescent',
+              'hangingBaseline',
+              'ideographicBaseline',
+              'width'
+            ].forEach(function(prop) {
+              this[prop] = +feralMetrics[prop];
+            }, this);
+            Object.freeze(this);
+          }
+          inertCtor(TameTextMetrics, Object);
+          return cajaVM.def(TameTextMetrics);
         });
-        Props.define(TameContext2D.prototype, TameContext2DConf, {
-          save: tameNoArgOp,
-          restore: tameNoArgOp,
 
-          scale: tameFloatsOp(2),
-          rotate: tameFloatsOp(1),
-          translate: tameFloatsOp(2),
-          transform: tameFloatsOp(6),
-          setTransform: tameFloatsOp(6),
-          // TODO(kpreid): whatwg has resetTransform
-
-          createLinearGradient: tameMethodCustom(
-              function(privates, x0, y0, x1, y1) {
-            enforceType(x0, 'number', 'x0');
-            enforceType(y0, 'number', 'y0');
-            enforceType(x1, 'number', 'x1');
-            enforceType(y1, 'number', 'y1');
-            return new TameGradient(
-                privates.feral.createLinearGradient(x0, y0, x1, y1));
-          }),
-
-          createRadialGradient: tameMethodCustom(
-              function(privates, x0, y0, r0, x1, y1, r1) {
-            enforceType(x0, 'number', 'x0');
-            enforceType(y0, 'number', 'y0');
-            enforceType(r0, 'number', 'r0');
-            enforceType(x1, 'number', 'x1');
-            enforceType(y1, 'number', 'y1');
-            enforceType(r1, 'number', 'r1');
-            return new TameGradient(privates.feral.createRadialGradient(
-              x0, y0, r0, x1, y1, r1));
-          }),
-
-          createPattern: tameMethodCustom(
-              function(privates, imageElement, repetition) {
-            // Consider what policy to have wrt reading the pixels from image
-            // elements before implementing this.
-            throw new Error(
-                'Domado: canvas createPattern not yet implemented');
-          }),
-
-          clearRect:  tameRectMethod(function() {}),
-          fillRect:   tameRectMethod(function() {}),
-          strokeRect: tameRectMethod(function() {}),
-
-          beginPath: tameNoArgOp,
-          closePath: tameNoArgOp,
-          moveTo: tameFloatsOp(2),
-          lineTo: tameFloatsOp(2),
-          quadraticCurveTo: tameFloatsOp(4),
-          bezierCurveTo: tameFloatsOp(6),
-          arcTo: tameFloatsOp(5),
-          // TODO(kpreid): whatwg adds 2 optional args to arcTo
-          rect: tameFloatsOp(4),
-          arc: tameMethodCustom(function(
-              privates, x, y, radius, startAngle, endAngle, anticlockwise) {
-            enforceType(x, 'number', 'x');
-            enforceType(y, 'number', 'y');
-            enforceType(radius, 'number', 'radius');
-            enforceType(startAngle, 'number', 'startAngle');
-            enforceType(endAngle, 'number', 'endAngle');
-            anticlockwise = anticlockwise || false;
-            enforceType(anticlockwise, 'boolean', 'anticlockwise');
-            privates.feral.arc(
-                x, y, radius, startAngle, endAngle, anticlockwise);
-          }),
-
-          // TODO(kpreid): Path objects for filling/stroking
-          fill: tameNoArgOp,
-          stroke: tameNoArgOp,
-          clip: tameNoArgOp,
-
-          // TODO(kpreid): Generic type-checking wrapper to eliminate the need
-          // for this code
-          // TODO(kpreid): implement spec'd optional args
-          isPointInPath: tameMethodCustom(function(privates, x, y) {
-            enforceType(x, 'number', 'x');
-            enforceType(y, 'number', 'y');
-            return enforceType(privates.feral.isPointInPath(x, y), 'boolean');
-          }),
-
-          fillText: tameDrawText,
-          strokeText: tameDrawText,
-
-          measureText: tameMethodCustom(function(privates, string) {
-            enforceType(string, 'string', 'measureText argument');
-            return new TameTextMetrics(privates.feral.measureText(string));
-          }),
-
-          drawImage: tameMethodCustom(function(privates, imageElement) {
-            // TODO(kpreid): Implement. Original concern was reading image data,
-            // but Caja's general policy is NOT to reimplement same-origin
-            // restrictions.
-            throw new Error('Domado: canvas drawImage not yet implemented');
-          }),
-
-          createImageData: tameMethodCustom(function(privates, sw, sh) {
-            enforceType(sw, 'number', 'sw');
-            enforceType(sh, 'number', 'sh');
-            // TODO(kpreid): taming membrane? or is this best considered a copy?
-            return new TameImageData(privates.feral.createImageData(sw, sh));
-          }),
-          getImageData: tameRectMethod(TameImageData),
-          putImageData: tameMethodCustom(function(privates,
-              tameImageData, dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight) {
-            tameImageData = TameImageDataT.coerce(tameImageData);
-            enforceFinite(dx, 'dx');
-            enforceFinite(dy, 'dy');
-            switch (arguments.length - 1) {
-            case 3:
-              dirtyX = 0;
-              dirtyY = 0;
-              dirtyWidth = tameImageData.width;
-              dirtyHeight = tameImageData.height;
-              break;
-            case 7:
-              enforceFinite(dirtyX, 'dirtyX');
-              enforceFinite(dirtyY, 'dirtyY');
-              enforceFinite(dirtyWidth, 'dirtyWidth');
-              enforceFinite(dirtyHeight, 'dirtyHeight');
-              break;
-            default:
-              throw 'putImageData cannot accept ' + (arguments.length - 1) +
-                  ' arguments';
-            }
-            TameImageDataConf.amplify(tameImageData, function(imageDataPriv) {
-              var tamePixelArray = imageDataPriv.tamePixelArray;
-              if (tamePixelArray) {
-                tamePixelArray._d_canvas_writeback();
-              }
-              privates.feral.putImageData(imageDataPriv.feral,
-                  dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight);
+        tamingClassTable.registerLazy('CanvasRenderingContext2D', function() {
+          // http://dev.w3.org/html5/2dcontext/
+          // http://www.whatwg.org/specs/web-apps/current-work/multipage/the-canvas-element.html#2dcontext
+          var TameContext2DConf = new Confidence('TameContext2D');
+          function TameContext2D(feralContext, policy) {
+            // policy is needed for the PropertyTaming accessors
+            feralContext = makeDOMAccessible(feralContext);
+            TameContext2DConf.confide(this, taming);
+            TameContext2DConf.amplify(this, function(privates) {
+              privates.feral = feralContext;
+              privates.policy = policy;
+              Object.preventExtensions(privates);
             });
-          }, true)
-        });
-        var CP_STYLE = Props.markPropMaker(function(env) {
-          var prop = env.prop;
-          return {
-            enumerable: true,
-            get: env.amplifying(function(privates) {
-              var value = privates.feral[prop];
-              if (typeof(value) === 'string') {
-                return canonColor(value);
-              } else if (cajaVM.passesGuard(TameGradientT,
-                                            taming.tame(value))) {
-                return taming.tame(value);
-              } else {
-                throw new Error('Internal: Can\'t tame value ' + value +
-                    ' of ' + prop);
-              }
+          }
+          inertCtor(TameContext2D, Object);
+          // TODO(kpreid): have inertCtor automatically install an appropriate
+          // toString method.
+          TameContext2D.prototype.toString = cajaVM.constFunc(function() {
+            return '[domado object CanvasRenderingContext2D]';
+          });
+          Props.define(TameContext2D.prototype, TameContext2DConf, {
+            save: tameNoArgOp,
+            restore: tameNoArgOp,
+
+            scale: tameFloatsOp(2),
+            rotate: tameFloatsOp(1),
+            translate: tameFloatsOp(2),
+            transform: tameFloatsOp(6),
+            setTransform: tameFloatsOp(6),
+            // TODO(kpreid): whatwg has resetTransform
+
+            createLinearGradient: tameMethodCustom(
+                function(privates, x0, y0, x1, y1) {
+              enforceType(x0, 'number', 'x0');
+              enforceType(y0, 'number', 'y0');
+              enforceType(x1, 'number', 'x1');
+              enforceType(y1, 'number', 'y1');
+              return new (tamingClassTable.getTamingCtor('CanvasGradient'))(
+                  privates.feral.createLinearGradient(x0, y0, x1, y1));
             }),
-            set: env.amplifying(function(privates, newValue) {
-              if (isColor(newValue)) {
-                privates.feral[prop] = newValue;
-              } else if (typeof(newValue) === 'object' &&
-                         cajaVM.passesGuard(TameGradientT, newValue)) {
-                privates.feral[prop] = taming.untame(newValue);
-              } // else do nothing
-              return newValue;
-            })
-          };
-        });
-        Props.define(TameContext2D.prototype, TameContext2DConf, {
-          // We filter the values supplied to setters in case some browser
-          // extension makes them more powerful, e.g. containing scripting or
-          // a URL.
-          // TODO(kpreid): Do we want to filter the *getters* as well?
-          // Scenarios: (a) canvas shared with innocent code, (b) browser
-          // quirks?? If we do, then what should be done with a bad value?
-          globalAlpha: PT.RWCond(
-              function (v) { return typeof v === 'number' &&
-                                    0.0 <= v && v <= 1.0;     }),
-          globalCompositeOperation: PT.RWCond(
-              StringTest([
-                'source-atop',
-                'source-in',
-                'source-out',
-                'source-over',
-                'destination-atop',
-                'destination-in',
-                'destination-out',
-                'destination-over',
-                'lighter',
-                'copy',
-                'xor'
-              ])),
-          strokeStyle: CP_STYLE,
-          fillStyle: CP_STYLE,
-          lineWidth: PT.RWCond(
-              function (v) { return typeof v === 'number' &&
-                                    0.0 < v && v !== Infinity; }),
-          lineCap: PT.RWCond(
-              StringTest([
-                'butt',
-                'round',
-                'square'
-              ])),
-          lineJoin: PT.RWCond(
-              StringTest([
-                'bevel',
-                'round',
-                'miter'
-              ])),
-          miterLimit: PT.RWCond(
-              function (v) { return typeof v === 'number' &&
-                                    0 < v && v !== Infinity; }),
-          shadowOffsetX: PT.RWCond(
-              function (v) {
-                return typeof v === 'number' && isFinite(v); }),
-          shadowOffsetY: PT.RWCond(
-              function (v) {
-                return typeof v === 'number' && isFinite(v); }),
-          shadowBlur: PT.RWCond(
-              function (v) { return typeof v === 'number' &&
-                                    0.0 <= v && v !== Infinity; }),
-          shadowColor: Props.markPropMaker(function(env) {
+
+            createRadialGradient: tameMethodCustom(
+                function(privates, x0, y0, r0, x1, y1, r1) {
+              enforceType(x0, 'number', 'x0');
+              enforceType(y0, 'number', 'y0');
+              enforceType(r0, 'number', 'r0');
+              enforceType(x1, 'number', 'x1');
+              enforceType(y1, 'number', 'y1');
+              enforceType(r1, 'number', 'r1');
+              return new (tamingClassTable.getTamingCtor('CanvasGradient'))(
+                privates.feral.createRadialGradient(x0, y0, r0, x1, y1, r1));
+            }),
+
+            createPattern: tameMethodCustom(
+                function(privates, imageElement, repetition) {
+              // Consider what policy to have wrt reading the pixels from image
+              // elements before implementing this.
+              throw new Error(
+                  'Domado: canvas createPattern not yet implemented');
+            }),
+
+            clearRect:  tameRectMethod(function() {}),
+            fillRect:   tameRectMethod(function() {}),
+            strokeRect: tameRectMethod(function() {}),
+
+            beginPath: tameNoArgOp,
+            closePath: tameNoArgOp,
+            moveTo: tameFloatsOp(2),
+            lineTo: tameFloatsOp(2),
+            quadraticCurveTo: tameFloatsOp(4),
+            bezierCurveTo: tameFloatsOp(6),
+            arcTo: tameFloatsOp(5),
+            // TODO(kpreid): whatwg adds 2 optional args to arcTo
+            rect: tameFloatsOp(4),
+            arc: tameMethodCustom(function(
+                privates, x, y, radius, startAngle, endAngle, anticlockwise) {
+              enforceType(x, 'number', 'x');
+              enforceType(y, 'number', 'y');
+              enforceType(radius, 'number', 'radius');
+              enforceType(startAngle, 'number', 'startAngle');
+              enforceType(endAngle, 'number', 'endAngle');
+              anticlockwise = anticlockwise || false;
+              enforceType(anticlockwise, 'boolean', 'anticlockwise');
+              privates.feral.arc(
+                  x, y, radius, startAngle, endAngle, anticlockwise);
+            }),
+
+            // TODO(kpreid): Path objects for filling/stroking
+            fill: tameNoArgOp,
+            stroke: tameNoArgOp,
+            clip: tameNoArgOp,
+
+            // TODO(kpreid): Generic type-checking wrapper to eliminate the need
+            // for this code
+            // TODO(kpreid): implement spec'd optional args
+            isPointInPath: tameMethodCustom(function(privates, x, y) {
+              enforceType(x, 'number', 'x');
+              enforceType(y, 'number', 'y');
+              return enforceType(privates.feral.isPointInPath(x, y), 'boolean');
+            }),
+
+            fillText: tameDrawText,
+            strokeText: tameDrawText,
+
+            measureText: tameMethodCustom(function(privates, string) {
+              enforceType(string, 'string', 'measureText argument');
+              return new (tamingClassTable.getTamingCtor('TextMetrics'))(
+                  privates.feral.measureText(string));
+            }),
+
+            drawImage: tameMethodCustom(function(privates, imageElement) {
+              // TODO(kpreid): Implement. Original concern was reading image
+              // data, but Caja's general policy is NOT to reimplement
+              // same-origin restrictions.
+              throw new Error('Domado: canvas drawImage not yet implemented');
+            }),
+
+            createImageData: tameMethodCustom(function(privates, sw, sh) {
+              enforceType(sw, 'number', 'sw');
+              enforceType(sh, 'number', 'sh');
+              // TODO(kpreid): taming membrane? or is this best considered a
+              // copy?
+              return new (tamingClassTable.getTamingCtor('ImageData'))(
+                  privates.feral.createImageData(sw, sh));
+            }),
+            getImageData: tameRectMethod(function(image) {
+              return new (tamingClassTable.getTamingCtor('ImageData'))(image);
+            }),
+            putImageData: tameMethodCustom(function(privates,
+                tameImageData, dx, dy, dirtyX, dirtyY, dirtyWidth,
+                dirtyHeight) {
+              tameImageData = TameImageDataT.coerce(tameImageData);
+              enforceFinite(dx, 'dx');
+              enforceFinite(dy, 'dy');
+              switch (arguments.length - 1) {
+              case 3:
+                dirtyX = 0;
+                dirtyY = 0;
+                dirtyWidth = tameImageData.width;
+                dirtyHeight = tameImageData.height;
+                break;
+              case 7:
+                enforceFinite(dirtyX, 'dirtyX');
+                enforceFinite(dirtyY, 'dirtyY');
+                enforceFinite(dirtyWidth, 'dirtyWidth');
+                enforceFinite(dirtyHeight, 'dirtyHeight');
+                break;
+              default:
+                throw 'putImageData cannot accept ' + (arguments.length - 1) +
+                    ' arguments';
+              }
+              TameImageDataConf.amplify(tameImageData, function(imageDataPriv) {
+                var tamePixelArray = imageDataPriv.tamePixelArray;
+                if (tamePixelArray) {
+                  tamePixelArray._d_canvas_writeback();
+                }
+                privates.feral.putImageData(imageDataPriv.feral,
+                    dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight);
+              });
+            }, true)
+          });
+          var CP_STYLE = Props.markPropMaker(function(env) {
+            var prop = env.prop;
             return {
               enumerable: true,
-              // TODO(kpreid): Better tools for deriving descriptors
-              get: CP_STYLE(env).get,
-              set: PT.RWCond(isColor)(env).set
+              get: env.amplifying(function(privates) {
+                var value = privates.feral[prop];
+                if (typeof(value) === 'string') {
+                  return canonColor(value);
+                } else if (cajaVM.passesGuard(TameGradientT,
+                                              taming.tame(value))) {
+                  return taming.tame(value);
+                } else {
+                  throw new Error('Internal: Can\'t tame value ' + value +
+                      ' of ' + prop);
+                }
+              }),
+              set: env.amplifying(function(privates, newValue) {
+                if (isColor(newValue)) {
+                  privates.feral[prop] = newValue;
+                } else if (typeof(newValue) === 'object' &&
+                           cajaVM.passesGuard(TameGradientT, newValue)) {
+                  privates.feral[prop] = taming.untame(newValue);
+                } // else do nothing
+                return newValue;
+              })
             };
-          }),
+          });
+          Props.define(TameContext2D.prototype, TameContext2DConf, {
+            // We filter the values supplied to setters in case some browser
+            // extension makes them more powerful, e.g. containing scripting or
+            // a URL.
+            // TODO(kpreid): Do we want to filter the *getters* as well?
+            // Scenarios: (a) canvas shared with innocent code, (b) browser
+            // quirks?? If we do, then what should be done with a bad value?
+            globalAlpha: PT.RWCond(
+                function (v) { return typeof v === 'number' &&
+                                      0.0 <= v && v <= 1.0;     }),
+            globalCompositeOperation: PT.RWCond(
+                StringTest([
+                  'source-atop',
+                  'source-in',
+                  'source-out',
+                  'source-over',
+                  'destination-atop',
+                  'destination-in',
+                  'destination-out',
+                  'destination-over',
+                  'lighter',
+                  'copy',
+                  'xor'
+                ])),
+            strokeStyle: CP_STYLE,
+            fillStyle: CP_STYLE,
+            lineWidth: PT.RWCond(
+                function (v) { return typeof v === 'number' &&
+                                      0.0 < v && v !== Infinity; }),
+            lineCap: PT.RWCond(
+                StringTest([
+                  'butt',
+                  'round',
+                  'square'
+                ])),
+            lineJoin: PT.RWCond(
+                StringTest([
+                  'bevel',
+                  'round',
+                  'miter'
+                ])),
+            miterLimit: PT.RWCond(
+                function (v) { return typeof v === 'number' &&
+                                      0 < v && v !== Infinity; }),
+            shadowOffsetX: PT.RWCond(
+                function (v) {
+                  return typeof v === 'number' && isFinite(v); }),
+            shadowOffsetY: PT.RWCond(
+                function (v) {
+                  return typeof v === 'number' && isFinite(v); }),
+            shadowBlur: PT.RWCond(
+                function (v) { return typeof v === 'number' &&
+                                      0.0 <= v && v !== Infinity; }),
+            shadowColor: Props.markPropMaker(function(env) {
+              return {
+                enumerable: true,
+                // TODO(kpreid): Better tools for deriving descriptors
+                get: CP_STYLE(env).get,
+                set: PT.RWCond(isColor)(env).set
+              };
+            }),
 
-          font: PT.RWCond(isFont),
-          textAlign: PT.RWCond(
-              StringTest([
-                'start',
-                'end',
-                'left',
-                'right',
-                'center'
-              ])),
-          textBaseline: PT.RWCond(
-              StringTest([
-                'top',
-                'hanging',
-                'middle',
-                'alphabetic',
-                'ideographic',
-                'bottom'
-              ]))
+            font: PT.RWCond(isFont),
+            textAlign: PT.RWCond(
+                StringTest([
+                  'start',
+                  'end',
+                  'left',
+                  'right',
+                  'center'
+                ])),
+            textBaseline: PT.RWCond(
+                StringTest([
+                  'top',
+                  'hanging',
+                  'middle',
+                  'alphabetic',
+                  'ideographic',
+                  'bottom'
+                ]))
+          });
+          return cajaVM.def(TameContext2D);
         });
-        cajaVM.def(TameContext2D);
 
         defineElement({
           domClass: 'HTMLCanvasElement',
-          properties: {
+          properties: function() { return {
             height: PT.filter(false, identity, false, Number),
             width: PT.filter(false, identity, false, Number),
             getContext: Props.ampMethod(function(privates, contextId) {
@@ -5103,8 +5178,10 @@ var Domado = (function() {
               switch (contextId) {
                 case '2d':
                   var feralContext = privates.feral.getContext('2d');
+                  var TameContext = tamingClassTable.getTamingCtor(
+                      'CanvasRenderingContext2D');
                   if (!taming.hasTameTwin(feralContext)) {
-                    taming.tamesTo(feralContext, cajaVM.def(new TameContext2D(
+                    taming.tamesTo(feralContext, cajaVM.def(new TameContext(
                         feralContext, privates.policy)));
                   }
                   return taming.tame(feralContext);
@@ -5115,7 +5192,7 @@ var Domado = (function() {
                   return null;
               }
             })
-          }
+          }; }
         });
       })();
 
@@ -5157,7 +5234,7 @@ var Domado = (function() {
       });
       cajaVM.def(FormElementProxyHandler);
 
-      var TameFormElement = defineElement({
+      defineElement({
         domClass: 'HTMLFormElement',
         proxyType: FormElementProxyHandler,
         construct: nodeAmp(function(privates) {
@@ -5170,7 +5247,7 @@ var Domado = (function() {
             value: privates.feral.length
           });
         }),
-        properties: {
+        properties: function() { return {
           action: PT.filterAttr(defaultToEmptyStr, String),
           elements: PT.TameMemoIf(false, 'elements', function(f) {
             // TODO(kpreid): make tameHTMLCollection live-capable
@@ -5188,7 +5265,7 @@ var Domado = (function() {
             privates.policy.requireEditable();
             return privates.feral.reset();
           })
-        }
+        }; }
       });
 
       defineTrivialElement('HTMLHeadingElement');
@@ -5204,13 +5281,13 @@ var Domado = (function() {
         domClass: 'HTMLHtmlElement'
       });
 
-      var TameIFrameElement = defineElement({
+      defineElement({
         domClass: 'HTMLIFrameElement',
         construct: nodeAmp(function(privates) {
           privates.contentDomicile = undefined;
           privates.seenContentDocument = undefined;
         }),
-        properties: {
+        properties: function() { return {
           align: {
             enumerable: true,
             get: nodeAmp(function(privates) {
@@ -5256,7 +5333,7 @@ var Domado = (function() {
               return contentDomicile(this).window;
             })
           }
-        }
+        }; }
       });
       function contentDomicile(tameIFrame) {
         // TODO(kpreid): Once we support loading content via src=, we will need
@@ -5297,9 +5374,9 @@ var Domado = (function() {
       }
 
       var featureTestImage = makeDOMAccessible(document.createElement('img'));
-      var TameImageElement = defineElement({
+      defineElement({
         domClass: 'HTMLImageElement',
-        properties: {
+        properties: function() { return {
           alt: PT.filterProp(String, String),
           height: PT.filterProp(Number, Number),
           src: PT.filter(false, String, true, identity),
@@ -5310,12 +5387,15 @@ var Domado = (function() {
               PT.filterProp(Number, Number)),
           complete: Props.cond('complete' in featureTestImage,
               PT.filterProp(Boolean, Boolean))
-        }
+        }; }
       });
 
+      // Common supertype just to save some code -- does not correspond to real
+      // HTML, but should be harmless. Ideally we wouldn't export this.
       function toInt(x) { return x | 0; }
-      var TameFormField = defineElement({
-        properties: {
+      defineElement({
+        domClass: 'CajaFormField',
+        properties: function() { return {
           autofocus: PT.ro,
           disabled: PT.rw,
           form: PT.related,
@@ -5324,13 +5404,13 @@ var Domado = (function() {
           value: PT.filter(
             false, function (x) { return x == null ? null : String(x); },
             false, function (x) { return x == null ? '' : '' + x; })
-        }
+        }; }
       });
       
-      var TameInputElement = defineElement({
-        superclass: TameFormField,
+      defineElement({
+        superclass: 'CajaFormField',
         domClass: 'HTMLInputElement',
-        properties: {
+        properties: function() { return {
           checked: PT.filterProp(identity, Boolean),
           defaultChecked: PT.rw,
           defaultValue: PT.filter(
@@ -5347,48 +5427,48 @@ var Domado = (function() {
           select: NP_noArgEditVoidMethod,
           stepDown: NP_noArgEditVoidMethod,
           stepUp: NP_noArgEditVoidMethod
-        }
+        }; }
       });
 
       defineElement({
-        superclass: TameFormField,
+        superclass: 'CajaFormField',
         domClass: 'HTMLButtonElement',
-        properties: {
+        properties: function() { return {
           type: PT.rw
-        }
+        }; }
       });
 
       defineElement({
-        superclass: TameFormField,
+        superclass: 'CajaFormField',
         domClass: 'HTMLSelectElement',
-        properties: {
+        properties: function() { return {
           multiple: PT.rw,
           options: PT.TameMemoIf(nodeListsAreLive, 'options', function(f) {
             return new TameOptionsList(f, defaultTameNode, 'name');
           }),
           selectedIndex: PT.filterProp(identity, toInt),
           type: PT.ro
-        }
+        }; }
       });
 
       defineElement({
-        superclass: TameFormField,
+        superclass: 'CajaFormField',
         domClass: 'HTMLTextAreaElement',
-        properties: {
+        properties: function() { return {
           type: PT.rw
-        }
+        }; }
       });
 
       defineElement({
         domClass: 'HTMLLabelElement',
-        properties: {
+        properties: function() { return {
           htmlFor: Props.actAs('for', PT.filterAttr(identity, identity))
-        }
+        }; }
       });
 
       defineElement({
         domClass: 'HTMLOptionElement',
-        properties: {
+        properties: function() { return {
           defaultSelected: PT.filterProp(Boolean, Boolean),
           disabled: PT.filterProp(Boolean, Boolean),
           form: PT.related,
@@ -5400,7 +5480,7 @@ var Domado = (function() {
           value: PT.filterProp(
             function (x) { return x == null ? null : String(x); },
             function (x) { return x == null ? '' : '' + x; })
-        }
+        }; }
       });
       
       defineTrivialElement('HTMLParagraphElement');
@@ -5429,7 +5509,7 @@ var Domado = (function() {
         return name + "();";
       }
 
-      var TameScriptElement = defineElement({
+      defineElement({
         domClass: 'HTMLScriptElement',
         forceChildrenNotEditable: true,
         construct: nodeAmp(function(privates) {
@@ -5438,7 +5518,7 @@ var Domado = (function() {
             document.createTextNode(
               dynamicCodeDispatchMaker(privates)));
         }),
-        properties: {
+        properties: function() { return {
           src: PT.filter(false, identity, true, identity),
           setAttribute: Props.ampMethod(function(privates, attrib, value) {
             var feral = privates.feral;
@@ -5449,36 +5529,36 @@ var Domado = (function() {
               privates.scriptSrc = String(value);
             }
           })
-        }
+        }; }
       });
 
       defineTrivialElement('HTMLSpanElement');
 
       defineElement({
         domClass: 'HTMLTableColElement',
-        properties: {
+        properties: function() { return {
           align: PT.filterProp(identity, identity),
           vAlign: PT.filterProp(identity, identity)
-        }
+        }; }
       });
 
       defineTrivialElement('HTMLTableCaptionElement');
 
-      var TameTableCellElement = defineElement({
+      defineElement({
         domClass: 'HTMLTableCellElement',
-        properties: {
+        properties: function() { return {
           colSpan: PT.filterProp(identity, identity),
           rowSpan: PT.filterProp(identity, identity),
           cellIndex: PT.ro,
           noWrap: PT.filterProp(identity, identity) // HTML5 Obsolete
-        }
+        }; }
       });
       defineElement({
-        superclass: TameTableCellElement,
+        superclass: 'HTMLTableCellElement',
         domClass: 'HTMLTableDataCellElement'
       });
       defineElement({
-        superclass: TameTableCellElement,
+        superclass: 'HTMLTableCellElement',
         domClass: 'HTMLTableHeaderCellElement'
       });
 
@@ -5488,9 +5568,9 @@ var Domado = (function() {
         }
       }
 
-      var TameTableRowElement = defineElement({
+      defineElement({
         domClass: 'HTMLTableRowElement',
-        properties: {
+        properties: function() { return {
           // TODO(kpreid): Arrange so there are preexisting functions to pass
           // into TameMemoIf rather than repeating this inline stuff.
           cells: PT.TameMemoIf(nodeListsAreLive, 'cells', function(feralList) {
@@ -5510,12 +5590,12 @@ var Domado = (function() {
             requireIntIn(index, -1, privates.feral.cells.length);
             privates.feral.deleteCell(index);
           })
-        }
+        }; }
       });
 
-      var TameTableSectionElement = defineElement({
+      defineElement({
         domClass: 'HTMLTableSectionElement',
-        properties: {
+        properties: function() { return {
           rows: PT.TameMemoIf(nodeListsAreLive, 'rows', function(feralList) {
             return new TameNodeList(feralList, defaultTameNode);
           }),
@@ -5529,13 +5609,14 @@ var Domado = (function() {
             requireIntIn(index, -1, privates.feral.rows.length);
             privates.feral.deleteRow(index);
           })
-        }
+        }; }
       });
 
-      var TameTableElement = defineElement({
-        superclass: TameTableSectionElement,  // nonstandard but sound
+      defineElement({
+        // nonstandard but sound
+        superclass: 'HTMLTableSectionElement',
         domClass: 'HTMLTableElement',
-        properties: {
+        properties: function() { return {
           tBodies: PT.TameMemoIf(nodeListsAreLive, 'tBodies',
               nodeAmp(function(privates, f) {
             if (privates.policy.childrenVisible) {
@@ -5565,7 +5646,7 @@ var Domado = (function() {
             requireIntIn(index, -1, privates.feral.rows.length);
             privates.feral.deleteRow(index);
           })
-        }
+        }; }
       });
 
       defineElement({
@@ -5620,207 +5701,202 @@ var Domado = (function() {
       function tameEvent(event) {
         event = makeDOMAccessible(event);
         if (!taming.hasTameTwin(event)) {
-          var tamed = new TameEvent(event, false);
+          var tamed = new (tamingClassTable.getTamingCtor('Event'))(
+              event, false);
           taming.tamesTo(event, tamed);
         }
         return taming.tame(event);
       }
 
-      function eventVirtualizingAccessor(fn) {
-        return Props.addOverride(Props.ampGetter(fn));
-      }
-
-      function P_e_view(transform) {
-        return Props.addOverride(PT.ROView(transform));
-      }
-
-      var featureTestKeyEvent = {};
-      try {
-        featureTestKeyEvent = makeDOMAccessible(
-            document.createEvent('KeyboardEvent'));
-      } catch (e) {}
-
-      function tameEventView(view) {
-        if (view === window) {
-          return tameWindow;
-        } else if (view === null) {
-          return null;
-        } else {
-          if (typeof console !== 'undefined') {
-            console.warn('Domado: Discarding unrecognized feral view value:',
-                view);
-          }
-          return null;
+      tamingClassTable.registerLazy('Event', function() {
+        function eventVirtualizingAccessor(fn) {
+          return Props.addOverride(Props.ampGetter(fn));
         }
-      }
-      function untameEventView(view) {
-        if (view === tameWindow) {
-          return window;
-        } else if (view === null) {
-          return null;
-        } else {
-          if (typeof console !== 'undefined') {
-            console.warn('Domado: Discarding unrecognized guest view value:',
-                view);
+
+        function P_e_view(transform) {
+          return Props.addOverride(PT.ROView(transform));
+        }
+
+        var featureTestKeyEvent = {};
+        try {
+          featureTestKeyEvent = makeDOMAccessible(
+              document.createEvent('KeyboardEvent'));
+        } catch (e) {}
+
+        function tameEventView(view) {
+          if (view === window) {
+            return tameWindow;
+          } else if (view === null) {
+            return null;
+          } else {
+            if (typeof console !== 'undefined') {
+              console.warn('Domado: Discarding unrecognized feral view value:',
+                  view);
+            }
+            return null;
           }
         }
-      }
-
-      function TameEvent(event, notYetDispatched) {
-        assert(!!event);
-        TameEventConf.confide(this, taming);
-        eventAmplify(this, function(privates) {
-          privates.feral = event;
-          privates.notYetDispatched = notYetDispatched;
-          Object.preventExtensions(privates);
-        });
-        return this;
-      }
-      inertCtor(TameEvent, Object, 'Event');
-      Props.define(TameEvent.prototype, TameEventConf, {
-        eventPhase: P_e_view(Number),
-        type: P_e_view(function(type) {
-          return bridal.untameEventType(String(type));
-        }),
-        bubbles: P_e_view(Boolean),
-        cancelable: P_e_view(Boolean),
-        view: P_e_view(tameEventView),
-        target: eventVirtualizingAccessor(function(privates) {
-          var event = privates.feral;
-          return tameRelatedNode(event.target || event.srcElement);
-        }),
-        srcElement: P_e_view(tameRelatedNode),
-        currentTarget: P_e_view(tameRelatedNode),
-        relatedTarget: eventVirtualizingAccessor(function(privates) {
-          var e = privates.feral;
-          var t = e.relatedTarget;
-          if (!t) {
-            if (e.type === 'mouseout') {
-              t = e.toElement;
-            } else if (e.type === 'mouseover') {
-              t = e.fromElement;
+        function untameEventView(view) {
+          if (view === tameWindow) {
+            return window;
+          } else if (view === null) {
+            return null;
+          } else {
+            if (typeof console !== 'undefined') {
+              console.warn('Domado: Discarding unrecognized guest view value:',
+                  view);
             }
           }
-          return tameRelatedNode(t);
-        }),
-        fromElement: P_e_view(tameRelatedNode),
-        toElement: P_e_view(tameRelatedNode),
-        detail: P_e_view(Number),
-        pageX: P_e_view(Number),
-        pageY: P_e_view(Number),
-        altKey: P_e_view(Boolean),
-        ctrlKey: P_e_view(Boolean),
-        metaKey: P_e_view(Boolean),
-        shiftKey: P_e_view(Boolean),
-        button: P_e_view(function (v) { return v && Number(v); }),
-        clientX: P_e_view(Number),
-        clientY: P_e_view(Number),
-        screenX: P_e_view(Number),
-        screenY: P_e_view(Number),
-        which: P_e_view(function (v) { return v && Number(v); }),
-        location: P_e_view(Number),  // KeyboardEvent
-        keyCode: P_e_view(function(v) { return v && Number(v); }),
-        charCode: P_e_view(function(v) { return v && Number(v); }),
-        key: Props.cond('key' in featureTestKeyEvent, P_e_view(String)),
-        char: Props.cond('char' in featureTestKeyEvent, P_e_view(String)),
-        stopPropagation: Props.ampMethod(function(privates) {
-          // TODO(mikesamuel): make sure event doesn't propagate to dispatched
-          // events for this gadget only.
-          // But don't allow it to stop propagation to the container.
-          if (privates.feral.stopPropagation) {
-            privates.feral.stopPropagation();
-          } else {
-            privates.feral.cancelBubble = true;
-          }
-        }),
-        preventDefault: Props.ampMethod(function(privates) {
-          // TODO(mikesamuel): make sure event doesn't propagate to dispatched
-          // events for this gadget only.
-          // But don't allow it to stop propagation to the container.
-          if (privates.feral.preventDefault) {
-            privates.feral.preventDefault();
-          } else {
-            privates.feral.returnValue = false;
-          }
-        }),
-        toString: Props.overridable(false, innocuous(function() {
-          return '[domado object Event]';
-        }))
-      });
-      cajaVM.def(TameEvent);  // and its prototype
-
-      function TameCustomHTMLEvent(event) {
-        return TameEvent.call(this, event, true);
-      }
-      inertCtor(TameCustomHTMLEvent, TameEvent);
-      /**
-       * Helper for init*Event.
-       * 'method' is relied on. 'args' should be untamed.
-       */
-      function tameInitSomeEvent(
-          privates, method, type, bubbles, cancelable, args) {
-        if (privates.notYetDispatched) {
-          bridal.initEvent(
-              privates.feral, method, type, bubbles, cancelable, args);
-        } else {
-          // Do nothing. This prevents guests using initEvent to mutate
-          // browser-generated events that will be seen by the host.
-          // It also matches browser behavior (Chrome and FF, as of 2013-01-07),
-          // because they have initEvent do nothing if the event has already
-          // been dispatched, but we don't want to rely on that for security,
-          // and bridal's initEvent emulation for IE does not have that
-          // property.
         }
-      }
-      Props.define(TameCustomHTMLEvent.prototype, TameEventConf, {
-        initEvent: Props.ampMethod(function(
-            privates, type, bubbles, cancelable) {
-          tameInitSomeEvent.call(this, privates, 'initEvent', type, bubbles,
-              cancelable, []);
-        }),
-        initUIEvent: Props.ampMethod(function(
-            privates, type, bubbles, cancelable, view, detail) {
-          tameInitSomeEvent.call(this, privates, 'initUIEvent', type, bubbles,
-              cancelable, [untameEventView(view), +detail]);
-        }),
-        initMouseEvent: Props.ampMethod(function(
-          // per MDN
-            privates, type, bubbles, cancelable, view, detail, screenX, screenY,
-            clientX, clientY, ctrlKey, altKey, shiftKey, metaKey, button,
-            relatedTarget) {
-          tameInitSomeEvent.call(this, privates, 'initMouseEvent', type, bubbles,
-              cancelable, [untameEventView(view), +detail, +screenX, +screenY,
-              +clientX, +clientY, Boolean(ctrlKey), Boolean(altKey),
-              Boolean(shiftKey), Boolean(metaKey), +button,
-              toFeralNode(relatedTarget)]);
-        }),
-        initKeyEvent: Props.cond(
-            'initKeyEvent' in featureTestKeyEvent,
-            Props.ampMethod(function(
-                // per MDN
-                privates, type, bubbles, cancelable, view, ctrlKey, altKey,
-                shiftKey, metaKey, keyCode, charCode) {
-          tameInitSomeEvent.call(this, privates, 'initKeyEvent', type, bubbles,
-              cancelable, [untameEventView(view), Boolean(ctrlKey),
-              Boolean(altKey), Boolean(shiftKey), Boolean(metaKey),
-              Number(keyCode), Number(charCode)]);
-        })),
-        initKeyboardEvent: Props.cond(
-            'initKeyboardEvent' in featureTestKeyEvent,
-            Props.ampMethod(function(
-                // per MDN
-                privates, type, bubbles, cancelable, view, char, key, location,
-                modifiers, repeat, locale) {
-          tameInitSomeEvent.call(this, privates, 'initKeyboardEvent', type,
-              bubbles, cancelable, [untameEventView(view), String(char),
-              String(key), Number(location), String(modifiers), Boolean(repeat),
-              String(locale)]);
-        })),
-        toString: Props.overridable(false, innocuous(function() {
-          return '[domado created Event]';
-        }))
+
+        /**
+         * Helper for init*Event.
+         * 'method' is relied on. 'args' should be untamed.
+         */
+        function tameInitSomeEvent(
+            privates, method, type, bubbles, cancelable, args) {
+          if (privates.notYetDispatched) {
+            bridal.initEvent(
+                privates.feral, method, type, bubbles, cancelable, args);
+          } else {
+            // Do nothing. This prevents guests using initEvent to mutate
+            // browser-generated events that will be seen by the host.
+            // It also matches browser behavior (Chrome and FF, as of 2013-01-07),
+            // because they have initEvent do nothing if the event has already
+            // been dispatched, but we don't want to rely on that for security,
+            // and bridal's initEvent emulation for IE does not have that
+            // property.
+          }
+        }
+
+        function TameEvent(event, isSyntheticEvent) {
+          assert(!!event);
+          TameEventConf.confide(this, taming);
+          eventAmplify(this, function(privates) {
+            privates.feral = event;
+            privates.notYetDispatched = isSyntheticEvent;
+            Object.preventExtensions(privates);
+          });
+          return this;
+        }
+        inertCtor(TameEvent, Object);
+        Props.define(TameEvent.prototype, TameEventConf, {
+          eventPhase: P_e_view(Number),
+          type: P_e_view(function(type) {
+            return bridal.untameEventType(String(type));
+          }),
+          bubbles: P_e_view(Boolean),
+          cancelable: P_e_view(Boolean),
+          view: P_e_view(tameEventView),
+          target: eventVirtualizingAccessor(function(privates) {
+            var event = privates.feral;
+            return tameRelatedNode(event.target || event.srcElement);
+          }),
+          srcElement: P_e_view(tameRelatedNode),
+          currentTarget: P_e_view(tameRelatedNode),
+          relatedTarget: eventVirtualizingAccessor(function(privates) {
+            var e = privates.feral;
+            var t = e.relatedTarget;
+            if (!t) {
+              if (e.type === 'mouseout') {
+                t = e.toElement;
+              } else if (e.type === 'mouseover') {
+                t = e.fromElement;
+              }
+            }
+            return tameRelatedNode(t);
+          }),
+          fromElement: P_e_view(tameRelatedNode),
+          toElement: P_e_view(tameRelatedNode),
+          detail: P_e_view(Number),
+          pageX: P_e_view(Number),
+          pageY: P_e_view(Number),
+          altKey: P_e_view(Boolean),
+          ctrlKey: P_e_view(Boolean),
+          metaKey: P_e_view(Boolean),
+          shiftKey: P_e_view(Boolean),
+          button: P_e_view(function (v) { return v && Number(v); }),
+          clientX: P_e_view(Number),
+          clientY: P_e_view(Number),
+          screenX: P_e_view(Number),
+          screenY: P_e_view(Number),
+          which: P_e_view(function (v) { return v && Number(v); }),
+          location: P_e_view(Number),  // KeyboardEvent
+          keyCode: P_e_view(function(v) { return v && Number(v); }),
+          charCode: P_e_view(function(v) { return v && Number(v); }),
+          key: Props.cond('key' in featureTestKeyEvent, P_e_view(String)),
+          char: Props.cond('char' in featureTestKeyEvent, P_e_view(String)),
+          stopPropagation: Props.ampMethod(function(privates) {
+            // TODO(mikesamuel): make sure event doesn't propagate to dispatched
+            // events for this gadget only.
+            // But don't allow it to stop propagation to the container.
+            if (privates.feral.stopPropagation) {
+              privates.feral.stopPropagation();
+            } else {
+              privates.feral.cancelBubble = true;
+            }
+          }),
+          preventDefault: Props.ampMethod(function(privates) {
+            // TODO(mikesamuel): make sure event doesn't propagate to dispatched
+            // events for this gadget only.
+            // But don't allow it to stop propagation to the container.
+            if (privates.feral.preventDefault) {
+              privates.feral.preventDefault();
+            } else {
+              privates.feral.returnValue = false;
+            }
+          }),
+
+          initEvent: Props.ampMethod(function(
+              privates, type, bubbles, cancelable) {
+            tameInitSomeEvent.call(this, privates, 'initEvent', type, bubbles,
+                cancelable, []);
+          }),
+          initUIEvent: Props.ampMethod(function(
+              privates, type, bubbles, cancelable, view, detail) {
+            tameInitSomeEvent.call(this, privates, 'initUIEvent', type, bubbles,
+                cancelable, [untameEventView(view), +detail]);
+          }),
+          initMouseEvent: Props.ampMethod(function(
+            // per MDN
+              privates, type, bubbles, cancelable, view, detail, screenX,
+              screenY, clientX, clientY, ctrlKey, altKey, shiftKey, metaKey,
+              button, relatedTarget) {
+            tameInitSomeEvent.call(this, privates, 'initMouseEvent', type,
+                bubbles, cancelable, [untameEventView(view), +detail, +screenX,
+                +screenY, +clientX, +clientY, Boolean(ctrlKey), Boolean(altKey),
+                Boolean(shiftKey), Boolean(metaKey), +button,
+                toFeralNode(relatedTarget)]);
+          }),
+          initKeyEvent: Props.cond(
+              'initKeyEvent' in featureTestKeyEvent,
+              Props.ampMethod(function(
+                  // per MDN
+                  privates, type, bubbles, cancelable, view, ctrlKey, altKey,
+                  shiftKey, metaKey, keyCode, charCode) {
+            tameInitSomeEvent.call(this, privates, 'initKeyEvent', type,
+                bubbles, cancelable, [untameEventView(view), Boolean(ctrlKey),
+                Boolean(altKey), Boolean(shiftKey), Boolean(metaKey),
+                Number(keyCode), Number(charCode)]);
+          })),
+          initKeyboardEvent: Props.cond(
+              'initKeyboardEvent' in featureTestKeyEvent,
+              Props.ampMethod(function(
+                  // per MDN
+                  privates, type, bubbles, cancelable, view, char, key,
+                  location, modifiers, repeat, locale) {
+            tameInitSomeEvent.call(this, privates, 'initKeyboardEvent', type,
+                bubbles, cancelable, [untameEventView(view), String(char),
+                String(key), Number(location), String(modifiers),
+                Boolean(repeat), String(locale)]);
+          })),
+
+          toString: Props.overridable(false, innocuous(function() {
+            return '[domado object Event]';
+          }))
+        });
+        return cajaVM.def(TameEvent);  // and defend its prototype
       });
-      cajaVM.def(TameCustomHTMLEvent);  // and its prototype
 
       // As far as we know, creating any particular event type is harmless; but
       // this whitelist exists to protect against novel extensions which may
@@ -6089,7 +6165,8 @@ var Domado = (function() {
             rawEvent = document.createEventObject();
             rawEvent.eventType = 'ondataavailable';
           }
-          var tamedEvent = new TameCustomHTMLEvent(rawEvent);
+          var tamedEvent = new (tamingClassTable.getTamingCtor('Event'))(
+              rawEvent, true);
           taming.tamesTo(rawEvent, tamedEvent);
           return tamedEvent;
         }),
@@ -6293,12 +6370,7 @@ var Domado = (function() {
 
       // Taming of Styles:
 
-      // defer construction
-      var TameStyle = null;
-      var TameComputedStyle = null;
-
-      function buildTameStyle() {
-
+      tamingClassTable.registerLazy('CSSStyleDeclaration', function() {
         var aStyleForCPC = elementForFeatureTests.style;
         aStyleForCPC = makeDOMAccessible(aStyleForCPC);
         var allCssProperties = CssPropertiesCollection(aStyleForCPC);
@@ -6313,7 +6385,7 @@ var Domado = (function() {
         /**
          * http://www.w3.org/TR/DOM-Level-2-Style/css.html#CSS-CSSStyleDeclaration
          */
-        TameStyle = function (style, editable, tameEl) {
+        function TameStyle(style, editable, tameEl) {
           style = makeDOMAccessible(style);
 
           TameStyleConf.confide(this, taming);
@@ -6336,8 +6408,7 @@ var Domado = (function() {
             Object.preventExtensions(privates);
           });
         };
-        inertCtor(TameStyle, Object /*, 'Style'*/);
-            // cannot export lazily
+        inertCtor(TameStyle, Object);
         TameStyle.prototype.getPropertyValue =
             TameStyleConf.amplifying(function(privates, cssPropertyName) {
           cssPropertyName = String(cssPropertyName || '').toLowerCase();
@@ -6410,8 +6481,17 @@ var Domado = (function() {
             })
           });
         });
-        cajaVM.def(TameStyle);  // and its prototype
 
+        // Support for computed style type reusing these values
+        // TODO(kpreid): Do this in a more least-authority way.
+        TameStyle.TameStyleConf = TameStyleConf;
+        TameStyle.allCssProperties = allCssProperties;
+
+        return cajaVM.def(TameStyle);  // and defends its prototype
+      });
+
+      tamingClassTable.registerLazy('CajaComputedCSSStyleDeclaration',
+          function() {
         function isNestedInAnchor(el) {
           for (;
               el && el != containerNode;
@@ -6423,7 +6503,11 @@ var Domado = (function() {
           return false;
         }
 
-        TameComputedStyle = function (rawElement, pseudoElement) {
+        var TameStyle = tamingClassTable.getTamingCtor('CSSStyleDeclaration');
+        var TameStyleConf = TameStyle.TameStyleConf;
+        var allCssProperties = TameStyle.allCssProperties;
+
+        function TameComputedStyle(rawElement, pseudoElement) {
           rawElement = rawElement || document.createElement('div');
           TameStyle.call(
               this,
@@ -6460,28 +6544,30 @@ var Domado = (function() {
             };
           });
         };
-        inertCtor(TameComputedStyle, TameStyle);
+        inertCtor(TameComputedStyle,
+            tamingClassTable.getTamingCtor('CSSStyleDeclaration'));
         Props.define(TameComputedStyle, TameStyleConf, {
           toString: Props.overridable(false, innocuous(function() {
             return '[Fake Computed Style]';
           }))
         });
-        cajaVM.def(TameComputedStyle);  // and its prototype
-      }
+        return cajaVM.def(TameComputedStyle);  // and defends its prototype
+      });
 
-      // Note: XMLHttpRequest is a ctor that *can* be directly
-      // called by cajoled code, so we do not use inertCtor().
-      tamingClassTable.registerSafeCtor('XMLHttpRequest',
-          cajaVM.def(TameXMLHttpRequest(
-              taming,
-              rulebreaker,
-              XMLHttpRequestCtor(
-                  makeDOMAccessible,
-                  makeFunctionAccessible(window.XMLHttpRequest),
-                  makeFunctionAccessible(window.ActiveXObject),
-                  makeFunctionAccessible(window.XDomainRequest)),
-              naiveUriPolicy,
-              function () { return domicile.pseudoLocation.href; })));
+      tamingClassTable.registerLazy('XMLHttpRequest', function() {
+        // Note: XMLHttpRequest is a ctor that *can* be directly
+        // called by cajoled code, so we do not use inertCtor().
+        return cajaVM.def(TameXMLHttpRequest(
+            taming,
+            rulebreaker,
+            XMLHttpRequestCtor(
+                makeDOMAccessible,
+                makeFunctionAccessible(window.XMLHttpRequest),
+                makeFunctionAccessible(window.ActiveXObject),
+                makeFunctionAccessible(window.XDomainRequest)),
+            naiveUriPolicy,
+            function () { return domicile.pseudoLocation.href; }));
+      });
 
 
       /**
@@ -6579,54 +6665,72 @@ var Domado = (function() {
       // Methods of TameWindow are established later. TODO(kpreid): Revisit
       // whether that is necessary.
 
-      // Location object -- used by Document and Window and so must be created
-      // before each.
-      function TameLocation() {
-        // TODO(mikesamuel): figure out a mechanism by which the container can
-        // specify the gadget's apparent URL.
-        // See http://www.whatwg.org/specs/web-apps/current-work/multipage/history.html#location0
-        var tameLocation = this;
-        function defineLocationField(f, dflt) {
-          Object.defineProperty(tameLocation, f, {
+      tamingClassTable.registerLazy('Location', function() {
+        // Location object -- used by Document and Window and so must be created
+        // before each.
+        function TameLocation() {
+          // TODO(mikesamuel): figure out a mechanism by which the container can
+          // specify the gadget's apparent URL.
+          // See http://www.whatwg.org/specs/web-apps/current-work/multipage/history.html#location0
+          var self = this;
+          function defineLocationField(f, dflt) {
+            Object.defineProperty(self, f, {
+              configurable: false,
+              enumerable: true,
+              get: innocuous(function() {
+                try {
+                  var v = domicile.pseudoLocation[f];
+                  return String(v !== null ? v : dflt);
+                } catch (e) {
+                  // paranoia - domicile.pseudoLocation is potentially
+                  // replaceable by the host and could have wrong-frame code.
+                  // TODO(kpreid): put pseudoLocation somewhere not writable.
+                  throw tameException(e);
+                }
+              })
+            });
+          }
+          defineLocationField('href', 'http://nosuchhost.invalid:80/');
+          defineLocationField('hash', '');
+          defineLocationField('host', 'nosuchhost.invalid:80');
+          defineLocationField('hostname', 'nosuchhost.invalid');
+          defineLocationField('pathname', '/');
+          defineLocationField('port', '80');
+          defineLocationField('protocol', 'http:');
+          defineLocationField('search', '');
+        }
+        inertCtor(TameLocation, Object);
+        setToString(TameLocation.prototype, innocuous(function() {
+          return this.href;
+        }));
+        return cajaVM.def(TameLocation);  // and its prototype
+      });
+
+      // 'location' singleton
+      var installLocation = (function() {
+        var tameLocation;
+        function tameLocationGetter() {
+          if (!tameLocation) {
+            tameLocation =
+                new (tamingClassTable.getTamingCtor('Location'))();
+          }
+          return tameLocation;
+        }
+        cajaVM.constFunc(tameLocationGetter);
+        function tameLocationSetter() {
+          throw new Error('Caja does not currently support assigning to ' +
+              '.location');
+        }
+        cajaVM.constFunc(tameLocationSetter);
+        return function installLocation(obj) {
+          Object.defineProperty(obj, 'location', {
             configurable: false,
             enumerable: true,
-            get: innocuous(function() {
-              try {
-                var v = domicile.pseudoLocation[f];
-                return String(v !== null ? v : dflt);
-              } catch (e) {
-                // paranoia - domicile.pseudoLocation is potentially replaceable
-                // by the host. TODO(kpreid): put pseudoLocation somewhere not
-                // writable.
-                throw tameException(e);
-              }
-            })
+            get: tameLocationGetter,
+            set: tameLocationSetter
           });
-        }
-        defineLocationField('href', 'http://nosuchhost.invalid:80/');
-        defineLocationField('hash', '');
-        defineLocationField('host', 'nosuchhost.invalid:80');
-        defineLocationField('hostname', 'nosuchhost.invalid');
-        defineLocationField('pathname', '/');
-        defineLocationField('port', '80');
-        defineLocationField('protocol', 'http:');
-        defineLocationField('search', '');
-        setToString(tameLocation, cajaVM.constFunc(function() {
-          return tameLocation.href;
-        }));
-      }
-      inertCtor(TameLocation, Object, 'Location');
-      var tameLocation = new TameLocation();
-      function installLocation(obj) {
-        Object.defineProperty(obj, "location", {
-          value: tameLocation,
-          configurable: false,
-          enumerable: true,
-          writable: false  // Writable in browsers, but has a side-effect
-                           // which we don't implement.
-        });
-      }
-      cajaVM.def(TameLocation);  // and its prototype
+        };
+      }());
 
       // See spec at http://www.whatwg.org/specs/web-apps/current-work/multipage/browsers.html#navigator
       // We don't attempt to hide or abstract userAgent details since
@@ -6776,8 +6880,9 @@ var Domado = (function() {
               throw new Error('Bad pseudo element ' + pseudoElement);
             }
             // No need to check editable since computed styles are readonly.
-            TameComputedStyle || buildTameStyle();
-            return new TameComputedStyle(elPriv.feral, pseudoElement);
+            return new (tamingClassTable.getTamingCtor(
+                'CajaComputedCSSStyleDeclaration'))(
+                elPriv.feral, pseudoElement);
           });
         }),
         pageXOffset: Props.alias(true, 'scrollX'),
@@ -6814,9 +6919,8 @@ var Domado = (function() {
       // opera: defined only on Opera.
       cajaVM.def(TameWindow);  // and its prototype
 
-      // Freeze exported classes. Must occur before TameHTMLDocument is
-      // instantiated.
-      tamingClassTable.defAllAndFinish();
+      // Declare we're done adding new exported classes.
+      tamingClassTable.finish();
 
       var tameDocument = new TameHTMLDocument(
           document,
