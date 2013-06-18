@@ -284,7 +284,7 @@ For help on building and testing Caja, see:
       <formatter type="xml"/>
       <jvmarg line="${jvmarg}"/>
       <syspropertyset refid="test.propertyset"/>
-      <batchtest todir="${reports}/test.${test.type}">
+      <batchtest todir="${reports}/${test.type}/results">
         <fileset dir="${tests}">
           <and>
             <not><filename name="**/*BrowserTest.java"/></not>
@@ -304,7 +304,7 @@ For help on building and testing Caja, see:
       <formatter type="xml"/>
       <jvmarg line="${jvmarg}"/>
       <syspropertyset refid="test.propertyset"/>
-      <batchtest todir="${reports}/test.${test.type}">
+      <batchtest todir="${reports}/${test.type}/results">
         <fileset dir="${tests}">
           <and>
             <not><filename name="**/*BrowserTest.java"/></not>
@@ -318,14 +318,17 @@ For help on building and testing Caja, see:
   </target>
 
   <target name="RuntestsRunBrowser" unless="emma.enabled">
+    <mkdir dir="${reports}/${test.type}/capture" />
     <junit printsummary="yes" fork="yes" forkmode="once" maxmemory="512m">
       <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
       <classpath refid="classpath.tests"/>
       <formatter type="xml"/>
       <jvmarg line="${jvmarg}"/>
       <syspropertyset refid="test.propertyset"/>
-      <sysproperty key="test.capture.to" value="${reports}/test.${test.type}"/>
-      <batchtest todir="${reports}/test.${test.type}">
+      <sysproperty
+          key="test.capture.to"
+          value="${reports}/${test.type}/capture"/>
+      <batchtest todir="${reports}/${test.type}/results">
         <fileset dir="${tests}">
           <and>
             <filename name="**/*BrowserTest.java"/>
@@ -344,7 +347,7 @@ For help on building and testing Caja, see:
       <classpath refid="classpath.tests"/>
       <jvmarg line="${jvmarg}"/>
       <syspropertyset refid="test.propertyset"/>
-      <batchtest todir="${reports}/test.${test.type}">
+      <batchtest todir="${reports}/${test.type}/results">
         <fileset dir="${tests}">
           <and>
             <not><filename name="**/ThirdPartyBrowserTest.java"/></not>
@@ -389,7 +392,7 @@ For help on building and testing Caja, see:
                        -com.google.caja.parser.quasiliteral.*RuleDoclet"/>
       </instr>
     </emma>
-    <mkdir dir="${reports}/test.${test.type}"/>
+    <mkdir dir="${reports}/${test.type}/results"/>
     <property name="test.threads" value="2"/>
     <parallel threadCount="${test.threads}" failonany="true">
       <antcall target="RuntestsRunBrowser"/>
@@ -399,7 +402,7 @@ For help on building and testing Caja, see:
     </parallel>
     <summarize errorProperty="runtests.error"
      failureProperty="runtests.failure">
-      <fileset dir="${reports}/test.${test.type}">
+      <fileset dir="${reports}/${test.type}/results">
         <include name="TEST-*.xml"/>
       </fileset>
     </summarize>
@@ -415,9 +418,10 @@ For help on building and testing Caja, see:
       </report>
     </emma>
     <!-- Generate the test results report. -->
-    <junitreport todir="${reports}/test.${test.type}">
-      <fileset dir="${reports}/test.${test.type}" includes="TEST-*.xml"/>
-      <report format="frames" todir="${reports}/test.${test.type}"
+    <mkdir dir="${reports}/${test.type}/report"/>
+    <junitreport todir="${reports}/${test.type}/results">
+      <fileset dir="${reports}/${test.type}/results" includes="TEST-*.xml"/>
+      <report format="frames" todir="${reports}/${test.type}/report"
        styledir="${third_party}/ant/etc"/>
     </junitreport>
     <condition property="runtests.success">
@@ -441,10 +445,10 @@ For help on building and testing Caja, see:
       </and>
     </condition>
     <fail message=
-     "One or more tests failed. For details, see ${reports}/test.${test.type}/index.html"
+     "One or more tests failed. For details, see ${reports}/${test.type}/report/index.html"
      if="runtests.error"/>
     <fail message=
-     "One or more tests failed. For details, see ${reports}/test.${test.type}/index.html"
+     "One or more tests failed. For details, see ${reports}/${test.type}/report/index.html"
      if="runtests.failure"/>
   </target>
 
