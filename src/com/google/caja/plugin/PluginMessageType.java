@@ -56,8 +56,8 @@ public enum PluginMessageType implements MessageTypeInt {
       "%s: css property %s with value %s not in range [%s, %s]",
       MessageLevel.WARNING),
   UNSAFE_CSS_IDENTIFIER(
-      "%s: css identifier '%s' contains characters that may not work"
-      + " on all browsers", MessageLevel.FATAL_ERROR),
+      "%s: potentially unsafe css identifier '%s'",
+      MessageLevel.WARNING),
   UNSAFE_CSS_PROPERTY("%s: unsafe css property %s", MessageLevel.ERROR),
   UNSAFE_CSS_PSEUDO_SELECTOR(
       "%s: unsafe css pseudo-selector %s", MessageLevel.ERROR),
