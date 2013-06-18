@@ -1352,7 +1352,8 @@
         argsBySuffix('WeakMap<CONSTRUCT>().get___',
         argsBySuffix('WeakMap<CONSTRUCT>().has___',
         argsBySuffix('WeakMap<CONSTRUCT>().set___',
-        G.none))));  // known implementation details leak
+        argsBySuffix('WeakMap<CONSTRUCT>().permitHostObjects___',
+        G.none)))));  // known implementation details leak. TODO abuse
 
     argsByIdentity(RegExp, genNew(genRegex));
     argsByIdentity(RegExp.prototype.exec, freshResult(genMethod(genString)));

@@ -70,12 +70,19 @@ function TamingSchema(privilegedAccess) {
     READ_ONLY_RECORD: 'read_only_record'
   });
 
-  var tameAs = new WeakMap();
+  // All WeakMaps we use deal in host objects, so have a shortcut
+  function makeWeakMap() {
+    var map = new WeakMap();
+    privilegedAccess.weakMapPermitHostObjects(map);
+    return map;
+  }
 
-  var tameFunctionName = new WeakMap();
-  var tameCtorSuper = new WeakMap();
+  var tameAs = makeWeakMap();
 
-  var functionAdvice = new WeakMap();
+  var tameFunctionName = makeWeakMap();
+  var tameCtorSuper = makeWeakMap();
+
+  var functionAdvice = makeWeakMap();
 
   function applyFeralFunction(f, self, args) {
     return initAdvice(f)(self, args);
@@ -91,7 +98,7 @@ function TamingSchema(privilegedAccess) {
     }
   }
 
-  var fixed = new WeakMap();
+  var fixed = makeWeakMap();
 
   function checkCanControlTaming(f) {
     var to = typeof f;

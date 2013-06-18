@@ -14,15 +14,16 @@
 
 /**
  * @provides SESFrameGroup
+ * @requires bridalMaker
  * @requires cajaVM
  * @requires cajaFrameTracker
  * @requires Domado
  * @requires GuestManager
  * @requires Q
- * @requires URI
+ * @requires ses
  * @requires TamingSchema
  * @requires TamingMembrane
- * @requires bridalMaker
+ * @requires URI
  * @overrides window
  */
 
@@ -50,7 +51,8 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
       banNumerics: function() {},
       USELESS: USELESS,
       BASE_OBJECT_CONSTRUCTOR: BASE_OBJECT_CONSTRUCTOR,
-      getValueOf: function(o) { return o.valueOf(); }
+      getValueOf: function(o) { return o.valueOf(); },
+      weakMapPermitHostObjects: ses.weakMapPermitHostObjects
   });
 
   var frameGroupTamingSchema = TamingSchema(tamingHelper);

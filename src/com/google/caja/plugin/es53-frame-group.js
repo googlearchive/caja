@@ -54,7 +54,8 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
       'banNumerics', markCallableWithoutMembrane(banNumerics),
       'USELESS', tamingWin.___.USELESS,
       'BASE_OBJECT_CONSTRUCTOR', tamingWin.___.BASE_OBJECT_CONSTRUCTOR,
-      'getValueOf', markCallableWithoutMembrane(getValueOf));
+      'getValueOf', markCallableWithoutMembrane(getValueOf),
+      'weakMapPermitHostObjects', tamingWin.cajaVM.identity);
 
   var frameGroupTamingSchema = TamingSchema(tamingHelper);
   var frameGroupTamingMembrane =

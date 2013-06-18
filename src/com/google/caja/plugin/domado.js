@@ -164,19 +164,6 @@ var Domado = (function() {
   }
 
   /**
-   * The Caja WeakMap emulation magic property name.
-   *
-   * This name can only be seen by using a proxy handler, but we need our proxy
-   * handlers to permit it even on frozen-seeming proxies, so we have to obtain
-   * it here, which we do by using a proxy to observe it.
-   *
-   * If proxies are unavailable or if WeakMaps do not use a magic property, then
-   * weakMapMagicName will be a value unequal to any string.
-   */
-  var weakMapMagicName = {};
-  // The actual initialization of weakMapMagicName occurs after ProxyHandler.
-
-  /**
    * This is a simple forwarding proxy handler. Code copied 2011-05-24 from
    * <http://wiki.ecmascript.org/doku.php?id=harmony:proxy_defaulthandler>
    * with modifications to make it work on ES5-not-Harmony-but-with-proxies as
@@ -193,12 +180,6 @@ var Domado = (function() {
 
     // Object.getOwnPropertyDescriptor(proxy, name) -> pd | undefined
     getOwnPropertyDescriptor: function(name) {
-      if (name === weakMapMagicName) {
-        // Caja WeakMap emulation internal property; must be redirected to
-        // avoid glitches involving the proxy being treated as identical to its
-        // target.
-        return Object.getOwnPropertyDescriptor(this, 'weakMapMagic');
-      }
       var desc = Object.getOwnPropertyDescriptor(this.target, name);
       if (desc !== undefined) { desc.configurable = true; }
       return desc;
@@ -223,26 +204,12 @@ var Domado = (function() {
 
     // Object.defineProperty(proxy, name, pd) -> undefined
     defineProperty: function(name, desc) {
-      if (name === weakMapMagicName) {
-        if (desc.get) {
-          throw new Error('WeakMap compatibility doesn\'t expect accessors');
-        }
-        if (desc.set === null) {
-          // TODO(kpreid): stale?
-          desc.set = undefined;
-        }
-        Object.defineProperty(this, 'weakMapMagic', desc);
-        return true;
-      }
       Object.defineProperty(this.target, name, desc);
       return true;
     },
 
     // delete proxy[name] -> boolean
     'delete': function(name) {
-      if (name === weakMapMagicName) {
-        return delete this.weakMapMagic;
-      }
       return delete this.target[name];
     },
 
@@ -272,11 +239,6 @@ var Domado = (function() {
 
     // proxy[name] -> any
     get: function(proxy, name) {
-      if (name === weakMapMagicName) {
-        // Caja WeakMap emulation internal property
-        // Note: Not correct in the presence of a getter (checked above)
-        return this.weakMapMagic;
-      }
       return this.target[name];
     },
 
@@ -311,39 +273,6 @@ var Domado = (function() {
     keys: function() { return Object.keys(this.target); }
   };
   cajaVM.def(ProxyHandler);
-
-  // Find the weakMapMagicName. This occurs after ProxyHandler is defined
-  // because it uses ProxyHandler.
-  (function() {
-    if (!proxiesAvailable) {
-      // unobservable so doesn't matter
-      return;
-    }
-
-    // Create a proxy whose handler will stash away the magic name.
-    var handler = new ProxyHandler({});
-    handler.getOwnPropertyDescriptor = function(name) {
-      if (/^weakmap:/.test(name)) { weakMapMagicName = name; }
-      return ProxyHandler.prototype.getOwnPropertyDescriptor.call(this, name);
-    };
-    handler.get = function(receiver, name) {
-      if (/^weakmap:/.test(name)) { weakMapMagicName = name; }
-      return ProxyHandler.prototype.get.call(this, receiver, name);
-    };
-    var proxy = Proxy.create(handler);
-
-    // Cause the proxy to be used as a key.
-    var w = new WeakMap();
-    try {
-      w.get(proxy);
-    } catch (e) {
-      console.error('Domado internal error: failed in WeakMap name setup:', e);
-    }
-
-    // At this point, we have either obtained the magic name, or there is no
-    // observable magic name, in which case weakMapMagicName is left at its
-    // initial {} value which is not === to any property name.
-  })();
 
   function makeOverrideSetter(object, prop) {
     return innocuous(function overrideSetter(newValue) {
@@ -867,7 +796,7 @@ var Domado = (function() {
     CollectionProxyHandler.prototype.getOwnPropertyDescriptor =
         function (name) {
       var lookup;
-      if (name !== weakMapMagicName && (lookup = this.col_lookup(name))) {
+      if ((lookup = this.col_lookup(name))) {
         return {
           configurable: true,  // proxy invariant check
           enumerable: true,  // TODO(kpreid): may vary
@@ -880,7 +809,7 @@ var Domado = (function() {
     };
     CollectionProxyHandler.prototype.get = function(receiver, name) {
       var lookup;
-      if (name !== weakMapMagicName && (lookup = this.col_lookup(name))) {
+      if ((lookup = this.col_lookup(name))) {
         return this.col_evaluate(lookup);
       } else {
         return ProxyHandler.prototype.get.call(this, receiver, name);
@@ -893,9 +822,7 @@ var Domado = (function() {
     };
     CollectionProxyHandler.prototype['delete'] = function(name) {
       var lookup;
-      if (name === weakMapMagicName) {
-        return false;
-      } else if ((lookup = this.col_lookup(name))) {
+      if ((lookup = this.col_lookup(name))) {
         return false;
       } else {
         return ProxyHandler.prototype['delete'].call(this, name);

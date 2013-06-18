@@ -25,6 +25,7 @@ function TamingMembrane(privilegedAccess, schema) {
 
   var feralByTame = new WeakMap();
   var tameByFeral = new WeakMap();
+  privilegedAccess.weakMapPermitHostObjects(tameByFeral);
 
   // Useless value provided as a safe 'this' value to functions.
   feralByTame.set(privilegedAccess.USELESS, privilegedAccess.USELESS);

@@ -23,8 +23,8 @@
  * quite conform, run <code>repairES5.js</code> first.
  *
  * @author Mark S. Miller
- * @requires ses, crypto, ArrayBuffer, Uint8Array
- * @overrides WeakMap, WeakMapModule, navigator
+ * @requires crypto, ArrayBuffer, Uint8Array, navigator
+ * @overrides WeakMap, ses, Proxy
  */
 
 /**
@@ -96,6 +96,29 @@ var WeakMap;
   if (typeof ses !== 'undefined' && ses.ok && !ses.ok()) {
     // already too broken, so give up
     return;
+  }
+
+  /**
+   * In some cases (current Firefox), we must make a choice betweeen a
+   * WeakMap which is capable of using all varieties of host objects as
+   * keys and one which is capable of safely using proxies as keys. See
+   * comments below about HostWeakMap and DoubleWeakMap for details.
+   *
+   * This function (which is a global, not exposed to guests) marks a
+   * WeakMap as permitted to do what is necessary to index all host
+   * objects, at the cost of making it unsafe for proxies.
+   *
+   * Do not apply this function to anything which is not a genuine
+   * fresh WeakMap.
+   */
+  function weakMapPermitHostObjects(map) {
+    // identity of function used as a secret -- good enough and cheap
+    if (map.permitHostObjects___) {
+      map.permitHostObjects___(weakMapPermitHostObjects);
+    }
+  }
+  if (typeof ses !== 'undefined') {
+    ses.weakMapPermitHostObjects = weakMapPermitHostObjects;
   }
 
   // Check if there is already a good-enough WeakMap implementation, and if so
@@ -184,6 +207,12 @@ var WeakMap;
       }).join('') + '___';
   }
 
+  function isNotHiddenName(name) {
+    return !(
+        name.substr(0, HIDDEN_NAME_PREFIX.length) == HIDDEN_NAME_PREFIX &&
+        name.substr(name.length - 3) === '___');
+  }
+
   /**
    * Monkey patch getOwnPropertyNames to avoid revealing the
    * HIDDEN_NAME.
@@ -198,11 +227,7 @@ var WeakMap;
    */
   defProp(Object, 'getOwnPropertyNames', {
     value: function fakeGetOwnPropertyNames(obj) {
-      return gopn(obj).filter(function(name) {
-        return !(
-          name.substr(0, HIDDEN_NAME_PREFIX.length) == HIDDEN_NAME_PREFIX &&
-            name.substr(name.length - 3) === '___');
-      });
+      return gopn(obj).filter(isNotHiddenName);
     }
   });
 
@@ -214,9 +239,7 @@ var WeakMap;
     var originalGetPropertyNames = Object.getPropertyNames;
     defProp(Object, 'getPropertyNames', {
       value: function fakeGetPropertyNames(obj) {
-        return originalGetPropertyNames(obj).filter(function(name) {
-          return name !== HIDDEN_NAME;
-        });
+        return originalGetPropertyNames(obj).filter(isNotHiddenName);
       }
     });
   }
@@ -484,6 +507,14 @@ var WeakMap;
         // we know all entries actually stored are entered in 'hmap'.
         var omap = undefined;
 
+        // Hidden-property maps are not compatible with proxies because proxies
+        // can observe the hidden name and either accidentally expose it or fail
+        // to allow the hidden property to be set. Therefore, we do not allow
+        // arbitrary WeakMaps to switch to using hidden properties, but only
+        // those which need the ability, and unprivileged code is not allowed
+        // to set the flag.
+        var enableSwitching = false;
+
         function dget(key, opt_default) {
           if (omap) {
             return hmap.has(key) ? hmap.get(key)
@@ -498,11 +529,15 @@ var WeakMap;
         }
 
         function dset(key, value) {
-          try {
+          if (enableSwitching) {
+            try {
+              hmap.set(key, value);
+            } catch (e) {
+              if (!omap) { omap = new OurWeakMap(); }
+              omap.set___(key, value);
+            }
+          } else {
             hmap.set(key, value);
-          } catch (e) {
-            if (!omap) { omap = new OurWeakMap(); }
-            omap.set___(key, value);
           }
         }
 
@@ -515,7 +550,14 @@ var WeakMap;
           get___:    { value: constFunc(dget) },
           has___:    { value: constFunc(dhas) },
           set___:    { value: constFunc(dset) },
-          delete___: { value: constFunc(ddelete) }
+          delete___: { value: constFunc(ddelete) },
+          permitHostObjects___: { value: constFunc(function(token) {
+            if (token === weakMapPermitHostObjects) {
+              enableSwitching = true;
+            } else {
+              throw new Error('bogus call to permitHostObjects___');
+            }
+          })}
         });
       }
       DoubleWeakMap.prototype = OurWeakMap.prototype;
@@ -530,6 +572,15 @@ var WeakMap;
       });
     })();
   } else {
+    // There is no host WeakMap, so we must use the emulation.
+
+    // Emulated WeakMaps are incompatible with native proxies (because proxies
+    // can observe the hidden name), so we must disable Proxy usage (in
+    // ArrayLike and Domado, currently).
+    if (typeof Proxy !== 'undefined') {
+      Proxy = undefined;
+    }
+
     WeakMap = OurWeakMap;
   }
 })();
