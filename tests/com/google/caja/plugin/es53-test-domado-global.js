@@ -85,9 +85,7 @@
             '</body>';
         registerGuestTest(testName,
             html.replace('$', '<script>' + htmlGuestJs + '</script>'),
-            expectHtml.replace('$',
-                inES5Mode ? '<script>caja_dynamic_script0___();</script>'
-                          : ''));
+            expectHtml.replace('$', inES5Mode ? '<script></script>' : ''));
       }
 
       registerStructureTest('testFullyExplicit',

@@ -301,8 +301,7 @@ document.write(
           ''
           + '<div>'
             + '<p>Before <code>document.write</code></p>'
-            + '<script type=\"text/javascript\">caja_dynamic_script0___();'
-            +     '</scr'+'ipt>'
+            + '<script type=\"text/javascript\"></scr'+'ipt>'
             + '<p id="testDocumentWrite-foo">Document written</p>'
           + '</div>'
           + '<div>'
@@ -2401,8 +2400,7 @@ After
     // used to confirm that the emulation was correct.
     jsunitRegister('testDocumentElement',
                    function testDocumentElement() {
-      var junkScriptText = 'caja_dynamic_script0___();';
-      var junkScript = inES5Mode ? '<scr'+'ipt>' + junkScriptText + '</scr' +
+      var junkScript = inES5Mode ? '<scr'+'ipt></scr' +
         'ipt>' : '';
       assertDomTree({
           nodeType: 9,
@@ -2424,7 +2422,7 @@ After
                   // TODO(kpreid): single space is a bug?
                   innerHTML: inES5Mode
                       ? '<title>this title is &amp; test </title>' +
-                          '<scr'+'ipt>'+junkScriptText+'</scr'+'ipt>'
+                          '<scr'+'ipt></scr'+'ipt>'
                       : '<title>this title is &amp; test </title>',
                   childrenExceptWhitespace: (function() {
                     var title = {
@@ -2438,17 +2436,14 @@ After
                         nodeValue: 'this title is & test   '
                       } ]
                     };
-                    return !inES5Mode ? [title] : [title, 
+                    return !inES5Mode ? [title] : [title,
                       {
                         nodeType: 1,
                         tagName: 'SCRIPT',
                         nodeValue: null,
                         attributes: [],
-                        innerHTML: junkScriptText,
-                        children: [ {
-                          nodeType: 3,
-                          nodeValue: junkScriptText
-                        } ]
+                        innerHTML: '',
+                        children: []
                       }
                     ];
                   }())

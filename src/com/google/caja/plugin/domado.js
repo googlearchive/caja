@@ -5427,7 +5427,8 @@ var Domado = (function() {
               // relative URL is resolved, not e.g. setAttribute time.
               domicile.evaluateUntrustedExternalScript(
                   URI.utils.resolve(domicile.pseudoLocation.href,
-                      privates.scriptSrc));
+                      privates.scriptSrc),
+                  privates.feral);  // load/error events are fired on this node
             }
           } finally {
             window[name] = undefined;
@@ -5436,14 +5437,23 @@ var Domado = (function() {
         return name + "();";
       }
 
+      // General hook in document.createElement which currently only applies to
+      // <script>s; keeping it simple till we need more generality.
+      var postInitCreatedElement = nodeAmp(function(privates) {
+        if (privates.feral.tagName === 'SCRIPT') {
+          privates.feral.appendChild(
+            document.createTextNode(
+              dynamicCodeDispatchMaker(privates)));
+        }
+      });
+
       defineElement({
         domClass: 'HTMLScriptElement',
         forceChildrenNotEditable: true,
         construct: nodeAmp(function(privates) {
           privates.scriptSrc = undefined;
-          privates.feral.appendChild(
-            document.createTextNode(
-              dynamicCodeDispatchMaker(privates)));
+          // See also postInitCreatedElement, which initializes
+          // document.createElement'd scripts for src loading
         }),
         properties: function() { return {
           src: PT.filter(false, identity, true, identity),
@@ -6064,7 +6074,9 @@ var Domado = (function() {
               }
             }
           }
-          return defaultTameNode(newEl);
+          var tameEl = defaultTameNode(newEl);
+          postInitCreatedElement.call(tameEl);  // Hook for <script>
+          return tameEl;
         }),
         createTextNode: Props.ampMethod(function(privates, text) {
           privates.policy.requireEditable();
@@ -6185,6 +6197,24 @@ var Domado = (function() {
               privates.onLoadListeners);
         });
       });
+
+      // Currently used by HtmlEmitter to synthesize script load events.
+      // Note that it does trigger handler attributes (because our handler
+      // attribute support does not catch 'custom' events); if this is needed,
+      // then what we need to do is arrange for bridal to not consider the event
+      // to be custom (which is OK since it also does not bubble).
+      /**
+       * Not yet fully general, only because the use case hasn't arisen.
+       * Note bubbles=false cancelable=false.
+       *
+       * @param {string} type e.g. 'Event'
+       * @param {string} name e.g. 'click'
+       */
+      domicile.fireVirtualEvent = function(feralNode, type, name) {
+        var event = document.createEvent(type);
+        bridal.initEvent(event, 'initEvent', name, false, false, [], true);
+        feralNode.dispatchEvent(event);
+      };
 
       function toFeralNode(tame) {
         if (tame === null || tame === undefined) {

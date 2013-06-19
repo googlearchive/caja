@@ -419,13 +419,13 @@ function HtmlEmitter(makeDOMAccessible, base,
     }
 
     function evaluateUntrustedScript(
-        scriptBaseUri, scriptInnerText, opt_delayed, opt_mitigate) {
+        scriptBaseUri, scriptInnerText, scriptNode, opt_delayed, opt_mitigate) {
       if (!opt_guestGlobal) { return; }
 
       if (opt_delayed) {
         delayScript(function () {
           evaluateUntrustedScript(
-            scriptBaseUri, scriptInnerText, false, opt_mitigate);
+            scriptBaseUri, scriptInnerText, scriptNode, false, opt_mitigate);
         });
         return;
       }
@@ -443,6 +443,9 @@ function HtmlEmitter(makeDOMAccessible, base,
             var compiledModule = compileModule(scriptInnerText, opt_mitigate);
             try {
               compiledModule(opt_domicile.window);
+
+              // Success.
+              domicile.fireVirtualEvent(scriptNode, 'Event', 'load');
               return;  // Do not trigger onerror below.
             } catch (runningEx) {
               errorMessage = String(runningEx);
@@ -455,8 +458,12 @@ function HtmlEmitter(makeDOMAccessible, base,
         }
       }
 
+      // TODO(kpreid): Include error message appropriately
+      domicile.fireVirtualEvent(scriptNode, 'Event', 'error');
+
       // Dispatch to the onerror handler.
       try {
+        // TODO(kpreid): This should probably become a full event dispatch.
         // TODO: Should this happen inline or be dispatched out of band?
         opt_domicile.window.onerror(
             errorMessage,
@@ -471,6 +478,8 @@ function HtmlEmitter(makeDOMAccessible, base,
       } catch (_) {
         // Ignore problems dispatching error.
       }
+
+      return errorMessage;
     }
 
     function makeCssUriHandler(baseUri, method, mime) {
@@ -515,19 +524,14 @@ function HtmlEmitter(makeDOMAccessible, base,
     }
 
     function resolveUntrustedExternal(
-        func, url, mime, marker, continuation, opt_errorResult) {
+        url, mime, marker, continuation) {
       if (domicile && domicile.fetchUri) {
         domicile.fetchUri(url, mime,
           function (result) {
             if (result && result.html) {
-              func(url, result.html);
-            } else if (opt_errorResult) {
-              func(url, opt_errorResult);
+              continuation(url, result.html);
             } else {
-              // TODO(jasvir): Thread logger and log the failure to fetch
-            }
-            if (continuation) {
-              continuation();
+              continuation(url, null);
             }
           });
         if (marker) {
@@ -538,7 +542,12 @@ function HtmlEmitter(makeDOMAccessible, base,
 
     function defineUntrustedExternalStylesheet(url, marker, continuation) {
       resolveUntrustedExternal(
-        defineUntrustedStylesheet, url, 'text/css', marker, continuation);
+          url, 'text/css', marker, function(url, result) {
+            if (result !== null) {
+              defineUntrustedStylesheet(url, result);
+            }
+            continuation();
+          });
     }
 
     function getMitigatedUrl(url) {
@@ -551,7 +560,7 @@ function HtmlEmitter(makeDOMAccessible, base,
     }
 
     function evaluateUntrustedExternalScript(
-        url, marker, continuation, delayed) {
+        url, scriptNode, marker, opt_continuation, delayed) {
       var proxiedUrl = getMitigatedUrl(url);
       var mitigateOpts;
       if (proxiedUrl) {
@@ -570,25 +579,33 @@ function HtmlEmitter(makeDOMAccessible, base,
       if (delayed && delayedScripts) {
         var idx = delayedScripts.length;
         delayedScripts[idx] = UNSATISFIED;
-        handler = function (url, src) {
+        handler = function(url, src) {
           delayedScripts[idx] = function () {
-            evaluateUntrustedScript(url, src, true, mitigateOpts);
+            evaluateUntrustedScript(url, src, scriptNode, true, mitigateOpts);
           };
           // TODO(mikesamuel): should this be done via timeout?
           execDelayedScripts();
         };
       } else {
         handler = function(uri, src, opt_delayed) {
-          evaluateUntrustedScript(uri, src, opt_delayed, mitigateOpts);
+          evaluateUntrustedScript(uri, src, scriptNode, opt_delayed,
+              mitigateOpts);
         };
       }
-      resolveUntrustedExternal(
-        handler, url, 'text/javascript', marker, continuation,
-        // TODO(mikesamuel): What is the appropriate voodoo here that triggers
-        // dispatch to the module global onerror handler?
-        // Can we prepackage a 'throw new Error("not loaded")' module, and load
-        // that when loading otherwise fails?
-        'throw new Error("not loaded")');
+      function outerHandler(uri, src, opt_delayed) {
+        // TODO(kpreid): opt_delayed never passed?
+        handler(
+            uri,
+            src === null ? 'throw new Error("not loaded")' : src,
+            opt_delayed);
+        if (opt_continuation) { opt_continuation(); }
+      }
+      // TODO(mikesamuel): What is the appropriate voodoo here that triggers
+      // dispatch to the module global onerror handler?
+      // Can we prepackage a 'throw new Error("not loaded")' module, and load
+      // that when loading otherwise fails?
+
+      resolveUntrustedExternal(url, 'text/javascript', marker, outerHandler);
     }
 
     // TODO(kpreid): This is separated into a function as part of an incomplete
@@ -596,14 +613,14 @@ function HtmlEmitter(makeDOMAccessible, base,
     // inside of insertion modes rather than outside, this function should
     // no longer exist, and cdataContentType should be subsumed by insertion
     // modes.
-    function handleExternal(marker, continuation) {
+    function handleExternal(node, marker, continuation) {
       var isScript = cdataContentType === CDATA_SCRIPT;
       cdataContentType = 0;
       if (pendingExternal) {
         if (isScript) {
           var res = resolveUriRelativeToDocument(pendingExternal);
           evaluateUntrustedExternalScript(
-              res, marker, continuation, pendingDelayed);
+              res, node, marker, continuation, pendingDelayed);
         }
         pendingExternal = undefined;
       } else {
@@ -611,7 +628,7 @@ function HtmlEmitter(makeDOMAccessible, base,
         cdataContent.length = 0;
         if (isScript) {
           evaluateUntrustedScript(
-              domicile.pseudoLocation.href, content, pendingDelayed);
+              domicile.pseudoLocation.href, content, node, pendingDelayed);
         } else {
           defineUntrustedStylesheet(domicile.pseudoLocation.href, content);
         }
@@ -1024,6 +1041,8 @@ function HtmlEmitter(makeDOMAccessible, base,
         },
         endTag: function(tagName, marker, continuation) {
           if (tagName === 'script') {
+            var node = insertionPoint;
+
             // ...
 
             // "Pop the current node off the stack of open elements."
@@ -1035,7 +1054,7 @@ function HtmlEmitter(makeDOMAccessible, base,
             // ...
 
             // "Execute the script."
-            handleExternal(marker, continuation);
+            handleExternal(node, marker, continuation);
           } else {
             // "Pop the current node off the stack of open elements."
             normalEndTag(tagName);
@@ -1269,7 +1288,7 @@ function HtmlEmitter(makeDOMAccessible, base,
         // Close any open script or style element element.
         // TODO(kpreid): Move this stuff into the insertion mode logic
         if (cdataContentType && cdataContentType !== CDATA_SCRIPT) {
-          handleExternal(marker, continuation);
+          handleExternal(insertionPoint, marker, continuation);
         }
         insertionMode.endTag(tagName, marker, continuation);
       },

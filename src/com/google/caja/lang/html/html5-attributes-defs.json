@@ -233,6 +233,7 @@
           "But events bubble, so any element can get this event.",
           "html5 explicitly allows this on any element." ] },
       { "key": "*::ONCHANGE", "type": "SCRIPT", "optional": true },
+      { "key": "*::ONERROR", "type": "SCRIPT", "optional": true },
       { "key": "*::ONFOCUS", "type": "SCRIPT", "optional": true },
       { "key": "*::ONLOAD", "type": "SCRIPT", "optional": true },
       { "key": "*::ONRESET", "type": "SCRIPT", "optional": true },

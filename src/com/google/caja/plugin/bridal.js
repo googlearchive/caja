@@ -269,10 +269,10 @@ var bridalMaker = function (makeDOMAccessible, targetDocNode) {
     return type;
   }
 
-  function initEvent(event, methodName, type, bubbles, cancelable, args) {
+  function initEvent(event, methodName, type, bubbles, cancelable, args, notCustom) {
     event = makeDOMAccessible(event);
     methodName = String(methodName);
-    type = tameEventType(type, true);
+    type = tameEventType(type, !notCustom);
     bubbles = Boolean(bubbles);
     cancelable = Boolean(cancelable);
 

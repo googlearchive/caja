@@ -79,3 +79,73 @@
     pass('testExternalScripts');
   });
 </script>
+
+<script type="text/javascript">
+  var onloadScript = 0;
+
+  // TODO(kpreid): This is potentially useful in other tests to add rigor --
+  // see if so and move it to a more useful location.
+  function watchEvents(target, name, callback) {
+    callback = jsunitCallback(callback);
+    var results = [];
+    target.addEventListener(name, function(event) {
+      results.push('capture');
+      callback();
+    }, false);
+    target.addEventListener(name, function(event) {
+      results.push('bubble');
+      callback();
+    }, true);
+    target['on' + name] = function(event) {
+      results.push('handler');
+      callback();
+      return true;
+    };
+    return results;
+  }
+
+  function scriptEventTest(goodEvent, badEvent, url, willRun) {
+    var s = document.createElement('script');
+    // Note: watchEvents does not check that attribute-based handlers are called
+    // (since they are mutually exclusive with ones assigned as functions);
+    // furthermore, they are known to not work; see domicile.fireVirtualEvent.
+    var watchG = watchEvents(s, goodEvent, check);
+    var watchB = watchEvents(s, badEvent, check);
+    function check() {
+      if (willRun) {
+        // ordering constraint
+        assertFalse(watchG.length > 0 && !onloadScript);
+      }
+    }
+
+    s.src = url;
+    assertEquals('ran before add', 0, onloadScript);
+    assertObjectEquals(goodEvent + ' before add', [], watchG);
+    assertObjectEquals(badEvent + ' before add', [], watchB);
+    document.body.appendChild(s);
+
+    assertAsynchronousRequirement('fired', function() {
+      //console.log(watchG);
+      return watchG.indexOf('handler') !== -1;
+    }, function() {
+      if (willRun) { assertEquals('ran after', 1, onloadScript); }
+      assertObjectEquals(goodEvent + ' after', ['capture', 'bubble', 'handler'],
+          watchG);
+      assertObjectEquals(badEvent + ' after', [], watchB);
+    });
+  }
+
+  jsunitRegisterIf(inES5Mode,
+                   'testScriptOnload',
+                   function testScriptOnload() {
+    scriptEventTest('load', 'error', 'es53-test-external-script-onload.js',
+        true);
+    pass('testScriptOnload');
+  });
+  jsunitRegisterIf(inES5Mode,
+                   'testScriptOnerror',
+                   function testScriptOnerror() {
+    scriptEventTest('error', 'load', 'non-existent-script.js', false);
+    pass('testScriptOnerror');
+  });
+</script>
