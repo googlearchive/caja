@@ -69,6 +69,8 @@ document.write(
               assertEquals(msg, v, node.nodeName);
               break;
             case 'innerHTML':
+              // TODO(kpreid): Once the cajoler is gone, remove canonInnerHtml
+              // and make sure we're 100% consistent
               assertEquals(msg, v, canonInnerHtml(node.innerHTML));
               break;
             case 'sameAs':
@@ -2400,8 +2402,15 @@ After
     // used to confirm that the emulation was correct.
     jsunitRegister('testDocumentElement',
                    function testDocumentElement() {
-      var junkScript = inES5Mode ? '<scr'+'ipt></scr' +
-        'ipt>' : '';
+      // note: single space in title is due to canonInnerHtml, see
+      // in assertDomTree.
+      var headInnerHTML =
+          '<title>this title is &amp; test </title>' +
+          (inES5Mode
+              ? '<style type="text/css"></style>' +
+                '<scr'+'ipt></scr'+'ipt>'
+              : '') +
+          '<style></style>';
       assertDomTree({
           nodeType: 9,
           nodeName: '#document',
@@ -2419,11 +2428,7 @@ After
                   tagName: 'HEAD',
                   nodeValue: null,
                   attributes: [],
-                  // TODO(kpreid): single space is a bug?
-                  innerHTML: inES5Mode
-                      ? '<title>this title is &amp; test </title>' +
-                          '<scr'+'ipt></scr'+'ipt>'
-                      : '<title>this title is &amp; test </title>',
+                  innerHTML: headInnerHTML,
                   childrenExceptWhitespace: (function() {
                     var title = {
                       nodeType: 1,
@@ -2436,7 +2441,29 @@ After
                         nodeValue: 'this title is & test   '
                       } ]
                     };
-                    return !inES5Mode ? [title] : [title,
+                    var dynStyle = {
+                      nodeType: 1,
+                      tagName: 'STYLE',
+                      nodeValue: null,
+                      attributes: [],
+                      innerHTML: '',
+                      children: []
+                    };
+                    return !inES5Mode ? [title, dynStyle] : [
+                      title,
+                      {
+                        nodeType: 1,
+                        tagName: 'STYLE',
+                        nodeValue: null,
+                        attributes: [
+                          {
+                            nodeName: 'type',
+                            nodeValue: 'text/css'
+                          }
+                        ],
+                        innerHTML: '',
+                        children: []
+                      },
                       {
                         nodeType: 1,
                         tagName: 'SCRIPT',
@@ -2444,7 +2471,8 @@ After
                         attributes: [],
                         innerHTML: '',
                         children: []
-                      }
+                      },
+                      dynStyle
                     ];
                   }())
                 },
@@ -2466,9 +2494,10 @@ After
         }, document);
 
       var html = canonInnerHtml(document.documentElement.innerHTML);
-      assertTrue('Wrong prefix of ' + html.substring(0, 100), html.indexOf(
-          '<head><title>this title is &amp; test </title>' + junkScript +
-          '</head><body') === 0);
+      var bodyi = html.indexOf('<body');
+      assertTrue('<body in html.innerHTML', bodyi !== -1);
+      assertEquals('<head>' + headInnerHTML + '</head>',
+          html.substring(0, bodyi));
 
       pass('testDocumentElement');
     });
@@ -2887,9 +2916,7 @@ Test row cell
        + '<span id="testBodyClassesDyn-no">'
        + 'normal since body has no class bar</span><br>');
   </script>
-<p>
-
-
+</p>
 <script type="text/javascript">
   jsunitRegister('testBodyClasses',
                  function testBodyClasses() {
@@ -2903,6 +2930,65 @@ Test row cell
     pass('testBodyClasses');
  });
 </script>
+
+<div id="testStyleElement" class="testcontainer">
+  <style type="text/css" id="testStyleElement-style" media="print">
+    #testStyleElement-style { display: block; background: yellow; width: 1em; }
+  </style>
+</div>
+<script type="text/javascript">
+  jsunitRegister('testStyleElement',
+                 function testStyleElement() {
+    var el = document.getElementById('testStyleElement-style');
+    if (!inES5Mode) {
+      // Currently not bothering to backport this functionality.
+      assertEquals('no element in cajoling mode', null, el);
+    } else {
+
+      assertEquals('STYLE', el.tagName);
+
+      // Guest-visible styles have no content.
+      // TODO(kpreid): Move virtualized stylesheet content to the actual style
+      // node.
+      assertEquals('innerHTML', '', el.innerHTML);
+
+      // Not allowed to set content.
+      expectFailure(function() {
+        el.innerHTML = 'body { border: 10em dashed red; }';
+      }, 'set style innerHTML');
+      expectFailure(function() {
+        el.textContent = 'body { border: 10em dashed red; }';
+      }, 'set style textContent');
+      expectFailure(function() {
+        el.appendChild(document.createTextNode(
+            'body { border: 10em dashed red; }'));
+      }, 'set style textContent');
+
+      // TODO(kpreid): Implement and test 'sheet' property
+
+      //assertEquals('text/css', el.type);
+      // type= is not whitelisted even if it is
+      // text/css. TODO(kpreid): improve this. Maybe even virtualize non-CSS
+      // style elements.
+      assertEquals('type', '', el.type);
+
+      // ditto
+      //assertEquals('print', el.media);
+      assertEquals('media', '', el.media);
+
+      if (directAccess.feralFeatureTest(el, 'scoped')) {
+        assertEquals('scoped', false, el.scoped);
+      } else {
+        assertFalse('scoped', 'scoped' in el);
+      }
+
+      assertEquals('disabled', false, el.disabled);
+    }
+    pass('testStyleElement');
+ });
+</script>
+
+
 
 <p id="testUsemap" class="testcontainer"
 ><map name="foo"><area href="areatarget.html"

@@ -608,32 +608,16 @@ function HtmlEmitter(makeDOMAccessible, base,
       resolveUntrustedExternal(url, 'text/javascript', marker, outerHandler);
     }
 
-    // TODO(kpreid): This is separated into a function as part of an incomplete
-    // refactoring to use exact HTML5 algorithms. Once <style> is also handled
-    // inside of insertion modes rather than outside, this function should
-    // no longer exist, and cdataContentType should be subsumed by insertion
-    // modes.
-    function handleExternal(node, marker, continuation) {
-      var isScript = cdataContentType === CDATA_SCRIPT;
-      cdataContentType = 0;
-      if (pendingExternal) {
-        if (isScript) {
-          var res = resolveUriRelativeToDocument(pendingExternal);
-          evaluateUntrustedExternalScript(
-              res, node, marker, continuation, pendingDelayed);
-        }
-        pendingExternal = undefined;
-      } else {
-        var content = cdataContent.join("");
-        cdataContent.length = 0;
-        if (isScript) {
-          evaluateUntrustedScript(
-              domicile.pseudoLocation.href, content, node, pendingDelayed);
-        } else {
-          defineUntrustedStylesheet(domicile.pseudoLocation.href, content);
-        }
-      }
+    function finishCdata() {
+      var result = {
+        text: cdataContent.join(''),
+        external: pendingExternal,
+        delayed: pendingDelayed
+      };
+      cdataContent.length = 0;
+      pendingExternal = undefined;
       pendingDelayed = false;
+      return result;
     }
 
     function lookupAttr(attribs, attr) {
@@ -651,18 +635,15 @@ function HtmlEmitter(makeDOMAccessible, base,
       return href;
     }
 
-    // The content type of cdataContent; either 0 (inactive) or these constants.
-    var cdataContentType = 0;
-    var CDATA_SCRIPT = 1;
-    var CDATA_STYLE = 2;
-    // Chunks of CDATA content of the type above which need to be specially
-    // processed and interpreted.
+    // Chunks of CDATA content which need to be specially processed and
+    // interpreted rather than inserted into the host DOM.
     var cdataContent = [];
     // The URL of any pending CDATA element, for example the value of the
     // <script src> attribute.
     var pendingExternal = undefined;
     // True iff the pending CDATA tag is defer or async.
     var pendingDelayed = false;
+
     var documentLoaded = undefined;
     var depth = 0;
 
@@ -688,7 +669,8 @@ function HtmlEmitter(makeDOMAccessible, base,
 
       domicile.sanitizeAttrs(realTagName, attribs);
 
-      if (!rSchemaEl.allowed && realTagName !== 'script') {
+      if (!rSchemaEl.allowed && realTagName !== 'script' &&
+          realTagName !== 'style') {
         throw new Error('HtmlEmitter internal: unsafe element ' + realTagName +
             ' slipped through virtualization!');
       }
@@ -722,8 +704,10 @@ function HtmlEmitter(makeDOMAccessible, base,
     }
 
     function normalText(text) {
-      if (insertionPoint.tagName === 'SCRIPT') {
-        throw new Error('Internal: Attempt to insert text in SCRIPT node');
+      var realTagName = insertionPoint.tagName;
+      if (!htmlSchema.element(realTagName).allowed) {
+        throw new Error('HtmlEmitter internal: attempted to add text to ' +
+            'unsafe element ' + realTagName + '!');
       }
       insertionPoint.appendChild(insertionPoint.ownerDocument.createTextNode(
           html.unescapeEntities(text)));
@@ -838,12 +822,28 @@ function HtmlEmitter(makeDOMAccessible, base,
           } else if (tagName === 'base' || tagName === 'basefont' ||
               tagName === 'bgsound'  || tagName === 'command' ||
               tagName === 'link'     || tagName === 'meta' ||
-              tagName === 'noscript' || tagName === 'noframes' ||
-              tagName === 'style') {
+              tagName === 'noscript' || tagName === 'noframes') {
+            // TODO(kpreid): Spec deviations for noscript, noframes, meta...
             normalInsert(tagName, attribs);
           } else if (tagName === 'title') {
             normalInsert(tagName, attribs);
             originalInsertionMode = insertionMode;
+            insertionMode = insertionModes.text;
+          } else if (tagName === 'style') {
+            // "Follow the generic raw text element parsing algorithm."
+            // "Insert an HTML element for the token."
+            normalInsert(tagName, attribs);
+
+            // "...switch the tokenizer to the RAWTEXT state..."
+            // Handled before this stage.
+
+            // "Let the original insertion mode be the current insertion mode."
+            originalInsertionMode = insertionMode;
+
+            pendingExternal = undefined;
+            pendingDelayed = false;
+
+            // "Then, switch the insertion mode to "text"."
             insertionMode = insertionModes.text;
           } else if (tagName === 'script') {
             // "Create an element for the token in the HTML namespace."
@@ -852,7 +852,7 @@ function HtmlEmitter(makeDOMAccessible, base,
             // "If the parser was originally created for the HTML fragment
             // parsing algorithm, then mark the script element as "already
             // started". (fragment case)"
-            // "Append the new element to the current node and push it onto the 
+            // "Append the new element to the current node and push it onto the
             // stack of open elements."
             // Note: We don't implement the mentioned flags so we can just merge
             // the steps into a normalInsert.
@@ -881,8 +881,7 @@ function HtmlEmitter(makeDOMAccessible, base,
                 || lookupAttr(attribs, 'async') !== undefined);
 
             // "Switch the insertion mode to "text"."
-            cdataContentType = CDATA_SCRIPT;
-            insertionMode = insertionModes.cajaScriptText;
+            insertionMode = insertionModes.text;
           } else if (tagName === 'head') {
             // "Parse error. Ignore the token."
           } else {
@@ -999,49 +998,23 @@ function HtmlEmitter(makeDOMAccessible, base,
         }
       },
       text: {
+        // Deviation from HTML5: When handling a <script> or <style>, does not
+        // actually insert text content, to prevent unsandboxed interpretation.
         toString: function () { return "text"; },
         startTag: function (tagName, attribs) {
           throw new Error("shouldn't happen: start tag <" + tagName +
               "...> while in text insertion mode for " +
               insertionPoint.tagName);
         },
-        endTag: function (tagName) {
-          normalEndTag(tagName);
-          insertionMode = originalInsertionMode;
-        },
-        text: function(text) {
-          normalText(text);
-        },
-        endOfFile: function() {
-          // "Parse error."
-
-          // "If the current node is a script element, mark the script element
-          // as "already started"."
-          // no-op because we use the special cajaScriptText mode for <script>
-          // so we never see a <script> in this mode.
-
-          // "Pop the current node off the stack of open elements."
-          normalEndTag(insertionPoint.tagName);
-
-          // "Switch the insertion mode to the original insertion mode and
-          // reprocess the current token."
-          insertionMode = originalInsertionMode;
-          insertionMode.endOfFile();
-        }
-      },
-      cajaScriptText: {
-        // Used when a <script> element is open. This is identical to the HTML5
-        // 'text' mode except that it does not actually insert text content, to
-        // prevent unsandboxed script execution.
-        toString: function() { return 'cajaScriptText'; },
-        startTag: function(tagName, attribs) {
-          throw new Error('shouldn\'t happen: start tag <' + tagName +
-              '...> while in text insertion mode for ' +
-              insertionPoint.tagName);
-        },
         endTag: function(tagName, marker, continuation) {
+          var info;
           if (tagName === 'script') {
             var node = insertionPoint;
+            if (node.tagName !== 'SCRIPT') {
+              throw new Error('shouldn\'t happen: end tag </' + tagName +
+                  '> while in text insertion mode for ' +
+                  node.tagName);
+            }
 
             // ...
 
@@ -1054,8 +1027,24 @@ function HtmlEmitter(makeDOMAccessible, base,
             // ...
 
             // "Execute the script."
-            handleExternal(node, marker, continuation);
+            info = finishCdata();
+            if (info.external) {
+              var res = resolveUriRelativeToDocument(info.external);
+              evaluateUntrustedExternalScript(
+                  res, node, marker, continuation, info.delayed);
+            } else {
+              evaluateUntrustedScript(
+                  domicile.pseudoLocation.href, info.text, node, info.delayed);
+            }
           } else {
+            if (tagName === 'style') {
+              info = finishCdata();
+              // no info.external since URL'd stylesheets are defined with
+              // <link>, not <style>.
+              defineUntrustedStylesheet(domicile.pseudoLocation.href,
+                  info.text);
+            }
+
             // "Pop the current node off the stack of open elements."
             normalEndTag(tagName);
 
@@ -1064,7 +1053,15 @@ function HtmlEmitter(makeDOMAccessible, base,
           }
         },
         text: function(text) {
-          cdataContent.push(text);
+          var inSpecial = insertionPoint.tagName === 'STYLE' ||
+              insertionPoint.tagName === 'SCRIPT';
+          if (inSpecial) {
+            // If we were to insert this content into the DOM, it might be
+            // executed outside the sandbox.
+            cdataContent.push(text);
+          } else {
+            normalText(text);
+          }
         },
         endOfFile: function() {
           // "Parse error."
@@ -1248,16 +1245,11 @@ function HtmlEmitter(makeDOMAccessible, base,
       startTag: function (tagName, attribs, params, marker, continuation) {
         var schemaElem = htmlSchema.element(tagName);
         if (!schemaElem.allowed) {
-          if (tagName === 'script') {
-            // Continue, let element be inserted. (Script elements are marked as
-            // disallowed in the schema because their text content is powerful,
-            // so they are explicitly special-cased in any code prepared to deal
-            // with them.)
-          } else if (tagName === 'style') {
-            cdataContentType = CDATA_STYLE;
-            pendingExternal = undefined;
-            pendingDelayed = false;
-            return; // TODO(kpreid): Remove, allow virtualized element
+          if (tagName === 'script' || tagName === 'style') {
+            // Continue, let element be inserted. (Script and style elements are
+            // marked as disallowed in the schema because their text content is
+            // powerful, so they are explicitly special-cased in any code
+            // prepared to deal with them.)
           } else if (tagName === 'link') {
             // Link types are case insensitive
             var rel = lookupAttr(attribs, 'rel');
@@ -1285,25 +1277,13 @@ function HtmlEmitter(makeDOMAccessible, base,
         insertionMode.startTag(tagName, attribs);
       },
       endTag: function (tagName, optional, marker, continuation) {
-        // Close any open script or style element element.
-        // TODO(kpreid): Move this stuff into the insertion mode logic
-        if (cdataContentType && cdataContentType !== CDATA_SCRIPT) {
-          handleExternal(insertionPoint, marker, continuation);
-        }
         insertionMode.endTag(tagName, marker, continuation);
       },
       pcdata: function (text) {
         insertionMode.text(text);
       },
       cdata: function (text) {
-        // Script content is handled by the insertion mode.
-        // TODO(kpreid): Eventually all text content will be and
-        // cdataContentType should go away.
-        if (cdataContentType && cdataContentType !== CDATA_SCRIPT) {
-          cdataContent.push(text);
-        } else {
-          documentWriter.pcdata(text);
-        }
+        insertionMode.text(text);
       }
     };
     documentWriter.rcdata = documentWriter.pcdata;
@@ -1330,14 +1310,15 @@ function HtmlEmitter(makeDOMAccessible, base,
       if (!insertionPoint) {
         reopen();
       }
-      if (cdataContentType) {
-        // A <script> or <style> element started in one document.write and
-        // continues in this one as in
-        //   document.write('<script>foo');
-        //   document.write('(bar)</script>');
-        // so we need to trick the SAX parser into a CDATA context.
-        htmlText = (cdataContentType === CDATA_SCRIPT
-                    ? '<script>' : '<style>') + htmlText;
+      // A <script> or <style> element started in one document.write and
+      // continues in this one as in
+      //   document.write('<script>foo');
+      //   document.write('(bar)</script>');
+      // so we need to trick the SAX parser into a CDATA context.
+      if (insertionPoint.tagName === 'SCRIPT') {
+        htmlText = '<script>' + htmlText;
+      } else if (insertionPoint.tagName === 'STYLE') {
+        htmlText = '<style>' + htmlText;
       }
       htmlParser(htmlText);
       return documentLoaded.promise;

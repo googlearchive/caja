@@ -2641,9 +2641,10 @@ var Domado = (function() {
             var tamer;
             var tagName = rawTagName.toLowerCase();
             var schemaElem = htmlSchema.element(tagName);
-            if (schemaElem.allowed || tagName === 'script') {
-              // <script> is specifically allowed because we make provisions
-              // for controlling its content and src.
+            if (schemaElem.allowed || tagName === 'script' ||
+                tagName === 'style') {
+              // <script> and <style> are specifically allowed because we make
+              // provisions for controlling their content and script src=.
               var domInterfaceName = schemaElem.domInterface;
               tamer = tamingClassTable.getTamingCtor(domInterfaceName);
               if (!tamer) {
@@ -5449,7 +5450,7 @@ var Domado = (function() {
 
       defineElement({
         domClass: 'HTMLScriptElement',
-        forceChildrenNotEditable: true,
+        forceChildrenNotEditable: true,  // critical to script isolation
         construct: nodeAmp(function(privates) {
           privates.scriptSrc = undefined;
           // See also postInitCreatedElement, which initializes
@@ -5470,6 +5471,23 @@ var Domado = (function() {
       });
 
       defineTrivialElement('HTMLSpanElement');
+
+      defineElement({
+        domClass: 'HTMLStyleElement',
+        forceChildrenNotEditable: true,  // critical to style isolation
+        properties: function() {
+          var styleForFeatureTests = makeDOMAccessible(
+              document.createElement('style'));
+          return {
+            disabled: PT.filterProp(identity, Boolean),
+            media: PT.filter(false, identity, true, identity),
+            scoped: Props.cond('scoped' in styleForFeatureTests,
+                PT.filterProp(identity, Boolean)),
+            // TODO(kpreid): property 'sheet'
+            type: PT.ro
+          };
+        }
+      });
 
       defineElement({
         domClass: 'HTMLTableColElement',
