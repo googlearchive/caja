@@ -73,6 +73,12 @@
         }
       };
     },
+    /** One value, computed on demand. */
+    lazyValue: function lazyValue(thunk) {
+      return function GlazyValueGen(callback) {
+        callback(thunk());
+      };
+    },
     /** All of the provided generators. */
     any: function any(var_args) {
       var a = Array.prototype.slice.call(arguments);
@@ -218,9 +224,9 @@
       return x;
     }
     var instances = new WeakMap();
-    function obtainInstance(ctor, label) {
+    function obtainInstance(ctor, infoThunk) {
       if (!instances.has(ctor)) {
-        instances.set(ctor, invokeConstructor(ctor, label));
+        instances.set(ctor, invokeConstructor(ctor, infoThunk));
       }
       return instances.get(ctor);
     }
@@ -399,7 +405,7 @@
                 function() {
                   var selfC = getSelfC();
                   return makeContext(
-                      obtainInstance(selfC.get(), selfC.getProgram),
+                      obtainInstance(selfC.get(), selfC.toDetailsString),
                       path + '<instance>',
                       'self',
                       function() { return noThisContext; },
@@ -1397,8 +1403,8 @@
     argsByProp('initKeyEvent', G.none);  // implemented like initEvent
     argsByProp('initKeyboardEvent', G.none);  // implemented like initEvent
     argsByProp('initMouseEvent', G.none);  // implemented like initEvent
-    argsByProp('dispatchEvent', genMethod(
-        function(c) { c(obtainInstance(Event)); }));
+    argsByProp('dispatchEvent', genMethod(G.lazyValue(function() {
+        return obtainInstance(Event, function() { return 'Event'; }); })));
     argsByProp('getAttribute',
         argsByProp('getAttributeNode',
         argsByProp('hasAttribute', genMethod(genString))));
