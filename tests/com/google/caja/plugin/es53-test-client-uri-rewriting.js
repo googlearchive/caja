@@ -18,7 +18,7 @@
  *
  * @author ihab.awad@gmail.com
  * @author jasvir@gmail.com
- * @requires caja, jsunitRun, readyToTest
+ * @requires caja, jsunitRun, readyToTest, basicCajaConfig
  */
 
 (function () {
@@ -49,11 +49,7 @@
     return o;
   }
 
-  caja.initialize({
-    cajaServer: '/caja',
-    debug: true,
-    forceES5Mode: inES5Mode
-  });
+  caja.initialize(basicCajaConfig);
   
   jsunitRegister('testUriInAttr', function testUriInAttr() {
     var div = createDiv();

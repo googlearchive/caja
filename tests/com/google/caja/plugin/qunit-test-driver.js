@@ -23,11 +23,7 @@ if (!testCase) {
   throw new Error('Parameter "test-case" not specified in URL');
 }
 
-caja.makeFrameGroup({
-  cajaServer: '/caja',
-  debug: true,
-  forceES5Mode: inES5Mode
-}, function(frameGroup) {
+caja.makeFrameGroup(basicCajaConfig, function(frameGroup) {
   frameGroup.makeES5Frame(
       createDiv(),
       caja.policy.net.ALL,

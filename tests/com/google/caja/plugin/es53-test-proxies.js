@@ -16,7 +16,7 @@
  * @fileoverview Runs Tom van Cutsem's ES5 Proxy tests.
  *
  * @author metaweta@gmail.com
- * @requires caja, jsunitRun, readyToTest
+ * @requires caja, jsunitRun, readyToTest, basicCajaConfig
  */
 
 (function () {
@@ -26,11 +26,7 @@
     }
   };
 
-  caja.initialize({
-    cajaServer: '/caja',
-    debug: true,
-    forceES5Mode: inES5Mode
-  });
+  caja.initialize(basicCajaConfig);
   
 
   jsunitRegister('testProxies', function testProxies() {

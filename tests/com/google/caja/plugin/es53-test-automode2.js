@@ -29,7 +29,7 @@
 
   caja.initialize({
     cajaServer: '/caja',
-    debug: true,
+    debug: !minifiedMode,
     disableSecurityForDebugger: true,
     es5Mode: undefined,
     // Guaranteed achievable level of insecurity - should cause es5 to run

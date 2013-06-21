@@ -31,15 +31,11 @@
  *     * methods of constructed objects
  *
  * @author ihab.awad@gmail.com
- * @requires caja, jsunitRun, readyToTest
+ * @requires caja, jsunitRun, readyToTest, basicCajaConfig
  */
 
 (function () {
-  caja.initialize({
-    cajaServer: '/caja',
-    debug: true,
-    forceES5Mode: inES5Mode
-  });
+  caja.initialize(basicCajaConfig);
 
   // Set up basic stuff
   var uriPolicy = {

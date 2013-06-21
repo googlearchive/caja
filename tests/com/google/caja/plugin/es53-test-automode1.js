@@ -29,7 +29,7 @@
 
   caja.initialize({
     cajaServer: '/caja',
-    debug: true,
+    debug: !minifiedMode,
     es5Mode: undefined,
     // Unachievable level of security - should cause es5 => es53 failover
     maxAcceptableSeverity: 'MAGICAL_UNICORN'

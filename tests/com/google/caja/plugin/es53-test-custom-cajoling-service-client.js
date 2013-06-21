@@ -68,7 +68,7 @@
 
   caja.initialize({
     cajaServer: '/caja',
-    debug: true,
+    debug: !minifiedMode,
     forceES5Mode: inES5Mode,
     cajolingServiceClient: cajolingServiceClient
   });

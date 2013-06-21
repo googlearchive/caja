@@ -28,7 +28,7 @@
 
   caja.initialize({
     cajaServer: '/caja',
-    debug: true,
+    debug: !minifiedMode,
     es5Mode: true,
     // Unachievable level of security - should cause es5 to refuse to run
     maxAcceptableSeverity: 'MAGICAL_UNICORN'

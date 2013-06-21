@@ -14,7 +14,7 @@
 
 /**
  * @author ihab.awad@gmail.com
- * @requires caja, jsunitRun, readyToTest
+ * @requires caja, jsunitRun, readyToTest, minifiedMode, inES5Mode
  */
 
 (function () {
@@ -23,7 +23,7 @@
 
   caja.initialize({
     cajaServer: origin + '/caja',
-    debug: true,
+    debug: !minifiedMode,
     forceES5Mode: inES5Mode
   });
   

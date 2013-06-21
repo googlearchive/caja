@@ -15,7 +15,7 @@
 /**
  * @fileoverview
  * 
- * @requires html4, getUrlParam, inES5Mode, URI, readyToTest, jsunitRun,
+ * @requires html4, getUrlParam, basicCajaConfig, URI, readyToTest, jsunitRun,
  *     asyncRequirements, console, createDiv, caja, createExtraImportsForTesting
  */
 
@@ -37,11 +37,7 @@
   var testCase = getUrlParam('test-case');
 
   if (testCase) {
-    caja.makeFrameGroup({
-      cajaServer: '/caja',
-      debug: true,
-      forceES5Mode: inES5Mode
-    }, function(frameGroup) {
+    caja.makeFrameGroup(basicCajaConfig, function(frameGroup) {
       frameGroup.makeES5Frame(
           createDiv(),
           {

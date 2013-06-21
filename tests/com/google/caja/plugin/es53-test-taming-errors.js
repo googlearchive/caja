@@ -17,7 +17,7 @@
  * This file is written in JavaScript, not ES53, and is loaded by the host page
  *
  * @author ihab.awad@gmail.com
- * @requires caja, jsunitRun, readyToTest
+ * @requires caja, jsunitRun, readyToTest, basicCajaConfig
  */
 
 (function () {
@@ -41,11 +41,7 @@
     }, 0);
   });
 
-  caja.makeFrameGroup({
-    cajaServer: '/caja',
-    debug: true,
-    forceES5Mode: inES5Mode
-  }, function (frameGroup) {
+  caja.makeFrameGroup(basicCajaConfig, function (frameGroup) {
 
     jsunitRegister('testInitFeralFrameSelf',
                    function testInitFeralFrameSelf() {

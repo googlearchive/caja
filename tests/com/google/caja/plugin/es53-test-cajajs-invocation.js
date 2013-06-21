@@ -17,7 +17,8 @@
  * create an ES53 frame.
  *
  * @author ihab.awad@gmail.com
- * @requires caja, jsunitRun, readyToTest
+ * @requires caja, jsunitRun, readyToTest, inES5Mode, minifiedMode,
+ *     basicCajaConfig
  */
 
 (function () {
@@ -80,25 +81,16 @@
     rewrite: caja.policy.net.rewriter.ALL
   };
 
-  caja.initialize({
-    cajaServer: '/caja',
-    debug: true,
-    forceES5Mode: inES5Mode
-  });
+  caja.initialize(basicCajaConfig);
 
   jsunitRegister('testCorrectMinified', function testCorrectMinified() {
-    assertEquals(
-        getUrlParam('minified', 'PARAM MISSING'),
-        String(!caja.closureCanary));
+    assertEquals(minifiedMode, !caja.closureCanary);
     jsunitPass('testCorrectMinified');
   });
 
   jsunitRegister('testReinitialization', function testReinitialization() {
     try {
-      caja.initialize({
-        cajaServer: '/caja',
-        debug: true
-      });
+      caja.initialize(basicCajaConfig);
     } catch (e) {
       assertStringContains('Caja cannot be initialized more than once', 
           String(e));
@@ -430,11 +422,7 @@
     });
   });
 
-  caja.makeFrameGroup({
-    cajaServer: '/caja',
-    debug: true,
-    forceES5Mode: inES5Mode
-  }, function (frameGroup) {
+  caja.makeFrameGroup(basicCajaConfig, function (frameGroup) {
 
     // TODO(ihab.awad): Test 'base url' functionality, esp. for "content" cases
     if (!inES5Mode)

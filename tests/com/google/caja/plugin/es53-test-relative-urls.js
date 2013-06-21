@@ -15,15 +15,11 @@
 /**
  * @fileoverview Tests how relative urls are resolved
  * @author jasvir@gmail.com
- * @requires caja, jsunitRun, readyToTest
+ * @requires caja, jsunitRun, readyToTest, basicCajaConfig
  */
 (function () {
 
-  caja.initialize({
-    cajaServer: '/caja',
-    debug: true,
-    forceES5Mode: inES5Mode
-  });
+  caja.initialize(basicCajaConfig);
 
   fetch('es53-test-relative-urls.html', function(testHtml) {
     jsunitRegister('testRelativeUrls', function testRelativeUrls () {

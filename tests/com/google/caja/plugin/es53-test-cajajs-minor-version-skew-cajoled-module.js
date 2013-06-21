@@ -30,7 +30,7 @@ jsunitRegister('testMinorVersionSkew', function testMinorVersionSkew() {
         cajaBuildVersion + 'M2');
     caja.initialize({
       cajaServer: '/caja',
-      debug: true,
+      debug: !minifiedMode,
       es5Mode: false
     });
     caja.load(undefined, undefined, function (frame) {

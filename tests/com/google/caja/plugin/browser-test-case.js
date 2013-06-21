@@ -73,10 +73,19 @@
  *
  *       Boolean whether we are running in pure ES5 or ES5/3 translation mode.
  *
+ *   minifiedMode
+ *
+ *       Boolean whether we want to load minified files.
+ *
  *   caja
  *
  *       At the time the test driver is running, an instance of the "caja"
  *       object, as defined in "c/g/c/caja.js", will be available.
+ *
+ *   basicCajaConfig
+ *
+ *       An appropriate set of parameters to caja.initialize or
+ *       caja.makeFrameGroup.
  *
  *   setUp(), tearDown()
  *
@@ -106,7 +115,9 @@
  *     JsUnitException, assertFailsSafe, fail,
  *     bridalMaker
  * @provides cajaBuildVersion, getUrlParam, withUrlParam, readyToTest,
- *     createDiv, createExtraImportsForTesting, inES5Mode, setUp, tearDown,
+ *     createDiv, createExtraImportsForTesting, inES5Mode, minifiedMode,
+*      basicCajaConfig
+ *     setUp, tearDown,
  *     asyncRequirements,
  *     canonInnerHtml, assertStringContains, assertStringDoesNotContain,
  *     splitHtmlAndScript, pageLoaded___, urlParamPattern, fetch
@@ -169,6 +180,21 @@ if (getUrlParam('es5') === 'true') {
 } else {
   throw new Error('es5 parameter is not "true" or "false"');
 }
+
+var minifiedMode;
+if (getUrlParam('minified', 'true') === 'true') {
+  minifiedMode = true;
+} else if (getUrlParam('minified', 'true') === 'false') {
+  minifiedMode = false;
+} else {
+  throw new Error('minified parameter is not "true" or "false"');
+}
+
+var basicCajaConfig = {
+  cajaServer: '/caja',
+  debug: !minifiedMode,
+  forceES5Mode: inES5Mode
+};
 
 // Construct test case navigation toolbar
 window.addEventListener('load', function() {

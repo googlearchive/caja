@@ -16,15 +16,11 @@
  * @fileoverview Tests which require a complete document to be loaded for each.
  *
  * @author kpreid@switchb.org
- * @requires caja, jsunitRun, readyToTest
+ * @requires caja, jsunitRun, readyToTest, basicCajaConfig
  */
 
 (function () {
-  caja.initialize({
-    cajaServer: '/caja',
-    debug: true,
-    forceES5Mode: inES5Mode
-  });
+  caja.initialize(basicCajaConfig);
 
   function registerGlobalTest(cond, testName, url, html, callback) {
     jsunitRegisterIf(cond, testName, function globalTestWrapper() {

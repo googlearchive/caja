@@ -16,7 +16,8 @@
  * @fileoverview Tests using a mitigating url rewriter for SES.
  *
  * @author jasvir@gmail.com
- * @requires caja, jsunitRun, readyToTest, document, jsunitRegister
+ * @requires caja, jsunitRun, readyToTest, document, jsunitRegister,
+ *     basicCajaConfig
  */
 
 (function () {
@@ -33,11 +34,7 @@
     }
   };
 
-  caja.initialize({
-    cajaServer: '/caja',
-    debug: true,
-    forceES5Mode: inES5Mode
-  });
+  caja.initialize(basicCajaConfig);
 
   jsunitRegister('testPrecajole', function testPrecajole() {
     caja.load(createDiv(), cachingUriPolicy, function (frame) {

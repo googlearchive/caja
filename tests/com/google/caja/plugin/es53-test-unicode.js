@@ -19,11 +19,7 @@
     }
   };
 
-  caja.initialize({
-    cajaServer: '/caja',
-    debug: true,
-    forceES5Mode: inES5Mode
-  });
+  caja.initialize(basicCajaConfig);
   
   function basicPassingTest(name, code, result) {
     var ipc = { result: 'untouched' };

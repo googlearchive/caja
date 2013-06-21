@@ -13,11 +13,7 @@
 // limitations under the License.
 
 (function() {
-  caja.initialize({
-    cajaServer: '/caja',
-    debug: true,
-    forceES5Mode: inES5Mode
-  });
+  caja.initialize(basicCajaConfig);
   var container = createDiv();
   caja.load(
       container,

@@ -165,7 +165,8 @@
   function shouldTreatAccessorAsValue(object, name, desc) {
     return (
         // work around SES patching frozen value properties into accessors
-        /defProp\(this, name, \{/.exec(String(desc.set)) ||
+        // Note: pattern must match minified or unminified code
+        /defProp\(this, ?name, ?\{/.exec(String(desc.set)) ||
         // or Domado doing the same, slightly differently
         getFunctionName(desc.get) === 'overrideGetter');
   }

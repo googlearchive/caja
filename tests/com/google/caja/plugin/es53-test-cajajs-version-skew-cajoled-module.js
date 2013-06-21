@@ -29,7 +29,7 @@ jsunitRegister('testVersionSkew', function testVersionSkew() {
         '0000');
     caja.initialize({
       cajaServer: '/caja',
-      debug: true,
+      debug: !minifiedMode,
       es5Mode: false
     });
     caja.load(undefined, undefined, function (frame) {

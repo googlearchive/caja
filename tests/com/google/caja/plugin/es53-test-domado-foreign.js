@@ -12,11 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-caja.initialize({
-  cajaServer: '/caja',
-  debug: true,
-  forceES5Mode: inES5Mode
-});
+caja.initialize(basicCajaConfig);
 
 var guestDiv = createDiv();
 

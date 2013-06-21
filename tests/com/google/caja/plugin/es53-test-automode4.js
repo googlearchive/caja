@@ -28,7 +28,7 @@
 
   caja.initialize({
     cajaServer: '/caja',
-    debug: true,
+    debug: !minifiedMode,
     es5Mode: true,
     // Unachievable level of security - should cause es5 not to run
     maxAcceptableSeverity: 'MAGICAL_UNICORN'
@@ -40,7 +40,7 @@
     // Try again using es53 explicitly this time
     caja.initialize({
       cajaServer: '/caja',
-      debug: true,
+      debug: !minifiedMode,
       es5Mode: false
     }, 
     function(details) { assertFalse("Ran wrong mode", details['es5Mode']); },

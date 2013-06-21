@@ -16,7 +16,7 @@
  * @fileoverview Google API taming tests.
  *
  * @author ihab.awad@gmail.com
- * @requires caja, jsunitRun, readyToTest
+ * @requires caja, jsunitRun, readyToTest, basicCajaConfig
  */
 
 
@@ -89,11 +89,7 @@
 
 function runtests() {
 
-  caja.initialize({
-    cajaServer: '/caja',
-    debug: true,
-    forceES5Mode: inES5Mode
-  });
+  caja.initialize(basicCajaConfig);
 
   var uriPolicy = {
     rewrite: function (uri, uriEffect, loaderType, hints) { return uri; }
