@@ -139,11 +139,26 @@ var sanitizeStylesheetWithExternals = undefined;
     function normalizeFunctionCall(tokens, start) {
       var parenDepth = 1, end = start + 1, n = tokens.length;
       while (end < n && parenDepth) {
-        // TODO: Can URLs appear in functions?
         var token = tokens[end++];
-        parenDepth += (token === '(' ? 1 : token === ')' ? -1 : 0);
+        // Decrement if we see a close parenthesis, and increment if we
+        // see a function.  Since url(...) are whole tokens, they will not
+        // affect the token scanning.
+        parenDepth += (token === ')' ? -1 : /^[^"']*\($/.test(token));
       }
-      return end;
+      // Allow error-recovery from unclosed functions by ignoring the call and
+      // so allowing resumption at the next ';'.
+      return parenDepth ? start+1 : end;
+    }
+
+    /** Put spaces between tokens, but don't duplicate existing spaces. */
+    function respace(tokens) {
+      var i = 0, j = 0, n = tokens.length, tok;
+      while (i < n) {
+        tok = tokens[i++];
+        if (tok !== ' ') { tokens[j++] = tok; }
+      }
+      tokens.length = j;
+      return tokens.join(' ');
     }
   
     // Used as map value to avoid hasOwnProperty checks.
@@ -241,7 +256,7 @@ var sanitizeStylesheetWithExternals = undefined;
                 // splices tokens to where i now is the index of the whole call:
                 //   ['x', ' ', 'rgb( 255 , 0 , 0 )', ' ', 'y']
                 tokens.splice(i, end - i,
-                              token = tokens.slice(i, end).join(' '))),
+                              token = respace(tokens.slice(i, end)))),
             litGroup = propertySchema.cssLitGroup,
             litMap = (litGroup
                       ? (propertySchema.cssLitMap
@@ -303,8 +318,8 @@ var sanitizeStylesheetWithExternals = undefined;
     var HISTORY_NON_SENSITIVE_PSEUDO_SELECTOR_WHITELIST =
       /^(active|after|before|first-child|first-letter|focus|hover)$/;
     
-    // TODO: This should be removed now as modern browsers no longer require this
-    // special handling
+    // TODO: This should be removed now as modern browsers no longer require
+    // this special handling
     var HISTORY_SENSITIVE_PSEUDO_SELECTOR_WHITELIST = 
       /^(link|visited)$/;
   
@@ -532,15 +547,15 @@ var sanitizeStylesheetWithExternals = undefined;
       // but supported by Chrome
       var url3 = /^\s*url\s*[(]([^)]*)[)]\s*$/;
       var match;
-      if (match = string1.exec(candidate)) {
+      if ((match = string1.exec(candidate))) {
         return match[1];
-      } else if (match = string2.exec(candidate)) {
+      } else if ((match = string2.exec(candidate))) {
         return match[1];
-      } else if (match = url1.exec(candidate)) {
+      } else if ((match = url1.exec(candidate))) {
         return match[1];
-      } else if (match = url2.exec(candidate)) {
+      } else if ((match = url2.exec(candidate))) {
         return match[1];
-      } else if (match = url3.exec(candidate)) {
+      } else if ((match = url3.exec(candidate))) {
         return match[1];
       }
       return null;
@@ -562,10 +577,11 @@ var sanitizeStylesheetWithExternals = undefined;
      *    file in sanitized CSS.
      * @param {function(string, Array.<string>): ?Array.<string>} tagPolicy
      *     As in html-sanitizer, used for rewriting element names.
-     * @param {undefined|function(string, boolean)} continuation callback from external
-     *     css urls.  The callback is called with a string, the CSS contents
-     *     and a boolean, which is true if the external url itself contained
-     *     other external urls.
+     * @param {undefined|function(string, boolean)} continuation callback from
+     *     external CSS URLs.
+     *     The callback is called with a string, the CSS contents and a boolean,
+     *     which is true if the external url itself contained other external
+     *     URLs.
      */
     function sanitizeStylesheetInternal(baseUri, cssText, suffix,
       naiveUriRewriter, naiveUriFetcher, tagPolicy,

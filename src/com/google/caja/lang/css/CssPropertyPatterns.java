@@ -644,7 +644,8 @@ public class CssPropertyPatterns {
                 "<" + commonSymbol + ">");
       JSREBuilder p = inspector.symbolToPattern(false, sig);
       if (p != null) {
-        String commonSubstring = withoutSpacesOrZero(p.p.optimize()).toString();
+        JSRE pOpt = withoutSpacesOrZero(p.p.optimize());
+        String commonSubstring = pOpt != null ? pOpt.toString() : "";
         if (commonSubstring.length() != 0) {
           commonSubstrings.add(commonSubstring);
         }

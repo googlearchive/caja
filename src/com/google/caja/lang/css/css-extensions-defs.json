@@ -442,11 +442,6 @@
       "source": "http://www.w3.org/TR/2009/CR-css3-background-20091217/#ltbg-imagegt"
     },
 
-    { "key": "<image>",
-      "signature": "<uri>",
-      "source": "http://www.w3.org/TR/2009/CR-css3-background-20091217/#ltimagegt"
-    },
-
     { "key": "<bg-position>",
       "signature": "[ [ [ <percentage> | <length> | left | center | right ] ] [ [ <percentage> | <length> | top | center | bottom ] ]? | [ [ center | [ left | right ] [ <percentage> | <length> ]? ] || [ center | [ top | bottom ] [ <percentage> | <length> ]? ] ] ]",
       "source": "http://www.w3.org/TR/2009/CR-css3-background-20091217/#ltbg-positiongt"
@@ -460,6 +455,76 @@
     { "key": "<attachment>",
       "signature": "scroll | fixed | local",
       "source": "http://www.w3.org/TR/2009/CR-css3-background-20091217/#ltattachmentgt"
-    }
+    },
+
+    { "key": "<image>",
+      "signature": "<uri> | <image-list> | <gradient>",
+      "source": "http://dev.w3.org/csswg/css-images-3/#image-values"
+    },
+
+    { "key": "<image-list>",
+      "signature": "image( [ <image-decl> , ]* [ <image-decl> | <color> ] )",
+      "source": "http://dev.w3.org/csswg/css-images-3/#image-notation"
+    },
+
+    { "key": "<image-decl>",
+      "signature": "<uri>",
+      "source": "http://dev.w3.org/csswg/css-images-3/#image-notation"
+    },
+
+    { "key": "<gradient>",
+      "signature": "[ <linear-gradient> | <radial-gradient> | <repeating-linear-gradient> | <repeating-radial-gradient> ]",
+      "source": "http://dev.w3.org/csswg/css-images-3/#linear-gradient-type"
+    },
+
+    { "key": "<linear-gradient>",
+      "signature": "linear-gradient ( [ [ <angle> | to <side-or-corner> ] ,]? <color-stop> [ , <color-stop>]+ )",
+      "source": "http://dev.w3.org/csswg/css-images-3/#linear-gradient-type"
+    },
+
+    { "key": "<radial-gradient>",
+      "signature": "radial-gradient ( [ [ <ending-shape> || <size> ] [ at <position> ]? , | at <position> , ]? <color-stop> [ , <color-stop> ]+ )",
+      "source": "http://dev.w3.org/csswg/css-images-3/#radial-gradients"
+    },
+
+    { "key": "<repeating-linear-gradient>",
+      "signature": "repeating-linear-gradient ( [ [ <angle> | to <side-or-corner> ] ,]? <color-stop>[, <color-stop>]+ )",
+      "source": "http://dev.w3.org/csswg/css-images-3/#repeating-gradients"
+    },
+
+    { "key": "<repeating-radial-gradient>",
+      "signature": "repeating-radial-gradient ( [ [ <ending-shape> || <size> ] [ at <position> ]? , | at <position> , ]? <color-stop> [ , <color-stop> ]+ )",
+      "source": "http://dev.w3.org/csswg/css-images-3/#repeating-gradients"
+    },
+
+    { "key": "<side-or-corner>",
+      "signature": "[left | right] || [top | bottom]",
+      "source": "http://dev.w3.org/csswg/css-images-3/#linear-gradient-type"
+    },
+
+    { "key": "<size>",
+      "signature": "[ closest-side | farthest-side | closest-corner | farthest-corner | <length> | [<length> | <percentage>] [<length> | <percentage>] ]",
+      "default": "farthest-corner",
+      "source": "http://dev.w3.org/csswg/css-images-3/#size"
+    },
+
+    { "key": "<color-stop>",
+      "signature": "<color> [ <percentage> | <length> ]?",
+      "source": "http://dev.w3.org/csswg/css-images-3/#color-stop-syntax"
+    },
+
+    { "key": "<ending-shape>",
+      "signature": "circle | ellipse",
+      "default": "circle",
+      "source": "http://dev.w3.org/csswg/css-images-3/#shape"
+    },
+
+    { "key": "<position>",
+      "default": "center",
+      "signature": "[ <percentage>  |  <length>  |  [[ left | right ] [ <percentage> | <length> ]? [ center | [ top | bottom ] [ <percentage> | <length> ]? ]? ]  |  [ [ top | bottom ] [ <percentage> | <length> ]? [ center | [ left | right ] [ <percentage> | <length> ]? ]? ]  |  [ center [ center | [ left | right | top | bottom ] [ <percentage> | <length> ]? ]? ] ]",
+      "comment": "the signature was derived from the source by duplicating and reducing to avoid the use of the && operator defined in http://www.w3.org/TR/CSS21/about.html#property-defs which is not supported by the CSS whitelist parser.",
+      "source": "http://dev.w3.org/csswg/css-backgrounds/#position",
+    },
+
   ]
 }

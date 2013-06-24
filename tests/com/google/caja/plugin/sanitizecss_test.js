@@ -255,3 +255,14 @@ jsunitRegister('testCssSelectors',
   assertSelector("#foo:bogus", "sfx", [".sfx #foo-sfx", []]);
   jsunit.pass();
 });
+
+jsunitRegister('testGradients',
+               function testGradients() {
+  var source = 'linear-gradient(to bottom right, red, rgb(255,0,0))';
+  var expect = 'linear-gradient( to bottom right , red , rgb( 255 , 0 , 0 ) )';
+  var tokens = lexCss(source);
+  sanitizeCssProperty(
+      'background-image', cssSchema['background-image'], tokens);
+  assertEquals(expect, tokens.join(''));
+  jsunit.pass();
+});

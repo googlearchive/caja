@@ -181,10 +181,42 @@ public class CssRewriterTest extends CajaTestCase {
   }
 
   public final void testGradients() throws Exception {
-    runTest("p { background-image:gradient(" +
-        "linear, left top, left bottom)}",
-        "", false);
-       assertNoErrors();
+    runTest("p { background-image:gradient(linear, left top, left bottom)}",
+            "", false);
+    assertNoErrors();
+
+    String pre = ".namespace__ p {\n  ";
+
+    // A gradient on 45deg axis starting blue and finishing red
+    runTest(
+        "p {   background-image: linear-gradient(45deg, blue, red) }",
+        pre + "background-image: linear-gradient(45deg, blue, red)\n}");
+    assertNoErrors();
+
+    // A gradient going from the bottom right to the top left starting blue and
+    // finishing red
+    runTest(
+        "p   { background-image:linear-gradient( to left top, blue, red); }",
+        pre + "background-image: linear-gradient(to left top, blue, red)\n}");
+    assertNoErrors();
+
+    // A gradient going from the bottom to top, starting blue, being green
+    // after 40%  and finishing red
+    runTest(
+        "p { background-image:linear-gradient( 0deg, blue, green 40%, red ); }",
+        pre + "background-image: linear-gradient(0deg, blue, green 40%, red)\n}"
+        );
+
+    runTest(
+       ""
+       + "li {"
+       + "  list-style-image:repeating-radial-gradient("
+       + "    circle closest-side at 20px 30px,"
+       + "    red, yellow, green 100%, yellow 150%, red 200%"
+       + "  );"
+       + "}",
+       "");
+
   }
 
   public final void testSubstitutions() throws Exception {
@@ -254,7 +286,7 @@ public class CssRewriterTest extends CajaTestCase {
 
   public final void testUrisCalledWithProperPropertyPart() throws Exception {
     // The CssRewriter needs to rewrite URIs.
-    // When it does so it passes
+    // When it does so it passes a context string.
     assertCallsUriRewriterWithPropertyPart(
         "background: 'foo.png'",
         "background::bg-image::image");

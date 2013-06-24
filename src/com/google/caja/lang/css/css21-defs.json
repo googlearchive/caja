@@ -34,7 +34,7 @@
       "dom2property": "backgroundColor" },
 
     { "key": "background-image",
-      "signature": "<uri> | none | inherit",
+      "signature": "<image> | none | inherit",
       "default": "none",
       "appliesTo": "*",
       "inherited": false,
@@ -407,7 +407,7 @@
       "dom2property": "lineHeight" },
 
     { "key": "list-style-image",
-      "signature": "<uri> | none | inherit",
+      "signature": "<image> | none | inherit",
       "default": "none",
       "appliesTo": { "include": ["display: list-item"] },
       "inherited": true,
@@ -905,6 +905,10 @@
                  " and 'cursive') must be quoted to prevent confusion with",
                  " the keywords with the same names."]
     },
+
+    { "key": "<image>",
+      "see": "http://www.w3.org/TR/2009/CR-css3-background-20091217/#ltimagegt",
+      "signature": "<uri>" },
 
     { "key": "<relative-size>",
       "see": "http://www.w3.org/TR/CSS21/fonts.html#propdef-font-size",
