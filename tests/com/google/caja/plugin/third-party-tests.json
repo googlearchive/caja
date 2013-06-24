@@ -132,7 +132,7 @@
       },
       {
         "guest": "css",
-        "expected-pass": { "firefox": 234, "chrome": 240 },
+        "expected-pass": 240,
         "comment": [
           "Current failure categories:",
             "Not yet examined."

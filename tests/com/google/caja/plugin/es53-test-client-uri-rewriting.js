@@ -35,12 +35,22 @@
   // simply check innerHTML of the client DIV to see whether the effect was
   // correct. Instead, we have to go to greater extremes by monkey patching the
   // emitCss___ function itself and checking the args it is called with.
+  // TODO(kpreid): This will go away once we have CSS fully moved into the guest
+  // tree (for ES5/3).
   function patchEmitCss(frame) {
-    var o = { emittedCss: null };
+    var captured = [];
+    function get() {
+      var result = captured.slice();
+      var styles = frame.innerContainer.getElementsByTagName('style');
+      for (var i = 0; i < styles.length; i++) {
+        result.push(styles[i].innerHTML);
+      }
+      return result.join('\n');
+    }
+    var o = { get: get };
     function capture(f) {
       return function (cssText) {
-        if (o.emittedCss) { throw 'cannot handle multiple emitCss'; }
-        o.emittedCss = cssText;
+        captured.push(cssText);
         f.call(this, cssText);
       }
     }
@@ -51,11 +61,23 @@
 
   caja.initialize(basicCajaConfig);
   
+  function checkForEvilUrls() {
+    var styles = document.getElementsByTagName('style');
+    var sanity = false;
+    for (var i = 0; i < styles.length; i++) {
+      var stylesheetText = styles[i].textContent;
+      sanity = sanity || stylesheetText.indexOf('URICALLBACK') !== -1;
+      assertStringDoesNotContain('javascript:', stylesheetText);
+      assertStringDoesNotContain('invalid:', stylesheetText);
+    }
+    assertTrue(sanity);
+  }
+
   jsunitRegister('testUriInAttr', function testUriInAttr() {
     var div = createDiv();
-    caja.load(div, uriCallback, function (frame) {
+    caja.load(div, uriCallback, jsunitCallback(function(frame) {
       frame.code('es53-test-client-uri-rewriting-guest.html')
-          .run(function (_) {
+          .run(jsunitCallback(function(_) {
         var result = canonInnerHtml(div.innerHTML);
         assertStringContains(
           canonInnerHtml(
@@ -76,11 +98,10 @@
               + ']]" target="_blank">foo</a>'
           ),
           result);
-        assertStringDoesNotContain('javascript:', result);
-        assertStringDoesNotContain('invalid:', result);
+        checkForEvilUrls();
         jsunitPass('testUriInAttr');
-      });
-    });
+      }));
+    }));
   });
 
   jsunitRegister('testUriInCss', function testUriInCss() {
@@ -98,9 +119,8 @@
           'url(' + q + 'URICALLBACK[['
           + origin + '/ant-testlib/com/google/caja/plugin/foo.png'
           + ']]' + q + ')',
-          capture.emittedCss);
-        assertStringDoesNotContain('javascript:', capture.emittedCss);
-        assertStringDoesNotContain('invalid:', capture.emittedCss);
+          capture.get());
+        checkForEvilUrls();
         jsunitPass('testUriInCss');
       }));
     }));
@@ -233,8 +253,9 @@
       'testStylesheetCompiled',
       function() {
         var calledPolicy = false;
+        var div = createDiv();
         caja.load(
-            createDiv(),
+            div,
             {
               rewrite: jsunitCallback(function rewrite(
                   uri, effects, ltype, hints) {
@@ -257,7 +278,7 @@
                   .run(jsunitCallback(function runCb() {
                     assertTrue('calledPolicy', calledPolicy);
                     assertStringContains('URI[[http://x.com/a.jpg]]',
-                        capture.emittedCss);
+                        capture.get());
                     jsunitPass('testStylesheetCompiled');
                   }));
             }));

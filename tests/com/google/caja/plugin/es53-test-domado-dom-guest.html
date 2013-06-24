@@ -2402,15 +2402,21 @@ After
     // used to confirm that the emulation was correct.
     jsunitRegister('testDocumentElement',
                    function testDocumentElement() {
-      // note: single space in title is due to canonInnerHtml, see
-      // in assertDomTree.
-      var headInnerHTML =
-          '<title>this title is &amp; test </title>' +
+      // want to test innerHTML but be indifferent to specific content, so
+      // just collect what's already there
+      var style0Text = inES5Mode ?
+          document.getElementsByTagName('style')[0].innerHTML : '';
+      var style1Text = document.getElementsByTagName('style')[inES5Mode ? 1 : 0]
+          .innerHTML;
+      // note: canonInnerHtml needed to match assertDomTree. To be removed; see
+      // comment on assertDomTree;
+      var headInnerHTML = canonInnerHtml(
+          '<title>this title is &amp; test   </title>' +
           (inES5Mode
-              ? '<style type="text/css"></style>' +
+              ? '<style type="text/css">' + style0Text + '</style>' +
                 '<scr'+'ipt></scr'+'ipt>'
               : '') +
-          '<style></style>';
+          '<style>' + style1Text + '</style>');
       assertDomTree({
           nodeType: 9,
           nodeName: '#document',
@@ -2446,8 +2452,11 @@ After
                       tagName: 'STYLE',
                       nodeValue: null,
                       attributes: [],
-                      innerHTML: '',
-                      children: []
+                      innerHTML: canonInnerHtml(style1Text),
+                      children: [ {
+                          nodeType: 3,
+                          nodeValue: style1Text
+                      } ]
                     };
                     return !inES5Mode ? [title, dynStyle] : [
                       title,
@@ -2461,8 +2470,11 @@ After
                             nodeValue: 'text/css'
                           }
                         ],
-                        innerHTML: '',
-                        children: []
+                        innerHTML: canonInnerHtml(style0Text),
+                        children: [ {
+                            nodeType: 3,
+                            nodeValue: style0Text
+                        } ]
                       },
                       {
                         nodeType: 1,
@@ -2950,7 +2962,10 @@ Test row cell
       // Guest-visible styles have no content.
       // TODO(kpreid): Move virtualized stylesheet content to the actual style
       // node.
-      assertEquals('innerHTML', '', el.innerHTML);
+      assertEquals('innerHTML',
+          '.caja-guest-0___ #testStyleElement-style-caja-guest-0___{' +
+              'display:block;background:yellow;width:1em;}\n'
+          , el.innerHTML);
 
       // Not allowed to set content.
       expectFailure(function() {

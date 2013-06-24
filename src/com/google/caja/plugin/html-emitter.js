@@ -498,13 +498,17 @@ function HtmlEmitter(makeDOMAccessible, base,
       return makeCssUriHandler(baseUri, 'fetchUri', 'text/css');
     }
 
-    function defineUntrustedStylesheet(styleBaseUri, cssText) {
+    function defineUntrustedStylesheet(styleBaseUri, cssText, styleElement) {
+      function emitCss(text) {
+        styleElement.appendChild(styleElement.ownerDocument.createTextNode(
+            text + '\n'));
+      }
       var safeCss = [];
       var safeInlineCss;
       function continuation(sanitizeStyle, moreToCome) {
         safeCss.push(sanitizeStyle);
         if (!moreToCome) {
-          domicile.emitCss(
+          emitCss(
             safeCss.join(' ') + ' ' + safeInlineCss);
         }
       }
@@ -516,7 +520,7 @@ function HtmlEmitter(makeDOMAccessible, base,
             domicile.tagPolicy,
             continuation);
         if (!sanitized.moreToCome) {
-          domicile.emitCss(sanitized.result);
+          emitCss(sanitized.result);
         } else {
           safeInlineCss = sanitized.result;
         }
@@ -540,11 +544,12 @@ function HtmlEmitter(makeDOMAccessible, base,
       }
     }
 
-    function defineUntrustedExternalStylesheet(url, marker, continuation) {
+    function defineUntrustedExternalStylesheet(
+        url, styleElement, marker, continuation) {
       resolveUntrustedExternal(
           url, 'text/css', marker, function(url, result) {
             if (result !== null) {
-              defineUntrustedStylesheet(url, result);
+              defineUntrustedStylesheet(url, result, styleElement);
             }
             continuation();
           });
@@ -816,12 +821,40 @@ function HtmlEmitter(makeDOMAccessible, base,
       },
       inHead: {
         toString: function () { return "in head"; },
-        startTag: function (tagName, attribs) {
+        startTag: function (tagName, attribs, marker, continuation) {
           if (tagName === 'html') {
             insertionModes.inBody.startTag.apply(undefined, arguments);
           } else if (tagName === 'base' || tagName === 'basefont' ||
-              tagName === 'bgsound'  || tagName === 'command' ||
-              tagName === 'link'     || tagName === 'meta' ||
+              tagName === 'bgsound'  || tagName === 'link') {
+            // Define a stylesheet for <link>
+            if (tagName === 'link') {
+              // Link types are case insensitive
+              var rel = lookupAttr(attribs, 'rel');
+              var href = lookupAttr(attribs, 'href');
+              var rels = rel ? String(rel).toLowerCase().split(' ') : [];
+              if (href && rels.indexOf('stylesheet') >= 0) {
+                var res = resolveUriRelativeToDocument(href);
+                // Nonconformant and visible to the guest, but needed
+                var styleElement = insertionPoint.ownerDocument
+                    .createElement('style');
+                insertionPoint.appendChild(styleElement);
+                defineUntrustedExternalStylesheet(
+                    res, styleElement, marker, continuation);
+              }
+            }
+
+            // "Insert an HTML element for the token."
+            normalInsert(tagName, attribs);
+
+            // "Immediately pop the current node off the stack of open
+            // elements."
+            // (Currently handled inside of normalInsert using the .empty flag.
+            // TODO(kpreid): Be HTML5 conformant in this aspect.)
+            //insertionPoint = insertionPoint.parentElement;
+
+            // "Acknowledge the token's self-closing flag, if it is set."
+            // Not implemented.
+          } else if (tagName === 'command' || tagName === 'meta' ||
               tagName === 'noscript' || tagName === 'noframes') {
             // TODO(kpreid): Spec deviations for noscript, noframes, meta...
             normalInsert(tagName, attribs);
@@ -1008,8 +1041,8 @@ function HtmlEmitter(makeDOMAccessible, base,
         },
         endTag: function(tagName, marker, continuation) {
           var info;
+          var node = insertionPoint;
           if (tagName === 'script') {
-            var node = insertionPoint;
             if (node.tagName !== 'SCRIPT') {
               throw new Error('shouldn\'t happen: end tag </' + tagName +
                   '> while in text insertion mode for ' +
@@ -1042,7 +1075,7 @@ function HtmlEmitter(makeDOMAccessible, base,
               // no info.external since URL'd stylesheets are defined with
               // <link>, not <style>.
               defineUntrustedStylesheet(domicile.pseudoLocation.href,
-                  info.text);
+                  info.text, node);
             }
 
             // "Pop the current node off the stack of open elements."
@@ -1250,16 +1283,6 @@ function HtmlEmitter(makeDOMAccessible, base,
             // marked as disallowed in the schema because their text content is
             // powerful, so they are explicitly special-cased in any code
             // prepared to deal with them.)
-          } else if (tagName === 'link') {
-            // Link types are case insensitive
-            var rel = lookupAttr(attribs, 'rel');
-            var href = lookupAttr(attribs, 'href');
-            var rels = rel ? String(rel).toLowerCase().split(' ') : [];
-            if (href && rels.indexOf('stylesheet') >= 0) {
-              var res = resolveUriRelativeToDocument(href);
-              defineUntrustedExternalStylesheet(res, marker, continuation);
-            }
-            return; // TODO(kpreid): Remove, allow virtualized element
           } else if (tagName === 'base') {
             var baseHref = lookupAttr(attribs, 'href');
             if (baseHref && domicile) {
@@ -1274,7 +1297,7 @@ function HtmlEmitter(makeDOMAccessible, base,
             return;
           }
         }
-        insertionMode.startTag(tagName, attribs);
+        insertionMode.startTag(tagName, attribs, marker, continuation);
       },
       endTag: function (tagName, optional, marker, continuation) {
         insertionMode.endTag(tagName, marker, continuation);
