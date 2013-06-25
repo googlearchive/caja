@@ -1456,8 +1456,12 @@ For help on building and testing Caja, see:
     <copy todir="${war}/testing/skew-0000/${build.svnVersion}">
       <fileset dir="${war}/${build.svnVersion}" includes="*.js"/>
     </copy>
-    <replace dir="${war}/testing/skew-0000"
-        token="${build.svnVersion}" value="0000"/>
+    <replaceregexp
+        flags="g"
+        match="(cajaBuildVersion\s*=|'cajolerVersion':)\s*'[m\d]+'"
+        replace="\1'0000'">
+      <fileset dir="${war}/testing/skew-0000" includes="**/*.js"/>
+    </replaceregexp>
 
     <property name="ver.mmm" value="${build.svnVersion}mmm"/>
     <mkdir dir="${war}/testing/skew-mmm/${ver.mmm}"/>
@@ -1466,8 +1470,12 @@ For help on building and testing Caja, see:
     <copy todir="${war}/testing/skew-mmm/${ver.mmm}" overwrite="true">
       <fileset dir="${war}/${build.svnVersion}" includes="*.js"/>
     </copy>
-    <replace dir="${war}/testing/skew-mmm"
-        token="${build.svnVersion}" value="${ver.mmm}"/>
+    <replaceregexp
+        flags="g"
+        match="(cajaBuildVersion\s*=|'cajolerVersion':)\s*'[m\d]+'"
+        replace="\1'${ver.mmm}'">
+      <fileset dir="${war}/testing/skew-mmm" includes="**/*.js"/>
+    </replaceregexp>
   </target>
 
   <!-- Copy third-party JARs to the WAR directory -->
