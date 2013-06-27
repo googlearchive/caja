@@ -174,7 +174,7 @@ caja.tamingGoogleLoader = (function() {
       if (!frame.hasOwnProperty('opaqueNodeByIdCounter___')) {
         frame.opaqueNodeByIdCounter___ = 0;
       }
-      var node = frame.untame(frame.imports.document.getElementById(origId));
+      var node = frame.getElementByGuestId(origId);
       var d = node.ownerDocument.createElement('div');
       var opaqueId = 'opaqueNodeById__' + frame.opaqueNodeByIdCounter___++ + '__' + frame.idSuffix;
       d.setAttribute('id', opaqueId);

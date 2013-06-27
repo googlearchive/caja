@@ -62,12 +62,50 @@ function GuestManager(frameTamingSchema, frameTamingMembrane, divs, hostBaseUrl,
     flash: true
   };
 
+  function copyStringMap(o) {
+    var r = {};
+    for (var k in o) {
+      if (Object.prototype.hasOwnProperty.call(o, k)) {
+        r[k] = o[k];
+      }
+    }
+    return r;
+  }
+
   var self = {
     // Public state
     div: divs.outer && divs.outer.parentNode,
     idClass: divs.idClass,
     getUrl: function() { return args.url; },
     getUriPolicy: function() { return uriPolicy; },
+
+    getElementByGuestId: domicile
+        ? function(id) {
+          return self.untame(
+              Object.prototype.v___
+                  ? self.imports.v___('document').m___('getElementById', [id])
+                  : self.imports.document.getElementById(id));
+        }
+        : function(_) {
+          return null;
+        },
+
+    rewriteUri: domicile
+        ? function(url, mime, opts) {
+          return self.untame(
+              Object.prototype.v___
+                  ? domicile.m___('rewriteUri', [
+                      url,
+                      mime,
+                      copyStringMap(opts)])
+                  : domicile.rewriteUri(
+                      url,
+                      mime,
+                      copyStringMap(opts)));
+        }
+        : function(_) {
+          return null;
+        },
 
     // deprecated; idSuffix in domado means '-' + idClass, but idSuffix
     // exposed here is without the leading '-'.  Future code should use the
@@ -89,8 +127,6 @@ function GuestManager(frameTamingSchema, frameTamingMembrane, divs, hostBaseUrl,
     // Internal state
     domicile: domicile,      // Currently exposed only for the test suite
     htmlEmitter: htmlEmitter,
-
-    rewriteUri: domicile ? domicile.rewriteUri : function() { return null; },
 
     // Taming utilities
     tame: frameTamingMembrane.tame,

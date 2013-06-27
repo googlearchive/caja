@@ -111,8 +111,13 @@
     request.send();
   }
 
+  // TODO(kpreid): Refactor to avoid unnecessary latency and dependencies,
+  // perhaps using Q.
+
   loadCatalog('tests', 'browser-tests.json', function() {
-    loadCatalog('tests', '../ses/ses-tests.json');
+    loadCatalog('tests', '../ses/ses-tests.json', function() {
+      loadCatalog('tests', 'apitaming-tests.json');
+    });
   });
   loadCatalog('thirdparty', 'third-party-tests.json');
 

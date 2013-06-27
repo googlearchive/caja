@@ -38,7 +38,7 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
     if (args.length < 1) { return []; }
     var spec = args[0];
     if (typeof spec === 'string') { spec = JSON.parse(spec); }
-    spec = utils.copyJson(spec);
+    spec = utils.copyMixed(spec);
     if (spec.containerId) {
       tameContainerId = spec.containerId;
       spec.containerId = utils.opaqueNodeById(spec.containerId);
@@ -94,7 +94,7 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
   // result has HTML in tooltips turned off
 
   function copyDrawOpts(opts) {
-    opts = utils.copyJson(opts);
+    opts = !!opts ? utils.copyJson(opts) : {};
     opts.allowHtml = false;
     opts.tooltip = { isHtml: false };
     return opts;
@@ -289,43 +289,63 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
   ////////////////////////////////////////////////////////////////////////
   // Formatters
 
-  v.ArrowFormat = function(opt_options) {};
-  v.ArrowFormat.__super__ = Object;
-  v.ArrowFormat.__before__ = [ utils.mapArgs(utils.copyJson) ];
-  v.ArrowFormat.prototype.format = function(dataTable, columnIndex) {};
+  function formatter(name, cb) {
+    cb(name + 'Format');
+    cb('Table' + name + 'Format');
+  }
 
-  v.BarFormat = function(opt_options) {};
-  v.BarFormat.__super__ = Object;
-  v.BarFormat.__before__ = [ utils.mapArgs(utils.copyJson) ];
-  v.BarFormat.prototype.format = function(dataTable, columnIndex) {};
+  formatter('Arrow', function(name) {
+    v[name] = function(opt_options) {};
+    v[name].__super__ = Object;
+    v[name].__before__ = [ utils.mapArgs(utils.copyJson) ];
+    v[name].prototype.format = function(dataTable, columnIndex) {};
+  });
 
-  v.ColorFormat = function() {};
-  v.ColorFormat.__super__ = Object;
-  v.ColorFormat.__before__ = [ utils.mapArgs(utils.copyJson) ];
-  v.ColorFormat.prototype.addRange = function(from, to, color, bgcolor) {};
-  v.ColorFormat.prototype.addGradientRange = function(from, to, color, fromBgColor, toBgColor) {};
-  v.ColorFormat.prototype.format = function(dataTable, columnIndex) {};
+  formatter('Bar', function(name) {
+    v[name] = function(opt_options) {};
+    v[name].__super__ = Object;
+    v[name].__before__ = [ utils.mapArgs(utils.copyJson) ];
+    v[name].prototype.format = function(dataTable, columnIndex) {};
+  });
 
-  v.DateFormat = function(opt_options) {};
-  v.DateFormat.__super__ = Object;
-  v.DateFormat.__before__ = [ utils.mapArgs(utils.copyJson) ];
-  v.DateFormat.prototype.format = function(dataTable, columnIndex) {};
-  v.DateFormat.prototype.formatValue = function(value) {};
+  formatter('Color', function(name) {
+    v[name] = function() {};
+    v[name].__super__ = Object;
+    v[name].__before__ = [ utils.mapArgs(utils.copyJson) ];
+    v[name].prototype.addRange = function(from, to, color, bgcolor) {};
+    v[name].prototype.addGradientRange =
+        function(from, to, color, fromBgColor, toBgColor) {};
+    v[name].prototype.format = function(dataTable, columnIndex) {};
+  });
 
-  v.NumberFormat = function(opt_options) {};
-  v.NumberFormat.__super__ = Object;
-  v.NumberFormat.__before__ = [ utils.mapArgs(utils.copyJson) ];
-  v.NumberFormat.prototype.format = function(dataTable, columnIndex) {};
-  v.NumberFormat.prototype.formatValue = function(value) {};
-  v.NumberFormat.DECIMAL_SEP = 1;
-  v.NumberFormat.GROUP_SEP = 1;
-  v.NumberFormat.DECIMAL_PATTERN = 1;
+  formatter('Date', function(name) {
+    v[name] = function(opt_options) {};
+    v[name].__super__ = Object;
+    v[name].__before__ = [ utils.mapArgs(utils.copyJson) ];
+    v[name].prototype.format = function(dataTable, columnIndex) {};
+    v[name].prototype.formatValue = function(value) {};
+  });
 
-  v.PatternFormat = function(pattern) {};
-  v.PatternFormat.__super__ = Object;
-  v.PatternFormat.prototype.format = function(dataTable, srcColumnIndices, opt_dstColumnIndex) {};
-  v.PatternFormat.prototype.format.__before__ = [ utils.mapArgs(utils.identity, utils.copyJson, utils.identity) ];
+  formatter('Number', function(name) {
+    v[name] = function(opt_options) {};
+    v[name].__super__ = Object;
+    v[name].__before__ = [ utils.mapArgs(utils.copyJson) ];
+    v[name].prototype.format = function(dataTable, columnIndex) {};
+    v[name].prototype.formatValue = function(value) {};
+    v[name].DECIMAL_SEP = 1;
+    v[name].GROUP_SEP = 1;
+    v[name].DECIMAL_PATTERN = 1;
+  });
 
+  formatter('Pattern', function(name) {
+    v[name] = function(pattern) {};
+    v[name].__super__ = Object;
+    v[name].prototype.format =
+        function(dataTable, srcColumnIndices, opt_dstColumnIndex) {};
+    v[name].prototype.format.__before__ = [
+        utils.mapArgs(utils.identity, utils.copyJson, utils.identity)
+      ];
+  });
 
   ////////////////////////////////////////////////////////////////////////
   // GadgetHelper
@@ -528,27 +548,24 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
   v.CandlestickChart.prototype.getSelection = function() {};
   v.CandlestickChart.prototype.setSelection = function(selection) {};
 
-  // TODO(ihab.awad): AnnotatedTimeLine data is garbled in testing under ES5.
-  // This is disabled until we fix this.
-
-  // v.AnnotatedTimeLine = function(container) {};
-  // v.AnnotatedTimeLine.__super__ = Object;
-  // v.AnnotatedTimeLine.__before__ = [
-  //   function(f, self, args) {
-  //     var outer = args[0];
-  //     var inner = utils.opaqueNode(outer);
-  //     inner.style.width = outer.style.width;
-  //     inner.style.height = outer.style.height;
-  //     return [ inner ];
-  //   }
-  // ];
-  // v.AnnotatedTimeLine.prototype.draw = function(data, opt_options) {};
-  // v.AnnotatedTimeLine.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, copyDrawOpts, utils.copyJson) ];
-  // v.AnnotatedTimeLine.prototype.getSelection = function() {};
-  // v.AnnotatedTimeLine.prototype.getVisibleChartRange = function() {};
-  // v.AnnotatedTimeLine.prototype.setVisibleChartRange = function(firstDate, lastDate, opt_animate) {};
-  // v.AnnotatedTimeLine.prototype.showDataColumns = function(columnIndexes) {};
-  // v.AnnotatedTimeLine.prototype.hideDataColumns = function(columnIndexes) {};
+  v.AnnotatedTimeLine = function(container) {};
+  v.AnnotatedTimeLine.__super__ = Object;
+  v.AnnotatedTimeLine.__before__ = [
+     function(f, self, args) {
+       var outer = args[0];
+       var inner = utils.opaqueNode(outer);
+       inner.style.width = outer.style.width;
+       inner.style.height = outer.style.height;
+       return [ inner ];
+     }
+  ];
+  v.AnnotatedTimeLine.prototype.draw = function(data, opt_options) {};
+  v.AnnotatedTimeLine.prototype.draw.__before__ = [ utils.mapArgs(utils.identity, copyDrawOpts, utils.copyJson) ];
+  v.AnnotatedTimeLine.prototype.getSelection = function() {};
+  v.AnnotatedTimeLine.prototype.getVisibleChartRange = function() {};
+  v.AnnotatedTimeLine.prototype.setVisibleChartRange = function(firstDate, lastDate, opt_animate) {};
+  v.AnnotatedTimeLine.prototype.showDataColumns = function(columnIndexes) {};
+  v.AnnotatedTimeLine.prototype.hideDataColumns = function(columnIndexes) {};
 
   v.GeoMap = function(container) {};
   v.GeoMap.__super__ = Object;
@@ -648,9 +665,9 @@ caja.tamingGoogleLoader.addPolicyFactory('google.visualization', function(frame,
   v.ControlWrapper.prototype.setContainerId.__before__ = [ containerIdBeforeSet ];
   v.ControlWrapper.prototype.setOption = function(key, value) {};
   v.ControlWrapper.prototype.setOptions = function(options_obj) {};
-  v.ControlWrapper.prototype.setOptions.__before__ = [ utils.mapArgs(utils.copyJson) ];
+  v.ControlWrapper.prototype.setOptions.__before__ = [ utils.mapArgs(utils.copyMixed) ];
   v.ControlWrapper.prototype.setState = function(state_obj) {};
-  v.ControlWrapper.prototype.setState.__before__ = [ utils.mapArgs(utils.copyJson) ];
+  v.ControlWrapper.prototype.setState.__before__ = [ utils.mapArgs(utils.copyMixed) ];
 
 
   return {

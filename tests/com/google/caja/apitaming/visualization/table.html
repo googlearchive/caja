@@ -16,13 +16,23 @@
           ['Bob',   {v: 7000,  f: '$7,000'},  true]
         ]);
 
-        var table = new google.visualization.Table(document.getElementById('table_div'));
-        table.draw(data, {showRowNumber: true});
+        // Show a regular table being drawn
+
+        new google.visualization.Table(
+            document.getElementById('table_plain_div'))
+            .draw(data, {showRowNumber: true});
+
+        // Demonstrate 'draw' being called with 'null' options (2nd arg)
+
+        new google.visualization.Table(
+            document.getElementById('table_nullopts_div'))
+            .draw(data, null);
       }
     </script>
   </head>
 
-  <body>
-    <div id='table_div'></div>
+  <body style="overflow: scroll;">
+    <div id="table_plain_div"></div>
+    <div id="table_nullopts_div"></div>
   </body>
 </html>
