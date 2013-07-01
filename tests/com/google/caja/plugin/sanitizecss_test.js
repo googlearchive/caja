@@ -227,32 +227,73 @@ jsunitRegister('testColonsInSelectors',
   var sanitized = sanitizeCssSelectors(
     tokens, 'sfx', function(el, args) { return { tagName: el }; });
   assertArrayEquals(
-      [['.sfx input.cl\\:a\\:ss[type="text"]',
-        '.sfx input#foo\\:bar-sfx'], []],
+    [['.sfx input.cl\\:a\\:ss[type="text"]',
+      '.sfx input#foo\\:bar-sfx'], []],
     sanitized);
   jsunit.pass();
 });
 
+function assertSelector(source, prefix, expected) {
+  var tokens = lexCss(source);
+  var sanitized = sanitizeCssSelectors(
+    tokens, prefix, function(el, args) { return { tagName: el }; });
+  assertArrayEquals(expected, sanitized);
+}
+
 jsunitRegister('testCssSelectors',
                function testCssSelectors() {
-  function assertSelector(source, prefix, expected) {
-    var tokens = lexCss(source);
-    var sanitized = sanitizeCssSelectors(
-      tokens, prefix, function(el, args) { return { tagName: el }; });
-    assertArrayEquals(expected, sanitized);
-  }
+  assertSelector("#foo:visited", "sfx", [[], [".sfx a#foo-sfx:visited"]]);
+  assertSelector("#foo:link", "sfx", [[], [".sfx a#foo-sfx:link"]]);
 
-  assertSelector("#foo:visited", "sfx", [[], ".sfx #foo-sfx:visited"]);
-  assertSelector("#foo:link", "sfx", [[], ".sfx #foo-sfx:link"]);
+  assertSelector("#foo:active", "sfx", [[".sfx #foo-sfx:active"], []]);
+  assertSelector("#foo:after", "sfx", [[".sfx #foo-sfx:after"], []]);
+  assertSelector("#foo:before", "sfx", [[".sfx #foo-sfx:before"], []]);
+  assertSelector(
+    "#foo:first-child", "sfx", [[".sfx #foo-sfx:first-child"], []]);
+  assertSelector(
+    "#foo:first-letter", "sfx", [[".sfx #foo-sfx:first-letter"], []]);
+  assertSelector("#foo:focus", "sfx", [[".sfx #foo-sfx:focus"], []]);
+  assertSelector("#foo:hover", "sfx", [[".sfx #foo-sfx:hover"], []]);
+  assertSelector("#foo:bogus", "sfx", [[], []]);
+  jsunit.pass();
+});
 
-  assertSelector("#foo:active", "sfx", [".sfx #foo-sfx:active", []]);
-  assertSelector("#foo:after", "sfx", [".sfx #foo-sfx:after", []]);
-  assertSelector("#foo:before", "sfx", [".sfx #foo-sfx:before", []]);
-  assertSelector("#foo:first-child", "sfx", [".sfx #foo-sfx:first-child", []]);
-  assertSelector("#foo:first-letter", "sfx", [".sfx #foo-sfx:first-leter", []]);
-  assertSelector("#foo:focus", "sfx", [".sfx #foo-sfx:focus", []]);
-  assertSelector("#foo:hover", "sfx", [".sfx #foo-sfx:hover", []]);
-  assertSelector("#foo:bogus", "sfx", [".sfx #foo-sfx", []]);
+jsunitRegister('testAttrSelectors',
+               function testAttrSelectors() {
+  assertSelector(
+    "div[class*='substr']", "sfx", [[".sfx div[class*=\"substr\"]"], []]);
+  assertSelector(
+    "div[class|='substr' i]", "sfx", [[".sfx div[class|=\"substr\" i]"], []]);
+  assertSelector(
+    "p[title |= \"sub\"]", "sfx", [[".sfx p[title|=\"sub\"]"], []]);
+  assertSelector(
+    "p[id ~= \"\\\"\"]", "sfx", [[".sfx p[id~=\"\\22 -sfx\"]"], []]);
+  // ids allowed on any element.  unquoted values are quoted.
+  assertSelector("*[id ~= foo]", "sfx", [[".sfx *[id~=\"foo-sfx\"]"], []]);
+  // id existence check allowed
+  assertSelector("*[id]", "sfx", [[".sfx *[id]"], []]);
+  assertSelector(
+    "input[type=text]", "sfx", [[".sfx input[type=\"text\"]"], []]);
+  // Can't deal with case insensitive matches of case sensitive suffix.
+  assertSelector("p[id ~= \"\\\"\" i]", "sfx", [[], []]);
+  // Drop empty values for suffix and prefix operators instead of turning a
+  // predicate that always fails into one that can succeed.
+  assertSelector("p[id^='']", "sfx", [[], []]);
+  // URIs require rewriting, so it isn't meaningful to match against URIs.
+  // Also, it leaks the base URL.
+  // Maybe store the original of URI attrs in a custom attr.
+  assertSelector("a[href*='?pwd=hello-kitty']", "sfx", [[], []]);
+  assertSelector("a[href]", "sfx", [[".sfx a[href]"], []]);
+  assertSelector("A[href]", "sfx", [[".sfx a[href]"], []]);
+  assertSelector("A[HREF]", "sfx", [[".sfx a[href]"], []]);
+  jsunit.pass();
+});
+
+jsunitRegister('testMixedSubselectorsOrderIndependent',
+               function testMixedSubselectorsOrderIndependent() {
+  assertSelector(
+    "div[title=foo].c1#id.c2", "zzz",
+    [[".zzz div.c1#id-zzz.c2[title=\"foo\"]"], []]);
   jsunit.pass();
 });
 

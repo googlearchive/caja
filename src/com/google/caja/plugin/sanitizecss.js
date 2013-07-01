@@ -119,7 +119,7 @@ var sanitizeStylesheetWithExternals = undefined;
    *     style will be resolved
    */
   sanitizeCssProperty = (function () {
-  
+
     function unionArrays(arrs) {
       var map = {};
       for (var i = arrs.length; --i >= 0;) {
@@ -130,7 +130,7 @@ var sanitizeStylesheetWithExternals = undefined;
       }
       return map;
     }
-  
+
     /**
      * Normalize tokens within a function call they can match against
      * cssSchema[propName].cssExtra.
@@ -160,10 +160,10 @@ var sanitizeStylesheetWithExternals = undefined;
       tokens.length = j;
       return tokens.join(' ');
     }
-  
+
     // Used as map value to avoid hasOwnProperty checks.
     var ALLOWED_LITERAL = {};
-  
+
     return function (property, propertySchema, tokens,
       opt_naiveUriRewriter, opt_baseUri) {
       var propBits = propertySchema.cssPropBits;
@@ -174,7 +174,7 @@ var sanitizeStylesheetWithExternals = undefined;
           CSS_PROP_BIT_QSTRING_CONTENT | CSS_PROP_BIT_QSTRING_URL);
       // TODO(mikesamuel): Figure out what to do with props like
       // content that admit both URLs and strings.
-  
+
       // Used to join unquoted keywords into a single quoted string.
       var lastQuoted = NaN;
       var i = 0, k = 0;
@@ -276,8 +276,9 @@ var sanitizeStylesheetWithExternals = undefined;
             ? (lastQuoted+1 === k
                // If the last token was also a keyword that was quoted, then
                // combine this token into that.
-               ? (tokens[lastQuoted] = tokens[lastQuoted]
-                  .substring(0, tokens[lastQuoted].length-1) + ' ' + token + '"',
+               ? (tokens[lastQuoted] = (
+                    tokens[lastQuoted].substring(0, tokens[lastQuoted].length-1)
+                    + ' ' + token + '"'),
                   token = '')
                : (lastQuoted = k, '"' + token + '"'))
             // Disallowed.
@@ -292,7 +293,18 @@ var sanitizeStylesheetWithExternals = undefined;
       tokens.length = k;
     };
   })();
-  
+
+  var HISTORY_NON_SENSITIVE_PSEUDO_SELECTOR_WHITELIST =
+    /^(active|after|before|first-child|first-letter|focus|hover)$/;
+
+  // TODO: This should be removed now as modern browsers no longer require
+  // this special handling
+  var HISTORY_SENSITIVE_PSEUDO_SELECTOR_WHITELIST = /^(link|visited)$/;
+
+  // Set of punctuation tokens that are child/sibling selectors.
+  var COMBINATOR = {};
+  COMBINATOR['>'] = COMBINATOR['+'] = COMBINATOR['~'] = COMBINATOR;
+
   /**
    * Given a series of tokens, returns two lists of sanitized selectors.
    * @param {Array.<string>} selectors In the form produces by csslexer.js.
@@ -314,31 +326,24 @@ var sanitizeStylesheetWithExternals = undefined;
     // property groups for the history sensitive ones.
     var historySensitiveSelectors = [];
     var historyInsensitiveSelectors = [];
-  
-    var HISTORY_NON_SENSITIVE_PSEUDO_SELECTOR_WHITELIST =
-      /^(active|after|before|first-child|first-letter|focus|hover)$/;
-    
-    // TODO: This should be removed now as modern browsers no longer require
-    // this special handling
-    var HISTORY_SENSITIVE_PSEUDO_SELECTOR_WHITELIST = 
-      /^(link|visited)$/;
-  
+
     // Remove any spaces that are not operators.
     var k = 0, i, inBrackets = 0, tok;
     for (i = 0; i < selectors.length; ++i) {
       tok = selectors[i];
-  
+
       if (
             (tok == '(' || tok == '[') ? (++inBrackets, true)
           : (tok == ')' || tok == ']') ? (inBrackets && --inBrackets, true)
           : !(selectors[i] == ' '
-              && (inBrackets || selectors[i-1] == '>' || selectors[i+1] == '>'))
+              && (inBrackets || COMBINATOR[selectors[i-1]] === COMBINATOR
+                  || COMBINATOR[selectors[i+1]] === COMBINATOR))
         ) {
         selectors[k++] = selectors[i];
       }
     }
     selectors.length = k;
-  
+
     // Split around commas.  If there is an error in one of the comma separated
     // bits, we throw the whole away, but the failure of one selector does not
     // affect others.
@@ -350,15 +355,15 @@ var sanitizeStylesheetWithExternals = undefined;
       }
     }
     processSelector(start, n);
-  
-  
+
+
     function processSelector(start, end) {
       var historySensitive = false;
-  
+
       // Space around commas is not an operator.
       if (selectors[start] === ' ') { ++start; }
       if (end-1 !== start && selectors[end] === ' ') { --end; }
-  
+
       // Split the selector into element selectors, content around
       // space (ancestor operator) and '>' (descendant operator).
       var out = [];
@@ -366,22 +371,21 @@ var sanitizeStylesheetWithExternals = undefined;
       var elSelector = '';
       for (var i = start; i < end; ++i) {
         var tok = selectors[i];
-        var isChild = (tok === '>');
-        if (isChild || tok === ' ') {
+        if (COMBINATOR[tok] === COMBINATOR || tok === ' ') {
           // We've found the end of a single link in the selector chain.
           // We disallow absolute positions relative to html.
           elSelector = processElementSelector(lastOperator, i, false);
-          if (!elSelector || (isChild && /^html/i.test(elSelector))) {
+          if (!elSelector || (tok === '>' && /^html/i.test(elSelector))) {
             return;
           }
           lastOperator = i+1;
-          out.push(elSelector, isChild ? ' > ' : ' ');
+          out.push(elSelector, tok);
         }
       }
       elSelector = processElementSelector(lastOperator, end, true);
       if (!elSelector) { return; }
       out.push(elSelector);
-  
+
       function processElementSelector(start, end, last) {
         // Split the element selector into four parts.
         // DIV.foo#bar[href]:hover
@@ -406,7 +410,9 @@ var sanitizeStylesheetWithExternals = undefined;
           }
         }
         classId = '';
-        while (start < end) {
+        attrs = '';
+        pseudoSelector = '';
+        for (;start < end; ++start) {
           tok = selectors[start];
           if (tok.charAt(0) === '#') {
             if (/^#_|__$|[^#0-9A-Za-z:_\-]/.test(tok)) { return null; }
@@ -420,57 +426,92 @@ var sanitizeStylesheetWithExternals = undefined;
             } else {
               return null;
             }
-          } else {
-            break;
-          }
-          ++start;
-        }
-        attrs = '';
-        while (start < end && selectors[start] === '[') {
-          ++start;
-          var attr = selectors[start++];
-          var atype = html4.ATTRIBS[element + '::' + attr];
-          if (atype !== +atype) { atype = html4.ATTRIBS['*::' + attr]; }
-          if (atype !== +atype) { return null; }
-  
-          var op = '', value = '';
-          if (/^[~^$*|]?=$/.test(selectors[start])) {
-            op = selectors[start++];
-            value = selectors[start++];
-          }
-          if (selectors[start++] !== ']') { return null; }
-          // TODO: replace this with a lookup table that also provides a
-          // function from operator and value to testable value.
-          switch (atype) {
-            case html4.atype['NONE']:
-            case html4.atype['URI']:
-            case html4.atype['URI_FRAGMENT']:
-            case html4.atype['ID']:
-            case html4.atype['IDREF']:
-            case html4.atype['IDREFS']:
-            case html4.atype['GLOBAL_NAME']:
-            case html4.atype['LOCAL_NAME']:
-            case html4.atype['CLASSES']:
-              if (op && atype !== html4.atype['NONE']) { return null; }
-              attrs += '[' + attr + op + value + ']';
-              break;
-          }
-        }
-        pseudoSelector = '';
-        if (start < end && selectors[start] === ':') {
-          tok = selectors[++start];
-          if (HISTORY_SENSITIVE_PSEUDO_SELECTOR_WHITELIST.test(tok)) {
-            if (!/^[a*]?$/.test(element)) {
+          } else if (start < end && selectors[start] === '[') {
+            ++start;
+            var attr = selectors[start++].toLowerCase();
+            var atype = html4.ATTRIBS[element + '::' + attr];
+            if (atype !== +atype) { atype = html4.ATTRIBS['*::' + attr]; }
+            if (atype !== +atype) { return null; }
+
+            var op = '', value = '', ignoreCase = false;
+            if (/^[~^$*|]?=$/.test(selectors[start])) {
+              op = selectors[start++];
+              value = selectors[start++];
+              // Quote identifier values.
+              if (/^[0-9A-Za-z:_\-]+$/.test(value)) {
+                value = '"' + value + '"';
+              } else if (value === ']') {
+                value = '""';
+                --start;
+              }
+              // Reject unquoted values.
+              if (!/^"([^\"\\]|\\.)*"$/.test(value)) {
+                return null;
+              }
+              ignoreCase = selectors[start] === "i";
+              if (ignoreCase) { ++start; }
+            }
+            if (selectors[start] !== ']') {
+              ++start;
               return null;
             }
-            historySensitive = true;
-            pseudoSelector = ':' + tok;
-            ++start;
-            element = 'a';
-          } else if (HISTORY_NON_SENSITIVE_PSEUDO_SELECTOR_WHITELIST.test(tok)) {
-            historySensitive = false;
-            pseudoSelector = ':' + tok;
-            ++start;
+            // TODO: replace this with a lookup table that also provides a
+            // function from operator and value to testable value.
+            switch (atype) {
+            case html4.atype['CLASSES']:
+            case html4.atype['LOCAL_NAME']:
+            case html4.atype['NONE']:
+              break;
+            case html4.atype['GLOBAL_NAME']:
+            case html4.atype['ID']:
+            case html4.atype['IDREF']:
+              if ((op === '=' || op === '~=' || op === '$=')
+                  && value != '""' && !ignoreCase) {
+                // The suffix is case-sensitive, so we can't translate case
+                // ignoring matches.
+                value = '"'
+                  + value.substring(1, value.length-1) + "-" + suffix
+                  + '"';
+              } else if (op === '|=' || op === '') {
+                // Ok.  a|=b -> a == b || a.startsWith(b + "-") and since we
+                // use "-" to separate the suffix from the identifier, we can
+                // allow this through unmodified.
+                // Existence checks are also ok.
+              } else {
+                // Can't correctly handle prefix and substring operators
+                // without leaking information about the suffix.
+                op = null;
+              }
+              break;
+            case html4.atype['URI']:
+            case html4.atype['URI_FRAGMENT']:
+              // URIs are rewritten, so we can't meanginfully translate URI
+              // selectors besides the common a[href] one that is used to
+              // distinguish links from naming anchors.
+              if (op !== '') { return null; }
+              break;
+            // TODO: IDREFS
+            default:
+              op = null;
+            }
+            if (op == null) { return null; }
+            attrs += '[' + attr + op + value + (ignoreCase ? ' i]' : ']');
+          } else if (start < end && selectors[start] === ':') {
+            tok = selectors[++start];
+            if (HISTORY_SENSITIVE_PSEUDO_SELECTOR_WHITELIST.test(tok)) {
+              if (!/^[a*]?$/.test(element)) {
+                return null;
+              }
+              historySensitive = true;
+              pseudoSelector = ':' + tok;
+              element = 'a';
+            } else if (
+              HISTORY_NON_SENSITIVE_PSEUDO_SELECTOR_WHITELIST.test(tok)) {
+              historySensitive = false;
+              pseudoSelector = ':' + tok;
+            } else {
+              break;
+            }
           }
         }
         if (start === end) {
@@ -482,21 +523,21 @@ var sanitizeStylesheetWithExternals = undefined;
         }
         return null;
       }
-  
-  
+
+
       var safeSelector = out.join('');
       // Namespace the selector so that it only matches under
       // a node with suffix in its CLASS attribute.
       safeSelector = '.' + suffix + ' ' + safeSelector;
-  
+
       (historySensitive
        ? historySensitiveSelectors
        : historyInsensitiveSelectors).push(safeSelector);
     }
-  
+
     return [historyInsensitiveSelectors, historySensitiveSelectors];
   };
-  
+
   (function () {
     var allowed = {};
     var cssMediaTypeWhitelist = {
@@ -510,7 +551,7 @@ var sanitizeStylesheetWithExternals = undefined;
       'tty': allowed,
       'tv': allowed
     };
-  
+
     /**
      * Given a series of sanitized tokens, removes any properties that would
      * leak user history if allowed to style links differently depending on
@@ -522,7 +563,7 @@ var sanitizeStylesheetWithExternals = undefined;
       for (var i = 0, n = blockOfProperties.length; i < n-1; ++i) {
         var token = blockOfProperties[i];
         if (':' === blockOfProperties[i+1]) {
-          elide = 
+          elide =
             !(cssSchema[token].cssPropBits & CSS_PROP_BIT_ALLOWED_IN_LINK);
         }
         if (elide) { blockOfProperties[i] = ''; }
@@ -530,7 +571,7 @@ var sanitizeStylesheetWithExternals = undefined;
       }
       return blockOfProperties.join('');
     }
-  
+
     /**
      * Extracts a url out of an at-import rule of the form:
      *   \@import "mystyle.css";
@@ -560,7 +601,7 @@ var sanitizeStylesheetWithExternals = undefined;
       }
       return null;
     }
-  
+
     /**
      * @param {string} baseUri a string against which relative urls are
      *    resolved.
@@ -622,7 +663,7 @@ var sanitizeStylesheetWithExternals = undefined;
                         resolveUri(baseUri, cssParseUri(headerArray[0])),
                         function(result) {
                           var sanitized =
-                            sanitizeStylesheetInternal(cssUrl, result.html, 
+                            sanitizeStylesheetInternal(cssUrl, result.html,
                               suffix,
                               naiveUriRewriter, naiveUriFetcher, tagPolicy,
                               continuation);
@@ -752,13 +793,13 @@ var sanitizeStylesheetWithExternals = undefined;
         moreToCome : moreToCome
       };
     }
-  
+
     sanitizeStylesheet = function (
         baseUri, cssText, suffix, naiveUriRewriter, tagPolicy) {
       return sanitizeStylesheetInternal(baseUri, cssText, suffix,
         naiveUriRewriter, undefined, tagPolicy, undefined).result;
     };
-  
+
     sanitizeStylesheetWithExternals = function (baseUri, cssText, suffix,
       naiveUriRewriter, naiveUriFetcher, tagPolicy,
       continuation) {

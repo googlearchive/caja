@@ -206,11 +206,11 @@ runCssSelectorTests([
       },
       {
         "cssText": "* html > * > p { margin: 0; }",
-        "golden": ".namespace__ * caja-v-html > * > p{margin:0}"
+        "golden": ".namespace__ * caja-v-html>*>p{margin:0}"
       },
       {
         "cssText": "#foo > #bar { color: blue }",
-        "golden": ".namespace__ #foo-namespace__ > #bar-namespace__{color:blue}"
+        "golden": ".namespace__ #foo-namespace__>#bar-namespace__{color:blue}"
       },
       {
         "cssText": "#foo .bar { color: blue }",

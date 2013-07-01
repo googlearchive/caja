@@ -301,16 +301,22 @@ function assertObjectEquals() {
                 isEqual = (var1.toString() === var2.toString());
                 break;
             default: //Object | Array
+                isEqual = var1.constructor === var2.constructor;
                 var i;
-                if (isEqual = (var1.length === var2.length))
-                    for (i in var1)
-                        assertObjectEquals(msg + ' found nested ' + type + '@' + i + '\n', var1[i], var2[i]);
+                for (i in var1) {
+                    assertObjectEquals(msg + ' found nested ' + type + '@' + i + '\n', var1[i], var2[i]);
+                }
+                for (i in var2) {
+                    if (!(i in var1)) {
+                        isEqual = false;
+                    }
+                }
         }
-        var ds1 = _displayStringForValue(var1);
-        var ds2 = _displayStringForValue(var2);
-        var sep = Math.max(ds1.length, ds2.length) < 40 ? ' ' : '\n';
-        _assert(msg, isEqual, 'Expected' + sep + ds1 + sep + 'but was' + sep + ds2);
     }
+    var ds1 = _displayStringForValue(var1);
+    var ds2 = _displayStringForValue(var2);
+    var sep = Math.max(ds1.length, ds2.length) < 40 ? ' ' : '\n';
+    _assert(msg, isEqual, 'Expected' + sep + ds1 + sep + 'but was' + sep + ds2);
 }
 
 assertArrayEquals = assertObjectEquals;
