@@ -219,8 +219,10 @@
     });
   });
 
-  if (inES5Mode)
-  jsunitRegister('testBuilderApiXhr', function testBuilderApiXhr() {
+  jsunitRegisterIf(
+      inES5Mode,
+      'testBuilderApiXhr',
+      function testBuilderApiXhr() {
     var div = createDiv();
     caja.load(div, xhrUriPolicy, function (frame) {
       frame.code('es53-test-guest.html', 'text/html')
@@ -229,6 +231,54 @@
               jsunitPass('testBuilderApiXhr');
            });
     });
+  });
+
+  jsunitRegisterIf(
+      inES5Mode,
+      'testUnicodeInCodeFails',
+      function testUnicodeInCodeFails() {
+    var code =
+      '<script> var x = 42; </script>' +
+      '<script> x++; var te\ufeffst = 1; </script>' + // should not run
+      '<script> record(x); </script>';
+    var xValue = 0;
+    var div = createDiv();
+    caja.load(div, xhrUriPolicy, jsunitCallback(function(frame) {
+      frame.code('http://example.com/', 'text/html', code)
+           .api({
+             record: frame.tame(frame.markFunction(function(x) {
+               xValue = x;
+             }))
+           })
+           .run(jsunitCallback(function(result) {
+             assertEquals(42, xValue);
+             jsunitPass('testUnicodeInCodeFails');
+           }));
+    }));
+  });
+
+  jsunitRegisterIf(
+      inES5Mode,
+      'testUnicodeInStringOk',
+      function testUnicodeInStringOk() {
+    var code =
+      '<script> var x = 42; </script>' +
+      '<script> x = \'te\ufeffst\'; </script>' + // should run
+      '<script> record(x); </script>';
+    var xValue = 0;
+    var div = createDiv();
+    caja.load(div, xhrUriPolicy, jsunitCallback(function(frame) {
+      frame.code('http://example.com/', 'text/html', code)
+           .api({
+             record: frame.tame(frame.markFunction(function(x) {
+               xValue = x;
+             }))
+           })
+           .run(jsunitCallback(function(result) {
+             assertEquals('te\ufeffst', xValue);
+             jsunitPass('testUnicodeInStringOk');
+           }));
+    }));
   });
 
   jsunitRegister('testBuilderApiJsNoDom', function testBuilderApiJsNoDom() {

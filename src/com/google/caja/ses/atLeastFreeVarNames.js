@@ -21,6 +21,7 @@
  * anticipated ES6.
  *
  * // provides ses.atLeastFreeVarNames
+ * // provides ses.limitSrcCharset
  * @author Mark S. Miller
  * @requires StringMap
  * @overrides ses, atLeastFreeVarNamesModule
@@ -96,21 +97,20 @@ var ses;
    * We use this to limit the input text to ascii only text.  All other
    * characters are encoded using backslash-u escapes.
    */
-  function LIMIT_SRC(programSrc) {
+  ses.limitSrcCharset = function(programSrc) {
     if (OTHER_WHITESPACE.test(programSrc)) {
-      throw new EvalError(
-        'Disallowing unusual unicode whitespace characters');
+      return { error: 'Disallowing unusual unicode whitespace characters' };
     }
     programSrc = programSrc.replace(/([\u0080-\u009f\u00a1-\uffff])/g,
       function(_, u) {
         return '\\u' + ('0000' + u.charCodeAt(0).toString(16)).slice(-4);
       });
-    return programSrc;
+    return { programSrc: programSrc };
   }
 
   /**
    * Return a regexp that can be used repeatedly to scan for the next
-   * identifier. It works correctly in concert with LIMIT_SRC above.
+   * identifier. It works correctly in concert with ses.limitSrcCharset above.
    *
    * If this regexp is changed compileExprLater.js should be checked for
    * correct escaping of freeNames.
@@ -125,7 +125,12 @@ var ses;
 
   ses.atLeastFreeVarNames = function atLeastFreeVarNames(programSrc) {
     programSrc = ''+programSrc;
-    programSrc = LIMIT_SRC(programSrc);
+    var result = ses.limitSrcCharset(programSrc);
+    if (!('programSrc' in result)) {
+      throw new EvalError(result.error);
+    } else {
+      programSrc = result.programSrc;
+    }
     // Now that we've temporarily limited our attention to ascii...
     var regexp = SHOULD_MATCH_IDENTIFIER();
     // Once we decide this file can depends on ES5, the following line

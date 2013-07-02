@@ -176,6 +176,11 @@ var cajaVM;
  *        skip this last freezing step. With confined-ES5, each frame
  *        is considered a separate protection domain rather that each
  *        individual object.
+ * @param limitSrcCharset ::F([string])
+ *        Given the sourceText for a strict Program, return a record with an
+ *        'error' field if it is not in the limited character set that SES
+ *        should process; otherwise, return a record with a 'programSrc' field
+ *        containing the original program text with Unicode escapes.
  * @param atLeastFreeVarNames ::F([string], Record(true))
  *        Given the sourceText for a strict Program,
  *        atLeastFreeVarNames(sourceText) returns a Record whose
@@ -203,6 +208,7 @@ var cajaVM;
  */
 ses.startSES = function(global,
                         whitelist,
+                        limitSrcCharset,
                         atLeastFreeVarNames,
                         extensions) {
   "use strict";
@@ -292,6 +298,7 @@ ses.startSES = function(global,
       options.rewriteTopLevelFuncs = true;
       options.rewriteFunctionCalls = true;
       options.rewriteTypeOf = false;
+      options.forceParseAndRender = false;
     } else {
       options.maskReferenceError = resolve('maskReferenceError', true);
 
@@ -308,6 +315,7 @@ ses.startSES = function(global,
       options.rewriteFunctionCalls = resolve('rewriteFunctionCalls', true);
       options.rewriteTypeOf = resolve('rewriteTypeOf',
                                       !options.maskReferenceError);
+      options.forceParseAndRender = resolve('forceParseAndRender', false);
     }
     return options;
   }
@@ -923,6 +931,9 @@ ses.startSES = function(global,
       // Note the EOL after modSrc to prevent trailing line comment in modSrc
       // eliding the rest of the wrapper.
       var options = resolveOptions(opt_mitigateOpts);
+      if (!('programSrc' in limitSrcCharset(modSrc))) {
+        options.forceParseAndRender = true;
+      }
       var exprSrc =
           '(function() {' +
           mitigateSrcGotchas(modSrc, options) +

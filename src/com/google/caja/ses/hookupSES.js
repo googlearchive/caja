@@ -34,6 +34,7 @@
 
     ses.startSES(global,
                  ses.whitelist,
+                 ses.limitSrcCharset,
                  ses.atLeastFreeVarNames,
                  function () { return {}; });
   } catch (err) {

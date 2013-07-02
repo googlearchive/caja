@@ -219,43 +219,42 @@ var ses;
       var path = [];
       var scopeLevel = 0;
       var ast = ses.rewriter_.parse(programSrc);
-      if (!needsRewriting(options)) {
-        return programSrc;
+      if (needsRewriting(options)) {
+        ses.rewriter_.traverse(ast, {
+          enter: function enter(node) {
+              var parent = path[path.length - 1];
+              path.push(node);
+
+              if (options.rewriteTopLevelFuncs &&
+                  isFunctionDecl(node) && scopeLevel === 0) {
+                rewriteFuncDecl(node, parent);
+                dirty = true;
+              } else if (options.rewriteTypeOf &&
+                  isTypeOf(node) && isId(node.argument)) {
+                rewriteTypeOf(node);
+                dirty = true;
+              } else if (options.rewriteTopLevelVars &&
+                         isVariableDecl(node) && scopeLevel === 0) {
+                rewriteVars(node, parent);
+                dirty = true;
+              }
+
+              if (introducesVarScope(node)) {
+                scopeLevel++;
+              }
+          },
+          leave: function leave(node) {
+              var last = path.pop();
+              if (node !== last) {
+                throw new Error('Internal error traversing the AST');
+              }
+              if (introducesVarScope(node)) {
+                scopeLevel--;
+              }
+          }
+        });
       }
-      ses.rewriter_.traverse(ast, {
-        enter: function enter(node) {
-            var parent = path[path.length - 1];
-            path.push(node);
-
-            if (options.rewriteTopLevelFuncs &&
-                isFunctionDecl(node) && scopeLevel === 0) {
-              rewriteFuncDecl(node, parent);
-              dirty = true;
-            } else if (options.rewriteTypeOf &&
-                isTypeOf(node) && isId(node.argument)) {
-              rewriteTypeOf(node);
-              dirty = true;
-            } else if (options.rewriteTopLevelVars &&
-                       isVariableDecl(node) && scopeLevel === 0) {
-              rewriteVars(node, parent);
-              dirty = true;
-            }
-
-            if (introducesVarScope(node)) {
-              scopeLevel++;
-            }
-        },
-        leave: function leave(node) {
-            var last = path.pop();
-            if (node !== last) {
-              throw new Error('Internal error traversing the AST');
-            }
-            if (introducesVarScope(node)) {
-              scopeLevel--;
-            }
-        }
-      });
-      if (dirty) {
+      if (dirty || options.forceParseAndRender) {
         return "\n"
             + "/*\n"
             + " * Program rewritten to mitigate differences between\n"
