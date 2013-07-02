@@ -14,8 +14,21 @@
 
 /** @fileoverview testcases for sanitizecss.js */
 
+function assertSelector(source, prefix, expected) {
+  var tokens = lexCss(source);
+  var sanitized = sanitizeCssSelectors(
+    tokens, prefix, function(el, args) { return { tagName: el }; });
+  assertArrayEquals(expected, sanitized);
+}
+
+function assertProperty(propName, source, expected) {
+  var tokens = lexCss(source);
+  sanitizeCssProperty(propName, cssSchema[propName], tokens);
+  assertEquals(expected, tokens.join(' '));
+}
+
 jsunitRegister('testFontFamily',
-               function testFont() {
+               function testFontFamily() {
   var tokens = ['Arial', ' ', 'Black', ',', 'monospace', ',',
                 'expression(', 'return', ' ', '"pwned"', ')', ',', 'Helvetica',
                 ' ', '#88ff88'];
@@ -34,9 +47,8 @@ jsunitRegister('testFontFamily',
 
 jsunitRegister('testFont',
                function testFont() {
-  var tokens = ['bold', ' ', '2em', ' ', 'monospace'];
-  sanitizeCssProperty('font', cssSchema['font'], tokens);
-  assertEquals('bold 2em monospace', tokens.join(' '));
+  assertProperty('font', 'bold 2em monospace', 'bold 2em monospace');
+  assertProperty('font', '20pt Calibri', '20pt "calibri"');
   jsunit.pass();
 });
 
@@ -213,10 +225,8 @@ jsunitRegister('testColor',
 jsunitRegister('testBorder',
                function testBorder() {
   var source = '1px solid rgb(0,0,0)';
-  var expect = '1px:solid:rgb( 0 , 0 , 0 )';
-  var tokens = lexCss(source);
-  sanitizeCssProperty('border', cssSchema['border'], tokens);
-  assertEquals(expect, tokens.join(':'));
+  var expect = '1px solid rgb( 0 , 0 , 0 )';
+  assertProperty('border', source, expect);
   jsunit.pass();
 });
 
@@ -232,13 +242,6 @@ jsunitRegister('testColonsInSelectors',
     sanitized);
   jsunit.pass();
 });
-
-function assertSelector(source, prefix, expected) {
-  var tokens = lexCss(source);
-  var sanitized = sanitizeCssSelectors(
-    tokens, prefix, function(el, args) { return { tagName: el }; });
-  assertArrayEquals(expected, sanitized);
-}
 
 jsunitRegister('testCssSelectors',
                function testCssSelectors() {
@@ -301,9 +304,6 @@ jsunitRegister('testGradients',
                function testGradients() {
   var source = 'linear-gradient(to bottom right, red, rgb(255,0,0))';
   var expect = 'linear-gradient( to bottom right , red , rgb( 255 , 0 , 0 ) )';
-  var tokens = lexCss(source);
-  sanitizeCssProperty(
-      'background-image', cssSchema['background-image'], tokens);
-  assertEquals(expect, tokens.join(''));
+  assertProperty('background-image', source, expect);
   jsunit.pass();
 });
