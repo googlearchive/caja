@@ -1851,6 +1851,11 @@ var Domado = (function() {
       var tamingClassTable = new TamingClassTable();
       var inertCtor = tamingClassTable.inertCtor.bind(tamingClassTable);
 
+      // Table of functions which are what WebIDL calls [NamedConstructor]
+      // (Caveat: In actual browsers, e.g. new Image().constructor === Image !==
+      // HTMLImageElement. We don't implement that.)
+      var namedConstructors = {};
+
       // The private properties used in TameNodeConf are:
       //    feral (feral node)
       //    policy (access policy)
@@ -2627,6 +2632,15 @@ var Domado = (function() {
       }
       var NP_noArgEditVoidMethod = NP_NoArgEditMethod(noop);
       var NP_noArgEditMethodReturningNode = NP_NoArgEditMethod(defaultTameNode);
+
+      /**
+       * Property spec for properties which reflect attributes whose values are
+       * not rewritten (so we can use the underlying property on getting) but
+       * should, on setting, be restricted by the attribute whitelist.
+       */
+      // This alias exists so as to document *why* we're doing this particular
+      // configuration.
+      var NP_writePolicyOnly = PT.filter(false, identity, true, identity);
 
       var nodeClassNoImplWarnings = {};
       var elementTamerCache = {};
@@ -4404,8 +4418,19 @@ var Domado = (function() {
             // TODO(felix8a): add suffix if href is self
             identity),
           // TODO(felix8a): fragment rewriting?
-          href: PT.filter(false, identity, true, identity)
+          href: NP_writePolicyOnly
         }; }
+      });
+
+      defineElement({
+        superclass: 'HTMLMediaElement',
+        domClass: 'HTMLAudioElement'
+      });
+      namedConstructors.Audio = innocuous(function AudioCtor(src) {
+        var element = tameDocument.createElement('audio');
+        element.preload = 'auto';
+        if (src !== undefined) { element.src = src; }
+        return element;
       });
 
       defineTrivialElement('HTMLBRElement');
@@ -5317,6 +5342,13 @@ var Domado = (function() {
               PT.filterProp(Boolean, Boolean))
         }; }
       });
+      // Per https://developer.mozilla.org/en-US/docs/DOM/Image as of 2012-09-24
+      namedConstructors.Image = innocuous(function ImageCtor(width, height) {
+        var element = tameDocument.createElement('img');
+        if (width !== undefined) { element.width = width; }
+        if (height !== undefined) { element.height = height; }
+        return element;
+      });
 
       // Common supertype just to save some code -- does not correspond to real
       // HTML, but should be harmless. Ideally we wouldn't export this.
@@ -5395,6 +5427,69 @@ var Domado = (function() {
       });
 
       defineElement({
+        domClass: 'HTMLMediaElement',
+        properties: function() { return {
+          // TODO(kpreid): audioTracks taming
+          autoplay: NP_writePolicyOnly,
+          // TODO(kpreid): buffered (TimeRanges) taming
+          // TODO(kpreid): controller (MediaController) taming
+          controls: NP_writePolicyOnly,
+          crossOrigin: NP_writePolicyOnly,
+          currentSrc: PT.ro,
+          currentTime: PT.ro,
+          defaultMuted: {
+            // TODO: express this generically
+            enumerable: true,
+            get: nodeAmp(function(privates) {
+              return privates.feral.defaultMuted;
+            }),
+            set: innocuous(function(v) {
+              if (v) {
+                this.setAttribute('muted', '');
+              } else {
+                this.removeAttribute('muted');
+              }
+            })
+          },
+          defaultPlaybackRate: PT.filterProp(identity, Number),
+          duration: PT.ro,
+          ended: PT.ro,
+          // TODO(kpreid): error (MediaError) taming
+          loop: NP_writePolicyOnly,
+          mediaGroup: PT.filterAttr(identity, identity),  // rewritten like id
+          muted: PT.ro,  // TODO(kpreid): Pending policy about guest audio
+          networkState: PT.ro,
+          paused: PT.ro,
+          playbackRate: PT.filterProp(identity, Number),
+          // TODO(kpreid): played (TimeRanges) taming
+          preload: NP_writePolicyOnly,
+          readyState: PT.ro,
+          // TODO(kpreid): seekable (TimeRanges) taming
+          seeking: PT.ro,
+          src: NP_writePolicyOnly,
+          // TODO(kpreid): textTracks (TextTrackList) taming
+          // TODO(kpreid): videoTracks (VideoTrackList) taming
+          volume: PT.ro,  // TODO(kpreid): Pending policy about guest audio
+          canPlayType: Props.ampMethod(function(privates, type) {
+            return String(privates.feral.canPlayType(String(type)));
+          }),
+          fastSeek: Props.ampMethod(function(privates, time) {
+            // TODO(kpreid): Use generic taming like canvas does
+            privates.policy.requireEditable();
+            privates.feral.fastSeek(+time);
+          }),
+          load: NP_noArgEditVoidMethod,
+          pause: NP_noArgEditVoidMethod,
+          play: Props.ampMethod(function(privates, time) {
+            // TODO(kpreid): Better programmatic control approach
+            if (domicile.handlingUserAction) {
+              privates.feral.play();
+            }
+          })
+        }; }
+      });
+
+      defineElement({
         domClass: 'HTMLOptionElement',
         properties: function() { return {
           defaultSelected: PT.filterProp(Boolean, Boolean),
@@ -5410,7 +5505,20 @@ var Domado = (function() {
             function (x) { return x == null ? '' : '' + x; })
         }; }
       });
-      
+      // Per https://developer.mozilla.org/en-US/docs/DOM/Option
+      // as of 2012-09-24
+      namedConstructors.Option = innocuous(function OptionCtor(
+          text, value, defaultSelected, selected) {
+        var element = tameDocument.createElement('option');
+        if (text !== undefined) { element.text = text; }
+        if (value !== undefined) { element.value = value; }
+        if (defaultSelected !== undefined) {
+          element.defaultSelected = defaultSelected;
+        }
+        if (selected !== undefined) { element.selected = selected; }
+        return element;
+      });
+
       defineTrivialElement('HTMLParagraphElement');
       defineTrivialElement('HTMLPreElement');
 
@@ -5457,7 +5565,7 @@ var Domado = (function() {
           // document.createElement'd scripts for src loading
         }),
         properties: function() { return {
-          src: PT.filter(false, identity, true, identity),
+          src: NP_writePolicyOnly,
           setAttribute: Props.ampMethod(function(privates, attrib, value) {
             var feral = privates.feral;
             privates.policy.requireEditable();
@@ -5480,7 +5588,7 @@ var Domado = (function() {
               document.createElement('style'));
           return {
             disabled: PT.filterProp(identity, Boolean),
-            media: PT.filter(false, identity, true, identity),
+            media: NP_writePolicyOnly,
             scoped: Props.cond('scoped' in styleForFeatureTests,
                 PT.filterProp(identity, Boolean)),
             // TODO(kpreid): property 'sheet'
@@ -5615,38 +5723,20 @@ var Domado = (function() {
         virtualized: null,
         domClass: 'HTMLUnknownElement'
       });
-      
-      // We are now done with all of the specialized element taming classes.
 
-      // Oddball constructors. There are only two of these and we implement
-      // both. (Caveat: In actual browsers, new Image().constructor == Image
-      // != HTMLImageElement. We don't implement that.)
-      // TODO(kpreid): There are more oddball constructors in HTML5, e.g. Audio,
-      // and a notation for it in HTML5's WebIDL. Generalize this to support
-      // that.
-      
-      // Per https://developer.mozilla.org/en-US/docs/DOM/Image as of 2012-09-24
-      function TameImageFun(width, height) {
-        var element = tameDocument.createElement('img');
-        if (width !== undefined) { element.width = width; }
-        if (height !== undefined) { element.height = height; }
-        return element;
-      }
-      cajaVM.def(TameImageFun);
-      
-      // Per https://developer.mozilla.org/en-US/docs/DOM/Option
-      // as of 2012-09-24
-      function TameOptionFun(text, value, defaultSelected, selected) {
-        var element = tameDocument.createElement('option');
-        if (text !== undefined) { element.text = text; }
-        if (value !== undefined) { element.value = value; }
-        if (defaultSelected !== undefined) {
-          element.defaultSelected = defaultSelected;
-        }
-        if (selected !== undefined) { element.selected = selected; }
-        return element;
-      }
-      cajaVM.def(TameOptionFun);
+      defineElement({
+        superclass: 'HTMLMediaElement',
+        domClass: 'HTMLVideoElement',
+        properties: function() { return {
+          height: PT.rw,
+          width: PT.rw,
+          poster: PT.filterAttr(identity, identity),
+          videoHeight: PT.rw,
+          videoWidth: PT.rw
+        }; }
+      });
+
+      // We are now done with all of the specialized element taming classes.
 
       // Taming of Events:
 
@@ -6942,8 +7032,16 @@ var Domado = (function() {
         }
       }
 
-      tameWindow.Image = TameImageFun;
-      tameWindow.Option = TameOptionFun;
+      // Register [NamedConstructor]s
+      Object.freeze(namedConstructors);  // catch initialization order errors
+      Object.getOwnPropertyNames(namedConstructors).forEach(function(name) {
+        Object.defineProperty(tameWindow, name, {
+          enumerable: true,
+          configurable: true,
+          writable: true,
+          value: namedConstructors[name]
+        });
+      });
 
       tameDocument = finishNode(tameDocument);
 

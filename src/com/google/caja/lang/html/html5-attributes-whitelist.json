@@ -76,6 +76,8 @@
       "OL::REVERSED",
       "*::SPELLCHECK",
       "LINK::SIZES",
+      "AUDIO::SRC",
+      "VIDEO::SRC",
       "TRACK::SRCLANG",
       "INPUT::STEP",
       "*::TRANSLATE",
@@ -252,10 +254,6 @@
         "comment":
           "TODO(kpreid): Stop migrating style elements so that this works" },
       { "key": "IFRAME::SEAMLESS",
-        "comment": "TODO(kpreid): further review" },
-      { "key": "AUDIO::SRC",
-        "comment": "TODO(kpreid): further review" },
-      { "key": "VIDEO::SRC",
         "comment": "TODO(kpreid): further review" },
       { "key": "IFRAME::SRCDOC",
         "comment": "TODO(kpreid): Implement HTML atype sanitization" }

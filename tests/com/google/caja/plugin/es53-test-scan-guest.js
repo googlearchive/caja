@@ -22,8 +22,9 @@
  *     setTimeout, clearTimeout, setInterval, clearInterval,
  *     cajaVM, directAccess, inES5Mode, getUrlParam,
  *     assertTrue, assertEquals, pass, jsunitFail,
- *     Event, HTMLInputElement, HTMLTableRowElement, HTMLTableSectionElement,
- *     HTMLTableElement, Image, Option, XMLHttpRequest, Window, Document, Node,
+ *     Event, HTMLInputElement, HTMLMediaElement, HTMLTableRowElement,
+ *     HTMLTableSectionElement, HTMLTableElement,
+ *     Audio, Image, Option, XMLHttpRequest, Window, Document, Node,
  *     Attr, Text, CSSStyleDeclaration, CanvasRenderingContext2D,
  *     CanvasGradient, ImageData, Location
  * @overrides window
@@ -669,7 +670,7 @@
         }
         // TODO(kpreid): factor out recognition
         if (typeof object === 'function' &&
-            /function Tame(?!XMLHttpRequest|OptionFun|ImageFun)/
+            /function Tame(?!XMLHttpRequest)/
                 .test(object.toString())) {
           noteProblem('Object is a taming ctor', context);
         }
@@ -940,6 +941,8 @@
         'backgroundColor', 'content', 'foo');
     var genCSSColor = G.value(undefined, null, '', 'red', '#17F', 'octarine',
         '}{');
+    var genMediaType = G.value(undefined, '', '/', 'text', 'text/*',
+        'text/plain', 'image/*', 'image/gif', 'audio/*', 'audio/x-wav');
     var genJS = G.value(null, '', '{', 'return true;');
     var genEventHandlerSet = G.tuple(G.value(THIS), G.tuple(genJS));
     var largestSmallInteger = 63;
@@ -1299,6 +1302,12 @@
     argsByIdentity(HTMLInputElement.prototype.select, genNoArgMethod);
     argsByIdentity(HTMLInputElement.prototype.stepDown, genNoArgMethod);
     argsByIdentity(HTMLInputElement.prototype.stepUp, genNoArgMethod);
+    argsByIdentity(HTMLMediaElement.prototype.canPlayType,
+        genMethod(genMediaType));
+    argsByIdentity(HTMLMediaElement.prototype.fastSeek, genMethod(genNumber));
+    argsByIdentity(HTMLMediaElement.prototype.load, genNoArgMethod);
+    argsByIdentity(HTMLMediaElement.prototype.pause, genNoArgMethod);
+    argsByIdentity(HTMLMediaElement.prototype.play, genNoArgMethod);
     argsByIdentity(HTMLTableRowElement.prototype.insertCell,
         genMethod(genSmallInteger));
     argsByIdentity(HTMLTableRowElement.prototype.deleteCell,
@@ -1319,6 +1328,7 @@
         genMethod(genSmallInteger));
     argsByIdentity(Image, genNew());  // TODO args
     argsByIdentity(Option, genNew());  // TODO args
+    argsByIdentity(Audio, genNew());  // TODO args
     argsByIdentity(XMLHttpRequest, genNew());
     argsByIdentity(XMLHttpRequest.prototype.open, G.none);  // TODO stateful
     argsByIdentity(XMLHttpRequest.prototype.setRequestHeader, G.none);

@@ -2261,6 +2261,10 @@ After
       },
       {
         typenames: [],
+        sample: new Audio()
+      },
+      {
+        typenames: [],
         sample: new Image()
       },
       {
@@ -2669,8 +2673,19 @@ After
                  function testOddballConstructors() {
     // Note: This test also tests the properties of the img and option elements.
 
+    var audio1 = new Audio();
+    assertEquals('AUDIO', audio1.nodeName);
+    assertEquals('audio default src', '', audio1.src);
+    assertEquals('audio implicit preload', 'auto', audio1.preload);
+    var audio2 = new Audio('foo.wav');
+    // TODO(kpreid): This should be assertEquals but URI rewriting is visible
+    assertContains('audio supplied src', 'foo.wav', audio2.src);
+    document.getElementById('testOddballConstructors').appendChild(audio2);
+        // should not fail - i.e. is a valid element
+
     // new Image() is approximately document.createElement('img')
     var image1 = new Image();
+    assertEquals('IMG', image1.nodeName);
     assertEquals('image default nodeType', 1, image1.nodeType);
     assertEquals('image default tagName', 'IMG', image1.tagName);
     assertEquals('image default width', 0, image1.width);
@@ -2684,6 +2699,7 @@ After
 
     // new Option() is approximately document.createElement('option')
     var option1 = new Option();
+    assertEquals('OPTION', option1.nodeName);
     assertEquals('option default nodeType', 1, option1.nodeType);
     assertEquals('option default tagName', 'OPTION', option1.tagName);
     assertEquals('option default text', '', option1.text);
