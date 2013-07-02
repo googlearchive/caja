@@ -334,7 +334,7 @@
 
 <p class="clickme testcontainer" id="testRepeatedHandlers">
   <b id="testRepeatedHandlers-label">testRepeatedHandlers - click me
-      <span id="testRepeatedHandlers-count"></span> times</b>
+      2 times</b>
 </p>
 <script type="text/javascript">
   jsunitRegister('testRepeatedHandlers',
@@ -342,45 +342,58 @@
     // an element containing the one being clicked on
     var container = document.getElementById('testRepeatedHandlers');
 
-    // result gathering/scheduling
-    var counter = document.getElementById('testRepeatedHandlers-count');
-    var hits = [];
-    var registeredToProceed = false;
-    var listener = jsunitCallback(function listener(event) {
-      hits.push([event.type, event.eventPhase]);
-      if (!registeredToProceed && event.type === 'mouseup') {
-        registeredToProceed = true;
-        setTimeout(jsunitCallback(function() {
-          registeredToProceed = false;
-          fns.shift()();
-          counter.textContent = fns.length;
-        }), 0);
-      }
+    var events = [];
+    var record = jsunitCallback(function record(event) {
+      events.push([event.type, event.eventPhase]);
     });
 
-    container.addEventListener('mousedown', function distraction() {}, true);
-    container.addEventListener('mousedown', listener, true);
-    container.addEventListener('mousedown', listener, true);  // duplicate noop
-    container.addEventListener('mousedown', listener, false);
-    container.addEventListener('mousedown', listener, false);  // duplicate noop
-    container.addEventListener('mouseup', listener, true);
-    container.addEventListener('mouseup', listener, false);
+    // multiple adds with identical args should be ignored
 
-    var fns = [function() {
-      // correct ordering, and no duplicates
-      assertEquals('first',
-          'mousedown,1,mousedown,3,mouseup,1,mouseup,3', String(hits));
-      hits = [];
-      // This removeEventListener should remove only one of the four listeners,
-      // which matches the parameters exactly.
-      container.removeEventListener('mousedown', listener, false);
-    }, function() {
-      assertEquals('second',
-          'mousedown,1,mouseup,1,mouseup,3', String(hits));
-      hits = [];
-      pass('testRepeatedHandlers');
-    }];
-    counter.textContent = fns.length;
+    container.addEventListener('mousedown', function junk1() {}, true);
+    container.addEventListener('mousedown', record, true);
+    container.addEventListener('mousedown', function junk2() {}, true);
+    container.addEventListener('mousedown', record, true);
+
+    container.addEventListener('mousedown', record, false);
+    container.addEventListener('mousedown', function junk3() {}, false);
+    container.addEventListener('mousedown', record, false);
+    container.addEventListener('mousedown', function junk4() {}, false);
+
+    container.addEventListener('mouseup', record, true);
+    container.addEventListener('mouseup', function junk5() {}, true);
+    container.addEventListener('mouseup', record, true);
+
+    container.addEventListener('mouseup', function junk6() {}, false);
+    container.addEventListener('mouseup', record, false);
+    container.addEventListener('mouseup', record, false);
+    container.addEventListener('mouseup', function junk7() {}, false);
+
+    var phase = 0;
+    var check = jsunitCallback(function(event) {
+      switch (++phase) {
+      case 1:
+        assertEquals(
+          'first', 'mousedown,1,mousedown,3,mouseup,1,mouseup,3',
+          String(events));
+        events = [];
+        // remove one of the event listeners and check again
+        container.removeEventListener('mousedown', record, false);
+        break;
+      case 2:
+        assertEquals(
+          'second', 'mousedown,1,mouseup,1,mouseup,3',
+          String(events));
+        events = [];
+        pass('testRepeatedHandlers');
+        container.removeEventListener('mouseup', check, false);
+        break;
+      default:
+        // ignore extra clicks
+        break;
+      }
+    });
+    container.addEventListener('mouseup', check, false);
+
   });
 </script>
 
