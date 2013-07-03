@@ -27,6 +27,8 @@ import junit.framework.ComparisonFailure;
  *
  * @author mikesamuel@gmail.com
  */
+// TODO(felix8a): remove SuppressWarnings after full conversion to junit4
+@SuppressWarnings("deprecation")
 public final class MoreAsserts {
 
   /**

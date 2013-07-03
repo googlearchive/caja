@@ -57,6 +57,8 @@ import org.w3c.dom.Text;
  *
  * @author mikesamuel@gmail.com
  */
+// TODO(felix8a): remove SuppressWarnings after full conversion to junit4
+@SuppressWarnings("deprecation")
 public class RhinoTestBed {
   private static final String HTML_NS = Namespaces.HTML_NAMESPACE_URI;
 
