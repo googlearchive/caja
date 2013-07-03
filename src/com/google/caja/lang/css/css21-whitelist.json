@@ -36,8 +36,6 @@
     "clear",
     "clip",
     "color",
-    "counter-increment",
-    "counter-reset",
     "cue-after",
     "cue-before",
     "cue",

@@ -14,6 +14,7 @@
 
 package com.google.caja.lang.css;
 
+import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lang.css.CssPropertyPatterns;
 import com.google.caja.lang.css.CssPropertyPatterns.CssPropertyData;
 import com.google.caja.lang.css.CssSchema;
@@ -30,6 +31,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CssPropertyPatternsTest extends CajaTestCase {
+
+  public final void testInvalidSymbol() {
+    try {
+      toPattern("<hiybbprqag>");
+      fail("invalid symbol succeeded");
+    } catch (SomethingWidgyHappenedError e) {
+      assertContains(e.getMessage(), "unknown CSS symbol hiybbprqag");
+    }
+  }
+
   public final void testKeywordPattern() {
     assertPattern("zoicks", "/^\\s*zoicks\\s*$/i");
     assertMatches("zoicks", "zoicks", "  zoicks", " ZOICKS ");

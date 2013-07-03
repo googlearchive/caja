@@ -391,6 +391,9 @@ public class CssPropertyPatterns {
       Name symbolName = sig.getValue();
       refsUsed.incr(symbolName.getCanonicalForm());
       JSRE builtinMatch = builtinToPattern(symbolName);
+      if (builtinMatch == BUILTIN_PROP_BIT_MATCH) {
+        return null;
+      }
       if (builtinMatch != null) {
         String re = builtinMatch.toString();
         boolean ident = isIdentChar(re.charAt(0));
@@ -419,9 +422,14 @@ public class CssPropertyPatterns {
             JSRE.cat(identBefore && ident ? spaces : optSpaces, builtinMatch));
       }
       CssSchema.SymbolInfo s = schema.getSymbol(symbolName);
+      if (s == null) {
+        throw new SomethingWidgyHappenedError(
+            "unknown CSS symbol " + symbolName);
+      }
       if (COLOR.equals(symbolName) && complete) {
         // Don't blow up the regexs by including the entire X11 color set over
         // and over.
+        // TODO(felix8a): why do this when standard-color doesn't exist?
         CssSchema.SymbolInfo standard = schema.getSymbol(STANDARD_COLOR);
         if (standard != null) { s = standard; }
       }
@@ -523,7 +531,7 @@ public class CssPropertyPatterns {
         if (zIndex) {
           this.props.add(CssPropBit.Z_INDEX);
         }
-        if (!complete) { return null; }
+        if (!complete) { return BUILTIN_PROP_BIT_MATCH; }
       }
       JSRE p = BUILTINS.get(key);
       if (p == null && key != baseKey) {
@@ -532,6 +540,8 @@ public class CssPropertyPatterns {
       return p;
     }
   }
+
+  private static final JSRE BUILTIN_PROP_BIT_MATCH = JSRE.raw("");
 
   private static final Map<String, CssPropBit> BUILTIN_PROP_BITS
       = ImmutableMap.<String, CssPropBit>builder()
@@ -602,6 +612,7 @@ public class CssPropertyPatterns {
         .put("integer:0,", digits)
         .put("integer:0,255", digits)
         .put("hex-color", JSRE.cat(hash, JSRE.rep(JSRE.rep(hex, 3, 3), 1, 2)))
+        .put("identifier", JSRE.raw("-?[_A-Za-z][-\\w]*"))
         .put("specific-voice", quotedIdentifiers)
         .put("family-name", quotedIdentifiers)
         .put("uri", JSRE.cat(
@@ -632,7 +643,9 @@ public class CssPropertyPatterns {
     // Seed with some known constant strings.
     for (Name commonSymbol : new Name[] {
         // Derived by counting symbol names into a bag in symbolToPattern above.
-        COLOR, Name.css("standard-color"),
+        COLOR,
+        // TODO(felix8a): this list used to include
+        // Name.css("standard-color"), which doesn't exist
         Name.css("length"), Name.css("length:0,"),
         Name.css("border-style"), Name.css("border-width"),
         Name.css("bg-position"), Name.css("bg-size"),
