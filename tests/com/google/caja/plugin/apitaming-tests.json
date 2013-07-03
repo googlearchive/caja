@@ -2,32 +2,27 @@
   {
     "label": "apitaming",
     "mode": "none",
-    "tests":
-      [
-        {
-          "bare": "../apitaming/tests-index.html?testsList=maps-list.json&cajaServer=/caja",
-          "label": "API taming Maps individual list"
-        },
-        {
-          "bare": "../apitaming/tests-index.html?testsList=picker-list.json&cajaServer=/caja",
-          "label": "API taming Picker individual list"
-        },
-        {
-          "bare": "../apitaming/tests-index.html?testsList=visualization-list.json&cajaServer=/caja",
-          "label": "API taming GViz individual list"
-        },
-        {
-          "bare": "../apitaming/tests-side-by-side.html?testsList=maps-list.json&cajaServer=/caja",
-          "label": "API taming Maps all (large/slow page)"
-        },
-        {
-          "bare": "../apitaming/tests-side-by-side.html?testsList=picker-list.json&cajaServer=/caja",
-          "label": "API taming Picker all (large/slow page)"
-        },
-        {
-          "bare": "../apitaming/tests-side-by-side.html?testsList=visualization-list.json&cajaServer=/caja",
-          "label": "API taming GViz all (large/slow page)"
-        }
-      ]
+    "manual": true,
+    "tests": [
+      {
+        "label": "individual",
+        "bare-template": "../apitaming/tests-index.html?testsList=*-list.json&cajaServer=/caja",
+        "tests": [
+          { "bare": "maps" },
+          { "bare": "picker" },
+          { "bare": "visualization" }
+        ]
+      },
+      {
+        "label": "all",
+        "comment": "large/slow page",
+        "bare-template": "../apitaming/tests-side-by-side.html?testsList=*-list.json&cajaServer=/caja",
+        "tests": [
+          { "bare": "maps" },
+          { "bare": "picker" },
+          { "bare": "visualization" }
+        ]
+      }
+    ]
   }
 ]

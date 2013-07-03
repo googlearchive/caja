@@ -35,18 +35,24 @@
  * <dt>bare
  * <dd>The document to load. Defaults to 'browser-test-case.html'.
  *
+ * <dt>bare-template
+ * <dd>If 'bare-template' is present, the 'bare' field is transformed by
+ * substituting it in place of all '*' characters in the 'bare-template'. This
+ * is mainly useful when inherited.
+ *
  * <dt>driver
  * <dd>The test driver to load, when applicable; corresponds to URL parameter
- * 'test-driver'(see browser-test-case.js).
+ * 'test-driver' (see browser-test-case.js).
+ *
+ * <dt>driver-template
+ * <dd>Template for 'driver' URL in the same format as 'bare-template'.
  *
  * <dt>guest
  * <dd>The guest content to load, when applicable; corresponds to URL parameter
  * 'test-case' (see browser-test-case.js).
  *
  * <dt>guest-template
- * <dd>If 'guest-template' is present, the 'guest' field is transformed by
- * substituting it in place of all '*' characters in the 'guest-template'. This
- * is mainly useful when inherited.
+ * <dd>Template for 'guest' URL in the same format as 'bare-template'.
  *
  * <dt>params
  * <dd>A record containing additional URL parameters (will be escaped). This
@@ -151,25 +157,25 @@ var parseTestCatalog;
 
   function onlyVariesMode(record) {
     if ('params' in record || 'guest' in record || 'driver' in record ||
-        'bare' in record) {
+        'bare' in record || 'tests' in record) {
       return false;
     }
     return true;
   }
 
-  function calcGuestURL(record) {
-    var guest = record.guest;
-    if ('guest-template' in record) {
-      guest = record['guest-template'].replace(/\*/g, guest);
+  function deriveURL(record, name) {
+    var url = record[name];
+    if ((name + '-template') in record) {
+      url = record[name + '-template'].replace(/\*/g, url);
     }
-    return guest;
+    return url;
   }
 
   function addPossibleUncajoled(record) {
     // TODO(kpreid): Using this as a proxy for 'this is a third-party test'
     if ('expected-pass' in record && 'guest' in record) {
       record.tests.push({
-        'bare': calcGuestURL(record),
+        'bare': deriveURL(record, 'guest'),
         'label': 'uncajoled',
         'manual': true,
         'params': {
@@ -226,7 +232,10 @@ var parseTestCatalog;
 
       validateKeys(longLabel, record, [
           'label', 'comment', 'tests',
-          'bare', 'driver', 'guest', 'guest-template', 'params',
+          'bare', 'bare-template',
+          'driver', 'driver-template',
+          'guest', 'guest-template',
+          'params',
           'mode', 'minified', 'expected-pass',
           'manual', 'disabled', 'failureIsAnOption',
           '_mini']);
@@ -253,7 +262,7 @@ var parseTestCatalog;
       // format comment
       var comment = (merged.comment || {}) instanceof Array
           ? merged.comment.join('\n')
-          : '';
+          : merged.comment || '';
 
       // Split leaves into virtual children
       var newSplits = splits;
@@ -311,13 +320,13 @@ var parseTestCatalog;
         var outPath = 'browser-test-case.html';
         var outParams = {};
         if ('guest' in merged) {
-          outParams['test-case'] = calcGuestURL(merged);
+          outParams['test-case'] = deriveURL(merged, 'guest');
         }
         if ('driver' in merged) {
-          outParams['test-driver'] = merged.driver;
+          outParams['test-driver'] = deriveURL(merged, 'driver');
         }
         if ('bare' in merged) {
-          outPath = merged.bare;
+          outPath = deriveURL(merged, 'bare');
         }
         if (mode !== 'none') {
           outParams['es5'] = String(mode === 'es5');
