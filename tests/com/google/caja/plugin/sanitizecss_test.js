@@ -14,10 +14,12 @@
 
 /** @fileoverview testcases for sanitizecss.js */
 
-function assertSelector(source, prefix, expected) {
+function assertSelector(
+    source, prefix, expected, opt_onUntranslatableSelector) {
   var tokens = lexCss(source);
   var sanitized = sanitizeCssSelectors(
-    tokens, prefix, function(el, args) { return { tagName: el }; });
+    tokens, prefix, function(el, args) { return { tagName: el }; },
+    opt_onUntranslatableSelector);
   assertArrayEquals(expected, sanitized);
 }
 
@@ -305,5 +307,50 @@ jsunitRegister('testGradients',
   var source = 'linear-gradient(to bottom right, red, rgb(255,0,0))';
   var expect = 'linear-gradient( to bottom right , red , rgb( 255 , 0 , 0 ) )';
   assertProperty('background-image', source, expect);
+  jsunit.pass();
+});
+
+jsunitRegister('testUntranslatableSelectorHandler',
+               function testUntranslatableSelectorHandler() {
+  // No handler
+  assertSelector(
+      "p.bar, b, bad[], p.foo", "x",
+      [[".x p.bar", ".x b", ".x p.foo"], []]);
+  // Explicitly permissive
+  assertSelector(
+      "p.bar, b, bad[], p.foo", "x",
+      [[".x p.bar", ".x b", ".x p.foo"], []],
+      function () { return true; });
+  // Fail early.
+  assertSelector(
+      "p.bar, b, bad[], p.foo", "x",
+      null,
+      function () { return false; });
+  // Don't fail early on nothing
+  assertSelector(
+      "p,,p", "x",
+      [[".x p", ".x p"], []],
+      function () { return false; });
+  // Test the callback value.
+  var source =
+    "p, b.bad__, p, div > *[bogus], p[title=@], div + p[id=bad bad],"
+    + " a[href~='untranslatable'], a:visited, p, b#bad__, b#__bad";
+  var expected = [[".x p", ".x p", ".x p"], [".x a:visited"]];
+  var log = [];
+  assertSelector(
+      source, "x", expected,
+      function (toks) { log.push(toks); return 1; });
+  assertArrayEquals(
+      "Untranslatable Handler Log",
+      [
+        ["b", ".", "bad__"],
+        ["div", ">", "*", "[", "bogus", "]"],
+        ["p", "[", "title", "=", "@", "]"],
+        ["div", "+", "p", "[", "id", "=", "bad", "bad", "]"],
+        ["a", "[", "href", "~=", "\"untranslatable\"", "]"],
+        ["b", "#bad__"],
+        ["b", "#__bad"]
+      ],
+      log);
   jsunit.pass();
 });

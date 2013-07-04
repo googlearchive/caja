@@ -61,8 +61,10 @@ public final class ExpressionStmt extends AbstractStatement {
   public void render(RenderContext rc) {
     TokenConsumer out = rc.getOut();
     out.mark(getFilePosition());
-    if (getExpression() instanceof FunctionConstructor
-        || getExpression() instanceof ObjectConstructor) {
+    Expression e = getExpression();
+    if (e instanceof FunctionConstructor
+        || e instanceof ObjectConstructor
+        || startsWithRegex(e)) {
       // We need to parenthesize Object constructors because otherwise an
       // object constructor with only one entry:
       //   { x : 4 }
@@ -76,15 +78,30 @@ public final class ExpressionStmt extends AbstractStatement {
       //   };
       // which is interpreted as two statements -- a declaration and a noop for
       // the semicolon.
+
+      // Rhino fails to parse
+      //   if(...)/foo/.test(x)?bar:baz;
+      // so we parenthesize operator trees whose left-most operand is a regex
+      // literal.
+
       out.consume("(");
-      getExpression().render(rc);
+      e.render(rc);
       out.consume(")");
     } else {
-      getExpression().render(rc);
+      e.render(rc);
     }
   }
 
   public boolean hasHangingConditional() { return false; }
 
   public JsonML toJsonML() { return getExpression().toJsonML(); }
+
+  private static boolean startsWithRegex(Expression e) {
+    while (e instanceof Operation) {
+      Operation op = (Operation) e;
+      if (op.getOperator().getType() == OperatorType.PREFIX) { break; }
+      e = op.children().get(0);
+    }
+    return e instanceof RegexpLiteral;
+  }
 }

@@ -316,11 +316,20 @@ var sanitizeStylesheetWithExternals = undefined;
    *    {@code [".sfx", " ", "a", "#foo-sfx", " ", "b", ".bar"]}.
    * @param {function(string, Array.<string>): ?Array.<string>} tagPolicy
    *     As in html-sanitizer, used for rewriting element names.
-   * @return {Array.<Array.<string>>} an array of length 2 where the zeroeth
+   * @param {function(Array.<string>): boolean} opt_onUntranslatableSelector
+   *     When a selector cannot be translated, this function is called with the
+   *     non-whitespace/comment tokens comprising the selector and returns a
+   *     value indicating whether to continue processing the selector list.
+   *     If it returns falsey, then processing is aborted and null is returned.
+   *     If not present or it returns truthy, then the complex selector is
+   *     dropped from the selector list.
+   * @return {Array.<Array.<string>>}? an array of length 2 where the zeroeth
    *    element contains history-insensitive selectors and the first element
    *    contains history-sensitive selectors.
+   *    Null when the untraslatable compound selector handler aborts processing.
    */
-  sanitizeCssSelectors = function (selectors, suffix, tagPolicy) {
+  sanitizeCssSelectors = function (
+      selectors, suffix, tagPolicy, opt_onUntranslatableSelector) {
     // Produce two distinct lists of selectors to sequester selectors that are
     // history sensitive (:visited), so that we can disallow properties in the
     // property groups for the history sensitive ones.
@@ -346,18 +355,19 @@ var sanitizeStylesheetWithExternals = undefined;
 
     // Split around commas.  If there is an error in one of the comma separated
     // bits, we throw the whole away, but the failure of one selector does not
-    // affect others.
+    // affect others except that opt_onUntranslatableSelector allows one to
+    // treat the entire output as unusable.
     var n = selectors.length, start = 0;
     for (i = 0; i < n; ++i) {
       if (selectors[i] === ',') {  // TODO: ignore ',' inside brackets.
-        processSelector(start, i);
+        if (!processComplexSelector(start, i)) { return null; }
         start = i+1;
       }
     }
-    processSelector(start, n);
+    if (!processComplexSelector(start, n)) { return null; }
 
 
-    function processSelector(start, end) {
+    function processComplexSelector(start, end) {
       var historySensitive = false;
 
       // Space around commas is not an operator.
@@ -368,30 +378,31 @@ var sanitizeStylesheetWithExternals = undefined;
       // space (ancestor operator) and '>' (descendant operator).
       var out = [];
       var lastOperator = start;
-      var elSelector = '';
-      for (var i = start; i < end; ++i) {
+      var valid = true;  // True iff out contains a valid complex selector.
+      for (var i = start; valid && i < end; ++i) {
         var tok = selectors[i];
         if (COMBINATOR[tok] === COMBINATOR || tok === ' ') {
           // We've found the end of a single link in the selector chain.
-          // We disallow absolute positions relative to html.
-          elSelector = processElementSelector(lastOperator, i, false);
-          if (!elSelector || (tok === '>' && /^html/i.test(elSelector))) {
-            return;
+          if (!processCompoundSelector(lastOperator, i, tok)) {
+            valid = false;
+          } else {
+            lastOperator = i+1;
           }
-          lastOperator = i+1;
-          out.push(elSelector, tok);
         }
       }
-      elSelector = processElementSelector(lastOperator, end, true);
-      if (!elSelector) { return; }
-      out.push(elSelector);
+      if (!processCompoundSelector(lastOperator, end, '')) {
+        valid = false;
+      }
 
-      function processElementSelector(start, end, last) {
+      function processCompoundSelector(start, end, combinator) {
         // Split the element selector into four parts.
         // DIV.foo#bar[href]:hover
         //    ^       ^     ^
         // el classes attrs pseudo
-        var element, classId, attrs, pseudoSelector, tok;
+        var element, classId, attrs, pseudoSelector,
+            tok,  // The current token
+            // valid implies the parts above comprise a sanitized selector.
+            valid = true;
         element = '';
         if (start < end) {
           tok = selectors[start];
@@ -412,27 +423,31 @@ var sanitizeStylesheetWithExternals = undefined;
         classId = '';
         attrs = '';
         pseudoSelector = '';
-        for (;start < end; ++start) {
+        for (;valid && start < end; ++start) {
           tok = selectors[start];
           if (tok.charAt(0) === '#') {
-            if (/^#_|__$|[^#0-9A-Za-z:_\-]/.test(tok)) { return null; }
-            // Rewrite ID elements to include the suffix.
-            classId += tok + '-' + suffix;
+            if (/^#_|__$|[^#0-9A-Za-z:_\-]/.test(tok)) {
+              valid = false;
+            } else {
+              // Rewrite ID elements to include the suffix.
+              classId += tok + '-' + suffix;
+            }
           } else if (tok === '.') {
             if (++start < end
                 && /^[0-9A-Za-z:_\-]+$/.test(tok = selectors[start])
                 && !/^_|__$/.test(tok)) {
               classId += '.' + tok;
             } else {
-              return null;
+              valid = false;
             }
           } else if (start < end && selectors[start] === '[') {
             ++start;
             var attr = selectors[start++].toLowerCase();
             var atype = html4.ATTRIBS[element + '::' + attr];
             if (atype !== +atype) { atype = html4.ATTRIBS['*::' + attr]; }
-            if (atype !== +atype) { return null; }
-
+            if (atype !== +atype) {
+              valid = false;
+            }
             var op = '', value = '', ignoreCase = false;
             if (/^[~^$*|]?=$/.test(selectors[start])) {
               op = selectors[start++];
@@ -446,14 +461,14 @@ var sanitizeStylesheetWithExternals = undefined;
               }
               // Reject unquoted values.
               if (!/^"([^\"\\]|\\.)*"$/.test(value)) {
-                return null;
+                valid = false;
               }
               ignoreCase = selectors[start] === "i";
               if (ignoreCase) { ++start; }
             }
             if (selectors[start] !== ']') {
               ++start;
-              return null;
+              valid = false;
             }
             // TODO: replace this with a lookup table that also provides a
             // function from operator and value to testable value.
@@ -480,7 +495,7 @@ var sanitizeStylesheetWithExternals = undefined;
               } else {
                 // Can't correctly handle prefix and substring operators
                 // without leaking information about the suffix.
-                op = null;
+                valid = false;
               }
               break;
             case html4.atype['URI']:
@@ -488,19 +503,20 @@ var sanitizeStylesheetWithExternals = undefined;
               // URIs are rewritten, so we can't meanginfully translate URI
               // selectors besides the common a[href] one that is used to
               // distinguish links from naming anchors.
-              if (op !== '') { return null; }
+              if (op !== '') { valid = false; }
               break;
             // TODO: IDREFS
             default:
-              op = null;
+              valid = false;
             }
-            if (op == null) { return null; }
-            attrs += '[' + attr + op + value + (ignoreCase ? ' i]' : ']');
+            if (valid) {
+              attrs += '[' + attr + op + value + (ignoreCase ? ' i]' : ']');
+            }
           } else if (start < end && selectors[start] === ':') {
             tok = selectors[++start];
             if (HISTORY_SENSITIVE_PSEUDO_SELECTOR_WHITELIST.test(tok)) {
               if (!/^[a*]?$/.test(element)) {
-                return null;
+                valid = false;
               }
               historySensitive = true;
               pseudoSelector = ':' + tok;
@@ -514,25 +530,37 @@ var sanitizeStylesheetWithExternals = undefined;
             }
           }
         }
-        if (start === end) {
+        if (start !== end) {  // Tokens not consumed.
+          valid = false;
+        }
+        if (valid) {
           // ':' is allowed in identifiers, but is also the
           // pseudo-selector separator, so ':' in preceding parts needs to
           // be escaped.
-          return (element + classId).replace(/[^ .*#\w-]/g, '\\$&')
-              + attrs + pseudoSelector;
+          var selector = (element + classId).replace(/[^ .*#\w-]/g, '\\$&')
+              + attrs + pseudoSelector + combinator;
+          if (selector) { out.push(selector); }
         }
-        return null;
+        return valid;
       }
 
+      if (valid) {
+        if (out.length) {
+          var safeSelector = out.join('');
+        
+          // Namespace the selector so that it only matches under
+          // a node with suffix in its CLASS attribute.
+          safeSelector = '.' + suffix + ' ' + safeSelector;
 
-      var safeSelector = out.join('');
-      // Namespace the selector so that it only matches under
-      // a node with suffix in its CLASS attribute.
-      safeSelector = '.' + suffix + ' ' + safeSelector;
-
-      (historySensitive
-       ? historySensitiveSelectors
-       : historyInsensitiveSelectors).push(safeSelector);
+          (historySensitive
+           ? historySensitiveSelectors
+           : historyInsensitiveSelectors).push(safeSelector);
+        }  // else nothing there.
+        return true;
+      } else {
+        return !opt_onUntranslatableSelector
+          || opt_onUntranslatableSelector(selectors.slice(start, end));
+      }
     }
 
     return [historyInsensitiveSelectors, historySensitiveSelectors];
