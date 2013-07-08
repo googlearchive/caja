@@ -14,8 +14,6 @@
 
 package com.google.caja.util;
 
-import java.util.Arrays;
-
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.handler.ContextHandler;
 import org.mortbay.jetty.handler.ResourceHandler;
@@ -51,10 +49,8 @@ public class LocalServer {
     int port = server.getConnectors()[0].getLocalPort();
     // Occasionally port is -1 after the server is started, not sure why yet.
     if (port < 0) {
-      throw new SomethingWidgyHappenedError(
-          "port=" + port +
-          " server=" + server +
-          " connectors=" + Arrays.toString(server.getConnectors()));
+      System.err.println("port=" + port);
+      throw new SomethingWidgyHappenedError("port=" + port);
     }
     return port;
   }

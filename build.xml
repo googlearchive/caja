@@ -265,6 +265,9 @@ For help on building and testing Caja, see:
   <property name="testonly.user.language" value="tr"/>
   <property name="testonly.user.region" value="TR"/>
 
+  <!-- turn on jetty verbose logging -->
+  <property name="testonly.DEBUG" value="true"/>
+
   <propertyset id="test.propertyset">
     <!-- caja.test.* is obsolete, but we propagate them so the
     test runner can warn the user -->
