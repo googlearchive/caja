@@ -618,6 +618,7 @@
 
     this.scan = function() {
       if (ran) { throw new Error('scan() called again'); }
+      ran = true;
 
       function traverse(context) {
         var object = context.get();
@@ -1661,7 +1662,9 @@
       console.warn(text);
     }
 
+    var stopped = false;
     document.getElementById('testUniverse-stop').onclick = function() {
+      stopped = true;  // for toggleNonErrors
       scanner.stop();
       return true;
     };
@@ -1706,7 +1709,7 @@
       if (problemCount === 0 && gapCount === 0) {
         pass('testUniverse');
       } else {
-        toggleNonErrors(true);
+        if (!stopped) { toggleNonErrors(true); }
         jsunitFail('testUniverse',
             'Failed: ' + problemCount + ' problems and ' + gapCount +
             ' coverage gaps.');
