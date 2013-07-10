@@ -24,7 +24,6 @@ import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
 import org.openqa.selenium.Capabilities;
-import org.openqa.selenium.NoSuchWindowException;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
@@ -44,25 +43,16 @@ import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.util.TestFlag;
 
 /**
- * Wrapper around a WebDriver instance for our multi-window usage pattern.
- *
- * WebDriver browser setup is kind of slow, so we reuse a browser for an entire
- * class's worth of tests via @BeforeClass and @AfterClass.
+ * Wrapper around a WebDriver instance.
  */
 
 class WebDriverHandle {
   private RemoteWebDriver driver = null;
-  private String firstWindow = null;
-  private int windowSeq = 1;
-  private int keptWindows = 0;
-
-  WebDriverHandle() {
-  }
+  private boolean canExecuteScript = true;
 
   WebDriver makeWindow() {
     if (driver == null) {
       driver = makeDriver();
-      firstWindow = driver.getWindowHandle();
       reportVersion(driver);
       try {
         driver.manage().timeouts().pageLoadTimeout(15, TimeUnit.SECONDS);
@@ -77,21 +67,23 @@ class WebDriverHandle {
         // harmless, ignore
       }
     }
-    // We try to run tests in a fresh window in an existing session,
-    // so we can avoid session startup overhead for each test.
-    // In some webdriver implementations (such as Safari), the
-    // window.open will fail, which is fine, we'll just run the test
-    // in the base window and open a new session for the next test.
-    String name = "cajatestwin" + (windowSeq++);
-    Boolean result = (Boolean) driver.executeScript(
-        "return !!window.open('', '" + name + "')");
-    if (result) {
-      driver.switchTo().window(name);
-    }
     return driver;
   }
 
-  void reportVersion(RemoteWebDriver driver) {
+  // Selenium 2.33 has trouble executing script on Firefox 23 and later
+  private Object executeScript(String script) {
+    if (canExecuteScript) {
+      try {
+        return driver.executeScript(script);
+      } catch (WebDriverException e) {
+        canExecuteScript = false;
+        log("executeScript failed: " + e);
+      }
+    }
+    return null;
+  }
+
+  private void reportVersion(RemoteWebDriver driver) {
     Capabilities caps = driver.getCapabilities();
     String name = caps.getBrowserName();
     if (name == null) { name = "unknown"; }
@@ -99,7 +91,7 @@ class WebDriverHandle {
     if (version == null) { version = "unknown"; }
     // Firefox's version is something like "20.0", which doesn't tell
     // you the exact build, so we also try to report buildID.
-    String build = (String) driver.executeScript(
+    String build = (String) executeScript(
         "return String(navigator.buildID || '')");
     if (build != null && !"".equals(build)) {
       version += " build " + build;
@@ -107,7 +99,7 @@ class WebDriverHandle {
     log("webdriver: browser " + name + " version " + version);
   }
 
-  void log(String s) {
+  private void log(String s) {
     // System.err is captured by junit and goes into ant-reports
     System.err.println(s);
 
@@ -119,54 +111,34 @@ class WebDriverHandle {
     err.println(s);
   }
 
-  String getBrowserType() {
-    return TestFlag.BROWSER.getString("firefox");
-  }
-
+  // makeWindow used to open a new window in an existing session, but
+  // there's no way to do that if executeScript() doesn't work. So now
+  // we just re-use the same window.
   void closeWindow() {
-    if (driver == null) { return; }
-    driver.close();
-    if (firstWindow == null) {
-      // we failed sometime during initialization; quit and try again.
-      driver.quit();
-      driver = null;
-      return;
-    }
-    try {
-      driver.switchTo().window(firstWindow);
-    } catch (NoSuchWindowException e) {
-      // if makeWindow didn't succeed in creating a new window, then we
-      // closed our only window, and we'll need a new webdriver session.
-      driver.quit();
-      driver = null;
+    if (driver != null) {
+      driver.get("about:blank");
     }
   }
 
+  // drop the driver handle without close or quit, leaving the browser open
   void keepOpen() {
-    keptWindows++;
+    driver = null;
   }
 
   void release() {
     if (driver != null) {
-      if (firstWindow != null) {
-        driver.switchTo().window(firstWindow);
-        firstWindow = null;
-      }
-      if (0 < keptWindows) {
-        // .close() quits the browser if there are no more windows, but
-        // helpers like chromedriver stay running.
-        driver.close();
-      } else {
+      try {
         driver.quit();
+      } finally {
+        driver = null;
       }
-      driver = null;
     }
   }
 
   private RemoteWebDriver makeDriver() {
     DesiredCapabilities dc = new DesiredCapabilities();
 
-    String browserType = getBrowserType();
+    String browserType = TestFlag.BROWSER.getString("firefox");
 
     if ("chrome".equals(browserType)) {
       // Chrome driver is odd in that the path to Chrome is specified
