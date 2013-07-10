@@ -895,8 +895,22 @@ document.write(
     assertQueryResult('#testQuerySelector p', ['a', 'b']);
     assertEquals('scoped query', 2, container.querySelectorAll('p').length);
     expectFailure(function() {
+      document.querySelector(':unrecognized');
+    }, 'syntax error solo', function(e) {
+      return e.name === 'SyntaxError';
+    });
+    expectFailure(function() {
+      document.querySelector('good,:unrecognized');
+    }, 'syntax error one of two', function(e) {
+      return e.name === 'SyntaxError';
+    });
+    expectFailure(function() {
       document.querySelector(',');
-    }, 'syntax error');
+    }, 'syntax error one of two', function(e) {
+      // https://code.google.com/p/google-caja/issues/detail?id=1804
+      //return e.name === 'SyntaxError';
+      return true;
+    });
 
     // test non-liveness
     var list = container.querySelectorAll('p');

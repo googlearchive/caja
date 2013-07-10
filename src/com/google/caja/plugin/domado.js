@@ -3329,11 +3329,18 @@ var Domado = (function() {
         }
       }
 
+      function querySelectorFail(tokens) {
+        var error = new Error('Erroneous or unsupported selector syntax: ' +
+            tokens.join(''));
+        error.name = 'SyntaxError';
+        throw error;
+      }
       function tameQuerySelector(rootFeralNode, guestSelector, returnAll) {
         var virtualizedSelectors = sanitizeCssSelectors(
           lexCss(guestSelector),
           idClass,
-          tagPolicy);
+          tagPolicy,
+          querySelectorFail);
         var historyInsensitiveVirtualizedSelectors =
           virtualizedSelectors[0].join(',');
         if (returnAll) {

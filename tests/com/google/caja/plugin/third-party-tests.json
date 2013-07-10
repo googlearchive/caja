@@ -203,7 +203,7 @@
       },
       {
         "guest": "button",
-        "expected-pass": "all"
+        "expected-pass": 78
       },
       {
         "guest": "core",
@@ -225,7 +225,7 @@
       },
       {
         "guest": "dialog",
-        "expected-pass": { "firefox": 220, "chrome": 227 },
+        "expected-pass": { "firefox": 219, "chrome": 226 },
         "comment": [
           "Current failure categories:",
             "What may be event simulation failures",
@@ -278,7 +278,7 @@
       },
       {
         "guest": "tabs",
-        "expected-pass": { "firefox": 487, "chrome": 519 },
+        "expected-pass": { "firefox": 485, "chrome": 517 },
         "comment": [
           "Current modifications made to test suite:",
             "Work around lost-signal problems due to lack of event simulation",
