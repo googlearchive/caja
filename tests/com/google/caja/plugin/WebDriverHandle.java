@@ -50,7 +50,12 @@ class WebDriverHandle {
   private RemoteWebDriver driver = null;
   private boolean canExecuteScript = true;
 
-  WebDriver makeWindow() {
+  // Don't keep more than this many failed test windows. (Otherwise
+  // a broken tree can overload a machine with browser windows.)
+  private static final int MAX_FAILS_KEPT = 9;
+  private static int fails_kept = 0;
+
+  WebDriver begin() {
     if (driver == null) {
       driver = makeDriver();
       reportVersion(driver);
@@ -111,18 +116,16 @@ class WebDriverHandle {
     err.println(s);
   }
 
-  // makeWindow used to open a new window in an existing session, but
-  // there's no way to do that if executeScript() doesn't work. So now
-  // we just re-use the same window.
-  void closeWindow() {
+  void end(boolean passed) {
+    // If a test fails, drop the driver handle without close or quit,
+    // leaving the browser open, which is helpful for debugging.
+    if (!passed && !TestFlag.BROWSER_CLOSE.truthy()
+        && fails_kept++ < MAX_FAILS_KEPT) {
+      driver = null;
+    }
     if (driver != null) {
       driver.get("about:blank");
     }
-  }
-
-  // drop the driver handle without close or quit, leaving the browser open
-  void keepOpen() {
-    driver = null;
   }
 
   void release() {

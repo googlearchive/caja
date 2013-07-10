@@ -153,7 +153,7 @@ public abstract class BrowserTestCase {
       if (TestFlag.DEBUG_SERVER.truthy()) {
         Thread.currentThread().join();
       }
-      WebDriver driver = wdh.makeWindow();
+      WebDriver driver = wdh.begin();
       driver.get(page);
       if (TestFlag.DEBUG_BROWSER.truthy()) {
         Thread.currentThread().join();
@@ -164,12 +164,7 @@ public abstract class BrowserTestCase {
     } finally {
       wdh.captureResults(label);
       localServer.stop();
-      // It's helpful for debugging to keep failed windows open.
-      if (!passed && !isKnownFailure && !TestFlag.BROWSER_CLOSE.truthy()) {
-        wdh.keepOpen();
-      } else {
-        wdh.closeWindow();
-      }
+      wdh.end(passed || isKnownFailure);
     }
     return result;
   }
