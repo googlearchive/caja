@@ -308,14 +308,20 @@ var sanitizeStylesheetWithExternals = undefined;
   /**
    * Given a series of tokens, returns two lists of sanitized selectors.
    * @param {Array.<string>} selectors In the form produces by csslexer.js.
-   * @param {string} suffix a suffix that is added to all IDs and which is
-   *    used as a CLASS names so that the returned selectors will only match
-   *    nodes under one with suffix as a class name.
-   *    If suffix is {@code "sfx"}, the selector
+   * @param {{
+   *     containerClass: ?string,
+   *     idSuffix: string,
+   *     tagPolicy: function(string, Array.<string>): ?Array.<string>
+   *   }} virtualization An object like <pre<{
+   *   containerClass: class name prepended to all selectors to scope them (if
+   *       not null)
+   *   idSuffix: appended to all ids to scope them
+   *   tagPolicy: As in html-sanitizer, used for rewriting element names.
+   * }</pre>
+   *    If containerClass is {@code "sfx"} and idSuffix is {@code "-sfx"}, the
+   *    selector
    *    {@code ["a", "#foo", " ", "b", ".bar"]} will be namespaced to
    *    {@code [".sfx", " ", "a", "#foo-sfx", " ", "b", ".bar"]}.
-   * @param {function(string, Array.<string>): ?Array.<string>} tagPolicy
-   *     As in html-sanitizer, used for rewriting element names.
    * @param {function(Array.<string>): boolean} opt_onUntranslatableSelector
    *     When a selector cannot be translated, this function is called with the
    *     non-whitespace/comment tokens comprising the selector and returns a
@@ -328,8 +334,12 @@ var sanitizeStylesheetWithExternals = undefined;
    *    contains history-sensitive selectors.
    *    Null when the untraslatable compound selector handler aborts processing.
    */
-  sanitizeCssSelectors = function (
-      selectors, suffix, tagPolicy, opt_onUntranslatableSelector) {
+  sanitizeCssSelectors = function(
+      selectors, virtualization, opt_onUntranslatableSelector) {
+    var containerClass = virtualization.containerClass;
+    var idSuffix = virtualization.idSuffix;
+    var tagPolicy = virtualization.tagPolicy;
+
     // Produce two distinct lists of selectors to sequester selectors that are
     // history sensitive (:visited), so that we can disallow properties in the
     // property groups for the history sensitive ones.
@@ -430,7 +440,7 @@ var sanitizeStylesheetWithExternals = undefined;
               valid = false;
             } else {
               // Rewrite ID elements to include the suffix.
-              classId += tok + '-' + suffix;
+              classId += tok + idSuffix;
             }
           } else if (tok === '.') {
             if (++start < end
@@ -485,7 +495,7 @@ var sanitizeStylesheetWithExternals = undefined;
                 // The suffix is case-sensitive, so we can't translate case
                 // ignoring matches.
                 value = '"'
-                  + value.substring(1, value.length-1) + "-" + suffix
+                  + value.substring(1, value.length-1) + idSuffix
                   + '"';
               } else if (op === '|=' || op === '') {
                 // Ok.  a|=b -> a == b || a.startsWith(b + "-") and since we
@@ -547,10 +557,12 @@ var sanitizeStylesheetWithExternals = undefined;
       if (valid) {
         if (out.length) {
           var safeSelector = out.join('');
-        
+
           // Namespace the selector so that it only matches under
           // a node with suffix in its CLASS attribute.
-          safeSelector = '.' + suffix + ' ' + safeSelector;
+          if (containerClass !== null) {
+            safeSelector = '.' + containerClass + ' ' + safeSelector;
+          }
 
           (historySensitive
            ? historySensitiveSelectors
@@ -634,27 +646,32 @@ var sanitizeStylesheetWithExternals = undefined;
      * @param {string} baseUri a string against which relative urls are
      *    resolved.
      * @param {string} cssText a string containing a CSS stylesheet.
-     * @param {string} suffix a suffix that is added to all IDs and which is
-     *    used as a CLASS names so that the returned selectors will only match
-     *    nodes under one with suffix as a class name.
-     *    If suffix is {@code "sfx"}, the selector
+     * @param {{
+     *     containerClass: ?string,
+     *     idSuffix: string,
+     *     tagPolicy: function(string, Array.<string>): ?Array.<string>
+     *   }} virtualization An object like <pre<{
+     *   containerClass: class name prepended to all selectors to scope them (if
+     *       not null)
+     *   idSuffix: appended to all ids to scope them
+     *   tagPolicy: As in html-sanitizer, used for rewriting element names.
+     * }</pre>
+     *    If containerClass is {@code "sfx"} and idSuffix is {@code "-sfx"}, the
+     *    selector
      *    {@code ["a", "#foo", " ", "b", ".bar"]} will be namespaced to
      *    {@code [".sfx", " ", "a", "#foo-sfx", " ", "b", ".bar"]}.
      * @param {function(string, string)} naiveUriRewriter maps URLs of media
      *    (images, sounds) that appear as CSS property values to sanitized
      *    URLs or null if the URL should not be allowed as an external media
      *    file in sanitized CSS.
-     * @param {function(string, Array.<string>): ?Array.<string>} tagPolicy
-     *     As in html-sanitizer, used for rewriting element names.
      * @param {undefined|function(string, boolean)} continuation callback from
      *     external CSS URLs.
      *     The callback is called with a string, the CSS contents and a boolean,
      *     which is true if the external url itself contained other external
      *     URLs.
      */
-    function sanitizeStylesheetInternal(baseUri, cssText, suffix,
-      naiveUriRewriter, naiveUriFetcher, tagPolicy,
-      continuation) {
+    function sanitizeStylesheetInternal(baseUri, cssText, virtualization,
+      naiveUriRewriter, naiveUriFetcher, continuation) {
       var safeCss = void 0;
       var moreToCome = false;
       // A stack describing the { ... } regions.
@@ -692,9 +709,8 @@ var sanitizeStylesheetWithExternals = undefined;
                         function(result) {
                           var sanitized =
                             sanitizeStylesheetInternal(cssUrl, result.html,
-                              suffix,
-                              naiveUriRewriter, naiveUriFetcher, tagPolicy,
-                              continuation);
+                              virtualization,
+                              naiveUriRewriter, naiveUriFetcher, continuation);
                           continuation(sanitized.result, sanitized.moreToCome);
                         },
                         naiveUriFetcher);
@@ -737,8 +753,8 @@ var sanitizeStylesheetWithExternals = undefined;
               var historySensitiveSelectors = void 0;
               var removeHistoryInsensitiveSelectors = false;
               if (!elide) {
-                var selectors = sanitizeCssSelectors(selectorArray, suffix,
-                    tagPolicy);
+                var selectors = sanitizeCssSelectors(selectorArray,
+                    virtualization);
                 var historyInsensitiveSelectors = selectors[0];
                 historySensitiveSelectors = selectors[1];
                 if (!historyInsensitiveSelectors.length
@@ -823,16 +839,15 @@ var sanitizeStylesheetWithExternals = undefined;
     }
 
     sanitizeStylesheet = function (
-        baseUri, cssText, suffix, naiveUriRewriter, tagPolicy) {
-      return sanitizeStylesheetInternal(baseUri, cssText, suffix,
-        naiveUriRewriter, undefined, tagPolicy, undefined).result;
+        baseUri, cssText, virtualization, naiveUriRewriter) {
+      return sanitizeStylesheetInternal(baseUri, cssText, virtualization,
+        naiveUriRewriter, undefined, undefined).result;
     };
 
-    sanitizeStylesheetWithExternals = function (baseUri, cssText, suffix,
-      naiveUriRewriter, naiveUriFetcher, tagPolicy,
-      continuation) {
-      return sanitizeStylesheetInternal(baseUri, cssText, suffix,
-        naiveUriRewriter, naiveUriFetcher, tagPolicy, continuation);
+    sanitizeStylesheetWithExternals = function (baseUri, cssText,
+      virtualization, naiveUriRewriter, naiveUriFetcher, continuation) {
+      return sanitizeStylesheetInternal(baseUri, cssText, virtualization,
+        naiveUriRewriter, naiveUriFetcher, continuation);
     };
   })();
 })();

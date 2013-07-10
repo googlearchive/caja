@@ -14,6 +14,26 @@
 
 // Called from css-stylesheet-tests.js in a JSONP style.
 function runCssSelectorTests(testGroups) {
+  var virtualization = {
+    containerClass: 'namespace__',
+    idSuffix: '-namespace__',
+    tagPolicy: function(t, a) {
+      // Implementation of virtualization policy for test cases -- the
+      // real version of this lives in html-schema.js.
+      // TODO(kpreid): Arrange so that we can exercise the sanitizer's
+      // behavior given an alternate policy function.
+      var eflags = t in html4.ELEMENTS ? html4.ELEMENTS[t]
+                                       : html4.eflags.VIRTUALIZED;
+      if (eflags & html4.eflags.VIRTUALIZED) {
+        return {'tagName': 'caja-v-' + t};
+      } else if (!(eflags & html4.eflags.UNSAFE)) {
+        return {};
+      } else {
+        return null;
+      }
+    }
+  };
+
   function testCssStylesheets() {
     for (var j = 0, m = testGroups.length; j < m; ++j) {
       var testGroup = testGroups[j];
@@ -30,22 +50,7 @@ function runCssSelectorTests(testGroups) {
             name + ' tests[' + i + '].golden', 'string', typeof golden);
 
         var actual = sanitizeStylesheet('',
-            test.cssText, 'namespace__', sanitizeUri,
-            function (t, a) {
-              // Implementation of virtualization policy for test cases -- the
-              // real version of this lives in html-schema.js.
-              // TODO(kpreid): Arrange so that we can exercise the sanitizer's
-              // behavior given an alternate policy function.
-              var eflags = t in html4.ELEMENTS ? html4.ELEMENTS[t]
-                                               : html4.eflags.VIRTUALIZED;
-              if (eflags & html4.eflags.VIRTUALIZED) {
-                return {'tagName': 'caja-v-' + t};
-              } else if (!(eflags & html4.eflags.UNSAFE)) {
-                return {};
-              } else {
-                return null;
-              }
-            });
+            test.cssText, virtualization, sanitizeUri);
         // The Java version produces property groups without a trailing
         // ';' since the semicolon is technically a separator in CSS.
         // This JavaScript version does not because it is simpler to

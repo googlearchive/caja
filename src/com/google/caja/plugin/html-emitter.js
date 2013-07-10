@@ -514,10 +514,9 @@ function HtmlEmitter(makeDOMAccessible, base,
       }
       if (domicile && domicile.emitCss) {
         var sanitized = sanitizeStylesheetWithExternals(styleBaseUri,
-            cssText, domicile.suffixStr.replace(/^-/, ''),
+            cssText, domicile.virtualization,
             makeCssUriSanitizer(styleBaseUri),
             makeCssUriFetcher(styleBaseUri),
-            domicile.tagPolicy,
             continuation);
         if (!sanitized.moreToCome) {
           emitCss(sanitized.result);

@@ -18,7 +18,12 @@ function assertSelector(
     source, prefix, expected, opt_onUntranslatableSelector) {
   var tokens = lexCss(source);
   var sanitized = sanitizeCssSelectors(
-    tokens, prefix, function(el, args) { return { tagName: el }; },
+    tokens,
+    {
+      containerClass: prefix,
+      idSuffix: '-' + prefix,
+      tagPolicy: function(el, args) { return { tagName: el }; }
+    },
     opt_onUntranslatableSelector);
   assertArrayEquals(expected, sanitized);
 }
@@ -237,7 +242,12 @@ jsunitRegister('testColonsInSelectors',
   var source = 'input.cl\\:a\\3a ss[type = "text"], input#foo\\:bar';
   var tokens = lexCss(source);
   var sanitized = sanitizeCssSelectors(
-    tokens, 'sfx', function(el, args) { return { tagName: el }; });
+    tokens,
+    {
+      containerClass: 'sfx',
+      idSuffix: '-sfx',
+      tagPolicy: function(el, args) { return { tagName: el }; }
+    });
   assertArrayEquals(
     [['.sfx input.cl\\:a\\:ss[type="text"]',
       '.sfx input#foo\\:bar-sfx'], []],

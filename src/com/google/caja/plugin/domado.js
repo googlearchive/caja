@@ -1792,6 +1792,14 @@ var Domado = (function() {
       // directly available to us here).
       taming.untame(naiveUriPolicy);
 
+      if (!/^-/.test(idSuffix)) {
+        throw new Error('id suffix "' + idSuffix + '" must start with "-"');
+      }
+      if (!/___$/.test(idSuffix)) {
+        throw new Error('id suffix "' + idSuffix + '" must end with "___"');
+      }
+      var idClass = idSuffix.substring(1);
+
       var domicile = {
         // True when we're executing a handler for events like click
         handlingUserAction: false
@@ -2053,6 +2061,22 @@ var Domado = (function() {
         }
       }
       var htmlSanitizer = html.makeHtmlSanitizer(tagPolicy);
+
+      // Bundle of all virtualization info, for use by CSS sanitizer
+      var virtualization = cajaVM.def({
+        // Class name matching the virtual document container. May be null (not
+        // undefined) if we are taming a complete document and there is no
+        // container (note: this case is not yet fully implemented).
+        containerClass: containerNode === document ? null : idClass,
+
+        // Suffix to append to all IDs and ID references.
+        idSuffix: idSuffix,
+
+        // Element/attribute rewriter
+        tagPolicy: tagPolicy
+      });
+      // needed by HtmlEmitter for stylesheet processing
+      domicile.virtualization = virtualization;
 
       /**
        * If str ends with suffix,
@@ -3337,10 +3361,7 @@ var Domado = (function() {
       }
       function tameQuerySelector(rootFeralNode, guestSelector, returnAll) {
         var virtualizedSelectors = sanitizeCssSelectors(
-          lexCss(guestSelector),
-          idClass,
-          tagPolicy,
-          querySelectorFail);
+          lexCss(guestSelector), virtualization, querySelectorFail);
         var historyInsensitiveVirtualizedSelectors =
           virtualizedSelectors[0].join(',');
         if (returnAll) {
@@ -6380,22 +6401,13 @@ var Domado = (function() {
               "CSS_PROP": prop
             });
       });
+      // TODO(kpreid): Consider moving domicile.suffix into the
+      // domicile.virtualization object. Used by caja-flash.js only.
       domicile.suffix = cajaVM.constFunc(function(nmtokens) {
         var p = String(nmtokens).replace(/^\s+|\s+$/g, '').split(/\s+/g);
         var out = [];
         for (var i = 0; i < p.length; ++i) {
           var nmtoken = rewriteAttribute(null, null, html4.atype.ID, p[+i]);
-          if (!nmtoken) { throw new Error(nmtokens); }
-          out.push(nmtoken);
-        }
-        return out.join(' ');
-      });
-      domicile.suffixStr = idSuffix;
-      domicile.ident = cajaVM.constFunc(function(nmtokens) {
-        var p = String(nmtokens).replace(/^\s+|\s+$/g, '').split(/\s+/g);
-        var out = [];
-        for (var i = 0; i < p.length; ++i) {
-          var nmtoken = rewriteAttribute(null, null, html4.atype.CLASSES, p[+i]);
           if (!nmtoken) { throw new Error(nmtokens); }
           out.push(nmtoken);
         }
@@ -6656,15 +6668,7 @@ var Domado = (function() {
         e = makeDOMAccessible(e);
         return e;
       });
-      domicile.tagPolicy = tagPolicy;  // used by CSS rewriter
 
-      if (!/^-/.test(idSuffix)) {
-        throw new Error('id suffix "' + idSuffix + '" must start with "-"');
-      }
-      if (!/___$/.test(idSuffix)) {
-        throw new Error('id suffix "' + idSuffix + '" must end with "___"');
-      }
-      var idClass = idSuffix.substring(1);
       var idClassPattern = new RegExp(
           '(?:^|\\s)' + idClass.replace(/[\.$]/g, '\\$&') + '(?:\\s|$)');
       /**
