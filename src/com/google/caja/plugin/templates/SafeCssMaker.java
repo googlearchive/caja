@@ -37,7 +37,7 @@ import org.w3c.dom.Element;
 /**
  * Attaches CSS to either the static HTML or the uncajoled JS as appropriate.
  * <p>
- * Depends on <code>emitCss___</code> as defined in DOMita.
+ * Depends on <code>emitCss___</code> as defined in Domado.
  *
  * @author mikesamuel@gmail.com
  */

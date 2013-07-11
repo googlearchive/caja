@@ -18,7 +18,7 @@
  * transfer of objects between mutually suspicious components.
  *
  * @param instantiateInTameElement a tamed function that takes
- *     a Domita tamed element, an HTML module URL and an optional
+ *     a Domado tamed element, an HTML module URL and an optional
  *     map of outer variables and instantiates the module within
  *     the provided element.
  * @param log a tamed function that logs messages to the console.

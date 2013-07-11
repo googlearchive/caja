@@ -264,7 +264,7 @@ runCssSelectorTests([
         "messages": []
       },
 
-    // Properties that are on DOMita's HISTORY_INSENSITIVE_STYLE_WHITELIST
+    // Properties that are on Domado's HISTORY_INSENSITIVE_STYLE_WHITELIST
     // should not be allowed in any rule that correlates with the :visited
     // pseudo selector.
     // TODO: How is this a whitelist then?

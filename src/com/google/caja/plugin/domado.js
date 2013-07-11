@@ -1415,10 +1415,10 @@ var Domado = (function() {
     function assert(cond) {
       if (!cond) {
         if (typeof console !== 'undefined') {
-          console.error('domita assertion failed');
+          console.error('Domado: assertion failed');
           console.trace();
         }
-        throw new Error("Domita assertion failed");
+        throw new Error('Domado: assertion failed');
       }
     }
 
@@ -2656,6 +2656,34 @@ var Domado = (function() {
       }
       var NP_noArgEditVoidMethod = NP_NoArgEditMethod(noop);
       var NP_noArgEditMethodReturningNode = NP_NoArgEditMethod(defaultTameNode);
+      /**
+       * Reflect a boolean attribute, in the HTML5 sense. Respects schema for
+       * writes, forwards for reads.
+       *
+       * http://www.whatwg.org/specs/web-apps/current-work/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes
+       */
+      var NP_reflectBoolean = Props.markPropMaker(function(env) {
+        var prop = env.prop;
+        return {
+          enumerable: true,
+          get: env.amplifying(function(privates) {
+            return privates.policy.attributesVisible &&
+                Boolean(privates.feral[prop]);
+          }),
+          set: innocuous(function(value) {
+            // "On setting, the content attribute must be removed if the IDL
+            // attribute is set to false, and must be set to the empty string if
+            // the IDL attribute is set to true."
+            if (value) {
+              // TODO(kpreid): markup whitelist rejects '' for boolean attrs but
+              // should accept it
+              this.setAttribute(prop, prop /* should be '' */);
+            } else {
+              this.removeAttribute(prop);
+            }
+          })
+        };
+      });
 
       /**
        * Property spec for properties which reflect attributes whose values are
@@ -5235,6 +5263,8 @@ var Domado = (function() {
             return tameHTMLCollection(f, defaultTameNode);
           }),
           enctype: PT.filterAttr(defaultToEmptyStr, String),
+          encoding: Props.actAs('enctype',
+              PT.filterAttr(defaultToEmptyStr, String)),
           method: PT.filterAttr(defaultToEmptyStr, String),
           target: PT.filterAttr(defaultToEmptyStr, String),
           submit: Props.ampMethod(function(privates) {
@@ -5384,8 +5414,8 @@ var Domado = (function() {
       defineElement({
         domClass: 'CajaFormField',
         properties: function() { return {
-          autofocus: PT.ro,
-          disabled: PT.rw,
+          autofocus: NP_reflectBoolean,
+          disabled: NP_reflectBoolean,
           form: PT.related,
           maxLength: PT.rw,
           name: PT.rw,
@@ -5518,10 +5548,18 @@ var Domado = (function() {
       });
 
       defineElement({
+        domClass: 'HTMLOptGroupElement',
+        properties: function() { return {
+          disabled: NP_reflectBoolean,
+          label: NP_writePolicyOnly
+        }; }
+      });
+
+      defineElement({
         domClass: 'HTMLOptionElement',
         properties: function() { return {
           defaultSelected: PT.filterProp(Boolean, Boolean),
-          disabled: PT.filterProp(Boolean, Boolean),
+          disabled: NP_reflectBoolean,
           form: PT.related,
           index: PT.filterProp(Number),
           label: PT.filterProp(String, String),
@@ -5615,7 +5653,7 @@ var Domado = (function() {
           var styleForFeatureTests = makeDOMAccessible(
               document.createElement('style'));
           return {
-            disabled: PT.filterProp(identity, Boolean),
+            disabled: NP_reflectBoolean,
             media: NP_writePolicyOnly,
             scoped: Props.cond('scoped' in styleForFeatureTests,
                 PT.filterProp(identity, Boolean)),
@@ -5799,8 +5837,8 @@ var Domado = (function() {
         function tameEventView(view) {
           if (view === window) {
             return tameWindow;
-          } else if (view === null) {
-            return null;
+          } else if (view === null || view === undefined) {
+            return view;
           } else {
             if (typeof console !== 'undefined') {
               console.warn('Domado: Discarding unrecognized feral view value:',
@@ -5812,13 +5850,14 @@ var Domado = (function() {
         function untameEventView(view) {
           if (view === tameWindow) {
             return window;
-          } else if (view === null) {
-            return null;
+          } else if (view === null || view === undefined) {
+            return view;
           } else {
             if (typeof console !== 'undefined') {
               console.warn('Domado: Discarding unrecognized guest view value:',
                   view);
             }
+            return null;
           }
         }
 
@@ -6692,16 +6731,6 @@ var Domado = (function() {
             + ' ' + idClass + ' vdoc-container___');
       }
 
-      // bitmask of trace points
-      //    0x0001 plugin_dispatchEvent
-      domicile.domitaTrace = 0;
-      domicile.getDomitaTrace = cajaVM.constFunc(
-          function() { return domicile.domitaTrace; }
-      );
-      domicile.setDomitaTrace = cajaVM.constFunc(
-          function(x) { domicile.domitaTrace = x; }
-      );
-
       var TameWindowConf = new Confidence('TameWindow');
 
       /**
@@ -6728,9 +6757,14 @@ var Domado = (function() {
         taming.permitUntaming(this);
 
         // Attach reflexive properties
-        ['top', 'self', 'opener', 'parent', 'window'].forEach(function(prop) {
+        [
+          'top', 'self', 'opener', 'parent', 'window', 'frames'
+        ].forEach(function(prop) {
           this[prop] = this;
         }, this);
+
+        // window.frames.length (must be a data prop for ES5/3)
+        this.length = 0;
       }
       inertCtor(TameWindow, Object, 'Window');
       Props.define(TameWindow.prototype, TameWindowConf, {
@@ -6818,7 +6852,9 @@ var Domado = (function() {
         platform: String(navigator.platform),
         // userAgent should equal the string sent in the User-Agent HTTP header.
         userAgent: String(navigator.userAgent),
-        // Custom attribute indicating Caja is active.
+        // Custom attribute indicating Caja is active. The version number has
+        // ended up completely meaningless, but there is code in the wild that
+        // tests for this attribute, so we'll just leave it, for now.
         cajaVersion: '1.0'
         });
 
@@ -7158,13 +7194,6 @@ var Domado = (function() {
 
     function dispatch(isUserAction, pluginId, handler, args) {
       var domicile = windowToDomicile.get(rulebreaker.getImports(pluginId));
-      if (domicile.domitaTrace & 0x1 && typeof console != 'undefined') {
-        var sig = ('' + handler).match(/^function\b[^\)]*\)/);
-        console.log(
-            'Dispatch pluginId=' + pluginId +
-            ', handler=' + (sig ? sig[0] : handler) +
-            ', args=' + args);
-      }
       switch (typeof handler) {
         case 'number':
           handler = domicile.handlers[+handler];

@@ -379,6 +379,21 @@ document.write(
   });
 </script>
 
+<script>
+  jsunitRegister('testWindowReflexive', function() {
+    [
+      'top', 'self', 'opener', 'parent', 'window', 'frames'
+    ].forEach(function(prop) {
+      assertTrue(prop, window[prop] === window);
+    });
+
+    // window.frames (which === window) is expected to act as an array-like.
+    assertEquals(0, window.frames.length);
+
+    pass();
+  });
+</script>
+
 <div id="testAttrsDeclaredInMarkup" class="testcontainer"
     ><form title="test title"></form>
   <b>Test attributes in markup</b>

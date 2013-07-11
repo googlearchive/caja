@@ -137,8 +137,11 @@ function urlParamPattern(name) {
 }
 function getUrlParam(name, opt_default) {
   var match = urlParamPattern(name).exec(window.location.href);
-  return match ? decodeURIComponent(match[2]) :
-      opt_default ? opt_default : '';
+  if (match) {
+    return decodeURIComponent(match[2].replace(/\+/g, ' '));
+  } else {
+    return opt_default ? opt_default : '';
+  }
 }
 
 /**

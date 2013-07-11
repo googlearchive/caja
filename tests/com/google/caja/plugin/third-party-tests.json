@@ -70,7 +70,7 @@
       },
       {
         "guest": "attributes",
-        "expected-pass": 415,
+        "expected-pass": 428,
         "comment": [
           "Current failure categories:",
             "Seeing absolute instead of relative URLs (visible rewriting).",
@@ -140,7 +140,7 @@
       },
       {
         "guest": "serialize",
-        "expected-pass": 26,
+        "expected-pass": 28,
         "comment": [
           "Current failure categories:",
             "Missing form fields."

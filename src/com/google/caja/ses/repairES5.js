@@ -3781,7 +3781,7 @@ var ses;
       repair: repair_PUSH_IGNORES_SEALED,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
       canRepair: true,
-      urls: [],
+      urls: ['https://code.google.com/p/v8/issues/detail?id=2711'],
       sections: ['15.2.3.9'],
       tests: [] // TODO(erights): Add to test262
     },

@@ -1214,7 +1214,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    * ES3, except that, when {@code opt_useKeyLifetime} is falsy or
    * absent, the keys here may be primitive types as well.
    *
-   * <p> To support Domita, the keys might be host objects.
+   * <p> To support taming membranes, the keys might be host objects.
    */
   function newTable(opt_useKeyLifetime, opt_expectedSize) {
     magicCount++;

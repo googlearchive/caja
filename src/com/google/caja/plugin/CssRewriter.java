@@ -677,7 +677,7 @@ public final class CssRewriter {
                   ((CssTree.IdentLiteral) child).getValue());
               if (!ALLOWED_PSEUDO_CLASSES.contains(pseudoName)) {
                 // Allow the visited pseudo selector but not with any styles
-                // that can be fetched via getComputedStyle in DOMita's
+                // that can be fetched via getComputedStyle in Domado's
                 // COMPUTED_STYLE_WHITELIST.
                 if (!(LINK_PSEUDO_CLASSES.contains(pseudoName)
                       && strippedPropertiesBannedInLinkClasses(

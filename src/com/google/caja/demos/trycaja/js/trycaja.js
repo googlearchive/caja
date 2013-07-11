@@ -5,7 +5,7 @@
   // Page variables
   var pages = mypages;
 
-  function showDomita(report) {
+  function showDomado(report) {
     if (!cajaDisplayed) {
       cajaDisplayed = true;
       document.getElementById('cajaDisplayContainer').style.display =
@@ -375,7 +375,7 @@
     }
     default: {
       if (line.trim() == 'display') {
-        showDomita(report);
+        showDomado(report);
         return true;
       }
 

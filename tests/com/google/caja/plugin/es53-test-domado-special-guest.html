@@ -128,7 +128,7 @@
 
     // The 'p1' element, since it is contained within an A element, should have
     // computed COLOR value inherited from the top-level container element of
-    // this DOMita instance (since COLOR is an allowed history-sensitive
+    // this Domado instance (since COLOR is an allowed history-sensitive
     // property), and a computed PADDING-LEFT value exactly as explicitly set
     // (since the CSS rewriter does not allow PADDING-LEFT to be assigned in a
     // history sensitive manner).
@@ -377,7 +377,7 @@
 <script type="text/javascript">
   jsunitRegister('testBoundingClientRect',
                  function testBoundingClientRect() {
-    // Grab two elements defined in domita_test.html
+    // Grab two elements defined in the initial state html
     var absPos = document.getElementById('absolutely-positioned');
     var relPos = document.getElementById('relatively-positioned');
 

@@ -34,7 +34,7 @@ public class LinkStyleWhitelist {
     Set<Name> propNames = Sets.newHashSet(
         Name.css("background-color"), Name.css("color"), Name.css("cursor"));
     // Rules limited to link and visited styles cannot allow properties that
-    // can be tested by DOMita's getComputedStyle since it would allow history
+    // can be tested by Domado's getComputedStyle since it would allow history
     // mining.
     // Do not inline the below.  The removeAll relies on the input being a set
     // of names, but since removeAll takes a Collection<?> it would fail

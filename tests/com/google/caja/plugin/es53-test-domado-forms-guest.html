@@ -254,3 +254,42 @@
     pass('testFancyInputs');
   });
 </script>
+
+<form class="testcontainer" id="testAutofocus">testAutofocus
+  <input type="text" id="testAutofocus-field" autofocus>
+</form>
+<script>
+  jsunitRegister('testAutofocus', function() {
+    var el = document.getElementById('testAutofocus-field');
+    assertEquals(false, el.autofocus);
+    el.autofocus = true;
+    assertEquals(null, directAccess.getAttribute(el, 'autofocus'));
+    assertEquals(false, el.autofocus);
+    pass();
+  });
+</script>
+
+<form class="testcontainer" id="testOptgroup">
+  <optgroup id="testOptgroup-field" disabled label="testOptgroup">
+</form>
+<script>
+  jsunitRegister('testOptgroup', function() {
+    var el = document.getElementById('testOptgroup-field');
+
+    assertEquals('testOptgroup', el.label);
+    el.label = 'testOptgroup is nifty';
+    assertEquals('testOptgroup is nifty', el.getAttribute('label'));
+
+    // disabled
+    // extensive tests to exercise reflect-boolean-attribute code, not because
+    // we're worried about disabled in particular
+    assertEquals(true, el.disabled);
+    el.disabled = false;
+    assertEquals(null, directAccess.getAttribute(el, 'disabled'));
+    assertEquals(false, el.disabled);
+    el.disabled = true;
+    assertEquals('string', typeof directAccess.getAttribute(el, 'disabled'));
+    assertEquals(true, el.disabled);
+    pass();
+  });
+</script>

@@ -251,12 +251,12 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
       })
     });
 
-    // The Domita implementation is obtained from the taming window,
-    // since we wish to protect Domita and its dependencies from the
+    // The Domado implementation is obtained from the taming window,
+    // since we wish to protect Domado and its dependencies from the
     // ability of guest code to modify the shared primordials.
 
     // TODO(kpreid): This is probably wrong: we're replacing the feral
-    // record imports with the tame constructed object 'window'.
+    // record imports with the tame constructed object 'window' (issue 1399).
 
     var targetAttributePresets = undefined;
     if (config.targetAttributePresets) {
