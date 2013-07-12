@@ -203,6 +203,7 @@ var ses;
   function needsRewriting(options) {
     return options.rewriteTopLevelVars ||
       options.rewriteTopLevelFuncs ||
+      options.rewriteFunctionCalls ||
       options.rewriteTypeOf;
   }
 
@@ -210,15 +211,15 @@ var ses;
    * Assumes {@code options} have already been safely canonicalized by
    * startSES's {@code resolveOptions}.
    */
-  ses.mitigateSrcGotchas = function(programSrc, options, logger) {
-    if (!options.parseProgram) {
-      return programSrc;
+  ses.mitigateSrcGotchas = function(funcBodySrc, options, logger) {
+    if (!needsRewriting(options) && !options.parseFunctionBody) {
+      return funcBodySrc;
     }
     try {
       var dirty = false;
       var path = [];
       var scopeLevel = 0;
-      var ast = ses.rewriter_.parse(programSrc);
+      var ast = ses.rewriter_.parse(funcBodySrc);
       if (needsRewriting(options)) {
         ses.rewriter_.traverse(ast, {
           enter: function enter(node) {
@@ -265,7 +266,7 @@ var ses;
             + " */\n"
             + ses.rewriter_.generate(ast);
       } else {
-        return programSrc;
+        return funcBodySrc;
       }
     } catch (e) {
       logger.warn('Failed to parse program', e);

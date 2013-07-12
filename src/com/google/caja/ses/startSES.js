@@ -18,9 +18,12 @@
  * <p>Assumes ES5 plus a WeakMap that conforms to the anticipated ES6
  * WeakMap spec. Compatible with ES5-strict or anticipated ES6.
  *
+ * //requires ses.makeCallerHarmless, ses.makeArgumentsHarmless
+ * //requires ses.verifyStrictFunctionBody
  * //optionally requires ses.mitigateSrcGotchas
  * //provides ses.startSES ses.resolveOptions, ses.securableWrapperSrc
  * //provides ses.makeCompiledExpr
+ *
  * @author Mark S. Miller,
  * @author Jasvir Nagra
  * @requires WeakMap
@@ -292,8 +295,8 @@ ses.startSES = function(global,
     var options = {};
     if (opt_mitigateOpts === undefined || opt_mitigateOpts === null) {
       options.maskReferenceError = true;
+      options.parseFunctionBody = true;
 
-      options.parseProgram = true;
       options.rewriteTopLevelVars = true;
       options.rewriteTopLevelFuncs = true;
       options.rewriteFunctionCalls = true;
@@ -301,15 +304,8 @@ ses.startSES = function(global,
       options.forceParseAndRender = false;
     } else {
       options.maskReferenceError = resolve('maskReferenceError', true);
+      options.parseFunctionBody = resolve('parseFunctionBody', false);
 
-      if (opt_mitigateOpts.parseProgram === false) {
-        ses.logger.warn(
-          'Refused to disable parsing for safety on all browsers');
-      }
-      // TODO(jasvir): This should only be necessary if a to-be-added
-      // test in repairES5.js indicates that this platform has the
-      // Function constructor bug
-      options.parseProgram = true;
       options.rewriteTopLevelVars = resolve('rewriteTopLevelVars', true);
       options.rewriteTopLevelFuncs = resolve('rewriteTopLevelFuncs', true);
       options.rewriteFunctionCalls = resolve('rewriteFunctionCalls', true);
@@ -330,11 +326,11 @@ ses.startSES = function(global,
    * {@code options} are assumed to already be canonicalized by {@code
    * resolveOptions} and says which mitigations to apply.
    */
-  function mitigateSrcGotchas(programSrc, options) {
+  function mitigateSrcGotchas(funcBodySrc, options) {
     var safeError;
     if ('function' === typeof ses.mitigateSrcGotchas) {
       try {
-        return ses.mitigateSrcGotchas(programSrc, options, ses.logger);
+        return ses.mitigateSrcGotchas(funcBodySrc, options, ses.logger);
       } catch (error) {
         // Shouldn't throw, but if it does, the exception is potentially from a
         // different context with an undefended prototype chain; don't allow it
@@ -348,7 +344,7 @@ ses.startSES = function(global,
         throw safeError;
       }
     } else {
-      return '' + programSrc;
+      return '' + funcBodySrc;
     }
   }
 
@@ -514,43 +510,26 @@ ses.startSES = function(global,
     var UnsafeFunction = Function;
 
     /**
-     * Fails if {@code programSrc} does not parse as a strict Program
-     * production, or, almost equivalently, as a FunctionBody
-     * production.
-     *
-     * <p>We use Crock's trick of simply passing {@code programSrc} to
-     * the original {@code Function} constructor, which will throw a
-     * SyntaxError if it does not parse as a FunctionBody. We used to
-     * use Ankur's trick (need link) which is more correct, in that it
-     * will throw if {@code programSrc} does not parse as a Program
-     * production, which is the relevant question. However, the
-     * difference -- whether return statements are accepted -- does
-     * not matter for our purposes. And testing reveals that Crock's
-     * trick executes over 100x faster on V8.
-     */
-    function verifyStrictProgram(programSrc) {
-      try {
-        UnsafeFunction('"use strict";' + programSrc);
-      } catch (err) {
-        // debugger; // Useful for debugging -- to look at programSrc
-        throw err;
-      }
-    }
-
-    /**
      * Fails if {@code exprSource} does not parse as a strict
      * Expression production.
      *
      * <p>To verify that exprSrc parses as a strict Expression, we
      * verify that, when surrounded by parens and followed by ";", it
-     * parses as a strict Program, and that when surrounded with
-     * double parens it still parses as a strict Program. We place a
-     * newline before the terminal token so that a "//" comment
-     * cannot suppress the close paren or parens.
+     * parses as a strict FunctionBody, and that when surrounded with
+     * double parens it still parses as a strict FunctionBody. We
+     * place a newline before the terminal token so that a "//"
+     * comment cannot suppress the close paren or parens.
+     *
+     * <p>We never check without parens because not all
+     * expressions, for example "function(){}", form valid expression
+     * statements. We check both single and double parens so there's
+     * no exprSrc text which can close the left paren(s), do
+     * something, and then provide open paren(s) to balance the final
+     * close paren(s). No one such attack will survive both tests.
      */
     function verifyStrictExpression(exprSrc) {
-      verifyStrictProgram('( ' + exprSrc + '\n);');
-      verifyStrictProgram('(( ' + exprSrc + '\n));');
+      ses.verifyStrictFunctionBody('( ' + exprSrc + '\n);');
+      ses.verifyStrictFunctionBody('(( ' + exprSrc + '\n));');
     }
 
     /**
@@ -790,8 +769,8 @@ ses.startSES = function(global,
      *     cases. This is a less correct but faster alternative to
      *     rewriteTypeOf that also works when source mitigations are
      *     not available.
-     * <li>parseProgram: check the program is syntactically
-     *     valid.
+     * <li>parseFunctionBody: check the src is syntactically
+     *     valid as a function body.
      * <li>rewriteTopLevelVars: transform vars to properties of global
      *     object. Defaults to true.
      * <li>rewriteTopLevelFuncs: transform funcs to properties of
@@ -807,12 +786,6 @@ ses.startSES = function(global,
      *     is false. If omitted, it defaults to the opposite of
      *     maskReferenceError.
      * </ul>
-     *
-     * <p>Currently for security, parseProgram is always true and
-     * cannot be unset because of the <a href=
-     * "https://code.google.com/p/v8/issues/detail?id=2470"
-     * >Function constructor bug</a>. TODO(jasvir): On platforms not
-     * suffering from this bug, parseProgram should default to false.
      *
      * <p>When SES is provided primitively, it should provide an
      * analogous {@code compileProgram} function that accepts a
@@ -963,6 +936,7 @@ ses.startSES = function(global,
       params = params.join(',');
       // Note the EOL after modSrc to prevent trailing line comment in body
       // eliding the rest of the wrapper.
+      ses.verifyStrictFunctionBody(body);
       var exprSrc = '(function(' + params + '\n){' + body + '\n})';
       return compileExpr(exprSrc)(sharedImports);
     }

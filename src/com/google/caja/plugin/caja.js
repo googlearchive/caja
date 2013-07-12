@@ -452,9 +452,15 @@ var caja = (function () {
           'ARRAYS_MODIFY_READONLY': { 'permit': true },
 
           // safe given that we use exactly one SES frame
-          'FREEZE_IS_FRAME_DEPENDENT': { 'permit': true }
+          'FREEZE_IS_FRAME_DEPENDENT': { 'permit': true },
+          'SYNTAX_ERRORS_ARENT_ALWAYS_EARLY': { 'permit': true }
         };
       }
+      ses['mitigateSrcGotchas'] = function() {
+        throw new EvalError('This function is a placeholder that should ' +
+                            'have been replaced by the real ' +
+                            'ses.mitigateSrcGotchas.');
+      };
     }
 
     var sesMaker = makeFrameMaker(config, 'ses-single-frame', frameInit);
