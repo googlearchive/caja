@@ -24,7 +24,7 @@
 var StringMap;
 
 (function() {
-   "use strict";
+   'use strict';
 
    var create = Object.create;
    var freeze = Object.freeze;
@@ -41,9 +41,12 @@ var StringMap;
    }
 
    var createNull;
-   if (((ses.es5ProblemReports || {}).FREEZING_BREAKS_PROTOTYPES || {})
-       .beforeFailure) {
-     // Object.create(null) is broken; fall back to ES3-style implementation
+
+   if (typeof ses === 'undefined' ||
+       !ses.ok() ||
+       ses.es5ProblemReports.FREEZING_BREAKS_PROTOTYPES.beforeFailure) {
+
+     // Object.create(null) may be broken; fall back to ES3-style implementation
      // (safe because we suffix keys anyway).
      createNull = function() { return {}; };
    } else {

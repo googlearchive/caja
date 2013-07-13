@@ -95,7 +95,7 @@ var ses;
            ssts.set(err, sst);
          }
          // Technically redundant, but prepareStackTrace is supposed
-         // to return a value, so this make it clearer that this value
+         // to return a value, so this makes it clearer that this value
          // is undefined (void 0).
          return void 0;
        };

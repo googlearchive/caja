@@ -53,15 +53,13 @@ var ses;
     * be one that sends the expression back up the server to be
     * cajoled.
     */
-   function compileExprLaterFallback(exprSrc,
-                                     opt_mitigateOpts,
-                                     opt_sourcePosition) {
+   function compileExprLaterFallback(exprSrc, opt_mitigateOpts) {
      // Coercing an object to a string may observably run code, so do
      // this now rather than in any later turn.
      exprSrc = ''+exprSrc;
 
      return Q(cajaVM).send('compileExpr',
-                           exprSrc, opt_mitigateOpts, opt_sourcePosition);
+                           exprSrc, opt_mitigateOpts);
    }
 
    if (typeof document === 'undefined') {
@@ -87,14 +85,14 @@ var ses;
    /**
     * Implements an eventual compileExpr using injected script tags
     */
-   function compileLaterInScript(exprSrc, opt_mitigateOpts, opt_sourceUrl) {
+   function compileLaterInScript(exprSrc, opt_mitigateOpts) {
 
      var result = Q.defer();
 
      // The portion of the pattern in compileExpr which is appropriate
      // here as well.
      var options = ses.resolveOptions(opt_mitigateOpts);
-     var wrapperSrc = ses.securableWrapperSrc(exprSrc, opt_sourceUrl);
+     var wrapperSrc = ses.securableWrapperSrc(exprSrc);
      var freeNames = ses.atLeastFreeVarNames(exprSrc);
 
      var head = document.getElementsByTagName("head")[0];
@@ -110,10 +108,10 @@ var ses;
          '["' + freeNames.join('", "') + '"], ' +
          JSON.stringify(options) + ')));';
 
-     if (opt_sourceUrl) {
+     if (options.sourceUrl === void 0) {
        // See http://code.google.com/p/google-caja/wiki/SES#typeof_variable
        if (typeof global.URI !== 'undefined' && URI.parse) {
-         var parsed = URI.parse(String(opt_sourceUrl));
+         var parsed = URI.parse(String(options.sourceUrl));
          parsed = null === parsed ? null : parsed.toString();
 
          // Note we could try to encode these characters or search specifically

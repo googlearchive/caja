@@ -3469,7 +3469,7 @@ var ses;
       urls: [],
       sections: ['15.2.3.4'],
       tests: ['15.2.3.4-0-1']
-    },
+    }
   ];
 
   /**
@@ -3689,7 +3689,8 @@ var ses;
       preSeverity: severities.SAFE_SPEC_VIOLATION,
       canRepair: true,
       urls: ['http://code.google.com/p/v8/issues/detail?id=2273',
-          'https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Array/forEach'],
+             'https://developer.mozilla.org/en-US/docs/JavaScript/' +
+               'Reference/Global_Objects/Array/forEach'],
       sections: ['15.4.4.18'],
       tests: []
     },
@@ -4110,7 +4111,8 @@ var ses;
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
       canRepair: false,  // repair is useful but inadequate
       urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=784892',
-             'https://bugzilla.mozilla.org/show_bug.cgi?id=674195'],
+             'https://bugzilla.mozilla.org/show_bug.cgi?id=674195',
+             'https://bugzilla.mozilla.org/show_bug.cgi?id=789897'],
       sections: [],
       tests: []
     },
@@ -4174,7 +4176,7 @@ var ses;
       preSeverity: severities.SAFE_SPEC_VIOLATION,
       canRepair: false,
       urls: ['https://code.google.com/p/v8/issues/detail?id=1310',
-             'https://mail.mozilla.org/pipermail/es-discuss/2013-March/029177.html'],
+        'https://mail.mozilla.org/pipermail/es-discuss/2013-March/029177.html'],
       sections: [],  // Not spelled out in spec, according to Brendan Eich (see
                      // es-discuss link)
       tests: []  // TODO(kpreid): add to test262 once we have a section to cite

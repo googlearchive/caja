@@ -22,9 +22,13 @@
  * implementation where the {@code WeakMap} specification does not
  * quite conform, run <code>repairES5.js</code> first.
  *
+ * <p> Even though WeakMapModule is not global, the linter thinks it
+ * is, which is why it is in the overrides list below.
+ *
  * @author Mark S. Miller
  * @requires crypto, ArrayBuffer, Uint8Array, navigator
  * @overrides WeakMap, ses, Proxy
+ * @overrides WeakMapModule
  */
 
 /**

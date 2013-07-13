@@ -125,7 +125,7 @@
          cajaVM.def(imports);
 
          var compiledExprP = compileExprLater(
-           '(function(){' + src + '})()', void 0, id);
+           '(function(){' + src + '})()', { sourceUrl: id });
          return Q(compiledExprP).then(function(compiledExpr) {
 
            compiledExpr(imports);

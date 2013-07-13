@@ -165,7 +165,7 @@ var cajaVM;
  *        {@code global} is the global object of <i>this</i>
  *        frame. The code should be made to work for cross-frame use.
  * @param whitelist ::Record(Permit) where Permit = true | "*" |
- *        "skip" | Record(Permit).  Describes the subset of naming
+ *        Record(Permit).  Describes the subset of naming
  *        paths starting from {@code sharedImports} that should be
  *        accessible. The <i>accessible primordials</i> are all values
  *        found by navigating these paths starting from {@code
@@ -288,6 +288,14 @@ ses.startSES = function(global,
    * options and their effects.
    */
   function resolveOptions(opt_mitigateOpts) {
+    if (typeof opt_mitigateOpts === 'string') {
+      // TODO: transient deprecated adaptor only, since there used to
+      // be an opt_sourceUrl parameter in many of the parameter
+      // positions now accepting an opt_mitigateOpts. Once we are
+      // confident that we no longer have live clients that count on
+      // the  old behavior, remove this kludge.
+      opt_mitigateOpts = { sourceUrl: opt_mitigateOpts };
+    }
     function resolve(opt, defaultOption) {
       return (opt_mitigateOpts && opt in opt_mitigateOpts) ?
         opt_mitigateOpts[opt] : defaultOption;
@@ -296,6 +304,7 @@ ses.startSES = function(global,
     if (opt_mitigateOpts === undefined || opt_mitigateOpts === null) {
       options.maskReferenceError = true;
       options.parseFunctionBody = true;
+      options.sourceUrl = void 0;
 
       options.rewriteTopLevelVars = true;
       options.rewriteTopLevelFuncs = true;
@@ -305,6 +314,7 @@ ses.startSES = function(global,
     } else {
       options.maskReferenceError = resolve('maskReferenceError', true);
       options.parseFunctionBody = resolve('parseFunctionBody', false);
+      options.sourceUrl = resolve('sourceUrl', void 0);
 
       options.rewriteTopLevelVars = resolve('rewriteTopLevelVars', true);
       options.rewriteTopLevelFuncs = resolve('rewriteTopLevelFuncs', true);
@@ -695,13 +705,8 @@ ses.startSES = function(global,
      *     accurate wrt the original source text, and except for the
      *     first line, all the column numbers are accurate too.
      * </ul>
-     *
-     * <p>TODO(erights): Find out if any platforms have any way to
-     * associate a file name and line number with eval'ed text, so
-     * that we can do something useful with the optional {@code
-     * opt_sourcePosition} to better support debugging.
      */
-    function securableWrapperSrc(exprSrc, opt_sourcePosition) {
+    function securableWrapperSrc(exprSrc) {
       verifyStrictExpression(exprSrc);
 
       return '(function() { ' +
@@ -799,7 +804,7 @@ ses.startSES = function(global,
      * {@code with} together with RegExp matching to intercept free
      * variable access without parsing.
      */
-    function compileExpr(src, opt_mitigateOpts, opt_sourcePosition) {
+    function compileExpr(src, opt_mitigateOpts) {
       // Force src to be parsed as an expr
       var exprSrc = '(' + src + '\n)';
 
@@ -811,7 +816,7 @@ ses.startSES = function(global,
       if (exprSrc[exprSrc.length - 1] === ';') {
         exprSrc = exprSrc.substr(0, exprSrc.length - 1);
       }
-      var wrapperSrc = securableWrapperSrc(exprSrc, opt_sourcePosition);
+      var wrapperSrc = securableWrapperSrc(exprSrc);
       var wrapper = unsafeEval(wrapperSrc);
       var freeNames = atLeastFreeVarNames(exprSrc);
       var result = makeCompiledExpr(wrapper, freeNames, options);
@@ -829,13 +834,13 @@ ses.startSES = function(global,
      * endowments are the only source of eval-time abilities for the
      * expr to cause effects.
      */
-    function confine(exprSrc, opt_endowments, opt_sourcePosition) {
+    function confine(exprSrc, opt_endowments, opt_mitigateOpts) {
       var imports = makeImports();
       if (opt_endowments) {
         copyToImports(imports, opt_endowments);
       }
       def(imports);
-      return compileExpr(exprSrc, opt_sourcePosition)(imports);
+      return compileExpr(exprSrc, opt_mitigateOpts)(imports);
     }
 
 
@@ -900,7 +905,7 @@ ses.startSES = function(global,
      * {@code getRequirements} above would also have to extract these
      * from the text to be compiled.
      */
-    function compileModule(modSrc, opt_mitigateOpts, opt_sourcePosition) {
+    function compileModule(modSrc, opt_mitigateOpts) {
       // Note the EOL after modSrc to prevent trailing line comment in modSrc
       // eliding the rest of the wrapper.
       var options = resolveOptions(opt_mitigateOpts);
@@ -912,7 +917,7 @@ ses.startSES = function(global,
           mitigateSrcGotchas(modSrc, options) +
           '\n}).call(this)';
       // Follow the pattern in compileExpr
-      var wrapperSrc = securableWrapperSrc(exprSrc, opt_sourcePosition);
+      var wrapperSrc = securableWrapperSrc(exprSrc);
       var wrapper = unsafeEval(wrapperSrc);
       var freeNames = atLeastFreeVarNames(exprSrc);
       var moduleMaker = makeCompiledExpr(wrapper, freeNames, options);
@@ -1364,8 +1369,8 @@ ses.startSES = function(global,
    * cleaned.
    *
    * We initialize the whiteTable only so that {@code getPermit} can
-   * process "*" and "skip" inheritance using the whitelist, by
-   * walking actual superclass chains.
+   * process "*" inheritance using the whitelist, by walking actual
+   * superclass chains.
    */
   var whiteTable = WeakMap();
   function register(value, permit) {
@@ -1379,10 +1384,8 @@ ses.startSES = function(global,
     }
     whiteTable.set(value, permit);
     keys(permit).forEach(function(name) {
-      if (permit[name] !== 'skip') {
-        var sub = value[name];
-        register(sub, permit[name]);
-      }
+      var sub = value[name];
+      register(sub, permit[name]);
     });
   }
   register(sharedImports, whitelist);
@@ -1392,7 +1395,7 @@ ses.startSES = function(global,
    * {@code base} object, and if so, with what Permit?
    *
    * <p>If it should be permitted, return the Permit (where Permit =
-   * true | "*" | "skip" | Record(Permit)), all of which are
+   * true | "*" | Record(Permit)), all of which are
    * truthy. If it should not be permitted, return false.
    */
   function getPermit(base, name) {
@@ -1406,7 +1409,7 @@ ses.startSES = function(global,
       permit = whiteTable.get(base);
       if (permit && hop.call(permit, name)) {
         var result = permit[name];
-        if (result === '*' || result === 'skip') {
+        if (result === '*') {
           return result;
         } else {
           return false;
@@ -1557,13 +1560,8 @@ ses.startSES = function(global,
       var path = prefix + (prefix ? '.' : '') + name;
       var p = getPermit(value, name);
       if (p) {
-        if (p === 'skip') {
-          reportProperty(ses.severities.SAFE,
-                         'Skipped', path);
-        } else {
-          var sub = value[name];
-          clean(sub, path);
-        }
+        var sub = value[name];
+        clean(sub, path);
       } else {
         cleanProperty(value, name, path);
       }
@@ -1572,11 +1570,10 @@ ses.startSES = function(global,
   clean(sharedImports, '');
 
   // es5ProblemReports has a 'dynamic' set of keys, and the whitelist mechanism
-  // does not support this (it only has 'skip', which is intended as a
-  // workaround and logged as such), so as a kludge we insert it after cleaning
+  // does not support this, so as a kludge we insert it after cleaning
   // and before defending. TODO(kpreid): Figure out a proper workaround. Perhaps
   // add another type of whitelisting (say a wildcard property name, or
-  // 'recursively JSON', or a non-warning 'skip')?
+  // 'recursively JSON')?
   cajaVM.es5ProblemReports = ses.es5ProblemReports;
 
   // This protection is now gathered here, so that a future version

@@ -106,13 +106,13 @@ var ses;
         return '\\u' + ('0000' + u.charCodeAt(0).toString(16)).slice(-4);
       });
     return { programSrc: programSrc };
-  }
+  };
 
   /**
    * Return a regexp that can be used repeatedly to scan for the next
    * identifier. It works correctly in concert with ses.limitSrcCharset above.
    *
-   * If this regexp is changed compileExprLater.js should be checked for
+   * If this regexp is changed, compileExprLater.js should be checked for
    * correct escaping of freeNames.
    */
   function SHOULD_MATCH_IDENTIFIER() {
@@ -125,11 +125,11 @@ var ses;
 
   ses.atLeastFreeVarNames = function atLeastFreeVarNames(programSrc) {
     programSrc = ''+programSrc;
-    var result = ses.limitSrcCharset(programSrc);
-    if (!('programSrc' in result)) {
-      throw new EvalError(result.error);
+    var limited = ses.limitSrcCharset(programSrc);
+    if (!('programSrc' in limited)) {
+      throw new EvalError(limited.error);
     } else {
-      programSrc = result.programSrc;
+      programSrc = limited.programSrc;
     }
     // Now that we've temporarily limited our attention to ascii...
     var regexp = SHOULD_MATCH_IDENTIFIER();

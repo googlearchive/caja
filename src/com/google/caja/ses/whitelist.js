@@ -60,20 +60,7 @@ var ses;
  *     of these is tamed as if with true, so that the value of the
  *     property is further tamed according to what other objects it
  *     inherits from.
- * <li>"skip", in which case this property on this object is simply
- *     whitelisted, as is this property as inherited by all objects
- *     that inherit from this object, but we avoid taming the value
- *     associated with that property. For example, as of this writing
- *     {@code "Function.prototype.caller"} leads to "skip" because
- *     some current browser bugs prevent us from removing or even
- *     traversing this property on some platforms of interest.
  * </ul>
- *
- * The "skip" markings are workarounds for browser bugs or other
- * temporary problems. For each of these, there should be an
- * explanatory comment explaining why or a bug citation. Ideally, we
- * can retire all "skip" entries by the time SES is ready for secure
- * production use.
  *
  * The members of the whitelist are either
  * <ul>
@@ -91,7 +78,6 @@ var ses;
  *     page are <b>not harmless</b> and so must not be whitelisted.
  * <li>(ES-Harmony proposal) accepted as "proposal" status for
  *     EcmaScript-Harmony.
- * <li>(Marked as "skip") See above.
  * </ul>
  *
  * <p>With the above encoding, there are some sensible whitelists we
@@ -266,9 +252,7 @@ var ses;
         filter: t,
         reduce: t,
         reduceRight: t,
-        length: 'skip'               // can't be redefined on Mozilla
-        // See https://bugzilla.mozilla.org/show_bug.cgi?id=591059
-        // and https://bugzilla.mozilla.org/show_bug.cgi?id=598996
+        length: t
       },
       isArray: t
     },
