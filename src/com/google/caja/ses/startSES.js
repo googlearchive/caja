@@ -495,7 +495,19 @@ ses.startSES = function(global,
   // we make the global object be the Window which inherits Object.prototype,
   // and is not a security risk since the properties are ambiently available.
 
-  var MAX_NAT = Math.pow(2, 53);
+  var MAX_NAT = Math.pow(2, 53) - 1;
+
+  /**
+   * Is allegenNum a number in the contiguous range of exactly and
+   * unambiguously representable natural numbers (non-negative integers)?
+   *
+   * <p>See <a href=
+   * "https://code.google.com/p/google-caja/issues/detail?id=1801"
+   * >Issue 1801: Nat must include at most (2**53)-1</a>
+   * and <a href=
+   * "https://mail.mozilla.org/pipermail/es-discuss/2013-July/031716.html"
+   * >Allen Wirfs-Brock's suggested phrasing</a> on es-discuss.
+   */
   function Nat(allegedNum) {
     if (typeof allegedNum !== 'number') {
       throw new RangeError('not a number');
