@@ -148,15 +148,15 @@ public final class Sets {
     }
   }
 
-  public static <E> Set<E> immutableSet(Collection<E> elements) {
+  public static <E> Set<E> immutableSet(Collection<? extends E> elements) {
     switch (elements.size()) {
       case 0: return Collections.emptySet();
-      case 1: return Collections.singleton(elements.iterator().next());
+      case 1: return Collections.<E>singleton(elements.iterator().next());
       default: return Collections.unmodifiableSet(newLinkedHashSet(elements));
     }
   }
 
-  public static <E> Set<E> immutableSet(Iterable<E> elements) {
+  public static <E> Set<E> immutableSet(Iterable<? extends E> elements) {
     return Collections.unmodifiableSet(newLinkedHashSet(elements));
   }
 

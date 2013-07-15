@@ -123,7 +123,7 @@ public abstract class CssPropertySignature implements ParseTreeNode {
 
   /** A signature that matches one of its children. */
   public static class SetSignature extends CssPropertySignature {
-    private SetSignature(List<CssPropertySignature> alternatives) {
+    public SetSignature(List<CssPropertySignature> alternatives) {
       super(alternatives);
     }
 
@@ -172,7 +172,7 @@ public abstract class CssPropertySignature implements ParseTreeNode {
 
   /** A signature that matches its children in order. */
   public static final class SeriesSignature extends CssPropertySignature {
-    private SeriesSignature(List<CssPropertySignature> children) {
+    private SeriesSignature(List<? extends CssPropertySignature> children) {
       super(children);
     }
     public Object getValue() { return null; }
@@ -273,6 +273,24 @@ public abstract class CssPropertySignature implements ParseTreeNode {
       super(children);
     }
     public Object getValue() { return null; }
+
+    public String getName() {
+      CssPropertySignature name = children().get(0);
+      if (name instanceof CssPropertySignature.LiteralSignature) {
+        return ((CssPropertySignature.LiteralSignature) name).getValue();
+      }
+      return null;
+    }
+
+    public CssPropertySignature getArgumentsSignature() {
+      List<? extends CssPropertySignature> children = children();
+      // The first is the name, the following ones match the argument list
+      // excluding parentheses.
+      if (children.size() == 2) {
+        return children.get(1);
+      }
+      return new SeriesSignature(children.subList(1, children.size()));
+    }
 
     public void render(RenderContext r) {
       TokenConsumer out = r.getOut();

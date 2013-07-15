@@ -40,8 +40,10 @@ public class Bag<T> {
 
   private Bag(Map<T, Integer> counts) { this.counts = counts; }
 
+  /** Adds 1 to the count for k and returns the count prior to addition. */
   public int incr(T k) { return incr(k, 1); }
 
+  /** Adds delta to the count for k and returns the count prior to addition. */
   public int incr(T k, int delta) {
     Integer i = counts.get(k);
     if (i == null) { i = 0; }

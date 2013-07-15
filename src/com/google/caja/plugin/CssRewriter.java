@@ -36,13 +36,12 @@ import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Name;
 import com.google.caja.util.Pair;
-import com.google.caja.util.Sets;
+import com.google.caja.util.TypesafeSet;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -143,7 +142,7 @@ public final class CssRewriter {
    *   </ul>
    * </blockquote>
    */
-  private static final Set<Name> LINK_PSEUDO_CLASSES = Sets.immutableSet(
+  private static final TypesafeSet<Name> LINK_PSEUDO_CLASSES = TypesafeSet.of(
       Name.css("link"), Name.css("visited"));
 
   /**
@@ -600,7 +599,7 @@ public final class CssRewriter {
     });
   }
 
-  private static final Set<Name> ALLOWED_PSEUDO_CLASSES = Sets.immutableSet(
+  private static final TypesafeSet<Name> ALLOWED_PSEUDO_CLASSES =TypesafeSet.of(
       Name.css("active"), Name.css("after"), Name.css("before"),
       Name.css("first-child"), Name.css("first-letter"), Name.css("focus"),
       Name.css("link"), Name.css("hover"));
@@ -873,7 +872,7 @@ public final class CssRewriter {
   private boolean strippedPropertiesBannedInLinkClasses(
       AncestorChain<CssTree.Selector> sel) {
     if (!(sel.parent.node instanceof CssTree.RuleSet)) { return false; }
-    Set<Name> propertyNames
+    TypesafeSet<Name> propertyNames
         = LinkStyleWhitelist.PROPERTIES_ALLOWED_IN_LINK_CLASSES;
     CssTree.RuleSet rs = sel.parent.cast(CssTree.RuleSet.class).node;
     MutableParseTreeNode.Mutation mut = rs.createMutation();

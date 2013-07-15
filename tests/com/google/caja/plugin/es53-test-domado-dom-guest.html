@@ -3197,33 +3197,7 @@ Test row cell
     pass('testUnknownElements');
   });
 </script>
-
-<div id="testZIndex" class="testcontainer"></div>
-<script type="text/javascript">
-  jsunitRegister('testZIndex',
-                 function testZIndex() {
-    document.getElementById("testZIndex").innerHTML =
-      "<div id='testZIndex-div' style='z-index:-9999999;'></div>";
-    assertNotEquals("keep-", "", document.getElementById("testZIndex-div")
-        .getAttribute("style"));
-    document.getElementById("testZIndex").innerHTML =
-        "<div id='testZIndex-div' style='z-index:9999999;'></div>";
-    assertNotEquals("keep+", "", document.getElementById("testZIndex-div")
-        .getAttribute("style"));
-
-    // Out-of-range values should be stripped
-    document.getElementById("testZIndex").innerHTML =
-      "<div id='testZIndex-div' style='z-index:-10000000;'></div>";
-    assertEquals("strip-", "", document.getElementById("testZIndex-div")
-        .getAttribute("style"));
-    document.getElementById("testZIndex").innerHTML =
-      "<div id='testZIndex-div' style='z-index:10000000;'></div>";
-    assertEquals("strip+", "", document.getElementById("testZIndex-div")
-        .getAttribute("style"));
-    pass('testZIndex');
-  });
-</script>
-
+      
 <div class="testcontainer" id="testNoembed">
  <noembed><script>window['testNoembedFail'] = true;</script></noembed>
 </div>

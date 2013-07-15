@@ -20,21 +20,32 @@ package com.google.caja.lang.css;
  * @author Mike Samuel <mikesamuel@gmail.com>
  */
 public enum CssPropBit {
+  /** Are non-negative numeric quantities allowed? */
   QUANTITY(1),
+  /** Are hash color literals allowed. */
   HASH_VALUE(2),
+  /** Are negative numeric quantities allowed? */
   NEGATIVE_QUANTITY(4),
-  QSTRING_CONTENT(8),
-  QSTRING_URL(16),
+  /** Are quoted strings allowed. */
+  QSTRING(8),
+  /** Are URLs allowed. */
+  URL(16),
   /**
    * Allowed to be read via computed style directly without computing the style
    * as if the link were not visited.
    */
   HISTORY_INSENSITIVE(32),
-  Z_INDEX(64),
+  /**
+   * Can identifiers that are not reserved words be treated as their literal
+   * text instead of being treated as symbols.
+   */
+  UNRESERVED_WORD(64),
+  /** Are unicode ranges allowed? */
+  UNICODE_RANGE(128),
   /**
    * Allowed to be specified in a history-sensitive manner in a CSS stylesheet.
    */
-  ALLOWED_IN_LINK(128),
+  ALLOWED_IN_LINK(256),
   ;
 
   /** a single bit. */

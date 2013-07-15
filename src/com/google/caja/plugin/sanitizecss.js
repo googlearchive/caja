@@ -22,10 +22,10 @@
  * \@requires CSS_PROP_BIT_ALLOWED_IN_LINK
  * \@requires CSS_PROP_BIT_HASH_VALUE
  * \@requires CSS_PROP_BIT_NEGATIVE_QUANTITY
- * \@requires CSS_PROP_BIT_QSTRING_CONTENT
- * \@requires CSS_PROP_BIT_QSTRING_URL
  * \@requires CSS_PROP_BIT_QUANTITY
- * \@requires CSS_PROP_BIT_Z_INDEX
+ * \@requires CSS_PROP_BIT_QSTRING
+ * \@requires CSS_PROP_BIT_UNRESERVED_WORD
+ * \@requires CSS_PROP_BIT_URL
  * \@requires cssSchema
  * \@requires decodeCss
  * \@requires html4
@@ -110,8 +110,6 @@ var sanitizeStylesheetWithExternals = undefined;
    * Given a series of normalized CSS tokens, applies a property schema, as
    * defined in CssPropertyPatterns.java, and sanitizes the tokens in place.
    * @param property a property name.
-   * @param propertySchema a property of cssSchema as defined by
-   *    CssPropertyPatterns.java
    * @param tokens as parsed by lexCss.  Modified in place.
    * @param opt_naiveUriRewriter a URI rewriter; an object with a "rewrite"
    *     function that takes a URL and returns a safe URL.
@@ -131,49 +129,65 @@ var sanitizeStylesheetWithExternals = undefined;
       return map;
     }
 
-    /**
-     * Normalize tokens within a function call they can match against
-     * cssSchema[propName].cssExtra.
-     * @return the exclusive end in tokens of the function call.
-     */
-    function normalizeFunctionCall(tokens, start) {
-      var parenDepth = 1, end = start + 1, n = tokens.length;
-      while (end < n && parenDepth) {
-        var token = tokens[end++];
-        // Decrement if we see a close parenthesis, and increment if we
-        // see a function.  Since url(...) are whole tokens, they will not
-        // affect the token scanning.
-        parenDepth += (token === ')' ? -1 : /^[^"']*\($/.test(token));
-      }
-      // Allow error-recovery from unclosed functions by ignoring the call and
-      // so allowing resumption at the next ';'.
-      return parenDepth ? start+1 : end;
-    }
-
-    /** Put spaces between tokens, but don't duplicate existing spaces. */
-    function respace(tokens) {
-      var i = 0, j = 0, n = tokens.length, tok;
-      while (i < n) {
-        tok = tokens[i++];
-        if (tok !== ' ') { tokens[j++] = tok; }
-      }
-      tokens.length = j;
-      return tokens.join(' ');
-    }
-
     // Used as map value to avoid hasOwnProperty checks.
     var ALLOWED_LITERAL = {};
 
-    return function (property, propertySchema, tokens,
-      opt_naiveUriRewriter, opt_baseUri) {
+    return function sanitize(property, tokens,
+                             opt_naiveUriRewriter, opt_baseUri) {
+
+      var propertySchema = cssSchema[property];
+
+      // If the property isn't recognized, elide all tokens.
+      if (!propertySchema || 'object' !== typeof propertySchema) {
+        tokens.length = 0;
+        return;
+      }
+
       var propBits = propertySchema.cssPropBits;
+
+      /**
+       * Recurse to 
+       * @return the exclusive end in tokens of the function call.
+       */
+      function sanitizeFunctionCall(tokens, start) {
+        var parenDepth = 1, end = start + 1, n = tokens.length;
+        while (end < n && parenDepth) {
+          var token = tokens[end++];
+          // Decrement if we see a close parenthesis, and increment if we
+          // see a function.  Since url(...) are whole tokens, they will not
+          // affect the token scanning.
+          parenDepth += (token === ')' ? -1 : /^[^"']*\($/.test(token));
+        }
+        // Allow error-recovery from unclosed functions by ignoring the call and
+        // so allowing resumption at the next ';'.
+        if (!parenDepth) {
+          var fnToken = tokens[start];
+          // Cut out the originals, so the caller can step by one token.
+          var fnTokens = tokens.splice(start, end - start, '');
+          var fns = propertySchema.cssFns;
+          // Look for a function that matches the name.
+          for (var i = 0, nFns = fns.length; i < nFns; ++i) {
+            if (fns[i].substring(0, fnToken.length) == fnToken) {
+              fnTokens[0] = fnTokens[fnTokens.length - 1] = '';
+              // Recurse and sanitize the function parameters.
+              sanitize(
+                fns[i],
+                // The actual parameters to the function.
+                fnTokens,
+                opt_naiveUriRewriter, opt_baseUri);
+              // Reconstitute the function from its parameter tokens.
+              return fnToken + fnTokens.join(' ') + ')';
+            }
+          }
+        }
+        return '';
+      }
+
       // Used to determine whether to treat quoted strings as URLs or
       // plain text content, and whether unrecognized keywords can be quoted
-      // to treate ['Arial', 'Black'] equivalently to ['"Arial Black"'].
-      var qstringBits = propBits & (
-          CSS_PROP_BIT_QSTRING_CONTENT | CSS_PROP_BIT_QSTRING_URL);
-      // TODO(mikesamuel): Figure out what to do with props like
-      // content that admit both URLs and strings.
+      // to treat ['Arial', 'Black'] equivalently to ['"Arial Black"'].
+      var stringDisposition =
+        propBits & (CSS_PROP_BIT_URL | CSS_PROP_BIT_UNRESERVED_WORD);
 
       // Used to join unquoted keywords into a single quoted string.
       var lastQuoted = NaN;
@@ -189,25 +203,34 @@ var sanitizeStylesheetWithExternals = undefined;
           // strip them out in case the content doesn't come via cssparser.js.
           (cc === ' '.charCodeAt(0)) ? ''
           : (cc === '"'.charCodeAt(0)) ? (  // Quoted string.
-            (qstringBits === CSS_PROP_BIT_QSTRING_URL && opt_naiveUriRewriter)
-            // Sanitize and convert to url("...") syntax.
-            // Treat url content as case-sensitive.
-            ? (normalizeUrl(safeUri(resolveUri(opt_baseUri,
-                  decodeCss(tokens[i].substring(1, token.length - 1))),
-                  property,
-                  opt_naiveUriRewriter)))
-            // Drop if plain text content strings not allowed.
-            : (qstringBits === CSS_PROP_BIT_QSTRING_CONTENT) ? token : '')
+            (stringDisposition === CSS_PROP_BIT_URL)
+            ? (opt_naiveUriRewriter
+               // Sanitize and convert to url("...") syntax.
+               // Treat url content as case-sensitive.
+               ? (normalizeUrl(
+                   // Rewrite to a safe URI.
+                   safeUri(
+                     // Convert to absolute URL
+                     resolveUri(
+                       opt_baseUri,
+                       // Strip off quotes
+                       decodeCss(tokens[i].substring(1, token.length - 1))),
+                     property,
+                     opt_naiveUriRewriter)))
+              : '')
+            : ((propBits & CSS_PROP_BIT_QSTRING)
+               // Ambiguous when more than one bit set in disposition.
+               && !(stringDisposition & (stringDisposition - 1)))
+            ? token
+            // Drop if quoted strings not allowed.
+            : ''
+          )
           // Preserve hash color literals if allowed.
           : (cc === '#'.charCodeAt(0) && /^#(?:[0-9a-f]{3}){1,2}$/.test(token))
           ? (propBits & CSS_PROP_BIT_HASH_VALUE ? token : '')
           : ('0'.charCodeAt(0) <= cc && cc <= '9'.charCodeAt(0))
           // A number starting with a digit.
-          ? ((propBits & CSS_PROP_BIT_QUANTITY)
-            ? ((propBits & CSS_PROP_BIT_Z_INDEX)
-              ? (token.match(/^\d{1,7}$/) ? token : '')
-              : token)
-            : '')
+          ? ((propBits & CSS_PROP_BIT_QUANTITY) ? token : '')
           // Normalize quantities so they don't start with a '.' or '+' sign and
           // make sure they all have an integer component so can't be confused
           // with a dotted identifier.
@@ -219,70 +242,58 @@ var sanitizeStylesheetWithExternals = undefined;
              // +.5 -> 0.5 if allowed.
              (cc === '+'.charCodeAt(0)
               && (isnum1 || (cc1 === '.'.charCodeAt(0) && isnum2))))
-            ? ((propBits & CSS_PROP_BIT_QUANTITY)
-              ? ((propBits & CSS_PROP_BIT_Z_INDEX)
-                ? (token.match(/^\+\d{1,7}$/) ? token : '')
-                : ((isnum1 ? '' : '0') + token.substring(1)))
-              : '')
+          ? ((propBits & CSS_PROP_BIT_QUANTITY)
+            ? ((isnum1 ? '' : '0') + token.substring(1))
+            : '')
           // -.5 -> -0.5 if allowed otherwise -> 0 if quantities allowed.
           : (cc === '-'.charCodeAt(0)
              && (isnum1 || (cc1 === '.'.charCodeAt(0) && isnum2)))
             ? ((propBits & CSS_PROP_BIT_NEGATIVE_QUANTITY)
-               ? ((propBits & CSS_PROP_BIT_Z_INDEX)
-                 ? (token.match(/^\-\d{1,7}$/) ? token : '')
-                 : ((isnum1 ? '-' : '-0') + token.substring(1)))
+               ? ((isnum1 ? '-' : '-0') + token.substring(1))
                : ((propBits & CSS_PROP_BIT_QUANTITY) ? '0' : ''))
           // .5 -> 0.5 if allowed.
           : (cc === '.'.charCodeAt(0) && isnum1)
           ? ((propBits & CSS_PROP_BIT_QUANTITY) ? '0' + token : '')
           // Handle url("...") by rewriting the body.
           : ('url(' === token.substring(0, 4))
-          ? ((opt_naiveUriRewriter && (qstringBits & CSS_PROP_BIT_QSTRING_URL))
+          ? ((opt_naiveUriRewriter && (propBits & CSS_PROP_BIT_URL))
              ? normalizeUrl(safeUri(resolveUri(opt_baseUri,
                   tokens[i].substring(5, token.length - 2)),
                   property,
                   opt_naiveUriRewriter))
              : '')
-          // Handle func(...) and literal tokens
-          // such as keywords and punctuation.
+          // Handle func(...) by recursing.
+          // Functions start at a token like "name(" and end with a ")" taking
+          // into account nesting.
+          : (token.charAt(token.length-1) === '(')
+          ? sanitizeFunctionCall(tokens, i)
           : (
-            // Step 1. Combine func(...) into something that can be compared
-            // against propertySchema.cssExtra.
-            (token.charAt(token.length-1) === '(')
-            && (end = normalizeFunctionCall(tokens, i),
-                // When tokens is
-                //   ['x', ' ', 'rgb(', '255', ',', '0', ',', '0', ')', ' ', 'y']
-                // and i is the index of 'rgb(' and end is the index of ')'
-                // splices tokens to where i now is the index of the whole call:
-                //   ['x', ' ', 'rgb( 255 , 0 , 0 )', ' ', 'y']
-                tokens.splice(i, end - i,
-                              token = respace(tokens.slice(i, end)))),
             litGroup = propertySchema.cssLitGroup,
             litMap = (litGroup
                       ? (propertySchema.cssLitMap
                          // Lazily compute the union from litGroup.
                          || (propertySchema.cssLitMap = unionArrays(litGroup)))
                       : ALLOWED_LITERAL),  // A convenient empty object.
-            (litMap[token] === ALLOWED_LITERAL
-             || propertySchema.cssExtra && propertySchema.cssExtra.test(token)))
-            // Token is in the literal map or matches extra.
-            ? token
-            : (/^\w+$/.test(token)
-               && (qstringBits === CSS_PROP_BIT_QSTRING_CONTENT))
-            // Quote unrecognized keywords so font names like
-            //    Arial Bold
-            // ->
-            //    "Arial Bold"
-            ? (lastQuoted+1 === k
-               // If the last token was also a keyword that was quoted, then
-               // combine this token into that.
-               ? (tokens[lastQuoted] = (
-                    tokens[lastQuoted].substring(0, tokens[lastQuoted].length-1)
-                    + ' ' + token + '"'),
-                  token = '')
-               : (lastQuoted = k, '"' + token + '"'))
-            // Disallowed.
-            : '');
+            (litMap[token] === ALLOWED_LITERAL))
+          // Token is in the literal map or matches extra.
+          ? token
+          : (/^\w+$/.test(token)
+             && stringDisposition === CSS_PROP_BIT_UNRESERVED_WORD
+             && (propBits & CSS_PROP_BIT_QSTRING))
+          // Quote unrecognized keywords so font names like
+          //    Arial Bold
+          // ->
+          //    "Arial Bold"
+          ? (lastQuoted+1 === k
+             // If the last token was also a keyword that was quoted, then
+             // combine this token into that.
+             ? (tokens[lastQuoted] = (
+                  tokens[lastQuoted].substring(0, tokens[lastQuoted].length-1)
+                  + ' ' + token + '"'),
+                token = '')
+             : (lastQuoted = k, '"' + token + '"'))
+          // Disallowed.
+          : '');
         if (token) {
           tokens[k++] = token;
         }
@@ -816,13 +827,10 @@ var sanitizeStylesheetWithExternals = undefined;
             },
             declaration: function (property, valueArray) {
               if (!elide) {
-                var schema = cssSchema[property];
-                if (schema) {
-                  sanitizeCssProperty(property, schema, valueArray,
-                    naiveUriRewriter, baseUri);
-                  if (valueArray.length) {
-                    safeCss.push(property, ':', valueArray.join(' '), ';');
-                  }
+                sanitizeCssProperty(
+                    property, valueArray, naiveUriRewriter, baseUri);
+                if (valueArray.length) {
+                  safeCss.push(property, ':', valueArray.join(' '), ';');
                 }
               }
             }

@@ -1078,6 +1078,10 @@ var Domado = (function() {
     var cssPropertyNames = {};
 
     for (var cssPropertyName in cssSchema) {
+      if (cssPropertyName.indexOf('(') >= 0) {
+        // Don't create properties for CSS functions like "rgb()".
+        continue;
+      }
       var baseStylePropertyName = cssPropertyName.replace(
           /-([a-z])/g, function (_, letter) { return letter.toUpperCase(); });
       var canonStylePropertyName = baseStylePropertyName;
@@ -1958,14 +1962,9 @@ var Domado = (function() {
        *    {@code "font-family"} not {@code "fontFamily"}.
        */
       function sanitizeStyleProperty(cssPropertyName, tokens) {
-        var schema = cssSchema[cssPropertyName];
-        if (!schema) {
-          tokens.length = 0;
-          return false;
-        }
         sanitizeCssProperty(
             cssPropertyName,
-            schema, tokens,
+            tokens,
             uriRewriterForCss,
             domicile.pseudoLocation.href);
         return tokens.length !== 0;
@@ -4580,10 +4579,9 @@ var Domado = (function() {
             if (tok !== ' ') { tokens[k++] = tok; }
           }
           tokens.length = k;
-          // sanitizeCssProperty always lowercases
+          // sanitizeCssProperty lowercases non-URL/content-string tokens.
           var unfiltered = tokens.join(' ').toLowerCase();
-          sanitizeCssProperty(cssPropertyName,
-                              cssSchema[cssPropertyName], tokens);
+          sanitizeCssProperty(cssPropertyName, tokens);
           return unfiltered === tokens.join(' ') ? unfiltered : false;
         }
 

@@ -4,6 +4,7 @@ import java.util.Set;
 
 import com.google.caja.util.Name;
 import com.google.caja.util.Sets;
+import com.google.caja.util.TypesafeSet;
 
 public class LinkStyleWhitelist {
   /**
@@ -17,8 +18,8 @@ public class LinkStyleWhitelist {
    * user's history as described at
    * https://bugzilla.mozilla.org/show_bug.cgi?id=147777 .
    */
-  public static Set<Name> HISTORY_INSENSITIVE_STYLE_WHITELIST
-      = Sets.immutableSet(
+  public static TypesafeSet<Name> HISTORY_INSENSITIVE_STYLE_WHITELIST
+      = TypesafeSet.of(
           Name.css("display"), Name.css("filter"), Name.css("float"),
           Name.css("height"), Name.css("left"), Name.css("opacity"),
           Name.css("overflow"), Name.css("position"), Name.css("right"),
@@ -29,7 +30,7 @@ public class LinkStyleWhitelist {
   /**
    * Allowed to be specified in a history-sensitive manner in a CSS stylesheet.
    */
-  public static final Set<Name> PROPERTIES_ALLOWED_IN_LINK_CLASSES;
+  public static final TypesafeSet<Name> PROPERTIES_ALLOWED_IN_LINK_CLASSES;
   static {
     Set<Name> propNames = Sets.newHashSet(
         Name.css("background-color"), Name.css("color"), Name.css("cursor"));
@@ -40,7 +41,7 @@ public class LinkStyleWhitelist {
     // of names, but since removeAll takes a Collection<?> it would fail
     // silently if the whitelist were changed to a Collection<String>.
     // Assigning to a local does type-check though.
-    propNames.removeAll(HISTORY_INSENSITIVE_STYLE_WHITELIST);
-    PROPERTIES_ALLOWED_IN_LINK_CLASSES = Sets.immutableSet(propNames);
+    propNames.removeAll(HISTORY_INSENSITIVE_STYLE_WHITELIST.asSet());
+    PROPERTIES_ALLOWED_IN_LINK_CLASSES = TypesafeSet.of(propNames);
   }
 }

@@ -30,7 +30,8 @@ jsunitRegister('testStyleBlock',
 
 jsunitRegister('testIllegalInlineStyle',
                function testIllegalInlineStyle() {
-  assertEquals('<p style="width: ">Hello world</p>',
+  assertEquals(
+    '<p>Hello world</p>',
     html.sanitize('<p style="width:expression(alert(1))">Hello world</p>'));
   jsunit.pass();
 });
@@ -47,12 +48,12 @@ jsunitRegister('testUriInlineStyle',
 jsunitRegister('testWeakUriRewriter',
                function testWeakUriRewriter() {
   assertEquals(
-      '<div style="background: "></div>',
+      '<div></div>',
       html_sanitize(
           '<div style="background: url(javascript:1)"></div>',
           function (uri) { return uri; }));
   assertEquals(
-      '<div style="background: "></div>',
+      '<div></div>',
       html_sanitize(
           '<div style="background: url(invalid:1)"></div>',
           function (uri) { return uri; }));

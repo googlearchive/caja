@@ -352,7 +352,7 @@ var html = (function(html4) {
           }
           break;
         case '<\/':
-          if (m = /^([-\w:]+)[^\'\"]*/.exec(next)) {
+          if ((m = /^([-\w:]+)[^\'\"]*/.exec(next))) {
             if (m[0].length === next.length && parts[pos + 1] === '>') {
               // fast case, no attribute parsing needed
               pos += 2;
@@ -902,12 +902,8 @@ var html = (function(html4) {
                 {
                   declaration: function (property, tokens) {
                     var normProp = property.toLowerCase();
-                    var schema = cssSchema[normProp];
-                    if (!schema) {
-                      return;
-                    }
                     sanitizeCssProperty(
-                        normProp, schema, tokens,
+                        normProp, tokens,
                         opt_naiveUriRewriter
                         ? function (url) {
                             return safeUri(
@@ -919,7 +915,10 @@ var html = (function(html4) {
                                 }, opt_naiveUriRewriter);
                           }
                         : null);
-                    sanitizedDeclarations.push(property + ': ' + tokens.join(' '));
+                    if (tokens.length) {
+                      sanitizedDeclarations.push(
+                          property + ': ' + tokens.join(' '));
+                    }
                   }
                 });
             value = sanitizedDeclarations.length > 0 ?

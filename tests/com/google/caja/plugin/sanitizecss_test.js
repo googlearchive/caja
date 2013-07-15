@@ -30,7 +30,7 @@ function assertSelector(
 
 function assertProperty(propName, source, expected) {
   var tokens = lexCss(source);
-  sanitizeCssProperty(propName, cssSchema[propName], tokens);
+  sanitizeCssProperty(propName, tokens);
   assertEquals(expected, tokens.join(' '));
 }
 
@@ -39,7 +39,7 @@ jsunitRegister('testFontFamily',
   var tokens = ['Arial', ' ', 'Black', ',', 'monospace', ',',
                 'expression(', 'return', ' ', '"pwned"', ')', ',', 'Helvetica',
                 ' ', '#88ff88'];
-  sanitizeCssProperty('font', cssSchema['font'], tokens);
+  sanitizeCssProperty('font', tokens);
   // Arial Black is quoted to prevent conflation with an unknown keyword.
   // Black is a valid keyword, but for color, not font.
   // monospace is a valid keyword for font so is not quoted.
@@ -68,7 +68,7 @@ jsunitRegister('testBackground',
   var tokens;
   tokens = ['bogus', ' ', '"foo.png"', ' ', 'transparent', ' ', '/',
             'URL("Bar.png")'];
-  sanitizeCssProperty('background', cssSchema['background'], tokens, sanitizeUrl);
+  sanitizeCssProperty('background', tokens, sanitizeUrl);
   assertEquals(
       'url(\"proxy?url=foo.png\") transparent / url(\"proxy?url=Bar.png\")',
       tokens.join(' '));
@@ -76,12 +76,12 @@ jsunitRegister('testBackground',
   // Without any URL sanitizer.
   tokens = ['bogus', ' ', '"foo.png"', ' ', 'transparent', ' ', '/',
             'url("Bar.png")'];
-  sanitizeCssProperty('background', cssSchema['background'], tokens);
+  sanitizeCssProperty('background', tokens);
   assertEquals('transparent /', tokens.join(' '));
 
   tokens = ['/', '*', '"/*zoicks*/"', ' ',
             '"\') url(\\22javascript:alert(1337)\")\"', '"</style>"'];
-  sanitizeCssProperty('background', cssSchema['background'], tokens, sanitizeUrl);
+  sanitizeCssProperty('background', tokens, sanitizeUrl);
   assertEquals(
     '/ url(\"proxy?url=%2F%2azoicks%2a%2F\")'
     + ' url(\"proxy?url=%27%29%20url%28%22javascript%3Aalert%281337%29%22%29\")'
@@ -91,8 +91,7 @@ jsunitRegister('testBackground',
   // Don't require the URL sanitizer to protect string boundaries.
   tokens = ['/', '*', '"/*zoicks*/"', ' ',
             '"\') url(\\22javascript:alert(1337)\")\"', '"</style>"'];
-  sanitizeCssProperty(
-      'background', cssSchema['background'], tokens, function (s) { return s; });
+  sanitizeCssProperty('background', tokens, function (s) { return s; });
   assertEquals(
     '/ url(\"/%2azoicks%2a/\")'
     // javascript: does not appear after url(" and embedded quotes and parens
@@ -106,7 +105,7 @@ jsunitRegister('testBackground',
   tokens = ['url("")', ' ', '"#"', ' ', 'url("#")', ' ',
             'url("javascript:evil()")'];
   sanitizeCssProperty(
-      'background', cssSchema['background'], tokens,
+      'background', tokens,
       function (s) {
         // Reject anything with a colon entirely, and strip fragments.
         s = s.replace(/#[\s\S]*$/, '');
@@ -124,51 +123,51 @@ jsunitRegister('testQuantities',
   var tokens;
 
   tokens = ['0', ' ', '.0', ' ', '0.', ' ', '0.0', ' '];
-  sanitizeCssProperty('padding', cssSchema['padding'], tokens);
+  sanitizeCssProperty('padding', tokens);
   // .0 -> 0.0 others unchanged.
   assertEquals('0 0.0 0. 0.0', tokens.join(' '));
 
   tokens = ['-0', ' ', '-.0', ' ', '-0.', ' ', '-0.0', ' '];
-  sanitizeCssProperty('padding', cssSchema['padding'], tokens);
+  sanitizeCssProperty('padding', tokens);
   // Negative numbers capped at 0.
   assertEquals('0 0 0 0', tokens.join(' '));
 
   tokens = ['+0', ' ', '+.0', ' ', '+0.', ' ', '+0.0'];
-  sanitizeCssProperty('padding', cssSchema['padding'], tokens);
+  sanitizeCssProperty('padding', tokens);
   // + sign dropped.
   assertEquals('0 0.0 0. 0.0', tokens.join(' '));
 
   tokens = ['7', ' ', '.5', ' ', '23.', ' ', '1.25'];
-  sanitizeCssProperty('padding', cssSchema['padding'], tokens);
+  sanitizeCssProperty('padding', tokens);
   // .5 -> 0.5 others unchanged.
   assertEquals('7 0.5 23. 1.25', tokens.join(' '));
 
   tokens = [' ', '-7', ' ', '-.5', ' ', '-23.', ' ', '-1.25'];
-  sanitizeCssProperty('padding', cssSchema['padding'], tokens);
+  sanitizeCssProperty('padding', tokens);
   // Negative numbers capped at 0.
   assertEquals('0 0 0 0', tokens.join(' '));
 
   // Negative margins are allowed.
   tokens = [' ', '-7', ' ', '-.5', ' ', '-23.', ' ', '-1.25'];
-  sanitizeCssProperty('margin', cssSchema['margin'], tokens);
+  sanitizeCssProperty('margin', tokens);
   assertEquals('-7 -0.5 -23. -1.25', tokens.join(' '));
 
   tokens = ['+7', ' ', '+.5', ' ', '+23.', ' ', '+1.25'];
-  sanitizeCssProperty('padding', cssSchema['padding'], tokens);
+  sanitizeCssProperty('padding', tokens);
   // + sign dropped.
   assertEquals('7 0.5 23. 1.25', tokens.join(' '));
 
   tokens = ['#123', ' ', '-', ' ', '5', ' ', '"5"'];
-  sanitizeCssProperty('padding', cssSchema['padding'], tokens);
+  sanitizeCssProperty('padding', tokens);
   assertEquals('5', tokens.join('5'));
 
   // Quantities are OK.
   tokens = ['7cm', ' ', '.5em', ' ', '23.mm', ' ', '1.25px'];
-  sanitizeCssProperty('padding', cssSchema['padding'], tokens);
+  sanitizeCssProperty('padding', tokens);
   assertEquals('7cm 0.5em 23.mm 1.25px', tokens.join(' '));
 
   tokens = ['+7cm', ' ', '+.5em', ' ', '+23.mm', ' ', '+1.25px'];
-  sanitizeCssProperty('padding', cssSchema['padding'], tokens);
+  sanitizeCssProperty('padding', tokens);
   assertEquals('7cm 0.5em 23.mm 1.25px', tokens.join(' '));
 
   // Font-family does not allow quantities at all.
@@ -180,7 +179,7 @@ jsunitRegister('testQuantities',
             '+7cm', ' ', '+.5em', ' ', '+23.mm', ' ', '+1.25px',
             '0', ' ', '.0', ' ', '-0', '+0', '0.0',
             '/'];
-  sanitizeCssProperty('font-family', cssSchema['font-family'], tokens);
+  sanitizeCssProperty('font-family', tokens);
   assertEquals('', tokens.join(' '));
 
   jsunit.pass();
@@ -215,7 +214,7 @@ jsunitRegister('testColor',
 
   for (var i = 0; i < colors.length; ++i) {
     var tokens = lexCss(colors[i]);
-    sanitizeCssProperty('color', cssSchema['color'], tokens);
+    sanitizeCssProperty('color', tokens);
     assertEquals(colors[i],
                  colors[i].replace(/\s+/g, '').toLowerCase(),
                  tokens.join('').replace(/\s+/g, '').toLowerCase());
@@ -223,7 +222,7 @@ jsunitRegister('testColor',
 
   for (var i = 0; i < notcolors.length; ++i) {
     var tokens = lexCss(notcolors[i]);
-    sanitizeCssProperty('color', cssSchema['color'], tokens);
+    sanitizeCssProperty('color', tokens);
     assertTrue(notcolors[i], tokens.length == 0);
   }
   jsunit.pass();
@@ -232,7 +231,7 @@ jsunitRegister('testColor',
 jsunitRegister('testBorder',
                function testBorder() {
   var source = '1px solid rgb(0,0,0)';
-  var expect = '1px solid rgb( 0 , 0 , 0 )';
+  var expect = '1px solid rgb(0 , 0 , 0)';
   assertProperty('border', source, expect);
   jsunit.pass();
 });
@@ -315,7 +314,7 @@ jsunitRegister('testMixedSubselectorsOrderIndependent',
 jsunitRegister('testGradients',
                function testGradients() {
   var source = 'linear-gradient(to bottom right, red, rgb(255,0,0))';
-  var expect = 'linear-gradient( to bottom right , red , rgb( 255 , 0 , 0 ) )';
+  var expect = 'linear-gradient(to bottom right , red , rgb(255 , 0 , 0))';
   assertProperty('background-image', source, expect);
   jsunit.pass();
 });
