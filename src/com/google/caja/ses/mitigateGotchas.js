@@ -50,11 +50,29 @@ var ses;
   }
 
   function isVariableDecl(node) {
-    return (node.type === 'VariableDeclaration');
+    return node.type === 'VariableDeclaration';
   }
 
   function isFunctionDecl(node) {
-    return (node.type === 'FunctionDeclaration');
+    return node.type === 'FunctionDeclaration';
+  }
+
+  /**
+   * Detects a call expression where the callee is an identifier.
+   *
+   * <p>This case is interesting because evaluating an identifier
+   * evaluates to a reference that potentially has a base. Even when
+   * the call is in strict code, if the identifier is defined by a
+   * {@code with} statement, then the function would be called with
+   * its {@code this} bound to the with's scope object. In this way,
+   * {@code with} fails to emulate the global scope.
+   *
+   * <p>See <a href=
+   * "https://code.google.com/p/google-caja/issues/detail?id=1755"
+   * >Issue 1755: Need rewriteFunctionCalls mitigation</a>
+   */
+  function isFunctionCall(node) {
+    return node.type === 'CallExpression' && isId(node.callee);
   }
 
   /**
@@ -200,6 +218,31 @@ var ses;
     };
   }
 
+  /**
+   * Rewrites a function call, e.g., {@code f(x, y)} to, e.g.,
+   * {@code (1,f)(x, y)} to prevent it from implicitly passing the
+   * callee's base as the {@code this}-binding, in case the callee
+   * evaluates to a reference.
+   *
+   * <p>See <a href=
+   * "https://code.google.com/p/google-caja/issues/detail?id=1755"
+   * >Issue 1755: Need rewriteFunctionCalls mitigation</a>
+   */
+  function rewriteFunctionCall(node) {
+    var oldCallee = node.callee;
+    node.callee = {
+      type: 'SequenceExpression',
+      expressions: [
+        {
+          type: 'Literal',
+          value: 1,
+          raw: "1"
+        },
+        oldCallee
+      ]
+    };
+  }
+
   function needsRewriting(options) {
     return options.rewriteTopLevelVars ||
       options.rewriteTopLevelFuncs ||
@@ -237,6 +280,10 @@ var ses;
               } else if (options.rewriteTopLevelVars &&
                          isVariableDecl(node) && scopeLevel === 0) {
                 rewriteVars(node, parent);
+                dirty = true;
+              } else if (options.rewriteFunctionCalls &&
+                         isFunctionCall(node)) {
+                rewriteFunctionCall(node);
                 dirty = true;
               }
 
