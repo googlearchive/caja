@@ -1939,6 +1939,18 @@ var Domado = (function() {
         return node;
       }
 
+      var uriRewriterForCss = !naiveUriPolicy ? null :
+          function uriRewriterForCss_(url, prop) {
+            return uriRewrite(
+                    naiveUriPolicy,
+                    url, html4.ueffects.SAME_DOCUMENT,
+                    html4.ltypes.SANDBOXED,
+                    {
+                      "TYPE": "CSS",
+                      "CSS_PROP": prop
+                    });
+          };
+
       /**
        * Sanitizes the value of a CSS property, the {@code red} in
        * {@code color:red}.
@@ -1954,18 +1966,7 @@ var Domado = (function() {
         sanitizeCssProperty(
             cssPropertyName,
             schema, tokens,
-            naiveUriPolicy
-            ? function (url) {
-                return uriRewrite(
-                    naiveUriPolicy,
-                    url, html4.ueffects.SAME_DOCUMENT,
-                    html4.ltypes.SANDBOXED,
-                    {
-                      "TYPE": "CSS",
-                      "CSS_PROP": cssPropertyName
-                    });
-              }
-            : null,
+            uriRewriterForCss,
             domicile.pseudoLocation.href);
         return tokens.length !== 0;
       }
@@ -6429,16 +6430,8 @@ var Domado = (function() {
       // note: referenced reflectively by HtmlEmitter
       domicile.cssUri = cajaVM.constFunc(function(uri, mimeType, prop) {
         uri = String(uri);
-        if (!naiveUriPolicy) { return null; }
-        return uriRewrite(
-            naiveUriPolicy,
-            uri,
-            html4.ueffects.SAME_DOCUMENT,
-            html4.ltypes.SANDBOXED,
-            {
-              "TYPE": "CSS",
-              "CSS_PROP": prop
-            });
+        if (!uriRewriterForCss) { return null; }
+        return uriRewriterForCss(uri, prop);
       });
       // TODO(kpreid): Consider moving domicile.suffix into the
       // domicile.virtualization object. Used by caja-flash.js only.
@@ -6560,32 +6553,25 @@ var Domado = (function() {
             })
           }
         });
-        allCssProperties.forEachCanonical(function (stylePropertyName) {
-          // TODO(kpreid): make each of these generated accessors more
-          // specialized for this name to reduce runtime cost.
+        allCssProperties.forEachCanonical(function(stylePropertyName) {
+          // TODO(kpreid): Refactor this to be clearer about what is going on;
+          // particularly what role each "name" plays.
+          var cssPropertyName =
+              allCssProperties.getCssPropFromCanonical(stylePropertyName);
+          var canonName =
+              allCssProperties.getCanonicalPropFromCss(cssPropertyName);
+          var allowed = allowProperty(cssPropertyName);
           Object.defineProperty(TameStyle.prototype, stylePropertyName, {
             enumerable: canHaveEnumerableAccessors,
             get: TameStyleConf.amplifying(function(privates) {
-              if (!privates.feral
-                  || !allCssProperties.isCanonicalProp(stylePropertyName)) {
+              if (!(privates.feral && allowed)) {
                 return void 0;
               }
-              var cssPropertyName =
-                  allCssProperties.getCssPropFromCanonical(stylePropertyName);
-              if (!allowProperty(cssPropertyName)) { return void 0; }
-              var canonName =
-                  allCssProperties.getCanonicalPropFromCss(cssPropertyName);
               return privates.readByCanonicalName(canonName);
             }),
             set: TameStyleConf.amplifying(function(privates, value) {
               if (!privates.editable) { throw new Error('style not editable'); }
-              stylePropertyName = String(stylePropertyName);
-              if (!allCssProperties.isCanonicalProp(stylePropertyName)) {
-                throw new Error('Unknown CSS property name ' + stylePropertyName);
-              }
-              var cssPropertyName =
-                  allCssProperties.getCssPropFromCanonical(stylePropertyName);
-              if (!allowProperty(cssPropertyName)) { return void 0; }
+              if (!allowed) { return; }
               var tokens = lexCss(value);
               if (tokens.length === 0
                  || (tokens.length === 1 && tokens[0] === ' ')) {
@@ -6597,10 +6583,7 @@ var Domado = (function() {
                 }
                 value = tokens.join(' ');
               }
-              var canonName =
-                  allCssProperties.getCanonicalPropFromCss(cssPropertyName);
               privates.writeByCanonicalName(canonName, value);
-              return true;
             })
           });
         });
