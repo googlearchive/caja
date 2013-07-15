@@ -443,9 +443,8 @@ var caja = (function () {
           'DEFINING_READ_ONLY_PROTO_FAILS_SILENTLY': { 'permit': true },
 
           // we don't use partly-unmodifiable arrays, and the repair for push
-          // is too slow
+          // is too slow to use unless necessary (i.e. PUSH_IGNORES_FROZEN)
           'PUSH_IGNORES_SEALED': { 'permit': true, 'doNotRepair': true },
-          'PUSH_IGNORES_FROZEN': { 'doNotRepair': true },
           'PUSH_DOES_NOT_THROW_ON_FROZEN_ARRAY':
               { 'permit': true, 'doNotRepair': true },
           'ARRAYS_DELETE_NONCONFIGURABLE': { 'permit': true },
