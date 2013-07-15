@@ -845,6 +845,27 @@ var ses;
     return !('getOwnPropertyNames' in Object);
   }
 
+  /**
+   * If you can, see Opera bug DSK-383293@bugs.opera.com.
+   *
+   * <p>On some Operas, the Object.prototype.__proto__ property is an
+   * accessor property, but the property descriptor of that property
+   * has a setter, i.e., {@code desc.set}, which throws a TypeError
+   * when one tries to read it. Unfortunately, this creates
+   * problems beyond our attempts at support.
+   */
+  function test_PROTO_SETTER_UNGETTABLE() {
+    var desc = Object.getOwnPropertyDescriptor(Object.prototype, '__proto__');
+    if (!desc) { return false; }
+    try {
+      void desc.set; // yes, just reading it
+    } catch (err) {
+      if (err instanceof TypeError) { return true; }
+      return ''+err;
+    }
+    return false;
+  }
+
   function inTestFrame(callback) {
     if (!document || !document.createElement) { return undefined; }
     var iframe = document.createElement('iframe');
@@ -1993,6 +2014,10 @@ var ses;
     } catch (e) {
       if (x.length !== 2) { return 'Unexpected modification of frozen array'; }
       if (x[0] === 1 && x[1] === 2) { return false; }
+    }
+    if (x.length === 1 && x[0] === 1 && x[1] === 2) {
+      // Behavior seen on Opera 12.10 mobile and 12.15
+      return true;
     }
     if (x.length !== 2) {
       return 'Unexpected silent modification of frozen array';
@@ -3469,6 +3494,17 @@ var ses;
       urls: [],
       sections: ['15.2.3.4'],
       tests: ['15.2.3.4-0-1']
+    },
+    {
+      id: 'PROTO_SETTER_UNGETTABLE',
+      description: "Can't get Object.prototype.__proto__'s setter",
+      test: test_PROTO_SETTER_UNGETTABLE,
+      repair: void 0,
+      preSeverity: severities.NOT_SUPPORTED,
+      canRepair: false,
+      urls: ['mailto:DSK-383293@bugs.opera.com'],
+      sections: [],
+      tests: []
     }
   ];
 
