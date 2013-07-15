@@ -925,6 +925,7 @@ public final class Parser extends ParserBase {
           }
           break;
           case BRACKET:
+            assert right != null;
             if (Operator.FUNCTION_CALL == op) {
               // Function calls can take nothing or multiple on the right, so
               // we wrap function calls up in an ActualList.
@@ -986,12 +987,13 @@ public final class Parser extends ParserBase {
     }
   }
 
-  private double toNumber(Token<JsTokenType> t) {
+  private static double toNumber(Token<JsTokenType> t) {
     // Double.parseDouble is not locale dependent.
     return Double.parseDouble(t.text);
   }
 
-  private String floatToString(Token<JsTokenType> t) throws ParseException {
+  private static String floatToString(Token<JsTokenType> t)
+      throws ParseException {
     try {
       return NumberLiteral.numberToString(new BigDecimal(t.text));
     } catch (NumberFormatException e) {
@@ -1002,7 +1004,7 @@ public final class Parser extends ParserBase {
     }
   }
 
-  private NumberLiteral toNumberLiteral(Token<JsTokenType> t) {
+  private static NumberLiteral toNumberLiteral(Token<JsTokenType> t) {
     return new RealLiteral(t.pos, toNumber(t));
   }
 
@@ -1034,7 +1036,7 @@ public final class Parser extends ParserBase {
     }
   }
 
-  private Pair<String, Integer> breakOutRadix(String n) {
+  private static Pair<String, Integer> breakOutRadix(String n) {
     if (n.startsWith("0X") || n.startsWith("0x")) {
       return Pair.pair(n.substring(2), 16);
     } else if (n.startsWith("0")) {

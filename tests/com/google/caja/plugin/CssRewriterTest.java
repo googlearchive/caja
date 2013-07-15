@@ -263,26 +263,6 @@ public class CssRewriterTest extends CajaTestCase {
         Name.css("z-index"));
   }
 
-  public final void testNonStandardColors() throws Exception {
-    FilePosition u = FilePosition.UNKNOWN;
-    assertNull(CssRewriter.colorHash(u, Name.css("invisible")));
-    // Can get color hashes even for standard colors.
-    assertEquals("#00f", CssRewriter.colorHash(u, Name.css("blue")).getValue());
-    // Is case insensitive.
-    assertEquals("#00f", CssRewriter.colorHash(u, Name.css("Blue")).getValue());
-    assertEquals("#00f", CssRewriter.colorHash(u, Name.css("BLUE")).getValue());
-
-    assertEquals("#000", CssRewriter.colorHash(u, 0).getValue());
-    assertEquals("#fff", CssRewriter.colorHash(u, 0xffffff).getValue());
-    assertEquals("#123", CssRewriter.colorHash(u, 0x112233).getValue());
-    // A change in any quartet causes the long form to be used.
-    assertEquals(
-        "#022233", CssRewriter.colorHash(u, 0x112233 ^ 0x130000).getValue());
-    assertEquals(
-        "#111333", CssRewriter.colorHash(u, 0x112233 ^ 0x003100).getValue());
-    assertEquals(
-        "#112220", CssRewriter.colorHash(u, 0x112233 ^ 0x000013).getValue());
-  }
 
   public final void testUrisCalledWithProperPropertyPart() throws Exception {
     // The CssRewriter needs to rewrite URIs.
@@ -311,8 +291,7 @@ public class CssRewriterTest extends CajaTestCase {
     new CssValidator(CssSchema.getDefaultCss21Schema(mq),
         HtmlSchema.getDefault(mq), mq)
         .validateCss(AncestorChain.instance(t));
-    new CssRewriter(uriPolicy, CssSchema.getDefaultCss21Schema(mq),
-                    HtmlSchema.getDefault(mq), mq)
+    new CssRewriter(uriPolicy, HtmlSchema.getDefault(mq), mq)
         .rewrite(AncestorChain.instance(t));
     t.acceptPreOrder(new Visitor() {
       public boolean visit(AncestorChain<?> ancestors) {
@@ -416,7 +395,7 @@ public class CssRewriterTest extends CajaTestCase {
             }
           }
         },
-        cssSchema, htmlSchema, mq)
+        htmlSchema, mq)
         .rewrite(AncestorChain.instance(t));
 
     {
@@ -451,7 +430,7 @@ public class CssRewriterTest extends CajaTestCase {
             return ref.getUri().toString();
           }
         },
-        cssSchema, htmlSchema, mq)
+        htmlSchema, mq)
         .rewrite(AncestorChain.instance(t));
 
     MoreAsserts.assertListsEqual(

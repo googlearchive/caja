@@ -84,10 +84,14 @@ public abstract class RewriterTestCase extends CajaTestCase {
         firstError = m;
       }
     }
-    firstError.format(mc, messageText);
+    if (firstError != null) {
+      firstError.format(mc, messageText);
+    } else {
+      messageText.append("NO ERROR");
+    }
     assertTrue(
         "First error is not \"" + error + "\": " + messageText.toString(),
-        messageText.toString().contains(error));
+        firstError != null && messageText.toString().contains(error));
   }
 
   protected void checkSucceeds(ParseTreeNode inputNode,
@@ -233,12 +237,12 @@ public abstract class RewriterTestCase extends CajaTestCase {
     assertEquals(message, plainRepr, rewrittenRepr);
   }
 
-  protected final <T extends ParseTreeNode> T syntheticTree(T node) {
+  protected static final <T extends ParseTreeNode> T syntheticTree(T node) {
     for (ParseTreeNode c : node.children()) { syntheticTree(c); }
     return makeSynthetic(node);
   }
 
-  protected final <T extends ParseTreeNode> T makeSynthetic(T node) {
+  protected static final <T extends ParseTreeNode> T makeSynthetic(T node) {
     SyntheticNodes.s(node);
     return node;
   }

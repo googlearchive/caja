@@ -1226,8 +1226,7 @@ public class TemplateCompilerTest extends CajaTestCase {
     for (JobEnvelope j : jobs.getJobs()) {
       switch (j.job.getType()) {
         case HTML:
-          DocumentFragment f = (DocumentFragment)
-            ((Dom) j.job.getRoot()).getValue();
+          DocumentFragment f = ((Dom) j.job.getRoot()).getValue();
           htmlOut.add(new IhtmlRoot(j, f, baseUri));
           break;
         case JS:
@@ -1235,9 +1234,7 @@ public class TemplateCompilerTest extends CajaTestCase {
           break;
         case CSS:
           CssTree.StyleSheet css = (CssTree.StyleSheet) j.job.getRoot();
-          CssRewriter rw = new CssRewriter(
-              null, CssSchema.getDefaultCss21Schema(mq),
-              HtmlSchema.getDefault(mq), mq);
+          CssRewriter rw = new CssRewriter(null, HtmlSchema.getDefault(mq), mq);
           rw.rewrite(AncestorChain.instance(css));
           CssDynamicExpressionRewriter rrw =
               new CssDynamicExpressionRewriter(meta);
@@ -1251,7 +1248,7 @@ public class TemplateCompilerTest extends CajaTestCase {
     assertMessagesLessSevereThan(MessageLevel.ERROR);
   }
 
-  private Block consolidate(List<SafeJsChunk> chunks) {
+  private static Block consolidate(List<SafeJsChunk> chunks) {
     Block consolidated = new Block();
     MutableParseTreeNode.Mutation mut = consolidated.createMutation();
     FilePosition unk = FilePosition.UNKNOWN;

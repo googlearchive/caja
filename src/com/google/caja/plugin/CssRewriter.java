@@ -15,9 +15,6 @@
 package com.google.caja.plugin;
 
 import com.google.caja.SomethingWidgyHappenedError;
-import com.google.caja.lang.css.CssPropertyPatterns;
-import com.google.caja.lang.css.CssSchema;
-import com.google.caja.lang.css.CssSchema.SymbolInfo;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
@@ -37,7 +34,6 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Lists;
-import com.google.caja.util.Maps;
 import com.google.caja.util.Name;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Sets;
@@ -46,7 +42,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -61,15 +56,14 @@ import java.util.regex.Pattern;
  */
 public final class CssRewriter {
   private final UriPolicy uriPolicy;
-  private final CssSchema cssSchema;
   private HtmlSchema htmlSchema;
   private final MessageQueue mq;
   private MessageLevel invalidNodeMessageLevel = MessageLevel.ERROR;
 
-  public CssRewriter(UriPolicy uriPolicy, CssSchema cssSchema, HtmlSchema htmlSchema, MessageQueue mq) {
+  public CssRewriter(
+      UriPolicy uriPolicy, HtmlSchema htmlSchema, MessageQueue mq) {
     assert null != mq;
     this.uriPolicy = uriPolicy;
-    this.cssSchema = cssSchema;
     this.htmlSchema = htmlSchema;
     this.mq = mq;
   }
@@ -291,7 +285,8 @@ public final class CssRewriter {
     }
   }
 
-  private boolean containsLinkPseudoClass(CssTree.SimpleSelector selector) {
+  private static boolean containsLinkPseudoClass(
+      CssTree.SimpleSelector selector) {
     final boolean[] result = new boolean[1];
     selector.visitPreOrder(new ParseTreeNodeVisitor() {
       public boolean visit(ParseTreeNode node) {
@@ -396,21 +391,12 @@ public final class CssRewriter {
   }
 
   /**
-   * Make sure that unitless lengths have units, and convert non-standard
-   * colors to hex constants.
+   * Make sure that unitless lengths have units.
    * <a href="http://www.w3.org/TR/CSS21/syndata.html#length-units">Lengths</a>
    * require units unless the value is zero.  All browsers assume px if the
    * suffix is missing.
    */
   private void fixTerms(AncestorChain<? extends CssTree> t) {
-    SymbolInfo stdColors = cssSchema.getSymbol(Name.css("color-standard"));
-    final Pattern stdColorMatcher;
-    if (stdColors != null) {
-      stdColorMatcher = new CssPropertyPatterns(cssSchema)
-          .cssPropertyToJavaRegex(stdColors.sig);
-    } else {
-      stdColorMatcher = null;
-    }
     t.node.visitPreOrder(new ParseTreeNodeVisitor() {
         public boolean visit(ParseTreeNode node) {
           if (!(node instanceof CssTree.Term)) {
@@ -434,32 +420,12 @@ public final class CssRewriter {
                             MessagePart.Factory.valueOf(value));
             }
             return false;
-          } else if (stdColorMatcher != null
-                     && CssPropertyPartType.IDENT == partType
-                     && (propertyPart(term).getCanonicalForm()
-                         .endsWith("::color"))) {
-            Name colorName = Name.css(
-                ((CssTree.IdentLiteral) term.getExprAtom()).getValue());
-            if (!stdColorMatcher.matcher(colorName.getCanonicalForm() + " ")
-                .matches()) {
-              FilePosition pos = term.getExprAtom().getFilePosition();
-              CssTree.HashLiteral replacement = colorHash(pos, colorName);
-              MessageLevel lvl = MessageLevel.LINT;
-              if (replacement == null) {
-                lvl = MessageLevel.ERROR;
-                replacement = CssTree.HashLiteral.hex(pos, 0, 3);
-              }
-              term.replaceChild(replacement, term.getExprAtom());
-              mq.addMessage(
-                  PluginMessageType.NON_STANDARD_COLOR, lvl, pos, colorName,
-                  MessagePart.Factory.valueOf(replacement.getValue()));
-            }
-            return false;
           }
           return true;
         }
       });
   }
+
   private static boolean isZeroOrHasUnits(String value) {
     int len = value.length();
     char ch = value.charAt(len - 1);
@@ -473,7 +439,7 @@ public final class CssRewriter {
   }
 
   /** Get rid of rules like <code>p { }</code>. */
-  private void removeEmptyDeclarationsAndSelectors(
+  private static void removeEmptyDeclarationsAndSelectors(
       AncestorChain<? extends CssTree> t) {
     t.node.acceptPreOrder(new Visitor() {
         public boolean visit(AncestorChain<?> ancestors) {
@@ -500,7 +466,8 @@ public final class CssRewriter {
         }
       }, t.parent);
   }
-  private void removeEmptyRuleSets(AncestorChain<? extends CssTree> t) {
+
+  private static void removeEmptyRuleSets(AncestorChain<? extends CssTree> t) {
     t.node.acceptPreOrder(new Visitor() {
         public boolean visit(AncestorChain<?> ancestors) {
           ParseTreeNode node = ancestors.node;
@@ -551,13 +518,14 @@ public final class CssRewriter {
         }
       }, t.parent);
   }
+
   private void renameVirtualizedElements(AncestorChain<? extends CssTree> t) {
     t.node.visitPreOrder(new ParseTreeNodeVisitor() {
         public boolean visit(ParseTreeNode node) {
           if (node instanceof CssTree.SuffixedSelectorPart) { return false; }
           if (!(node instanceof CssTree.SimpleSelector)) { return true; }
           CssTree.SimpleSelector ss = (CssTree.SimpleSelector) node;
-          CssTree name = (CssTree) ss.children().get(0);
+          CssTree name = ss.children().get(0);
           if (name instanceof CssTree.IdentLiteral) {
             CssTree.IdentLiteral lit = (CssTree.IdentLiteral) name;
 
@@ -572,7 +540,8 @@ public final class CssRewriter {
         }
       });
   }
-  private void suffixIds(AncestorChain<? extends CssTree> t) {
+
+  private static void suffixIds(AncestorChain<? extends CssTree> t) {
     // Rewrite IDs with the gadget suffix.
     t.node.visitPreOrder(new ParseTreeNodeVisitor() {
           public boolean visit(ParseTreeNode node) {
@@ -593,7 +562,7 @@ public final class CssRewriter {
           }
         });
   }
-  private void restrictRulesToSubtreesWithGadgetClass(
+  private static void restrictRulesToSubtreesWithGadgetClass(
       AncestorChain<? extends CssTree> t) {
     t.node.visitPreOrder(new ParseTreeNodeVisitor() {
       public boolean visit(ParseTreeNode node) {
@@ -939,7 +908,7 @@ public final class CssRewriter {
     return true;
   }
 
-  private boolean mightContainUrl(CssTree.Expr expr) {
+  private static boolean mightContainUrl(CssTree.Expr expr) {
     for (int n = expr.getNTerms(), i = 0; i < n; ++i) {
       CssTree.CssExprAtom atom = expr.getNthTerm(i).getExprAtom();
       if (!(atom instanceof CssTree.IdentLiteral
@@ -996,164 +965,6 @@ public final class CssRewriter {
     return true;
   }
 
-  public static CssTree.HashLiteral colorHash(FilePosition pos, Name color) {
-    Integer hexI = CSS3_COLORS.get(color.getCanonicalForm());
-    return hexI != null ? colorHash(pos, hexI) : null;
-  }
-
-  public static CssTree.HashLiteral colorHash(FilePosition pos, int hex) {
-    if ((hex & 0x0f0f0f) == ((hex >>> 4) & 0x0f0f0f)) {  // #rgb
-      return CssTree.HashLiteral.hex(
-          pos, ((hex >>> 8) & 0xf00) | ((hex >>> 4) & 0xf0) | (hex & 0xf), 3);
-    } else { // #rrggbb
-      return CssTree.HashLiteral.hex(pos, hex, 6);
-    }
-  }
-
-  // http://www.w3.org/TR/css3-iccprof#x11-color
-  private static final Map<String, Integer> CSS3_COLORS
-      = Maps.<String, Integer>immutableMap()
-        .put("aliceblue", 0xF0F8FF)
-        .put("antiquewhite", 0xFAEBD7)
-        .put("aqua", 0x00FFFF)
-        .put("aquamarine", 0x7FFFD4)
-        .put("azure", 0xF0FFFF)
-        .put("beige", 0xF5F5DC)
-        .put("bisque", 0xFFE4C4)
-        .put("black", 0x000000)
-        .put("blanchedalmond", 0xFFEBCD)
-        .put("blue", 0x0000FF)
-        .put("blueviolet", 0x8A2BE2)
-        .put("brown", 0xA52A2A)
-        .put("burlywood", 0xDEB887)
-        .put("cadetblue", 0x5F9EA0)
-        .put("chartreuse", 0x7FFF00)
-        .put("chocolate", 0xD2691E)
-        .put("coral", 0xFF7F50)
-        .put("cornflowerblue", 0x6495ED)
-        .put("cornsilk", 0xFFF8DC)
-        .put("crimson", 0xDC143C)
-        .put("cyan", 0x00FFFF)
-        .put("darkblue", 0x00008B)
-        .put("darkcyan", 0x008B8B)
-        .put("darkgoldenrod", 0xB8860B)
-        .put("darkgray", 0xA9A9A9)
-        .put("darkgreen", 0x006400)
-        .put("darkkhaki", 0xBDB76B)
-        .put("darkmagenta", 0x8B008B)
-        .put("darkolivegreen", 0x556B2F)
-        .put("darkorange", 0xFF8C00)
-        .put("darkorchid", 0x9932CC)
-        .put("darkred", 0x8B0000)
-        .put("darksalmon", 0xE9967A)
-        .put("darkseagreen", 0x8FBC8F)
-        .put("darkslateblue", 0x483D8B)
-        .put("darkslategray", 0x2F4F4F)
-        .put("darkturquoise", 0x00CED1)
-        .put("darkviolet", 0x9400D3)
-        .put("deeppink", 0xFF1493)
-        .put("deepskyblue", 0x00BFFF)
-        .put("dimgray", 0x696969)
-        .put("dodgerblue", 0x1E90FF)
-        .put("firebrick", 0xB22222)
-        .put("floralwhite", 0xFFFAF0)
-        .put("forestgreen", 0x228B22)
-        .put("fuchsia", 0xFF00FF)
-        .put("gainsboro", 0xDCDCDC)
-        .put("ghostwhite", 0xF8F8FF)
-        .put("gold", 0xFFD700)
-        .put("goldenrod", 0xDAA520)
-        .put("gray", 0x808080)
-        .put("green", 0x008000)
-        .put("greenyellow", 0xADFF2F)
-        .put("honeydew", 0xF0FFF0)
-        .put("hotpink", 0xFF69B4)
-        .put("indianred", 0xCD5C5C)
-        .put("indigo", 0x4B0082)
-        .put("ivory", 0xFFFFF0)
-        .put("khaki", 0xF0E68C)
-        .put("lavender", 0xE6E6FA)
-        .put("lavenderblush", 0xFFF0F5)
-        .put("lawngreen", 0x7CFC00)
-        .put("lemonchiffon", 0xFFFACD)
-        .put("lightblue", 0xADD8E6)
-        .put("lightcoral", 0xF08080)
-        .put("lightcyan", 0xE0FFFF)
-        .put("lightgoldenrodyellow", 0xFAFAD2)
-        .put("lightgreen", 0x90EE90)
-        .put("lightgrey", 0xD3D3D3)
-        .put("lightpink", 0xFFB6C1)
-        .put("lightsalmon", 0xFFA07A)
-        .put("lightseagreen", 0x20B2AA)
-        .put("lightskyblue", 0x87CEFA)
-        .put("lightslategray", 0x778899)
-        .put("lightsteelblue", 0xB0C4DE)
-        .put("lightyellow", 0xFFFFE0)
-        .put("lime", 0x00FF00)
-        .put("limegreen", 0x32CD32)
-        .put("linen", 0xFAF0E6)
-        .put("magenta", 0xFF00FF)
-        .put("maroon", 0x800000)
-        .put("mediumaquamarine", 0x66CDAA)
-        .put("mediumblue", 0x0000CD)
-        .put("mediumorchid", 0xBA55D3)
-        .put("mediumpurple", 0x9370DB)
-        .put("mediumseagreen", 0x3CB371)
-        .put("mediumslateblue", 0x7B68EE)
-        .put("mediumspringgreen", 0x00FA9A)
-        .put("mediumturquoise", 0x48D1CC)
-        .put("mediumvioletred", 0xC71585)
-        .put("midnightblue", 0x191970)
-        .put("mintcream", 0xF5FFFA)
-        .put("mistyrose", 0xFFE4E1)
-        .put("moccasin", 0xFFE4B5)
-        .put("navajowhite", 0xFFDEAD)
-        .put("navy", 0x000080)
-        .put("oldlace", 0xFDF5E6)
-        .put("olive", 0x808000)
-        .put("olivedrab", 0x6B8E23)
-        .put("orange", 0xFFA500)
-        .put("orangered", 0xFF4500)
-        .put("orchid", 0xDA70D6)
-        .put("palegoldenrod", 0xEEE8AA)
-        .put("palegreen", 0x98FB98)
-        .put("paleturquoise", 0xAFEEEE)
-        .put("palevioletred", 0xDB7093)
-        .put("papayawhip", 0xFFEFD5)
-        .put("peachpuff", 0xFFDAB9)
-        .put("peru", 0xCD853F)
-        .put("pink", 0xFFC0CB)
-        .put("plum", 0xDDA0DD)
-        .put("powderblue", 0xB0E0E6)
-        .put("purple", 0x800080)
-        .put("red", 0xFF0000)
-        .put("rosybrown", 0xBC8F8F)
-        .put("royalblue", 0x4169E1)
-        .put("saddlebrown", 0x8B4513)
-        .put("salmon", 0xFA8072)
-        .put("sandybrown", 0xF4A460)
-        .put("seagreen", 0x2E8B57)
-        .put("seashell", 0xFFF5EE)
-        .put("sienna", 0xA0522D)
-        .put("silver", 0xC0C0C0)
-        .put("skyblue", 0x87CEEB)
-        .put("slateblue", 0x6A5ACD)
-        .put("slategray", 0x708090)
-        .put("snow", 0xFFFAFA)
-        .put("springgreen", 0x00FF7F)
-        .put("steelblue", 0x4682B4)
-        .put("tan", 0xD2B48C)
-        .put("teal", 0x008080)
-        .put("thistle", 0xD8BFD8)
-        .put("tomato", 0xFF6347)
-        .put("turquoise", 0x40E0D0)
-        .put("violet", 0xEE82EE)
-        .put("wheat", 0xF5DEB3)
-        .put("white", 0xFFFFFF)
-        .put("whitesmoke", 0xF5F5F5)
-        .put("yellow", 0xFFFF00)
-        .put("yellowgreen", 0x9ACD32)
-        .create();
 
   /**
    * A class literal that is allowed in certain positions.

@@ -488,31 +488,13 @@ runCssSelectorTests([
     ]
   },
   {
-    "test_name": "NonStandardColors",
+    "test_name": "NonCSS21Colors",
     "tests": [
       {
         "cssText": "a.c { color: LightSlateGray; background: ivory; }",
-        "golden": ".namespace__ a.c {\n  color: #789;\n  background: #fffff0\n}",
-        // TODO: see if special color names work when quoted.
+        "golden": ".namespace__ a.c {\n  color: LightSlateGray;\n  background: ivory\n}",
         "altGolden": ".namespace__ a.c{color:lightslategray;background:ivory}",
-        "messages": [
-          {
-            "type": "NON_STANDARD_COLOR",
-            "level": "LINT",
-            "args": [
-              "lightslategray",
-              "#789"
-            ]
-          },
-          {
-            "type": "NON_STANDARD_COLOR",
-            "level": "LINT",
-            "args": [
-              "ivory",
-              "#fffff0"
-            ]
-          }
-        ]
+        "messages": []
       }
     ]
   },

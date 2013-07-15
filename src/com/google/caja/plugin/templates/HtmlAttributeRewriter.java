@@ -242,7 +242,7 @@ public final class HtmlAttributeRewriter {
         v.validateCss(AncestorChain.instance(decls));
         // The rewriter will remove any unsafe constructs.
         // and put URLs in the proper filename namespace
-        new CssRewriter(meta.getUriPolicy(), cssSchema, htmlSchema, mq)
+        new CssRewriter(meta.getUriPolicy(), htmlSchema, mq)
             .withInvalidNodeMessageLevel(MessageLevel.WARNING)
             .rewrite(AncestorChain.instance(decls));
         new CssDynamicExpressionRewriter(meta).rewriteCss(decls);
@@ -352,7 +352,7 @@ public final class HtmlAttributeRewriter {
     return new SanitizedAttr(true, dynamicValue);
   }
 
-  Expression sanitizeFrameTargetValue(AttrValue attr) {
+  static Expression sanitizeFrameTargetValue(AttrValue attr) {
     // If the guest code supplied an attribute value for 'target', we get it
     // in 'attr.src'. Otherwise, TemplateCompiler gives us an 'attr.src' with
     // a value equal to the empty string, which Domado's rewriteTargetAttribute

@@ -275,6 +275,7 @@ public class BuildServiceImplementation implements BuildService {
 
     // Write the output
     if (passed) {
+      assert outputJs != null;
       // Write out as HTML if the output file has the right extension.
       boolean asXml = output.getName().endsWith(".xhtml");
       boolean emitMarkup = asXml || output.getName().endsWith(".html");
@@ -319,7 +320,8 @@ public class BuildServiceImplementation implements BuildService {
     return passed;
   }
 
-  private boolean concat(List<File> inputs, File output, PrintWriter logger) {
+  private static boolean concat(
+      List<File> inputs, File output, PrintWriter logger) {
     StringBuilder result = new StringBuilder();
     boolean ok = true;
     boolean first = true;
@@ -366,7 +368,7 @@ public class BuildServiceImplementation implements BuildService {
    * sanity check when concatenating JS files in the build process, and we
    * control all the JS files involved.
    */
-  private boolean isStrict(CharSequence js) {
+  private static boolean isStrict(CharSequence js) {
     return strictRE.matcher(js).find();
   }
 

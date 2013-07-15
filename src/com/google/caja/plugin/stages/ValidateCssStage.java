@@ -54,7 +54,7 @@ public final class ValidateCssStage implements Pipeline.Stage<Jobs> {
     CssValidator v = new CssValidator(
         cssSchema, htmlSchema, jobs.getMessageQueue());
     CssRewriter rw = new CssRewriter(
-        jobs.getPluginMeta().getUriPolicy(), cssSchema, htmlSchema,
+        jobs.getPluginMeta().getUriPolicy(), htmlSchema,
         jobs.getMessageQueue());
 
     for (MessageLevel level : new MessageLevel[] {
