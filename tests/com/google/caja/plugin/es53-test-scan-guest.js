@@ -209,13 +209,12 @@
    * Provide instances of objects given constructors.
    */
   function UniversalConstructor(noteGap) {
-    function invokeConstructor(ctor, infoThunk) {
+    function invokeConstructor(ctor, context) {
       var x;
       try {
         x = new ctor();
       } catch (e) {
-        noteGap('Need custom obtainInstance for ctor; threw ' + e + '\n' +
-            infoThunk());
+        noteGap('Need custom obtainInstance for ctor; threw ' + e, context);
         return undefined;
       }
       Object.freeze(x);  // avoid registering as extensibility problem
@@ -226,9 +225,9 @@
       return x;
     }
     var instances = new WeakMap();
-    function obtainInstance(ctor, infoThunk) {
+    function obtainInstance(ctor, context) {
       if (!instances.has(ctor)) {
-        instances.set(ctor, invokeConstructor(ctor, infoThunk));
+        instances.set(ctor, invokeConstructor(ctor, context));
       }
       return instances.get(ctor);
     }
@@ -407,7 +406,7 @@
                 function() {
                   var selfC = getSelfC();
                   return makeContext(
-                      obtainInstance(selfC.get(), selfC.toDetailsString),
+                      obtainInstance(selfC.get(), selfC),
                       path + '<instance>',
                       'self',
                       function() { return noThisContext; },
@@ -560,6 +559,7 @@
     var logGap = optional(options.logGap, function() {});
     var setProgress = optional(options.setProgress, function() {});
     var finished = optional(options.finished, function() {});
+    var checkObject = optional(options.checkObject, function() {});
 
     // exported configuration
     var expectedUnfrozen = this.expectedUnfrozen = new MatchingMap();
@@ -582,9 +582,9 @@
     // exported to allow callbacks to record problems
     this.noteProblem = noteProblem;
 
-    function noteGap(description) {
+    function noteGap(description, opt_context) {
       gapCount++;
-      logGap(description);
+      logGap(description, opt_context);
     }
 
     // Async loop to avoid stalling browser
@@ -649,17 +649,19 @@
         }
         seenTable.set(object, path);
         log(path, '\n');
-
-        var frameOfObject = whichFrame(object);
-        var objectShouldBeFrozen = !expectedUnfrozen.get(context);
-
-        // tests
-        // TODO(kpreid): Make the tests a function parameter to Scanner
-        if (frameOfObject !== 'guest' && frameOfObject !== 'taming' &&
-            frameOfObject !== 'neutral') {
-          noteProblem('Object from a ' + frameOfObject + ' frame', context);
-          return; // no point in further analyzing, is doomed
+        if (object instanceof Error) {
+          log('  ' + object + '\n');
         }
+
+        // general tests
+        var doomed = checkObject(context);
+        if (doomed) { return; }
+
+        // frozenness test
+        // This is not in checkObject because it is tied into individual
+        // property checks and because then the ownership of expectedUnfrozen
+        // would be odd.
+        var objectShouldBeFrozen = !expectedUnfrozen.get(context);
         if (!Object.isFrozen(object) && objectShouldBeFrozen) {
           if (Object.isExtensible(object)) {
             // Be more specific about why it is not frozen -- we also check
@@ -669,19 +671,12 @@
             noteProblem('Object is not frozen', context);
           }
         }
-        // TODO(kpreid): factor out recognition
-        if (typeof object === 'function' &&
-            /function Tame(?!XMLHttpRequest)/
-                .test(object.toString())) {
-          noteProblem('Object is a taming ctor', context);
-        }
 
         // function invocation
         if (typeof object === 'function') {
           var argGenerator = functionArgs.get(context);
           if (!argGenerator) {
-            noteGap('No argument generator for function\n' +
-                context.toDetailsString());
+            noteGap('No argument generator for function', context);
             argGenerator = G.none;
           }
           argGenerator(function(tuple) {
@@ -798,8 +793,7 @@
         try {
           ownPropertyNames = Object.getOwnPropertyNames(object);
         } catch (e) {
-          noteGap('getOwnPropertyNames(_) threw ' + e + '\n' +
-              context.toDetailsString());
+          noteGap('getOwnPropertyNames(_) threw ' + e, context);
           ownPropertyNames = [];
         }
         ownPropertyNames.sort(comparePropertyNames);
@@ -808,8 +802,8 @@
           try {
             desc = Object.getOwnPropertyDescriptor(object, name);
           } catch (e) {
-            noteGap('getOwnPropertyDescriptor(_, "' + name + '") threw ' + e +
-                '\n' + context.toDetailsString());
+            noteGap('getOwnPropertyDescriptor(_, "' + name + '") threw ' + e,
+                context);
           }
           if (desc) { recurse(name, desc); }
         });
@@ -881,6 +875,7 @@
       pathFilter: getUrlParam('scan-only'),
       breakOnProblem: !!getUrlParam('break'),  // TODO(kpreid): UI to set flag
       // functions are defined below
+      checkObject: checkObject,
       log: write,
       logProblem: logProblem,
       logGap: logGap,
@@ -1031,13 +1026,25 @@
     /** Add third value-callback to an arguments generator */
     function annotate(calls, callback) {
       return G.apply(function (call) {
-        return [call[0], call[1], callback];
+        function composed(context, thrown) {
+          original(context, thrown);
+          callback(context, thrown);
+        }
+        if (call[2]) {
+          var original = call[2];
+          return [call[0], call[1], composed];
+        } else {
+          return [call[0], call[1], callback];
+        }
       }, calls);
     }
     /** Note that the result is fresh and therefore expected to be extensible */
     function freshResult(calls) {
       return annotate(calls, function(context, thrown) {
-        expectedUnfrozen.setByIdentity(context.get(), true);
+        var object = context.get();
+        if (object === Object(object)) {  // not a primitive
+          expectedUnfrozen.setByIdentity(object, true);
+        }
       });
     }
 
@@ -1416,7 +1423,7 @@
     argsByProp('initKeyboardEvent', G.none);  // implemented like initEvent
     argsByProp('initMouseEvent', G.none);  // implemented like initEvent
     argsByProp('dispatchEvent', genMethod(G.lazyValue(function() {
-        return obtainInstance(Event, function() { return 'Event'; }); })));
+        return obtainInstance(Event, undefined); })));
     argsByProp('getAttribute',
         argsByProp('getAttributeNode',
         argsByProp('hasAttribute', genMethod(genString))));
@@ -1637,6 +1644,24 @@
         document.createElement('canvas').getContext('2d').createImageData(
             2, 2));
 
+    function checkObject(context) {
+      var object = context.get();
+      var frameOfObject = whichFrame(object);
+      // TODO(kpreid): Make the tests a function parameter to Scanner
+      if (frameOfObject !== 'guest' && frameOfObject !== 'taming' &&
+          frameOfObject !== 'neutral') {
+        scanner.noteProblem('Object from a ' + frameOfObject + ' frame',
+            context);
+        return true; // no point in further analyzing, is doomed
+      }
+      if (typeof object === 'function' &&
+          /function Tame(?!XMLHttpRequest)/
+              .test(object.toString())) {
+        scanner.noteProblem('Object is a taming ctor', context);
+      }
+      return false;
+    }
+
     var output = document.getElementById('testUniverse-report');
     function write(var_args) {
       var el = document.createElement('span');
@@ -1653,8 +1678,11 @@
       output.appendChild(el);
       console.error(text);
     }
-    function logGap(description) {
+    function logGap(description, opt_context) {
       var text = 'Coverage gap: ' + description;
+      if (opt_context) {
+        text += '\n' + opt_context.toDetailsString();
+      }
       var el = document.createElement('strong');
       el.className = 'scan-gap';
       el.appendChild(document.createTextNode(text + '\n'));
@@ -1730,7 +1758,7 @@
         pass('testScanner');
       }
     });
-    scanner.skip(Object.prototype);
+    scanner.skip('Object');
     // each property here is an 'object is extensible' problem
     scanner.queue(Context.root(Object.freeze({a: {}, 1: {}, '!': {}}),
         'foo', 'bar'));

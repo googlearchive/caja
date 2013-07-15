@@ -659,17 +659,21 @@ var Domado = (function() {
     }
 
     /**
-     * A getter/setter which forwards to the other-named property of this
+     * A getter which forwards to the other-named property of this
      * object.
+     *
+     * (This does not also forward a setter so as to avoid producing a visible
+     * but useless setter if the other property is read-only. If that is needed,
+     * we'll define aliasRW. Unfortunately there's no way to 'statically'
+     * determine which behavior to use.)
      *
      * Remember that the other property could have been overridden by the caller
      * if it is inherited!
      */
-    function alias(enumerable, otherProp) {
+    function aliasRO(enumerable, otherProp) {
       return {
         enumerable: enumerable,
-        get: innocuous(function aliasGetter() { return this[otherProp]; }),
-        set: innocuous(function aliasSetter(v) { this[otherProp] = v; })
+        get: innocuous(function aliasGetter() { return this[otherProp]; })
       };
     }
 
@@ -766,7 +770,7 @@ var Domado = (function() {
     return {
       define: define,
       actAs: actAs,
-      alias: alias,
+      aliasRO: aliasRO,
       overridable: overridable,
       addOverride: addOverride,
       plainMethod: plainMethod,
@@ -5530,11 +5534,12 @@ var Domado = (function() {
           canPlayType: Props.ampMethod(function(privates, type) {
             return String(privates.feral.canPlayType(String(type)));
           }),
-          fastSeek: Props.ampMethod(function(privates, time) {
-            // TODO(kpreid): Use generic taming like canvas does
-            privates.policy.requireEditable();
-            privates.feral.fastSeek(+time);
-          }),
+          // fastSeek is in spec but not yet in browsers
+          //fastSeek: Props.ampMethod(function(privates, time) {
+          //  // TODO(kpreid): Use generic taming like canvas does
+          //  privates.policy.requireEditable();
+          //  privates.feral.fastSeek(+time);
+          //}),
           load: NP_noArgEditVoidMethod,
           pause: NP_noArgEditVoidMethod,
           play: Props.ampMethod(function(privates, time) {
@@ -6978,8 +6983,8 @@ var Domado = (function() {
                 elPriv.feral, pseudoElement);
           });
         }),
-        pageXOffset: Props.alias(true, 'scrollX'),
-        pageYOffset: Props.alias(true, 'scrollY'),
+        pageXOffset: Props.aliasRO(true, 'scrollX'),
+        pageYOffset: Props.aliasRO(true, 'scrollY'),
         scrollX: Props.ampGetter(function(p) {
             return p.feralContainerNode.scrollLeft; }),
         scrollY: Props.ampGetter(function(p) {
