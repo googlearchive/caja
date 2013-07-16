@@ -49,6 +49,7 @@ import com.google.caja.util.TestFlag;
 class WebDriverHandle {
   private RemoteWebDriver driver = null;
   private boolean canExecuteScript = true;
+  private boolean reportedVersion = false;
 
   // Don't keep more than this many failed test windows. (Otherwise
   // a broken tree can overload a machine with browser windows.)
@@ -89,6 +90,8 @@ class WebDriverHandle {
   }
 
   private void reportVersion(RemoteWebDriver driver) {
+    if (reportedVersion) { return; }
+    reportedVersion = true;
     Capabilities caps = driver.getCapabilities();
     String name = caps.getBrowserName();
     if (name == null) { name = "unknown"; }
@@ -122,13 +125,19 @@ class WebDriverHandle {
     if (!passed && !TestFlag.BROWSER_CLOSE.truthy()
         && fails_kept++ < MAX_FAILS_KEPT) {
       driver = null;
-    }
-    if (driver != null) {
+    } else if (TestFlag.BROWSER_REUSE.truthy()) {
+      // TODO(felix8a): this occasionally causes chromedriver to hang
       driver.get("about:blank");
+    } else {
+      closeDriver();
     }
   }
 
   void release() {
+    closeDriver();
+  }
+
+  private void closeDriver() {
     if (driver != null) {
       try {
         driver.quit();

@@ -34,6 +34,8 @@ public enum TestFlag {
       "test.browser"),
   BROWSER_CLOSE(
       "test.browser.close"),
+  BROWSER_REUSE(
+      "test.browser.reuse"),
   CAPTURE_TO(
       "test.capture.to"),
   CHROME_ARGS(
