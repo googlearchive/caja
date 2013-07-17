@@ -260,3 +260,52 @@ jsunitRegister("testAttributeSelectors",
       'input.cl\\:ass[xml\\:lang ~= "en:us"] { color: blue }');
   jsunit.pass();
 });
+
+// https://code.google.com/p/google-caja/issues/detail?id=1770
+// check parsing and error recovery when there are no spaces
+jsunitRegister('testMinifiedCss1', function testMinifiedCss1() {
+  assertParsedCssStylesheet(
+      ['startStylesheet', [],
+       'startRuleset',    [['a']],
+       'endRuleset',      [],
+       'startRuleset',    [['b']],
+       'declaration',     ['color', ['blue']],
+       'endRuleset',      [],
+       'endStylesheet',   []],
+      'a{bogus}b{color:blue}');
+  jsunit.pass();
+});
+
+jsunitRegister('testMinifiedCss2', function testMinifiedCss2() {
+  assertParsedCssStylesheet(
+      ['startStylesheet', [],
+       'startAtrule',     ['@something', []],
+       'startBlock',
+       'startRuleset',    [['a']],
+       'declaration',     ['color', ['red']],
+       'endRuleset',      [],
+       'endBlock',
+       'endAtrule',
+       'startRuleset',    [['b']],
+       'declaration',     ['color', ['blue']],
+       'endRuleset',      [],
+       'endStylesheet',   []],
+      '@something{a{color:red}}b{color:blue}');
+  jsunit.pass();
+});
+
+jsunitRegister('testMinifiedCss3', function testMinifiedCss3() {
+  assertParsedCssStylesheet(
+      ['startStylesheet', [],
+       'startAtrule',     ['@something', []],
+       'startBlock',
+       'endBlock',
+       'endAtrule',
+       'startRuleset',    [['b']],
+       'declaration',     ['color', ['blue']],
+       'endRuleset',      [],
+       'endStylesheet',   []],
+      '@something{bogus}b{color:blue}');
+  jsunit.pass();
+});
+

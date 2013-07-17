@@ -171,17 +171,16 @@ var parseCssDeclarations;
       // Skip malformed content per selector calling convention.
       e = ~e;
       // Make sure we skip at least one token.
-      return i === e ? e+1 : e;
+      return e === s ? e+1 : e;
     }
-    i = e;
+    var tok = toks[e];
+    if (tok !== '{') {
+      // Make sure we skip at least one token.
+      return e === s ? e+1 : e;
+    }
+    i = e+1;  // Skip over '{'
     // Don't include any trailing space in the selector slice.
     if (e > s && toks[e-1] === ' ') { --e; }
-    var tok = toks[i];
-    ++i;  // Skip over '{'
-    if (tok !== '{') {
-      // Skips past the '{' when there is a malformed input.
-      return i;
-    }
     if (handler.startRuleset) {
       handler.startRuleset(toks.slice(s, e));
     }
@@ -200,7 +199,7 @@ var parseCssDeclarations;
     if (handler.endRuleset) {
       handler.endRuleset();
     }
-    return i < n ? i+1 : i;
+    return i;
   }
 
   // selector    : any+;
