@@ -22,6 +22,16 @@
 
 runCssSelectorTests([
   {
+    // font-weight is special because it only admits specific numbers
+    "test_name": "FontWeight",
+    "tests": [
+      {
+        "cssText": "p { font-weight: 100; font-weight: 150; }",
+        "golden": ".namespace__ p{font-weight:100}"
+      }
+    ]
+  },
+  {
     "test_name": "AtRules",
     "tests": [
       {

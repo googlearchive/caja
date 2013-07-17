@@ -199,6 +199,7 @@ var sanitizeStylesheetWithExternals = undefined;
         var cc = token.charCodeAt(0), cc1, cc2, isnum1, isnum2, end;
         var litGroup, litMap;
         token = (
+
           // Strip out spaces.  Normally cssparser.js dumps these, but we
           // strip them out in case the content doesn't come via cssparser.js.
           (cc === ' '.charCodeAt(0)) ? ''
@@ -225,12 +226,26 @@ var sanitizeStylesheetWithExternals = undefined;
             // Drop if quoted strings not allowed.
             : ''
           )
+
           // Preserve hash color literals if allowed.
           : (cc === '#'.charCodeAt(0) && /^#(?:[0-9a-f]{3}){1,2}$/.test(token))
           ? (propBits & CSS_PROP_BIT_HASH_VALUE ? token : '')
+
+          : (
+            litGroup = propertySchema.cssLitGroup,
+            litMap = (litGroup
+                      ? (propertySchema.cssLitMap
+                         // Lazily compute the union from litGroup.
+                         || (propertySchema.cssLitMap = unionArrays(litGroup)))
+                      : ALLOWED_LITERAL),  // A convenient empty object.
+            (litMap[token] === ALLOWED_LITERAL))
+          // Token is in the literal map or matches extra.
+          ? token
+
           : ('0'.charCodeAt(0) <= cc && cc <= '9'.charCodeAt(0))
           // A number starting with a digit.
           ? ((propBits & CSS_PROP_BIT_QUANTITY) ? token : '')
+
           // Normalize quantities so they don't start with a '.' or '+' sign and
           // make sure they all have an integer component so can't be confused
           // with a dotted identifier.
@@ -245,15 +260,18 @@ var sanitizeStylesheetWithExternals = undefined;
           ? ((propBits & CSS_PROP_BIT_QUANTITY)
             ? ((isnum1 ? '' : '0') + token.substring(1))
             : '')
+
           // -.5 -> -0.5 if allowed otherwise -> 0 if quantities allowed.
           : (cc === '-'.charCodeAt(0)
              && (isnum1 || (cc1 === '.'.charCodeAt(0) && isnum2)))
             ? ((propBits & CSS_PROP_BIT_NEGATIVE_QUANTITY)
                ? ((isnum1 ? '-' : '-0') + token.substring(1))
                : ((propBits & CSS_PROP_BIT_QUANTITY) ? '0' : ''))
+
           // .5 -> 0.5 if allowed.
           : (cc === '.'.charCodeAt(0) && isnum1)
           ? ((propBits & CSS_PROP_BIT_QUANTITY) ? '0' + token : '')
+
           // Handle url("...") by rewriting the body.
           : ('url(' === token.substring(0, 4))
           ? ((opt_naiveUriRewriter && (propBits & CSS_PROP_BIT_URL))
@@ -262,21 +280,13 @@ var sanitizeStylesheetWithExternals = undefined;
                   property,
                   opt_naiveUriRewriter))
              : '')
+
           // Handle func(...) by recursing.
           // Functions start at a token like "name(" and end with a ")" taking
           // into account nesting.
           : (token.charAt(token.length-1) === '(')
           ? sanitizeFunctionCall(tokens, i)
-          : (
-            litGroup = propertySchema.cssLitGroup,
-            litMap = (litGroup
-                      ? (propertySchema.cssLitMap
-                         // Lazily compute the union from litGroup.
-                         || (propertySchema.cssLitMap = unionArrays(litGroup)))
-                      : ALLOWED_LITERAL),  // A convenient empty object.
-            (litMap[token] === ALLOWED_LITERAL))
-          // Token is in the literal map or matches extra.
-          ? token
+
           : (/^\w+$/.test(token)
              && stringDisposition === CSS_PROP_BIT_UNRESERVED_WORD
              && (propBits & CSS_PROP_BIT_QSTRING))
@@ -292,6 +302,7 @@ var sanitizeStylesheetWithExternals = undefined;
                   + ' ' + token + '"'),
                 token = '')
              : (lastQuoted = k, '"' + token + '"'))
+
           // Disallowed.
           : '');
         if (token) {
