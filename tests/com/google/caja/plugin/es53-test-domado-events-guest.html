@@ -936,7 +936,9 @@ TODO(felix8a): fix javascript url handling
       if (directAccess.feralFeatureTest(event, 'char')) {
         assertEquals('initKeyboardEvent char', 'q', event.char);
       }
-      if (directAccess.feralFeatureTest(event, 'key')) {
+      // firefox 23 and 24 have event.key but it seems to always be ''
+      if (directAccess.feralFeatureTest(event, 'key') &&
+          directAccess.getFeralProperty(event, 'key') !== '') {
         assertEquals('initKeyboardEvent key', 'q', event.key);
       }
       assertEquals('initKeyEvent charCode', 0, event.charCode);
