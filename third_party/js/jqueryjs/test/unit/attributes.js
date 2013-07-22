@@ -54,7 +54,7 @@ test( "jQuery.propFix integrity test", function() {
 });
 
 test( "attr(String)", function() {
-	expect( 50 );
+	expect( 47 /* Patched for Caja: 50 */ );
 
 	equal( jQuery("#text1").attr("type"), "text", "Check for type attribute" );
 	equal( jQuery("#radio1").attr("type"), "radio", "Check for type attribute" );
@@ -75,9 +75,13 @@ test( "attr(String)", function() {
 
 	// [7472] & [3113] (form contains an input with name="action" or name="id")
 	var extras = jQuery("<input id='id' name='id' /><input id='name' name='name' /><input id='target' name='target' />").appendTo("#testForm");
-	equal( jQuery("#form").attr("action","newformaction").attr("action"), "newformaction", "Check that action attribute was changed" );
+	// Patched for Caja: URL-valued attributes are converted into absolute form in
+	// Caja. This test is therefore disabled.
+	// equal( jQuery("#form").attr("action","newformaction").attr("action"), "newformaction", "Check that action attribute was changed" );
 	equal( jQuery("#testForm").attr("target"), undefined, "Retrieving target does not equal the input with name=target" );
-	equal( jQuery("#testForm").attr("target", "newTarget").attr("target"), "newTarget", "Set target successfully on a form" );
+  // Patched for Caja: 'target' attributes are rewritten in Caja.
+  // This test is therefore disabled.
+  // equal( jQuery("#testForm").attr("target", "newTarget").attr("target"), "newTarget", "Set target successfully on a form" );
 	equal( jQuery("#testForm").removeAttr("id").attr("id"), undefined, "Retrieving id does not equal the input with name=id after id is removed [#7472]" );
 	// Bug #3685 (form contains input with name="name")
 	equal( jQuery("#testForm").attr("name"), undefined, "Retrieving name does not retrieve input with name=name" );
@@ -150,7 +154,9 @@ test( "attr(String)", function() {
 	equal( $form.attr("class"), "something", "Retrieve the class attribute on a form." );
 
 	var $a = jQuery("<a href='#' onclick='something()'>Click</a>").appendTo("#qunit-fixture");
-	equal( $a.attr("onclick"), "something()", "Retrieve ^on attribute without anonymous function wrapper." );
+	// Patched for Caja: 'onclick' JavaScript attributes are rewritten in Caja.
+	// This test is therefore disabled.
+	// equal( $a.attr("onclick"), "something()", "Retrieve ^on attribute without anonymous function wrapper." );
 
 	ok( jQuery("<div/>").attr("doesntexist") === undefined, "Make sure undefined is returned when no attribute is found." );
 	ok( jQuery("<div/>").attr("title") === undefined, "Make sure undefined is returned when no attribute is found." );
@@ -250,7 +256,7 @@ test( "attr(Hash)", function() {
 });
 
 test( "attr(String, Object)", function() {
-	expect( 71 );
+	expect( 70 /* Patched for Caja: 71 */ );
 
 	var div = jQuery("div").attr("foo", "bar"),
 		i = 0,
@@ -316,8 +322,11 @@ test( "attr(String, Object)", function() {
 	equal( $input.attr("checked"), "checked", "Set checked to 'checked' (verified by .attr)" );
 
 	var $radios = jQuery("#checkedtest").find("input[type='radio']");
-	$radios.eq( 1 ).trigger("click");
-	equal( $radios.eq( 1 ).prop("checked"), true, "Second radio was checked when clicked" );
+	// Patched for Caja: We cannot support click() securely in Caja with reasonable
+	// effort. https://code.google.com/p/google-caja/issues/detail?id=1129
+	// This test is therefore disabled.
+	// $radios.eq( 1 ).trigger("click");
+	// equal( $radios.eq( 1 ).prop("checked"), true, "Second radio was checked when clicked" );
 	equal( $radios.eq( 0 ).attr("checked"), "checked", "First radio is still [checked]" );
 
 	$input = jQuery("#text1").attr( "readonly", false ).prop( "readOnly", true );
@@ -358,17 +367,21 @@ test( "attr(String, Object)", function() {
 	jQuery("#foo").attr("contenteditable", true);
 	equal( jQuery("#foo").attr("contenteditable"), "true", "Enumerated attributes are set properly" );
 
-	var attributeNode = document.createAttribute("irrelevant"),
+	// TODO(ihab.awad): document.createAttribute() is nonexistent, so we need to
+	// allow the rest of the tests to be executed.
+	var /* attributeNode = document.createAttribute("irrelevant"), */
 		commentNode = document.createComment("some comment"),
 		textNode = document.createTextNode("some text"),
 		obj = {};
-
-	jQuery.each( [ commentNode, textNode, attributeNode ], function( i, elem ) {
+	jQuery.each( [ commentNode, textNode /* , attributeNode */ ], function( i, elem ) {
 		var $elem = jQuery( elem );
 		$elem.attr( "nonexisting", "foo" );
 		strictEqual( $elem.attr("nonexisting"), undefined, "attr(name, value) works correctly on comment and text nodes (bug #7500)." );
 	});
 
+	// TODO(ihab.awad): window.eval() unsupported, so must comment out to allow
+	// other tests to proceed.
+	/*
 	// Register the property name to avoid generating a new global when testing window
 	Globals.register("nonexisting");
 	jQuery.each( [ window, document, obj, "#firstp" ], function( i, elem ) {
@@ -378,6 +391,7 @@ test( "attr(String, Object)", function() {
 		equal( $elem.attr( "nonexisting", "foo" ).attr("nonexisting"), "foo", "attr falls back to prop on unsupported arguments" );
 		elem.nonexisting = oldVal;
 	});
+	*/
 
 	var table = jQuery("#table").append("<tr><td>cell</td></tr><tr><td>cell</td><td>cell</td></tr><tr><td>cell</td><td>cell</td></tr>"),
 		td = table.find("td:first");
@@ -617,7 +631,7 @@ test( "removeAttr(Multi String, variable space width)", function() {
 });
 
 test( "prop(String, Object)", function() {
-	expect( 31 );
+	expect( 30 /* TODO(ihab.awad): 31 */ );
 
 	equal( jQuery("#text1").prop("value"), "Test", "Check for value attribute" );
 	equal( jQuery("#text1").prop( "value", "Test2" ).prop("defaultValue"), "Test", "Check for defaultValue attribute" );
@@ -666,11 +680,13 @@ test( "prop(String, Object)", function() {
 	equal( jQuery( option ).prop("selected"), true, "Make sure that a single option is selected, even when in an optgroup." );
 	equal( jQuery( document ).prop("nodeName"), "#document", "prop works correctly on document nodes (bug #7451)." );
 
-	var attributeNode = document.createAttribute("irrelevant"),
+	// TODO(ihab.awad): document.createAttribute() is nonexistent, so we need to
+	// allow the rest of the tests to be executed.
+	var /* attributeNode = document.createAttribute("irrelevant"), */
 		commentNode = document.createComment("some comment"),
 		textNode = document.createTextNode("some text"),
 		obj = {};
-	jQuery.each( [ document, attributeNode, commentNode, textNode, obj, "#firstp" ], function( i, ele ) {
+	jQuery.each( [ document, /* attributeNode, */ commentNode, textNode, obj, "#firstp" ], function( i, ele ) {
 		strictEqual( jQuery( ele ).prop("nonexisting"), undefined, "prop works correctly for non existing attributes (bug #7500)." );
 	});
 
@@ -747,8 +763,9 @@ test( "prop('tabindex', value)", 10, function() {
 });
 
 test( "removeProp(String)", function() {
-	expect( 6 );
-	var attributeNode = document.createAttribute("irrelevant"),
+	expect( 5 /* TODO(ihab.awad): 6 */ );
+	// TODO(ihab.awad): document.createAttribute() not supported
+	var /* attributeNode = document.createAttribute("irrelevant"), */
 		commentNode = document.createComment("some comment"),
 		textNode = document.createTextNode("some text"),
 		obj = {};
@@ -764,7 +781,8 @@ test( "removeProp(String)", function() {
 		$ele.prop( "nonexisting", "foo" ).removeProp("nonexisting");
 		strictEqual( ele["nonexisting"], undefined, "removeProp works correctly on non DOM element nodes (bug #7500)." );
 	});
-	jQuery.each( [ commentNode, textNode, attributeNode ], function( i, ele ) {
+	// TODO(ihab.awad): see above
+	jQuery.each( [ commentNode, textNode /*, attributeNode */ ], function( i, ele ) {
 		var $ele = jQuery( ele );
 		$ele.prop( "nonexisting", "foo" ).removeProp("nonexisting");
 		strictEqual( ele["nonexisting"], undefined, "removeProp works correctly on non DOM element nodes (bug #7500)." );
@@ -988,7 +1006,11 @@ test( "val(select) after form.reset() (Bug #2551)", function() {
 
 	jQuery("#kkk").val("gf");
 
-	document["kk"].reset();
+	// TODO(ihab.awad): work around
+	// https://code.google.com/p/google-caja/issues/detail?id=1807
+	// to allow other tests to run
+	// document["kk"].reset();
+	document.getElementById('kk').reset();
 
 	equal( jQuery("#kkk")[ 0 ].value, "cf", "Check value of select after form reset." );
 	equal( jQuery("#kkk").val(), "cf", "Check value of select after form reset." );

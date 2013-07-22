@@ -23,6 +23,11 @@ if (!testCase) {
   throw new Error('Parameter "test-case" not specified in URL');
 }
 
+if (getUrlParam('minified') === 'false') {
+  // Enable un-minified jQuery source files for easier debugging
+  testCase = testCase + '&dev=true';
+}
+
 caja.makeFrameGroup(basicCajaConfig, function(frameGroup) {
   frameGroup.makeES5Frame(
       createDiv(),

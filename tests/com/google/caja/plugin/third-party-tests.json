@@ -10,12 +10,12 @@
         "expected-pass": 377,
         "comment": [
           "Current failure categories:",
-            "window.eval not enabled for testing",
-            "We don't implement XML yet.",
-            "We don't implement document.getElementsByName.",
-            "jQuery.proxy is not getting a thisArg it wants - this one may",
-            "  actually be a strict-mode incompatibility in jQuery itself.",
-            "Other unexamined."
+            "https://code.google.com/p/google-caja/issues/detail?id=1199",
+            "https://code.google.com/p/google-caja/issues/detail?id=1785",
+            "https://code.google.com/p/google-caja/issues/detail?id=1786",
+            "https://code.google.com/p/google-caja/issues/detail?id=1787",
+            "https://code.google.com/p/google-caja/issues/detail?id=1788",
+            "https://code.google.com/p/google-caja/issues/detail?id=1790"
         ]
       },
       {
@@ -23,11 +23,7 @@
         "expected-pass": "all",
         "comment": [
           "Current modifications made to test suite:",
-            "Adjusted 'context is window' test assuming callee is non-strict",
-          "Current failure categories:",
-            "'No callback iteration' test fails -- not obvious why, but",
-            "  suggesting type/identity issues.",
-            ".has() test fails -- may be related."
+            "Adjusted 'context is window' test assuming callee is non-strict"
         ]
       },
       {
@@ -35,9 +31,7 @@
         "expected-pass": "all",
         "comment": [
           "Current modifications made to test suite:",
-            "Adjusted tests assuming callee is non-strict",
-          "Current failure categories:",
-            "Some jQuery promises not having notify/reject/resolve methods."
+            "Adjusted tests assuming callee is non-strict"
         ]
       },
       {
@@ -45,9 +39,8 @@
         "expected-pass": 27,
         "comment": [
           "Current failure categories:",
-            "We don't implement src= iframes yet.",
-            "Support tests expecting different things than it actually gets",
-            "  from the browser, presumably due to Domado unsupported features."
+            "https://code.google.com/p/google-caja/issues/detail?id=1199",
+            "https://code.google.com/p/google-caja/issues/detail?id=1791"
         ]
       },
       {
@@ -55,32 +48,28 @@
         "expected-pass": 286,
         "comment": [
           "Current failure categories:",
-            "'Triggering the removeData should not throw exceptions.' is",
-            "  getting its hands on what looks like the tameContainerNode of",
-            "  an iframe and thus noting the absence of addEventListener."
+            "https://code.google.com/p/google-caja/issues/detail?id=1792"
         ]
       },
       {
         "guest": "queue",
-        "expected-pass": "all",
-        "comment": [
-          "Current failure categories:",
-            "foo.animate is not a function"
-        ]
+        "expected-pass": "all"
       },
       {
         "guest": "attributes",
         "expected-pass": 428,
         "comment": [
           "Current failure categories:",
-            "Seeing absolute instead of relative URLs (visible rewriting).",
-            "target= rewriting is visible to the guest.",
-            "We don't implement XML yet.",
-            ".checked is affecting checked= when it shouldn't.",
-            "We don't implement document.createAttribute yet.",
-            "Removing style= attributes is misbehaving.",
-            "Something about retrieving tabindex.",
-            "Other mismatches."
+            "https://code.google.com/p/google-caja/issues/detail?id=1787",
+            "https://code.google.com/p/google-caja/issues/detail?id=1795",
+            "https://code.google.com/p/google-caja/issues/detail?id=1786",
+            "https://code.google.com/p/google-caja/issues/detail?id=1812",
+            "https://code.google.com/p/google-caja/issues/detail?id=1798",
+            "https://code.google.com/p/google-caja/issues/detail?id=1785",
+            "https://code.google.com/p/google-caja/issues/detail?id=1799",
+            "https://code.google.com/p/google-caja/issues/detail?id=1800",
+            "https://code.google.com/p/google-caja/issues/detail?id=1155",
+            "https://code.google.com/p/google-caja/issues/detail?id=1807"
         ]
       },
       {
@@ -88,9 +77,13 @@
         "expected-pass": 376,
         "comment": [
           "Current failure categories:",
-            "Object [domado object HTMLInputElement] has no method 'click'",
-            "At least one lost-signal failure.",
-            "Other unexamined."
+            "https://code.google.com/p/google-caja/issues/detail?id=1199",
+            "https://code.google.com/p/google-caja/issues/detail?id=1799",
+            "https://code.google.com/p/google-caja/issues/detail?id=1812",
+            "https://code.google.com/p/google-caja/issues/detail?id=1810",
+            "https://code.google.com/p/google-caja/issues/detail?id=1814",
+            "TODO(ihab.awad): This is as far as I got with diagnosis.",
+            "  Some bugs probably remain in this file."
         ]
       },
       {

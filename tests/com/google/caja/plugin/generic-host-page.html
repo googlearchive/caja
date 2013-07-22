@@ -77,7 +77,14 @@
       <option>NOT_SUPPORTED</option>
     </select></label>
     &middot;
-    <label><input type="checkbox" name="debug" value="true"> Config <code>debug</code></label>
+    <label>
+      <input type="checkbox" name="debug" value="true">
+      Config <code>debug</code>
+    </label>
+    <label>
+      <input type="checkbox" name="alert" value="true">
+      Provide <code>alert</code>
+    </label>
     <br>
     <textarea type="text" name="content"></textarea>
     <button id="load" type="submit">Load</button>
@@ -115,8 +122,15 @@
         caja.policy.net.ALL,
         function(frame) {
           status('frame.content().run()');
-          frame.content('http://caja-host-url.invalid/', options.content)
-              .run(function() {
+          frame.content('http://caja-host-url.invalid/', options.content);
+          if (options.alert) {
+            frame.api({
+                  alert: frame.tame(frame.markFunction(function(s) {
+                    window.alert('Guest alerts: ' + s);
+                  }))
+                });
+          }
+          frame.run(function() {
                 status('Complete');
               });
         });
