@@ -388,3 +388,11 @@ jsunitRegister('testImportant', function testImportant() {
 
   jsunit.pass();
 });
+
+jsunitRegister('testIssue1804', function testIssue1804() {
+  assertSelector("a,", "sfx", [[".sfx a"], []]);
+  assertSelector(",a", "sfx", [[".sfx a"], []]);
+  assertSelector(",",  "sfx", [[], []]);
+  assertSelector("a[", "sfx", [[], []]);
+  jsunit.pass();
+});

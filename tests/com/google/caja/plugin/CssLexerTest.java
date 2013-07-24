@@ -23,7 +23,7 @@ import com.google.caja.util.RhinoTestBed;
  * @author mikesamuel@gmail.com
  */
 public final class CssLexerTest extends CajaTestCase {
-  public final void testHtmlSanitizer() throws Exception {
+  public final void testCssLexer() throws Exception {
     RhinoTestBed.runJsUnittestFromHtml(
         html(fromResource("csslexer-test.html")));
   }

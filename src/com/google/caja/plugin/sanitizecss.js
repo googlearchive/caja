@@ -472,7 +472,7 @@ var sanitizeStylesheetWithExternals = undefined;
             } else {
               valid = false;
             }
-          } else if (start < end && selectors[start] === '[') {
+          } else if (start + 1 < end && selectors[start] === '[') {
             ++start;
             var attr = selectors[start++].toLowerCase();
             var atype = html4.ATTRIBS[element + '::' + attr];
@@ -560,6 +560,8 @@ var sanitizeStylesheetWithExternals = undefined;
             } else {
               break;
             }
+          } else {
+            break;  // Unrecognized token.
           }
         }
         if (start !== end) {  // Tokens not consumed.
