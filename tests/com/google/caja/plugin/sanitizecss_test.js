@@ -396,3 +396,102 @@ jsunitRegister('testIssue1804', function testIssue1804() {
   assertSelector("a[", "sfx", [[], []]);
   jsunit.pass();
 });
+
+jsunitRegister('testMediaQueries', function testMediaQueries() {
+  var passing = [
+    '',
+    ' ',
+    'all',
+    ' all',
+    'all ',
+    ' all ',
+    'not all',
+    'all and(color)',
+    'screen and (max-width: 6in) and (color), (color)',
+    '(min-orientation:portrait)',
+    '(min-width: 700px)',
+    '(min-width: 700px) and (orientation: landscape)',
+    'tv and (min-width: 700px) and (orientation: landscape)',
+    '(min-width: 700px), handheld and (orientation: landscape)',
+    'not all and (monochrome)',
+    'not screen and (color), print and (color)',
+    'only screen and (color)',
+    'all and (color)',
+    'all and (min-color: 4)',
+    'all and ( min-color : 4 )',
+    'all and (color-index)',
+    'all and (min-color-index: 256)',
+    'screen and (min-aspect-ratio: 1/1)',
+    'screen and (device-aspect-ratio: 16/9), screen and (device-aspect-ratio: 16/10)',
+    'screen and (max-device-width: 799px)',
+    'handheld and (grid) and (max-width: 15em)',
+    'all and (monochrome)',
+    'all and (min-monochrome: 8)',
+    'all and (orientation: portrait)',
+    'print and (min-resolution: 300dpi)',
+    'screen and (min-resolution: 2dppx)',
+    'tv and (scan: progressive)',
+    'handheld and (min-width: 20em), screen and (min-width: 20em)',
+    'print and (min-width: 8.5in)',
+    'screen and (min-width: 500px) and (max-width: 800px)',
+    '(min-resolution: 192dpi)',
+    'print and (min-width: 25cm)',
+    'screen and (min-width: 400px) and (max-width: 700px)',
+    'handheld and (min-width: 20em), \n  screen and (min-width: 20em)',
+    'screen and (device-width: 800px)',
+    'screen and (device-height: 600px)',
+    'all and (orientation:landscape)',
+    'screen and (device-aspect-ratio: 16/9)',
+    'screen and (device-aspect-ratio: 2560 / 1440)',
+    '(min-color: 1)',
+    '(min-color:2)',
+    'all and (color-index)',
+    'all and (min-color-index: 1)',
+    'all and (min-color-index: 256)',
+    '(monochrome)',
+    '(min-monochrome: 1)',
+    'print and (monochrome)',
+    'print and (min-resolution: 118dpcm)',
+    'handheld and (grid) and (max-device-height: 7em)',
+    '(script) and (pointer: fine)',
+    'only screen and (pointer) and (hover:1)',
+    'screen and (luminosity:dim)',
+    '(MONOCHROME)',
+    '(Color:1)',
+    'Screen AND (Min-device-Width: 600PX)'
+  ];
+  var failing = [
+    'not all',
+    'only and or',
+    '(bogus)',
+    '(screen)',
+    'min-width:800px',
+    'screen and ((color:1))',
+    'only (color)',
+    'only (color:1)',
+    'screen, tv, ',
+    '(min-device-width:6in',
+    '(min-device-width:',
+    '(min-device-width'
+  ];
+  function normalizeQuery(css) {
+    if (/\S/.test(css) && !/^\s*\w/.test(css)) { css = 'not all , ' + css; }
+    css = css.replace(/\s+/g, ' ');
+    return css.replace(/(^|[^\w\-]) /g, '$1') // Strip spaces after punctuation.
+              .replace(/ (?=$|[^\w\-])/g, '') // Strip spaces before punctuation.
+              .toLowerCase();
+  }
+  for (var i = 0, n = passing.length; i < n; ++i) {
+    var css = passing[i];
+    var tokens = lexCss(css);
+    var sanitized = sanitizeMediaQuery(tokens);
+    assertEquals(css, normalizeQuery(css), normalizeQuery(sanitized)); 
+  }
+  for (var i = 0, n = failing.length; i < n; ++i) {
+    var css = failing[i];
+    var tokens = lexCss(css);
+    var sanitized = sanitizeMediaQuery(tokens);
+    assertEquals(css, 'not all', normalizeQuery(sanitized)); 
+  }
+  jsunit.pass();
+});

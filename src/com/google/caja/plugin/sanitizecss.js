@@ -36,12 +36,14 @@
  * \@provides sanitizeCssSelectors
  * \@provides sanitizeStylesheet
  * \@provides sanitizeStylesheetWithExternals
+ * \@provides sanitizeMediaQuery
  */
 
 var sanitizeCssProperty = undefined;
 var sanitizeCssSelectors = undefined;
 var sanitizeStylesheet = undefined;
 var sanitizeStylesheetWithExternals = undefined;
+var sanitizeMediaQuery = undefined;
 
 (function () {
   var NOEFFECT_URL = 'url("about:blank")';
@@ -603,18 +605,99 @@ var sanitizeStylesheetWithExternals = undefined;
   };
 
   (function () {
-    var allowed = {};
-    var cssMediaTypeWhitelist = {
-      'braille': allowed,
-      'embossed': allowed,
-      'handheld': allowed,
-      'print': allowed,
-      'projection': allowed,
-      'screen': allowed,
-      'speech': allowed,
-      'tty': allowed,
-      'tv': allowed
+    var MEDIA_TYPE =
+       '(?:'
+       + 'all|aural|braille|embossed|handheld|print'
+       + '|projection|screen|speech|tty|tv'
+       + ')';
+
+    // A white-list of media features extracted from the "Pseudo-BNF" in
+    // http://dev.w3.org/csswg/mediaqueries4/#media1 and
+    // https://developer.mozilla.org/en-US/docs/Web/Guide/CSS/Media_queries
+    var MEDIA_FEATURE =
+       '(?:'
+       + '(?:min-|max-)?'
+       + '(?:' + (
+           '(?:device-)?'
+         + '(?:aspect-ratio|height|width)'
+         + '|color(?:-index)?'
+         + '|monochrome'
+         + '|orientation'
+         + '|resolution'
+       )
+       + ')'
+       + '|grid'
+       + '|hover'
+       + '|luminosity'
+       + '|pointer'
+       + '|scan'
+       + '|script'
+       + ')';
+
+    var LENGTH_UNIT = '(?:p[cxt]|[cem]m|in|dpi|dppx|dpcm|%)';
+
+    var CSS_VALUE =
+       '-?(?:'
+       + '[a-z]\\w+(?:-\\w+)*'  // An identifier
+       // A length or scalar quantity, or a rational number.
+       // dev.w3.org/csswg/mediaqueries4/#values introduces a ratio value-type
+       // to allow matching aspect ratios like "4 / 3".
+       + '|\\d+(?: / \\d+|(?:\\.\\d+)?' + LENGTH_UNIT + '?)'
+       + ')';
+
+    var MEDIA_EXPR =
+       '\\( ' + MEDIA_FEATURE + ' (?:' + ': ' + CSS_VALUE + ' )?\\)';
+
+    var MEDIA_QUERY =
+       '(?:'
+       + '(?:(?:(?:only|not) )?' + MEDIA_TYPE + '|' + MEDIA_EXPR + ')'
+       // We use 'and ?' since 'and(' is a single CSS function token while
+       // 'and (' parses to two separate tokens -- IDENT "and", DELIM "(".
+       + '(?: and ?' + MEDIA_EXPR + ')*'
+       + ')';
+
+    var STARTS_WITH_KEYWORD_REGEXP = /^\w/;
+
+    var MEDIA_QUERY_LIST_REGEXP = new RegExp(
+      '^' + MEDIA_QUERY + '(?: , ' + MEDIA_QUERY + ')*' + '$',
+      'i'
+    );
+
+    /**
+     * Sanitizes a media query as defined in
+     * http://dev.w3.org/csswg/mediaqueries4/#syntax
+     * <blockquote>
+     * Media Queries allow authors to adapt the style applied to a document
+     * based on the environment the document is being rendered in.
+     * </blockquote>
+     *
+     * @param {Array.<string>} cssTokens an array of tokens of the kind produced
+     *   by cssLexers.
+     * @return {string} a CSS media query.  This may be the empty string, or if
+     *   the input is invalid, then a query that is always false.
+     */
+    sanitizeMediaQuery = function (cssTokens) {
+      cssTokens = cssTokens.slice();
+      // Strip out space tokens.
+      var nTokens = cssTokens.length, k = 0;
+      for (var i = 0; i < nTokens; ++i) {
+        var tok = cssTokens[i];
+        if (tok != ' ') { cssTokens[k++] = tok; }
+      }
+      cssTokens.length = k;
+      var css = cssTokens.join(' ');
+      css = (
+        !css.length ? ''  // Always true per the spec.
+        : !(MEDIA_QUERY_LIST_REGEXP.test(css)) ? 'not all'  // Always false.
+        // Emit as-is if it starts with 'only', 'not' or a media type.
+        : STARTS_WITH_KEYWORD_REGEXP.test(css) ? css
+        : 'not all , ' + css  // Not ambiguous with a URL.
+      );
+      return css;
     };
+  }());
+
+  (function () {
 
     /**
      * Given a series of sanitized tokens, removes any properties that would
@@ -716,19 +799,12 @@ var sanitizeStylesheetWithExternals = undefined;
               if (elide) {
                 atIdent = null;
               } else if (atIdent === '@media') {
-                headerArray = headerArray.filter(
-                  function (mediaType) {
-                    return cssMediaTypeWhitelist[mediaType] == allowed;
-                  });
-                if (headerArray.length) {
-                  safeCss.push(atIdent, ' ', headerArray.join(','));
-                } else {
-                  atIdent = null;
-                }
+                safeCss.push('@media', ' ', sanitizeMediaQuery(headerArray));
               } else {
                 if (atIdent === '@import' && headerArray.length > 0) {
                   if ('function' === typeof continuation) {
                     moreToCome = true;
+                    // TODO: provide any media query to the continuation.
                     var cssUrl = safeUri(
                         resolveUri(baseUri, cssParseUri(headerArray[0])),
                         function(result) {
@@ -892,4 +968,5 @@ if (typeof window !== 'undefined') {
   window['sanitizeCssProperty'] = sanitizeCssProperty;
   window['sanitizeCssSelectors'] = sanitizeCssSelectors;
   window['sanitizeStylesheet'] = sanitizeStylesheet;
+  window['sanitizeMediaQuery'] = sanitizeMediaQuery;
 }
