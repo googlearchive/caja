@@ -209,17 +209,17 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
   //----------------
 
   function makeES5Frame(div, uriPolicy, es5ready, domOpts) {
-    var divs = cajaInt.prepareContainerDiv(div, feralWin, domOpts);
+    var divInfo = cajaInt.prepareContainerDiv(div, feralWin, domOpts);
     guestMaker.make(function (guestWin) {
       var frameTamingSchema =
           TamingSchema(tamingHelper);
       var frameTamingMembrane =
           TamingMembrane(tamingHelper, frameTamingSchema.control);
       var domicileAndEmitter = makeDomicileAndEmitter(
-          frameTamingMembrane, divs, uriPolicy, guestWin);
+          frameTamingMembrane, divInfo, uriPolicy, guestWin);
       var domicile = domicileAndEmitter && domicileAndEmitter[0];
       var htmlEmitter = domicileAndEmitter && domicileAndEmitter[1];
-      var gman = GuestManager(frameTamingSchema, frameTamingMembrane, divs, 
+      var gman = GuestManager(frameTamingSchema, frameTamingMembrane, divInfo,
           cajaInt.documentBaseUrl(), domicile, htmlEmitter, guestWin,
           tamingWin.___.USELESS, uriPolicy, es53run);
       gman._loader = guestWin.loadModuleMaker(
@@ -230,8 +230,8 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
   }
 
   function makeDomicileAndEmitter(
-      frameTamingMembrane, divs, uriPolicy, guestWin) {
-    if (!divs.inner) { return null; }
+      frameTamingMembrane, divInfo, uriPolicy, guestWin) {
+    if (!divInfo.opt_div) { return null; }
 
     // Needs to be accessible by Domado. But markFunction must be done at
     // most once, so markFunction(uriPolicy.rewrite) would only work once,
@@ -285,7 +285,7 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
     markCallableWithoutMembrane(frameTamingMembrane.hasFeralTwin);
 
     var domicile = domado.attachDocument(
-      '-' + divs.idClass, uriPolicyWrapper, divs.inner,
+      '-' + divInfo.idClass, uriPolicyWrapper, divInfo.opt_div,
       targetAttributePresets,
       recordWithMethods(
         'permitUntaming', permitUntaming,

@@ -57,7 +57,7 @@
       },
       {
         "guest": "attributes",
-        "expected-pass": 428,
+        "expected-pass": 464,
         "comment": [
           "Current failure categories:",
             "https://code.google.com/p/google-caja/issues/detail?id=1787",
@@ -74,7 +74,7 @@
       },
       {
         "guest": "event",
-        "expected-pass": 376,
+        "expected-pass": 378,
         "comment": [
           "Current failure categories:",
             "https://code.google.com/p/google-caja/issues/detail?id=1199",
@@ -105,7 +105,7 @@
       },
       {
         "guest": "manipulation",
-        "expected-pass": { "firefox": 588, "chrome": 559 },
+        "expected-pass": { "firefox": 574, "chrome": 559 },
         "comment": [
           "Current modifications made to test suite:",
             "Removed SES-incompatible Array.prototype modification; was only",
@@ -125,7 +125,7 @@
       },
       {
         "guest": "css",
-        "expected-pass": 240,
+        "expected-pass": 241,
         "comment": [
           "Current failure categories:",
             "Not yet examined."
@@ -149,7 +149,7 @@
       },
       {
         "guest": "effects",
-        "expected-pass": 552,
+        "expected-pass": { "firefox": 552, "chrome": 551 },
         "comment": [
           "Current failure categories:",
             "fill-opacity SVG-only CSS property."
@@ -218,7 +218,7 @@
       },
       {
         "guest": "dialog",
-        "expected-pass": { "firefox": 219, "chrome": 226 },
+        "expected-pass": { "firefox": 290, "chrome": 305 },
         "comment": [
           "Current failure categories:",
             "What may be event simulation failures",
@@ -255,7 +255,7 @@
       },
       {
         "guest": "slider",
-        "expected-pass": { "firefox": 92, "chrome": 123 },
+        "expected-pass": { "firefox": 93, "chrome": 124 },
         "comment": [
           "Current failure categories:",
             "Keyboard events not working"

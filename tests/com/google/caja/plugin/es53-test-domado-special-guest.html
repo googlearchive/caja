@@ -425,7 +425,7 @@
     }
 
     function windowStyleWidth() {
-      var w = parseInt(directAccess.getComputedStyle(directAccess.getBodyNode(),
+      var w = parseInt(directAccess.getComputedStyle(directAccess.getVdocNode(),
           'width'), 10);
 
       // Firefox and Chrome are inconsistent about whether the computed style
@@ -478,7 +478,7 @@ can test window.scrollBy with a positive x value with a visible effect.
     // that behavior?
     //assertEquals(
     //    'hidden',
-    //    directAccess.getComputedStyle(directAccess.getBodyNode(), 'overflow'));
+    //    directAccess.getComputedStyle(directAccess.getVdocNode(), 'overflow'));
 
     window.scrollBy(0, 0);
     assertEquals(initialViewPort, getViewport());
@@ -486,24 +486,24 @@ can test window.scrollBy with a positive x value with a visible effect.
     // that behavior?
     //assertEquals(
     //    'hidden',
-    //    directAccess.getComputedStyle(directAccess.getBodyNode(), 'overflow'));
+    //    directAccess.getComputedStyle(directAccess.getVdocNode(), 'overflow'));
 
     window.scrollTo(0, 10);
     assertEquals(
         'auto',
-        directAccess.getComputedStyle(directAccess.getBodyNode(), 'overflow'));
+        directAccess.getComputedStyle(directAccess.getVdocNode(), 'overflow'));
     assertEquals('0,10,0,10', getViewport());
 
     window.scrollBy(10, -5);
     assertEquals(
         'auto',
-        directAccess.getComputedStyle(directAccess.getBodyNode(), 'overflow'));
+        directAccess.getComputedStyle(directAccess.getVdocNode(), 'overflow'));
     assertEquals('10,5,10,5', getViewport());
 
     document.defaultView.scrollTo(0, 0);
     assertEquals(
         'auto',
-        directAccess.getComputedStyle(directAccess.getBodyNode(), 'overflow'));
+        directAccess.getComputedStyle(directAccess.getVdocNode(), 'overflow'));
     assertEquals('0,0,0,0', getViewport());
 
     pass('testScrolling');

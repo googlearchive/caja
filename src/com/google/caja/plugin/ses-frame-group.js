@@ -190,16 +190,16 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
   //----------------
 
   function makeES5Frame(div, uriPolicy, es5ready, domOpts) {
-    var divs = cajaInt.prepareContainerDiv(div, feralWin, domOpts);
+    var divInfo = cajaInt.prepareContainerDiv(div, feralWin, domOpts);
 
     var frameTamingSchema = TamingSchema(tamingHelper);
     var frameTamingMembrane =
         TamingMembrane(tamingHelper, frameTamingSchema.control);
     var domicileAndEmitter = makeDomicileAndEmitter(
-        frameTamingMembrane, divs, uriPolicy);
+        frameTamingMembrane, divInfo, uriPolicy);
     var domicile = domicileAndEmitter && domicileAndEmitter[0];
     var htmlEmitter = domicileAndEmitter && domicileAndEmitter[1];
-    var gman = GuestManager(frameTamingSchema, frameTamingMembrane, divs,
+    var gman = GuestManager(frameTamingSchema, frameTamingMembrane, divInfo,
         cajaInt.documentBaseUrl(), domicile, htmlEmitter, window, USELESS,
         uriPolicy, sesRun);
     es5ready(gman);
@@ -208,8 +208,8 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
   //----------------
 
   function makeDomicileAndEmitter(
-      frameTamingMembrane, divs, uriPolicy) {
-    if (!divs.inner) { return null; }
+      frameTamingMembrane, divInfo, uriPolicy) {
+    if (!divInfo.opt_div) { return null; }
 
     function FeralTwinStub() {}
     FeralTwinStub.prototype.toString = function () {
@@ -255,7 +255,7 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
     });
 
     var domicile = domado.attachDocument(
-      '-' + divs.idClass, uriPolicyWrapper, divs.inner,
+      '-' + divInfo.idClass, uriPolicyWrapper, divInfo.opt_div,
       config.targetAttributePresets,
       Object.freeze({
         permitUntaming: permitUntaming,

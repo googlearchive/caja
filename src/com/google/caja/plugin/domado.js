@@ -1750,9 +1750,6 @@ var Domado = (function() {
     /**
      * Add a tamed document implementation to a Gadget's global scope.
      *
-     * Has the side effect of adding the classes "vdoc-container___" and
-     * idSuffix.substring(1) to the containerNode.
-     *
      * @param {string} idSuffix a string suffix appended to all node IDs.
      *     It should begin with "-" and end with "___".
      * @param {Object} uriPolicy an object like <pre>{
@@ -1771,8 +1768,8 @@ var Domado = (function() {
      *         If a hint is not present it should not be relied upon.
      *     The rewrite function should be idempotent to allow rewritten HTML
      *     to be reinjected. The policy must be a tamed object.
-     * @param {Node} containerNode an HTML node to contain the children of the
-     *     virtual Document node provided to Cajoled code.
+     * @param {Node} outerContainerNode an HTML node to contain the virtual DOM
+     *     structure, either an Element or Document node.
      * @param {Object} optTargetAttributePresets a record containing the presets
      *     (default and whitelist) for the HTML "target" attribute.
      * @param {Object} taming. An interface to a taming membrane.
@@ -1781,7 +1778,7 @@ var Domado = (function() {
      *     object is known as a "domicile".
      */
     function attachDocument(
-      idSuffix, naiveUriPolicy, containerNode, optTargetAttributePresets,
+      idSuffix, naiveUriPolicy, outerContainerNode, optTargetAttributePresets,
         taming) {
 
       if (arguments.length < 3) {
@@ -1816,17 +1813,75 @@ var Domado = (function() {
 
       var vdocContainsForeignNodes = false;
 
-      containerNode = makeDOMAccessible(containerNode);
-      var document = containerNode.nodeType === 9  // Document node
-          ? containerNode
-          : containerNode.ownerDocument;
+      outerContainerNode = makeDOMAccessible(outerContainerNode);
+      var document = outerContainerNode.nodeType === 9  // Document node
+          ? outerContainerNode
+          : outerContainerNode.ownerDocument;
       document = makeDOMAccessible(document);
       var bridal = bridalMaker(makeDOMAccessible, document);
       var elementForFeatureTests =
           makeDOMAccessible(document.createElement('div'));
 
-      var window = bridalMaker.getWindow(containerNode, makeDOMAccessible);
+      var window = bridalMaker.getWindow(outerContainerNode, makeDOMAccessible);
       window = makeDOMAccessible(window);
+
+      // Note that feralPseudoWindow may be an Element or a Window depending.
+      var feralPseudoDocument, feralPseudoWindow;
+      if (outerContainerNode.nodeType === 9) { // Document node
+        feralPseudoWindow = window;
+        feralPseudoDocument = outerContainerNode;
+      } else {
+        // Construct wrappers for visual isolation and for feral nodes
+        // corresponding to tame nodes.
+        //
+        // * outerIsolator and feralPseudoWindow (the two outermost wrappers)
+        //   together provide visual isolation.
+        // * feralPseudoWindow is the feral node used for event dispatch on
+        //   tameWindow. feralPseudoDocument is the same for tameDocument.
+        //
+        // The reason we do not use feralPseudoDocument as the inner isolator
+        // is that feral nodes which are the feral-twin of some tame node are
+        // at higher risk of being mutated by the guest, or by tamed host APIs
+        // on behalf of the guest. This way, a visual isolation break would
+        // require modifying untame(tameWindow).style, which is less likely to
+        // be accidentally permitted.
+        var outerIsolator = makeDOMAccessible(
+            document.createElement('div'));
+        feralPseudoDocument = makeDOMAccessible(
+            document.createElement('div'));
+        feralPseudoWindow = makeDOMAccessible(document.createElement('div'));
+        outerIsolator.appendChild(feralPseudoWindow);
+        feralPseudoWindow.appendChild(feralPseudoDocument);
+        // Class-name hooks: The host page can
+        // * match all elements between its content and the guest content as
+        //   .caja-vdoc-wrapper
+        // * match the outermost such element using .caja-vdoc-outer
+        // * match the innermost such element using .caja-vdoc-inner
+        // This scheme has been chosen to be forward-compatible in the
+        // event that we change the number of wrappers in use.
+        outerIsolator.className = 'caja-vdoc-wrapper caja-vdoc-outer';
+        feralPseudoWindow.className = 'caja-vdoc-wrapper';
+        feralPseudoDocument.className = 'caja-vdoc-wrapper caja-vdoc-inner ' +
+            'vdoc-container___ ' + idClass;
+        // Visual isolation.
+        // TODO(kpreid): Add explanation of how these style rules produce the
+        // needed effects.
+        makeDOMAccessible(outerIsolator.style);
+        outerIsolator.style.display = 'block';
+        outerIsolator.style.position = 'relative';
+        outerIsolator.style.overflow = 'hidden';
+        outerIsolator.style.margin = '0';
+        outerIsolator.style.padding = '0';
+        makeDOMAccessible(feralPseudoWindow.style);
+        feralPseudoWindow.style.display = 'block';
+        feralPseudoWindow.style.position = 'relative';
+        // Final hookup; move existing children (like static HTML produced by
+        // the cajoler) into the virtual document.
+        while (outerContainerNode.firstChild) {
+          feralPseudoDocument.appendChild(outerContainerNode.firstChild);
+        }
+        outerContainerNode.appendChild(outerIsolator);
+      }
 
       var elementPolicies = {};
       elementPolicies.form = function (attribs) {
@@ -1862,7 +1917,7 @@ var Domado = (function() {
 
       // On IE, turn <canvas> tags into canvas elements that explorercanvas
       // will recognize
-      bridal.initCanvasElements(containerNode);
+      bridal.initCanvasElements(outerContainerNode);
 
       var tamingClassTable = new TamingClassTable();
       var inertCtor = tamingClassTable.inertCtor.bind(tamingClassTable);
@@ -1915,27 +1970,6 @@ var Domado = (function() {
             rulebreaker.copyLengthPropertyIfUninterceptable(node, proxiedNode);
 
             node = proxiedNode;
-          }
-
-          var feral = privates.feral;
-          if (feral) {
-            if (feral.nodeType === 1) {
-              // Elements must only be tamed once; to do otherwise would be
-              // a bug in Domado.
-              taming.tamesTo(feral, node);
-            } else {
-              // Other node types are tamed every time they are encountered;
-              // we simply remember the latest taming here.
-              // TODO(kpreid): Review whether this is still desired and
-              // consistent behavior.
-              taming.reTamesTo(feral, node);
-            }
-          } else {
-            // If guest code passes a node of its own with no feral counterpart
-            // to host code, we pass the empty object "{}". This is a safe
-            // behavior until experience determines we need something more
-            // complex.
-            taming.tamesTo({}, node);
           }
 
           // Require all properties of the private state record to have already
@@ -2071,7 +2105,7 @@ var Domado = (function() {
         // Class name matching the virtual document container. May be null (not
         // undefined) if we are taming a complete document and there is no
         // container (note: this case is not yet fully implemented).
-        containerClass: containerNode === document ? null : idClass,
+        containerClass: outerContainerNode === document ? null : idClass,
 
         // Suffix to append to all IDs and ID references.
         idSuffix: idSuffix,
@@ -2781,12 +2815,19 @@ var Domado = (function() {
             : makeTameNodeByType(node);
         tamed = finishNode(tamed);
 
+        taming.tamesTo(node, tamed);
+
         return tamed;
       }
 
+      /**
+       * Tame a reference to a feral node which might turn out to be outside the
+       * virtual document, inside a foreign node, etc. (in which case it is
+       * replaced with null).
+       */
       function tameRelatedNode(node) {
         if (node === null || node === void 0) { return null; }
-        if (node === containerNode) {
+        if (node === feralPseudoDocument) {
           return tameDocument;
         }
 
@@ -2810,6 +2851,22 @@ var Domado = (function() {
           return defaultTameNode(node);
         } catch (e) {}
         return null;
+      }
+      
+      /**
+       * Like tameRelatedNode but includes the window (which is an EventTarget,
+       * but not a Node).
+       */
+      function tameEventTarget(nodeOrWindow) {
+        if (nodeOrWindow === feralPseudoWindow || nodeOrWindow === window) {
+          return tameWindow;
+        } else if (nodeOrWindow &&
+            makeDOMAccessible(nodeOrWindow).nodeType === 1) {
+          return tameRelatedNode(nodeOrWindow);
+        } else {
+          // Wasn't an element and wasn't the particular window.
+          return null;
+        }
       }
 
       /**
@@ -3518,22 +3575,44 @@ var Domado = (function() {
         return wrapper;
       }
 
+      /**
+       * Catch all failures and pass to onerror, for when we _aren't_ wrapping
+       * a native event handler/listener and must catch everything.
+       */
+      function callAsEventListener(func, thisArg, tameEventObj) {
+        try {
+          Function.prototype.call.call(func, thisArg, tameEventObj);
+        } catch (e) {
+          try {
+            tameWindow.onerror(
+                e.message,
+                '<' + tameEventObj.type + ' handler>',  // better than nothing
+                0);
+          } catch (e2) {
+            console.error('onerror handler failed\n', e, '\n', e2);
+          }
+        }
+      }
+
+      function getFeralEventTarget(privates) {
+        return privates.feralEventTarget || privates.feral;
+      }
+
       // Implementation of EventTarget::addEventListener
-      var tameAddEventListener =
-          nodeAmp(function(privates, name, listener, useCapture) {
+      var tameAddEventListenerProp =
+          Props.ampMethod(function(privates, name, listener, useCapture) {
         name = String(name);
         useCapture = Boolean(useCapture);
-        var feral = privates.feral;
+        var feral = getFeralEventTarget(privates);
         privates.policy.requireEditable();
         var list = privates.wrappedListeners;
         if (!list) {
           list = privates.wrappedListeners = [];
         }
         if (searchForListener(list, name, listener, useCapture) === null) {
-          var wrappedListener = makeEventHandlerWrapper(
-              privates.feral, listener);
+          var wrappedListener = makeEventHandlerWrapper(feral, listener);
           var remove = bridal.addEventListener(
-              privates.feral, name, wrappedListener, useCapture);
+              feral, name, wrappedListener, useCapture);
           list.push({
             n: name,
             l: listener,
@@ -3544,11 +3623,10 @@ var Domado = (function() {
       });
 
       // Implementation of EventTarget::removeEventListener
-      var tameRemoveEventListener =
-          nodeAmp(function(privates, name, listener, useCapture) {
+      var tameRemoveEventListenerProp =
+          Props.ampMethod(function(privates, name, listener, useCapture) {
         name = String(name);
         useCapture = Boolean(useCapture);
-        var feral = privates.feral;
         privates.policy.requireEditable();
         var list = privates.wrappedListeners;
         if (!list) { return; }
@@ -3570,6 +3648,13 @@ var Domado = (function() {
         }
         return null;
       }
+
+      var tameDispatchEventProp = Props.ampMethod(function(privates, evt) {
+        eventAmplify(evt, function(evtPriv) {
+          bridal.dispatchEvent(getFeralEventTarget(privates), evtPriv.feral);
+        });
+      });
+
 
       // We have now set up most of the 'support' facilities and are starting to
       // define node taming classes.
@@ -3708,6 +3793,10 @@ var Domado = (function() {
         nodeAmplify(this, function(privates) {
           privates.feral = node;
 
+          // protocol for EventTarget operations
+          privates.wrappedListeners = [];
+          // privates.feralEventTarget absent as default
+
           if (proxiesAvailable && opt_proxyType) {
             privates.proxyHandler = new opt_proxyType(this);
           }
@@ -3812,11 +3901,9 @@ var Domado = (function() {
         }),
         // http://www.w3.org/TR/DOM-Level-2-Events/events.html#Events-EventTarget
         // "The EventTarget interface is implemented by all Nodes"
-        dispatchEvent: Props.ampMethod(function(privates, evt) {
-          eventAmplify(evt, function(evtPriv) {
-            bridal.dispatchEvent(privates.feral, evtPriv.feral);
-          });
-        }),
+        addEventListener: tameAddEventListenerProp,
+        removeEventListener: tameRemoveEventListenerProp,
+        dispatchEvent: tameDispatchEventProp,
         /**
          * Speced in <a href="http://www.w3.org/TR/DOM-Level-3-Core/core.html#Node3-compareDocumentPosition">DOM-Level-3</a>.
          */
@@ -4089,7 +4176,6 @@ var Domado = (function() {
         TameBackedNode.call(this, node, opt_policy, opt_proxyType);
         nodeAmplify(this, function(privates) {
           privates.geometryDelegate = node;
-          privates.wrappedListeners = undefined;
         });
       }
       var defaultNodeClassCtor =
@@ -4230,14 +4316,14 @@ var Domado = (function() {
             var feralOffsetParent = privates.feral.offsetParent;
             if (!feralOffsetParent) {
               return feralOffsetParent;
-            } else if (feralOffsetParent === containerNode) {
+            } else if (feralOffsetParent === feralPseudoDocument) {
               // Return the body if the node is contained in the body. This is
               // emulating how browsers treat offsetParent and the real <BODY>.
               return nodeAmplify(tameDocument.body, function(bodyPriv) {
                 var feralBody = bodyPriv.feral;
                 for (var ancestor =
                          makeDOMAccessible(privates.feral.parentNode);
-                     ancestor !== containerNode;
+                     ancestor !== feralPseudoDocument;
                      ancestor = makeDOMAccessible(ancestor.parentNode)) {
                   if (ancestor === feralBody) {
                     return defaultTameNode(feralBody);
@@ -4374,9 +4460,7 @@ var Domado = (function() {
                       bottom: elRect.bottom - vdocTop
                     });
           });
-        }),
-        addEventListener: Props.overridable(true, tameAddEventListener),
-        removeEventListener: Props.overridable(true, tameRemoveEventListener)
+        })
       });
       if ('classList' in elementForFeatureTests) {
         Props.define(TameElement.prototype, TameNodeConf, {
@@ -5906,10 +5990,10 @@ var Domado = (function() {
           view: P_e_view(tameEventView),
           target: eventVirtualizingAccessor(function(privates) {
             var event = privates.feral;
-            return tameRelatedNode(event.target || event.srcElement);
+            return tameEventTarget(event.target || event.srcElement);
           }),
           srcElement: P_e_view(tameRelatedNode),
-          currentTarget: P_e_view(tameRelatedNode),
+          currentTarget: P_e_view(tameEventTarget),
           relatedTarget: eventVirtualizingAccessor(function(privates) {
             var e = privates.feral;
             var t = e.relatedTarget;
@@ -5920,7 +6004,7 @@ var Domado = (function() {
                 t = e.fromElement;
               }
             }
-            return tameRelatedNode(t);
+            return tameEventTarget(t);
           }),
           fromElement: P_e_view(tameRelatedNode),
           toElement: P_e_view(tameRelatedNode),
@@ -6040,9 +6124,19 @@ var Domado = (function() {
           privates.onLoadListeners = [];
           privates.onDCLListeners = [];
 
+          // protocol for EventTarget operations
+          privates.wrappedListeners = [];
+          privates.feralEventTarget = container;
+          // We use .feralEventTarget rather than .feral here because, even
+          // though the feral twin of the tame document is container, because
+          // it is not truly a node taming and ordinary node operations should
+          // not be effective on the document's feral node.
+
           // Used to implement operations on the document, never exposed to the
-          // guest.
-          privates.tameContainerNode = defaultTameNode(container);
+          // guest. Note in particular that we skip defaultTameNode to skip
+          // registering it in the taming membrane.
+          privates.tameContainerNode =
+            finishNode(makeTameNodeByType(container));
         });
 
         Props.define(this, TameNodeConf, {
@@ -6050,6 +6144,8 @@ var Domado = (function() {
         });
 
         installLocation(this);
+
+        taming.tamesTo(container, this);
       }
       tamingClassTable.registerSafeCtor('Document',
           inertCtor(TameHTMLDocument, TameNode, 'HTMLDocument'));
@@ -6215,21 +6311,9 @@ var Domado = (function() {
               return tameQuerySelector(privates.feralContainerNode, selector,
                   true);
             })),
-        addEventListener: Props.ampMethod(
-            function(privates, name, listener, useCapture) {
-          if (name === 'DOMContentLoaded') {
-            ensureValidCallback(listener);
-            privates.onDCLListeners.push(listener);
-          } else {
-            return privates.tameContainerNode.addEventListener(
-                name, listener, useCapture);
-          }
-        }),
-        removeEventListener: Props.ampMethod(
-            function(privates, name, listener, useCapture) {
-          return privates.tameContainerNode.removeEventListener(
-              name, listener, useCapture);
-        }),
+        addEventListener: tameAddEventListenerProp,
+        removeEventListener: tameRemoveEventListenerProp,
+        dispatchEvent: tameDispatchEventProp,
         createComment: Props.ampMethod(function(privates, text) {
           return defaultTameNode(privates.feralDoc.createComment(" "));
         }),
@@ -6347,34 +6431,26 @@ var Domado = (function() {
         };
       });
 
-      function dispatchToListeners(eventType, eventName, listeners) {
+      // TODO(kpreid): reconcile this and fireVirtualEvent
+      function dispatchToListeners(tameNode, eventType, eventName) {
         var event = tameDocument.createEvent(eventType);
-        event.initEvent(eventName, false, false);
-        // In case a listener attempts to append another listener
-        var len = listeners.length;
-        for (var i = 0; i < len; ++i) {
-          tameWindow.setTimeout(
-              Function.prototype.bind.call(
-                listeners[+i], tameWindow, event), 0);
+        event.initEvent(eventName, true, false);
+
+        // TODO(kpreid): onload should be handled generically as an event
+        // handler, not as a special case. But how?
+        if (eventName === 'load') {
+          if (tameWindow.onload) {
+            callAsEventListener(tameWindow.onload, tameNode, event);
+          }
         }
-        listeners.length = 0;
+
+        tameNode.dispatchEvent(event);
       }
 
       // Called by the html-emitter when the virtual document has been loaded.
       domicile.signalLoaded = cajaVM.constFunc(function() {
-        nodeAmplify(tameDocument, function(privates) {
-          dispatchToListeners(
-              'Event',
-              'DOMContentLoaded',
-              privates.onDCLListeners);
-          if (tameWindow.onload) {
-            tameWindow.setTimeout(tameWindow.onload, 0);
-          }
-          dispatchToListeners(
-              'UIEvent',
-              'load',
-              privates.onLoadListeners);
-        });
+        dispatchToListeners(tameDocument, 'Event', 'DOMContentLoaded');
+        dispatchToListeners(tameWindow, 'UIEvent', 'load');
       });
 
       // Currently used by HtmlEmitter to synthesize script load events.
@@ -6603,7 +6679,7 @@ var Domado = (function() {
           function() {
         function isNestedInAnchor(el) {
           for (;
-              el && el != containerNode;
+              el && el !== feralPseudoDocument;
               el = makeDOMAccessible(el.parentNode)) {
             if (el.tagName && el.tagName.toLowerCase() === 'a') {
               return true;
@@ -6641,7 +6717,9 @@ var Domado = (function() {
                 return superReadByCanonicalName.call(this, canonName);
               } else {
                 return TameStyleConf.amplify(
-                    new TameComputedStyle(containerNode, this.pseudoElement),
+                    // TODO(kpreid): Explain why we're using this node's answer
+                    new TameComputedStyle(feralPseudoDocument,
+                        this.pseudoElement),
                     function(p2) {
                   return p2.readByCanonicalName(canonName);
                 });
@@ -6701,7 +6779,7 @@ var Domado = (function() {
        * document?
        */
       function isContainerNode(node) {
-        return node === containerNode ||
+        return node === feralPseudoDocument ||
             (node &&
              node.nodeType === 1 &&
              idClassPattern.test(node.className));
@@ -6710,22 +6788,32 @@ var Domado = (function() {
       domicile.getIdClass = cajaVM.constFunc(function() {
         return idClass;
       });
-      // enforce id class on container
-      if (containerNode.nodeType !== 9) {  // not a document (top level)
-        bridal.setAttribute(containerNode, 'class',
-            bridal.getAttribute(containerNode, 'class')
-            + ' ' + idClass + ' vdoc-container___');
-      }
+
+      /**
+       * The node whose children correspond to the children of the tameDocument.
+       */
+      domicile.getPseudoDocument = cajaVM.constFunc(function() {
+        return feralPseudoDocument;
+      });
 
       var TameWindowConf = new Confidence('TameWindow');
 
       /**
        * See http://www.whatwg.org/specs/web-apps/current-work/multipage/browsers.html#window for the full API.
        */
-      function TameWindow(container) {
+      function TameWindow(feralWinNode, feralDocNode) {
         TameWindowConf.confide(this, taming);
         TameWindowConf.amplify(this, function(privates) {
-          privates.feralContainerNode = container;
+          // TODO(kpreid): revise this to make sense
+          privates.feralContainerNode = feralDocNode;
+
+          // needed for EventTarget
+          privates.policy = nodePolicyEditable;
+
+          // protocol for EventTarget operations
+          privates.wrappedListeners = [];
+          privates.feralEventTarget = feralWinNode;
+
           Object.preventExtensions(privates);
         });
 
@@ -6740,7 +6828,7 @@ var Domado = (function() {
           writable: false
         });
 
-        taming.permitUntaming(this);
+        taming.tamesTo(feralWinNode, this);
 
         // Attach reflexive properties
         [
@@ -6897,45 +6985,9 @@ var Domado = (function() {
       var stubBarPropProp = Props.overridable(true,
           cajaVM.def({visible: false}));
       Props.define(TameWindow.prototype, TameWindowConf, {
-        addEventListener: Props.plainMethod(
-            function(name, listener, useCapture) {
-          if (name === 'load') {
-            ensureValidCallback(listener);
-            nodeAmplify(tameDocument, function(privates) {
-              privates.onLoadListeners.push(listener);
-            });
-          } else if (name === 'DOMContentLoaded') {
-            ensureValidCallback(listener);
-            nodeAmplify(tameDocument, function(privates) {
-              privates.onDCLListeners.push(listener);
-            });
-          } else {
-            // TODO: need a testcase for this
-            tameDocument.addEventListener(name, listener, useCapture);
-          }
-        }),
-        removeEventListener: Props.plainMethod(
-            function (name, listener, useCapture) {
-          if (name === 'load' || name === 'DOMContentLoaded') {
-            var listeners = nodeAmplify(tameDocument, function(p) {
-              // exception-safe export from amp - all objects are guest code
-              return p[name === 'load' ? 'onLoadListeners' : 'onDCLListeners'];
-            });
-            var k = 0;
-            for (var i = 0, n = listeners.length; i < n; ++i) {
-              listeners[i - k] = listeners[+i];
-              if (listeners[+i] === listener) {
-                ++k;
-              }
-            }
-            listeners.length -= k;
-          } else {
-            tameDocument.removeEventListener(name, listener, useCapture);
-          }
-        }),
-        dispatchEvent: Props.plainMethod(function (evt) {
-          // TODO(ihab.awad): Implement
-        }),
+        addEventListener: tameAddEventListenerProp,
+        removeEventListener: tameRemoveEventListenerProp,
+        dispatchEvent: tameDispatchEventProp,
         scrollBy: Props.ampMethod(function(privates, dx, dy) {
           // The window is always auto scrollable, so make the apparent window
           // body scrollable if the gadget tries to scroll it.
@@ -7022,14 +7074,14 @@ var Domado = (function() {
 
       var tameDocument = new TameHTMLDocument(
           document,
-          containerNode,
+          feralPseudoDocument,
           // TODO(jasvir): Properly wire up document.domain
           // by untangling the cyclic dependence between
           // TameWindow and TameDocument
           String(undefined || 'nosuchhost.invalid'));
-      domicile.htmlEmitterTarget = containerNode;
+      domicile.htmlEmitterTarget = feralPseudoDocument;
 
-      var tameWindow = new TameWindow(containerNode);
+      var tameWindow = new TameWindow(feralPseudoWindow, feralPseudoDocument);
 
 
 

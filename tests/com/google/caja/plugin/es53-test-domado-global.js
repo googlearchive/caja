@@ -278,7 +278,7 @@
         '<html><head> <script>;</script></head>'
             + '<body><div>2</div></body></html>',
         function(frame) {
-          var doc = frame.div.firstChild.firstChild;
+          var doc = frame.innerContainer;
           var html = canonInnerHtml(doc.innerHTML);
           assertEquals(
             '<caja-v-html>'

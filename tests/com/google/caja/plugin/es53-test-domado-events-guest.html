@@ -343,7 +343,7 @@
     var container = document.getElementById('testRepeatedHandlers');
 
     var events = [];
-    var record = jsunitCallback(function record(event) {
+    var record = jsunitCallback(function(event) {
       events.push([event.type, event.eventPhase]);
     });
 
@@ -527,76 +527,98 @@ TODO(felix8a): fix javascript url handling
   });
 </script>
 
-<p class="testcontainer" id="testOnLoadListener">Onload</p>
-<script type="text/javascript">
+<p class="testcontainer" id="testLoadEvents">
+  Load events sequencing and bubbling
+</p>
+<script>
   (function() {
-    var b1 = 0;
-    var b2 = 0;
-    var b3 = 0;
-    var setb1 = function setb1cb() {
-      console.log('set onload b1');
-      b1 ++;
-    };
-    var setb2 = function setb2cb(event) {
-      assertEquals('load', event.type);
-      assertEquals(1, arguments.length);
-      console.log('set onload b2');
-      b2 ++;
-    };
-    var setb3 = function setb3cb() {
-      console.log('set onload b3');
-      b3 ++;
-    };
-    window.addEventListener('load', setb1);
-    window.addEventListener('load', setb2);
-    window.removeEventListener('load', setb1);
-    window.onload = setb3;
+    var events = [];
+    var additionalError;
 
-    jsunitRegister('testOnLoadListener',
-                 function testOnLoadListener() {
-      if (b1 === 0 && b2 === 1 && b3 === 1) {
-        pass('testOnLoadListener');
-      } else {
-        fail('testOnLoadListener');
-      }
+    jsunitRegister('testLoadEvents', function() {
+      assertEquals(
+        'w,DOMContentLoaded,1,true ' +
+        'd,DOMContentLoaded,2,true ' +
+        'd,DOMContentLoaded,2,false ' +
+        'w,DOMContentLoaded,3,false ' +
+        'w,load,0,handler ' +
+        'w,load,2,true ' +
+        'w,load,2,false',
+        events.join(' '));
+      pass('testLoadEvents');
     });
+
+    function makeListener(node, type, expectTarget, capture) {
+      function inner(thisArg, event) {
+        if (capture && event.target && event.target.nodeName === 'SCRIPT') {
+          // ignore captured script node load events
+          return;
+        }
+
+        var str = event.type + ' @ ' + node + ' phase ' + event.eventPhase;
+        console.log(str);
+        document.getElementById('testLoadEvents')
+            .appendChild(document.createElement('div'))
+            .appendChild(document.createTextNode(str));
+
+        // done before asserts so overall events check can also run
+        var tshort = thisArg === window ? 'w' : thisArg === document ? 'd' :
+            thisArg;
+        events.push([tshort, event.type, event.eventPhase, capture]);
+
+        assertTrue('event phase',
+            capture ? event.eventPhase !== 3 : event.eventPhase !== 1);
+        assertEquals('event type', type, event.type);
+        assertTrue('listener this (' + thisArg + ')', thisArg === node);
+        assertTrue('event target (' + event.target + ')',
+            event.target === expectTarget);
+      }
+      // jsunitCallback doesn't pass 'this' and even if it did it would be
+      // through the membrane
+      var callback = jsunitCallback(inner, 'testLoadEvents');
+      return function(event) { return callback(this, event); };
+    }
+    function record(node, expectTarget, type) {
+      [true, false].forEach(function(capture) {
+        node.addEventListener(
+            type,
+            makeListener(node, type, expectTarget, capture),
+            capture);
+      });
+    }
+
+    window.onload = function(event) {
+      try {
+        events.push([this === window ? 'w' : this, event.type,
+            event.eventPhase, 'handler']);
+      } catch (e) {
+        fail('testLoadEvents', e);
+      }
+    };
+
+    record(window, document, 'DOMContentLoaded');
+    record(document, document, 'DOMContentLoaded');
+    record(window, window, 'load');
+    record(document, window, 'load');
   })();
 </script>
 
-<p class="testcontainer" id="testDOMContentLoadedListener">DOMContentLoaded</p>
-<script>
-  (function () {
-    var b1 = 0;
-    var b2 = 0;
-    var b3 = 0;
-    var setb1 = function setb1cb() {
-      console.log('set dcl b1');
-      b1 ++;
-    };
-    var setb2 = function setb2cb() {
-      console.log('set dcl b2');
-      b2 ++;
-    };
-    var setb3 = function setb3cb() {
-      console.log('set dcl b3');
-      b3 += b2 ? 99 : 1; // DOMContentLoaded must fire before load
-    };
+<p class="testcontainer" id="testRemoveSpecialHandler">
+  testRemoveSpecialHandler
+</p>
+<script type="text/javascript">
+  (function() {
+    var nok = false;
+    function h() {
+      nok = true;
+    }
+    window.addEventListener('load', h);
+    window.removeEventListener('load', h);
 
-    window.addEventListener('DOMContentLoaded', setb1);
-    window.addEventListener('load', setb2);
-    window.addEventListener('DOMContentLoaded', setb3);
-    window.removeEventListener('DOMContentLoaded', setb1);
-
-    jsunitRegister('testDOMContentLoadedListener',
-                   function testDOMContentLoadedListener() {
-      assertAsynchronousRequirement('loaded',
-          function() { return !!b2; },
-          function() {
-        assertEquals('b1', 0, b1);
-        assertEquals('b2', 1, b2);
-        assertEquals('b3', 1, b3);
-      });
-      pass('testDOMContentLoadedListener');
+    jsunitRegister('testRemoveSpecialHandler',
+                   function testRemoveSpecialHandler() {
+      assertFalse(nok);
+      pass('testRemoveSpecialHandler');
     });
   })();
 </script>

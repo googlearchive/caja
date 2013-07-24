@@ -3100,6 +3100,9 @@ Test row cell
     // Except as noted, all Domado objects we're checking here should toString
     // like the native DOM nodes with the extra marker "domado ".
 
+    // Global
+    assertEquals('[domado object Window]', window.toString());
+
     // Nodes
     // Printing the nodeName is non-standard
     assertEquals('[domado object HTMLBodyElement BODY]',

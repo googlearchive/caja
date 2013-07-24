@@ -38,8 +38,8 @@
  * semantics that don't matter in practice.  GuestManager combines the two.
  */
 
-function GuestManager(frameTamingSchema, frameTamingMembrane, divs, hostBaseUrl,
-  domicile, htmlEmitter, guestWin, USELESS, uriPolicy, runImpl) {
+function GuestManager(frameTamingSchema, frameTamingMembrane, divInfo,
+    hostBaseUrl, domicile, htmlEmitter, guestWin, USELESS, uriPolicy, runImpl) {
   // TODO(felix8a): this api needs to be simplified; it's difficult to
   // explain what all the parameters mean in different situations.
   var args = {
@@ -74,8 +74,8 @@ function GuestManager(frameTamingSchema, frameTamingMembrane, divs, hostBaseUrl,
 
   var self = {
     // Public state
-    div: divs.outer && divs.outer.parentNode,
-    idClass: divs.idClass,
+    div: divInfo.opt_div && divInfo.opt_div.parentNode,
+    idClass: divInfo.idClass,
     getUrl: function() { return args.url; },
     getUriPolicy: function() { return uriPolicy; },
 
@@ -110,7 +110,7 @@ function GuestManager(frameTamingSchema, frameTamingMembrane, divs, hostBaseUrl,
     // deprecated; idSuffix in domado means '-' + idClass, but idSuffix
     // exposed here is without the leading '-'.  Future code should use the
     // idClass property instead.
-    idSuffix: divs.idClass,
+    idSuffix: divInfo.idClass,
 
     // TODO(kpreid): rename/move to make sure this is used only for testing
     // as SES now doesn't have a distinct guestWin which could cause confusion.
@@ -121,8 +121,8 @@ function GuestManager(frameTamingSchema, frameTamingMembrane, divs, hostBaseUrl,
               : (guestWin.___
                  ? guestWin.___.copy(guestWin.___.sharedImports) // for es53
                  : {})),                                         // for ses
-    innerContainer: divs.inner,
-    outerContainer: divs.outer,
+    innerContainer: domicile && domicile.getPseudoDocument(),
+    outerContainer: divInfo.opt_div,
 
     // Internal state
     domicile: domicile,      // Currently exposed only for the test suite

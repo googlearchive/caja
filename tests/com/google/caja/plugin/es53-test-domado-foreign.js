@@ -39,7 +39,7 @@ caja.load(
 
       extraImports.getEmbeddedForeignNode = function() {
         var node = createTestDiv();
-        guestDiv.firstChild.firstChild.appendChild(node);
+        guestDiv.getElementsByTagName('caja-v-body')[0].appendChild(node);
         return frame.domicile.tameNodeAsForeign(node);
       };
       extraImports.getEmbeddedForeignNode.i___ =

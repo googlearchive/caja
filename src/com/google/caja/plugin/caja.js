@@ -586,48 +586,16 @@ var caja = (function () {
     }
   }
 
-  function prepareContainerDiv(div, feralWin, domOpts) {
-    if (div && feralWin['document'] !== div.ownerDocument) {
+  function prepareContainerDiv(opt_div, feralWin, domOpts) {
+    if (opt_div && feralWin['document'] !== opt_div.ownerDocument) {
       throw '<div> provided for ES5 frame must be in main document';
     }
     domOpts = domOpts || {};
     var opt_idClass = domOpts ? domOpts['idClass'] : void 0;
     var idClass = opt_idClass || ('caja-guest-' + nextId++ + '___');
-    var inner = null;
-    var outer = null;
-    if (div) {
-      // Class-name hooks: The host page can
-      // * match all elements between its content and the guest content as
-      //   .caja-vdoc-wrapper
-      // * match the outermost such element using .caja-vdoc-outer
-      // * match the innermost such element using .caja-vdoc-inner
-      // This scheme has been chosen to be potentially forward-compatible in the
-      // event that we switch to more or less than 2 wrappers.
-
-      inner = div.ownerDocument.createElement('div');
-      inner.className = 'caja-vdoc-inner caja-vdoc-wrapper';
-      inner.style.display = 'block';
-      inner.style.position = 'relative';
-
-      outer = div.ownerDocument.createElement('div');
-      outer.className = 'caja-vdoc-outer caja-vdoc-wrapper';
-      outer.style.position = 'relative';
-      outer.style.overflow = 'hidden';
-      outer.style.display = 'block';
-      outer.style.margin = '0';
-      outer.style.padding = '0';
-      // Move existing children (like static HTML produced by the cajoler)
-      // into the inner container.
-      while (div.firstChild) {
-        inner.appendChild(div.firstChild);
-      }
-      outer.appendChild(inner);
-      div.appendChild(outer);
-    }
     return {
       'idClass': idClass,
-      'inner': inner,
-      'outer': outer
+      'opt_div': opt_div
     };
   }
 

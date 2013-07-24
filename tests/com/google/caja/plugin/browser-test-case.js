@@ -599,11 +599,11 @@ function createExtraImportsForTesting(frameGroup, frame) {
       return frame.domicile.tameNode(
           frame.domicile.feralNode(tameNode).parentNode);
     },
-    getBodyNode: function () {
+    getVdocNode: function () {
       return frame.domicile.tameNode(frame.innerContainer);
     },
     getComputedStyle: function (tameNode, styleProp, opt_pseudoElement) {
-      var node = frame.domicile.feralNode(tameNode);
+      var node = frame.untame(tameNode);
       if (node.currentStyle && !opt_pseudoElement) {
         return node.currentStyle[styleProp.replace(
             /-([a-z])/g,
@@ -651,7 +651,7 @@ function createExtraImportsForTesting(frameGroup, frame) {
   makeCallable(directAccess.getInnerHTML);
   makeCallable(directAccess.getAttribute);
   makeCallable(directAccess.getParentNode);
-  makeCallable(directAccess.getBodyNode);
+  makeCallable(directAccess.getVdocNode);
   makeCallable(directAccess.getComputedStyle);
   makeCallable(directAccess.makeUnattachedScriptNode);
   makeCallable(directAccess.evalInHostFrame);
