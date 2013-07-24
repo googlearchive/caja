@@ -692,8 +692,9 @@ var sanitizeStylesheetWithExternals = undefined;
      *     which is true if the external url itself contained other external
      *     URLs.
      */
-    function sanitizeStylesheetInternal(baseUri, cssText, virtualization,
-      naiveUriRewriter, naiveUriFetcher, continuation) {
+    function sanitizeStylesheetInternal(
+        baseUri, cssText, virtualization, naiveUriRewriter, naiveUriFetcher,
+        continuation) {
       var safeCss = void 0;
       var moreToCome = false;
       // A stack describing the { ... } regions.
@@ -838,10 +839,20 @@ var sanitizeStylesheetWithExternals = undefined;
             },
             declaration: function (property, valueArray) {
               if (!elide) {
+                var isImportant = false;
+                var nValues = valueArray.length;
+                if (nValues >= 2
+                    && valueArray[nValues - 2] === '!'
+                    && valueArray[nValues - 1].toLowerCase() === 'important') {
+                  isImportant = true;
+                  valueArray.length -= 2;
+                }
                 sanitizeCssProperty(
                     property, valueArray, naiveUriRewriter, baseUri);
                 if (valueArray.length) {
-                  safeCss.push(property, ':', valueArray.join(' '), ';');
+                  safeCss.push(
+                    property, ':', valueArray.join(' '),
+                    isImportant ? ' !important;' : ';');
                 }
               }
             }
@@ -859,14 +870,17 @@ var sanitizeStylesheetWithExternals = undefined;
 
     sanitizeStylesheet = function (
         baseUri, cssText, virtualization, naiveUriRewriter) {
-      return sanitizeStylesheetInternal(baseUri, cssText, virtualization,
-        naiveUriRewriter, undefined, undefined).result;
+      return sanitizeStylesheetInternal(
+          baseUri, cssText, virtualization,
+          naiveUriRewriter, undefined, undefined).result;
     };
 
-    sanitizeStylesheetWithExternals = function (baseUri, cssText,
-      virtualization, naiveUriRewriter, naiveUriFetcher, continuation) {
-      return sanitizeStylesheetInternal(baseUri, cssText, virtualization,
-        naiveUriRewriter, naiveUriFetcher, continuation);
+    sanitizeStylesheetWithExternals = function (
+        baseUri, cssText, virtualization, naiveUriRewriter, naiveUriFetcher,
+        continuation) {
+      return sanitizeStylesheetInternal(
+          baseUri, cssText, virtualization,
+          naiveUriRewriter, naiveUriFetcher, continuation);
     };
   })();
 })();

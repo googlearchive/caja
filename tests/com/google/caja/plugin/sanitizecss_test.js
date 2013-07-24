@@ -363,3 +363,28 @@ jsunitRegister('testUntranslatableSelectorHandler',
       log);
   jsunit.pass();
 });
+
+jsunitRegister('testImportant', function testImportant() {
+  function assertSanitizedStylesheet(golden, input) {
+    var selectors = sanitizeStylesheet(
+        'http://example.com/baseurl', input,
+        {
+          containerClass: 'scopeClass',
+          idSuffix: '-suffix',
+          tagPolicy: function (elName, attrs) { return []; }
+        });
+    assertArrayEquals(input, golden, selectors);
+  }
+
+  assertSanitizedStylesheet(
+      ''
+      + '.scopeClass p{color:red !important;}'
+      + '.scopeClass q{color:green !important;}'
+      + '.scopeClass #id-suffix{color:blue;}',
+      ''
+      + 'p { color: red !important }\n'
+      + 'q { color: green ! Important }\n'
+      + '#id { color: blue }');
+
+  jsunit.pass();
+});
