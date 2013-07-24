@@ -309,3 +309,57 @@ jsunitRegister('testMinifiedCss3', function testMinifiedCss3() {
   jsunit.pass();
 });
 
+jsunitRegister('testKeyframes', function testKeyframes() {
+  // Mixture of example 1 and example 2 from
+  // http://dev.w3.org/csswg/css-animations/
+  var input = [
+    'div {',
+    '  animation-name: diagonal-slide;',
+    '  animation-duration: 5s;',
+    '  animation-iteration-count: 10;',
+    '}',
+    '',
+    '@keyframes diagonal-slide {',
+    '',
+    '  from {',
+    '    left: 0;',
+    '    top: 0;',
+    '  }',
+    '',
+    '  50% {',
+    '    left: 55px;',
+    '  }',
+    '',
+    '  to {',
+    '    left: 100px;',
+    '    top: 100px;',
+    '  }',
+    '',
+    '}'].join('\n');
+  assertParsedCssStylesheet(
+    [
+      "startStylesheet",     [],
+        "startRuleset",      [["div"]],
+          "declaration",     ["animation-name", ["diagonal-slide"]],
+          "declaration",     ["animation-duration", ["5s"]],
+          "declaration",     ["animation-iteration-count", ["10"]],
+        "endRuleset",        [],
+        "startAtrule",       ["@keyframes", ["diagonal-slide"]],
+          "startBlock",      [],
+            "startRuleset",  [["from"]],  // Not really a ruleset.
+              "declaration", ["left", ["0"]],
+              "declaration", ["top", ["0"]],
+            "endRuleset",    [],
+            "startRuleset",  [["50%"]],   // Not really a ruleset.
+              "declaration", ["left", ["55px"]],
+            "endRuleset",    [],
+            "startRuleset",  [["to"]],    // Not really a ruleset.
+              "declaration", ["left", ["100px"]],
+              "declaration", ["top", ["100px"]],
+            "endRuleset",    [],
+          "endBlock",        [],
+        "endAtrule",         [],
+      "endStylesheet",       []
+    ],
+    input);
+});
