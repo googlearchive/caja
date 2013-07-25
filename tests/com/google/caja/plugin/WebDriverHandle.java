@@ -14,10 +14,8 @@
 
 package com.google.caja.plugin;
 
-import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -50,28 +48,39 @@ class WebDriverHandle {
   private RemoteWebDriver driver = null;
   private boolean canExecuteScript = true;
   private boolean reportedVersion = false;
+  private String firstWindow = null;
+  private int windowSeq = 0;
+  private boolean windowOpened = false;
 
   // Don't keep more than this many failed test windows. (Otherwise
   // a broken tree can overload a machine with browser windows.)
   private static final int MAX_FAILS_KEPT = 9;
-  private static int fails_kept = 0;
+  private static int failsKept = 0;
 
   WebDriver begin() {
     if (driver == null) {
       driver = makeDriver();
+      firstWindow = driver.getWindowHandle();
       reportVersion(driver);
       try {
         driver.manage().timeouts().pageLoadTimeout(15, TimeUnit.SECONDS);
       } catch (WebDriverException e) {
-        log("failed to set pageLoadTimeout: " + e.toString());
+        Echo.echo("failed to set pageLoadTimeout: " + e);
         // harmless, ignore
       }
       try {
         driver.manage().timeouts().setScriptTimeout(5, TimeUnit.SECONDS);
       } catch (WebDriverException e) {
-        log("failed to setScriptTimeout: " + e.toString());
+        Echo.echo("failed to setScriptTimeout: " + e);
         // harmless, ignore
       }
+    }
+    // Try to open a new window
+    String name = "cajatest" + (windowSeq++);
+    windowOpened = (Boolean) executeScript(
+        "return !!window.open('', '" + name + "');");
+    if (windowOpened) {
+      driver.switchTo().window(name);
     }
     return driver;
   }
@@ -83,7 +92,7 @@ class WebDriverHandle {
         return driver.executeScript(script);
       } catch (WebDriverException e) {
         canExecuteScript = false;
-        log("executeScript failed: " + e);
+        Echo.echo("executeScript failed: " + e);
       }
     }
     return null;
@@ -104,32 +113,28 @@ class WebDriverHandle {
     if (build != null && !"".equals(build)) {
       version += " build " + build;
     }
-    log("webdriver: browser " + name + " version " + version);
-  }
-
-  private void log(String s) {
-    // System.err is captured by junit and goes into ant-reports
-    System.err.println(s);
-
-    // FileDescriptor.err is captured by ant and goes to stdout.
-    // We don't close err since that would close FileDescriptor.err
-    @SuppressWarnings("resource")
-    PrintStream err = new PrintStream(
-        new FileOutputStream(FileDescriptor.err), true);
-    err.println(s);
+    Echo.echo("webdriver: browser " + name + " version " + version);
   }
 
   void end(boolean passed) {
     // If a test fails, drop the driver handle without close or quit,
     // leaving the browser open, which is helpful for debugging.
     if (!passed && !TestFlag.BROWSER_CLOSE.truthy()
-        && fails_kept++ < MAX_FAILS_KEPT) {
+        && failsKept++ < MAX_FAILS_KEPT) {
       driver = null;
-    } else if (TestFlag.BROWSER_REUSE.truthy()) {
-      // TODO(felix8a): this occasionally causes chromedriver to hang
-      driver.get("about:blank");
     } else {
-      closeDriver();
+      try {
+        // If we're reusing the same browser, close the current window.
+        if (windowOpened) {
+          driver.close();
+          driver.switchTo().window(firstWindow);
+        } else {
+          driver.get("about:blank");
+        }
+      } catch (Exception e) {
+        Echo.echo("window cleanup failed: " + e);
+        closeDriver();
+      }
     }
   }
 
@@ -212,7 +217,7 @@ class WebDriverHandle {
         byte[] bytes = ss.getScreenshotAs(OutputType.BYTES);
         saveToFile(dir + name + ".capture.png", bytes);
       } catch (WebDriverException e) {
-        log("screenshot failed: " + e);
+        Echo.echo("screenshot failed: " + e);
       }
     }
 

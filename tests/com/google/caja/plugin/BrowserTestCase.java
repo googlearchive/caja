@@ -17,9 +17,6 @@ package com.google.caja.plugin;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.FileDescriptor;
-import java.io.FileOutputStream;
-import java.io.PrintStream;
 import java.util.List;
 
 import org.junit.AfterClass;
@@ -51,6 +48,8 @@ import com.google.common.base.Joiner;
 public abstract class BrowserTestCase {
   // Constructed @BeforeClass to share a single web browser.
   private static WebDriverHandle wdh;
+  private static int serverPort;
+  private static String serverHost;
 
   protected String testBuildVersion = null;
 
@@ -84,6 +83,17 @@ public abstract class BrowserTestCase {
   @BeforeClass
   public static void setUpClass() throws Exception {
     wdh = new WebDriverHandle();
+    serverPort = TestFlag.SERVER_PORT.getInt(0);
+    serverHost = TestFlag.SERVER_HOSTNAME.getString(null);
+    if (serverHost == null) {
+      // If we're testing a remote browser, we need a hostname it can
+      // use to contact the LocalServer instance.
+      if (TestFlag.WEBDRIVER_URL.truthy()) {
+        serverHost = ThisHostName.value();
+      } else {
+        serverHost = "localhost";
+      }
+    }
   }
 
   @AfterClass
@@ -102,69 +112,53 @@ public abstract class BrowserTestCase {
     testBuildVersion = version;
   }
 
-  static protected PrintStream errStream = null;
-
-  // The ant junit runner captures System.err.  This returns a handle
-  // to fd 2 for messages we want to go to the real stderr.
-  static protected PrintStream getErr() {
-    if (errStream == null) {
-      errStream = new PrintStream(
-          new FileOutputStream(FileDescriptor.err), true);
+  private void debugHook() throws Exception {
+    if (!TestFlag.DEBUG_BROWSER.truthy() && !TestFlag.DEBUG_SERVER.truthy()) {
+      return;
     }
-    return errStream;
+    serverPort = TestFlag.SERVER_PORT.getInt(8000);
+    localServer.start(serverPort);
+    String url = testUrl("test-index.html");
+    if (TestFlag.DEBUG_BROWSER.truthy()) {
+      wdh.begin().get(url);
+    }
+    Echo.echo("- See " + url);
+    Thread.currentThread().join();
+  }
+
+  private String testUrl(String name) {
+    return "http://" + serverHost + ":" + localServer.getPort()
+        + "/ant-testlib/com/google/caja/plugin/" + name;
   }
 
   protected String runBrowserTest(
-      String label, boolean isKnownFailure, String pageName,
-      String... params) throws Exception {
-    int serverPort = TestFlag.SERVER_PORT.getInt(0);
-
-    if (TestFlag.DEBUG_BROWSER.truthy() || TestFlag.DEBUG_SERVER.truthy()) {
-      pageName = "test-index.html";
-      params = null;
-      serverPort = TestFlag.SERVER_PORT.getInt(8000);
-    }
-
+      String label, boolean isKnownFailure, String name, String... params)
+          throws Exception {
+    debugHook();
     String result = "";
     boolean passed = false;
     try {
+      localServer.start(serverPort);
+
+      String url = testUrl(name);
+      if (params != null && 0 < params.length) {
+        url += "?" + Joiner.on("&").join(params);
+      }
+      Echo.echo("- Running " + url);
+
       try {
-        localServer.start(serverPort);
-      } catch (Exception e) {
-        getErr().println(e);
-        throw e;
+        WebDriver driver = wdh.begin();
+        driver.get(url);
+        result = driveBrowser(driver);
+        passed = true;
+        wdh.captureResults(label);
+      } finally {
+        wdh.end(passed || isKnownFailure);
       }
-
-      String localhost = TestFlag.SERVER_HOSTNAME.getString(null);
-      if (localhost == null) {
-        if (TestFlag.WEBDRIVER_URL.truthy()) {
-          localhost = ThisHostName.value();
-        } else {
-          localhost = "localhost";
-        }
-      }
-      String page = "http://" + localhost + ":" + localServer.getPort()
-              + "/ant-testlib/com/google/caja/plugin/" + pageName;
-      if (params != null && params.length > 0) {
-        page += "?" + Joiner.on("&").join(params);
-      }
-      getErr().println("- Try " + page);
-
-      if (TestFlag.DEBUG_SERVER.truthy()) {
-        Thread.currentThread().join();
-      }
-      WebDriver driver = wdh.begin();
-      driver.get(page);
-      if (TestFlag.DEBUG_BROWSER.truthy()) {
-        Thread.currentThread().join();
-      }
-
-      result = driveBrowser(driver);
-      passed = true;
+    } catch (Exception e) {
+      Echo.rethrow(e);
     } finally {
-      wdh.captureResults(label);
       localServer.stop();
-      wdh.end(passed || isKnownFailure);
     }
     return result;
   }
