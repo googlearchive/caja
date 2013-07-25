@@ -362,4 +362,5 @@ jsunitRegister('testKeyframes', function testKeyframes() {
       "endStylesheet",       []
     ],
     input);
+  jsunit.pass();
 });
