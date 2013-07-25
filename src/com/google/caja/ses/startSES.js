@@ -372,7 +372,7 @@ ses.startSES = function(global,
    * Obtain the ES5 singleton [[ThrowTypeError]].
    */
   function getThrowTypeError() {
-    return Object.getOwnPropertyDescriptor(getThrowTypeError, "arguments").get;
+    return gopd(getThrowTypeError, "arguments").get;
   }
 
 
@@ -1384,10 +1384,14 @@ ses.startSES = function(global,
    * process "*" inheritance using the whitelist, by walking actual
    * superclass chains.
    */
+  var whitelistSymbols = [true, '*', 'accessor'];
   var whiteTable = WeakMap();
   function register(value, permit) {
     if (value !== Object(value)) { return; }
     if (typeof permit !== 'object') {
+      if (whitelistSymbols.indexOf(permit) < 0) {
+        fail('syntax error in whitelist; unexpected value: ' + permit);
+      }
       return;
     }
     var oldPermit = whiteTable.get(value);
@@ -1396,8 +1400,13 @@ ses.startSES = function(global,
     }
     whiteTable.set(value, permit);
     keys(permit).forEach(function(name) {
-      var sub = value[name];
-      register(sub, permit[name]);
+      // Use gopd to avoid invoking an accessor property.
+      // Mismatches between permit === 'accessor' and the property actually
+      // being an accessor property are caught later by clean().
+      var desc = gopd(value, name);
+      if (desc) {
+        register(desc.value, permit[name]);
+      }
     });
   }
   register(sharedImports, whitelist);
@@ -1407,7 +1416,7 @@ ses.startSES = function(global,
    * {@code base} object, and if so, with what Permit?
    *
    * <p>If it should be permitted, return the Permit (where Permit =
-   * true | "*" | Record(Permit)), all of which are
+   * true | "accessor" | "*" | Record(Permit)), all of which are
    * truthy. If it should not be permitted, return false.
    */
   function getPermit(base, name) {
@@ -1572,8 +1581,31 @@ ses.startSES = function(global,
       var path = prefix + (prefix ? '.' : '') + name;
       var p = getPermit(value, name);
       if (p) {
-        var sub = value[name];
-        clean(sub, path);
+        var desc = gopd(value, name);
+        if (hop.call(desc, 'value')) {
+          // Is a data property
+          var subValue = desc.value;
+          if (p === 'accessor') {
+            // We are not saying that it is safe for the prop to be
+            // unexpectedly not an accessor; rather, it will be deleted
+            // and thus made safe.
+            reportProperty(ses.severities.SAFE_SPEC_VIOLATION,
+                           'Not an accessor property', path);
+            cleanProperty(value, name, path);
+          } else {
+            clean(subValue, path);
+          }
+        } else {
+          // Is an accessor property (note symmetry with above case)
+          if (p !== 'accessor') {
+            reportProperty(ses.severities.SAFE_SPEC_VIOLATION,
+                           'Not a data property', path);
+            cleanProperty(value, name, path);
+          } else {
+            clean(desc.get, path + '<getter>');
+            clean(desc.set, path + '<setter>');
+          }
+        }
       } else {
         cleanProperty(value, name, path);
       }
