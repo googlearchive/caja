@@ -1863,18 +1863,25 @@ var Domado = (function() {
         feralPseudoWindow.className = 'caja-vdoc-wrapper';
         feralPseudoDocument.className = 'caja-vdoc-wrapper caja-vdoc-inner ' +
             'vdoc-container___ ' + idClass;
-        // Visual isolation.
+        // Visual isolation and formatting. We use inline styles because they
+        // cannot be overridden by any stylesheet.
         // TODO(kpreid): Add explanation of how these style rules produce the
         // needed effects.
-        makeDOMAccessible(outerIsolator.style);
-        outerIsolator.style.display = 'block';
+        [outerIsolator, feralPseudoWindow, feralPseudoDocument].forEach(
+            function(el) {
+          makeDOMAccessible(el.style);
+          // Ensure block display and no additional borders/gaps.
+          el.style.display = 'block';
+          el.style.margin = '0';
+          el.style.border = 'none';
+          el.style.padding = '0';
+        });
+        // Establish a new coordinate system for absolutely-positioned elements.
+        // TODO(kpreid): Explain why it is necessary to have two nested.
         outerIsolator.style.position = 'relative';
-        outerIsolator.style.overflow = 'hidden';
-        outerIsolator.style.margin = '0';
-        outerIsolator.style.padding = '0';
-        makeDOMAccessible(feralPseudoWindow.style);
-        feralPseudoWindow.style.display = 'block';
         feralPseudoWindow.style.position = 'relative';
+        // Clip content to bounds of container.
+        outerIsolator.style.overflow = 'hidden';
         // Final hookup; move existing children (like static HTML produced by
         // the cajoler) into the virtual document.
         while (outerContainerNode.firstChild) {

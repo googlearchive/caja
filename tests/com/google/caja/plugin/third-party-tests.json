@@ -105,7 +105,7 @@
       },
       {
         "guest": "manipulation",
-        "expected-pass": { "firefox": 574, "chrome": 559 },
+        "expected-pass": { "firefox": 588, "chrome": 559 },
         "comment": [
           "Current modifications made to test suite:",
             "Removed SES-incompatible Array.prototype modification; was only",
@@ -149,7 +149,7 @@
       },
       {
         "guest": "effects",
-        "expected-pass": { "firefox": 552, "chrome": 551 },
+        "expected-pass": 552,
         "comment": [
           "Current failure categories:",
             "fill-opacity SVG-only CSS property."
