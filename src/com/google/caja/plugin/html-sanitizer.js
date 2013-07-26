@@ -917,7 +917,7 @@ var html = (function(html4) {
                         : null);
                     if (tokens.length) {
                       sanitizedDeclarations.push(
-                          property + ': ' + tokens.join(' '));
+                          normProp + ': ' + tokens.join(' '));
                     }
                   }
                 });

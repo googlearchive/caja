@@ -2011,7 +2011,8 @@ var Domado = (function() {
             cssPropertyName,
             tokens,
             uriRewriterForCss,
-            domicile.pseudoLocation.href);
+            domicile.pseudoLocation.href,
+            idSuffix);
         return tokens.length !== 0;
       }
 

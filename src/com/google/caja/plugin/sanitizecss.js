@@ -116,8 +116,9 @@ var sanitizeMediaQuery = undefined;
    * @param tokens as parsed by lexCss.  Modified in place.
    * @param opt_naiveUriRewriter a URI rewriter; an object with a "rewrite"
    *     function that takes a URL and returns a safe URL.
-   * @param opt_baseURI baseUri; uri against which all relative urls in this
-   *     style will be resolved
+   * @param opt_baseURI a URI against which all relative URLs in tokens will
+   *     be resolved.
+   * @param opt_idSuffix {string} appended to all IDs to scope them.
    */
   sanitizeCssProperty = (function () {
 
@@ -135,8 +136,8 @@ var sanitizeMediaQuery = undefined;
     // Used as map value to avoid hasOwnProperty checks.
     var ALLOWED_LITERAL = {};
 
-    return function sanitize(property, tokens,
-                             opt_naiveUriRewriter, opt_baseUri) {
+    return function sanitize(
+        property, tokens, opt_naiveUriRewriter, opt_baseUri, opt_idSuffix) {
 
       var propertySchema = cssSchema[property];
 
@@ -149,8 +150,16 @@ var sanitizeMediaQuery = undefined;
       var propBits = propertySchema.cssPropBits;
 
       /**
-       * Recurse to 
-       * @return the exclusive end in tokens of the function call.
+       * Recurse to apply the appropriate function schema to the function call
+       * that starts at {@code tokens[start]}.
+       * @param {Array.<string>} tokens an array of CSS token that is modified
+       *   in place so that all tokens involved in the function call
+       *   (from {@code tokens[start]} to a close parenthesis) are folded to
+       *   one token.
+       * @param {number} start an index into tokens of a function token like
+       *   {@code 'name('}.
+       * @return the replacement function or the empty string if the function
+       *   call is not both well-formed and allowed.
        */
       function sanitizeFunctionCall(tokens, start) {
         var parenDepth = 1, end = start + 1, n = tokens.length;
@@ -230,10 +239,6 @@ var sanitizeMediaQuery = undefined;
             : ''
           )
 
-          // Preserve hash color literals if allowed.
-          : (cc === '#'.charCodeAt(0) && /^#(?:[0-9a-f]{3}){1,2}$/.test(token))
-          ? (propBits & CSS_PROP_BIT_HASH_VALUE ? token : '')
-
           : (
             litGroup = propertySchema.cssLitGroup,
             litMap = (litGroup
@@ -244,6 +249,10 @@ var sanitizeMediaQuery = undefined;
             (litMap[token] === ALLOWED_LITERAL))
           // Token is in the literal map or matches extra.
           ? token
+
+          // Preserve hash color literals if allowed.
+          : (cc === '#'.charCodeAt(0) && /^#(?:[0-9a-f]{3}){1,2}$/.test(token))
+          ? (propBits & CSS_PROP_BIT_HASH_VALUE ? token : '')
 
           : ('0'.charCodeAt(0) <= cc && cc <= '9'.charCodeAt(0))
           // A number starting with a digit.
@@ -276,7 +285,7 @@ var sanitizeMediaQuery = undefined;
           ? ((propBits & CSS_PROP_BIT_QUANTITY) ? '0' + token : '')
 
           // Handle url("...") by rewriting the body.
-          : ('url(' === token.substring(0, 4))
+          : ('url("' === token.substring(0, 5))
           ? ((opt_naiveUriRewriter && (propBits & CSS_PROP_BIT_URL))
              ? normalizeUrl(safeUri(resolveUri(opt_baseUri,
                   tokens[i].substring(5, token.length - 2)),
@@ -292,7 +301,7 @@ var sanitizeMediaQuery = undefined;
 
           : ((propBits & CSS_PROP_BIT_GLOBAL_NAME)
              && /^-?[a-z_][\w\-]*$/.test(token) && !/__$/.test(token))
-          ? token + '-suffix'
+          ? (opt_idSuffix ? token + opt_idSuffix : '')
 
           : (/^\w+$/.test(token)
              && stringDisposition === CSS_PROP_BIT_UNRESERVED_WORD
@@ -344,7 +353,7 @@ var sanitizeMediaQuery = undefined;
    *   }} virtualization An object like <pre<{
    *   containerClass: class name prepended to all selectors to scope them (if
    *       not null)
-   *   idSuffix: appended to all ids to scope them
+   *   idSuffix: appended to all IDs to scope them
    *   tagPolicy: As in html-sanitizer, used for rewriting element names.
    * }</pre>
    *    If containerClass is {@code "sfx"} and idSuffix is {@code "-sfx"}, the
@@ -952,11 +961,12 @@ var sanitizeMediaQuery = undefined;
                   valueArray.length -= 2;
                 }
                 sanitizeCssProperty(
-                    property, valueArray, naiveUriRewriter, baseUri);
+                    property, valueArray, naiveUriRewriter, baseUri,
+                    virtualization.idSuffix);
                 if (valueArray.length) {
                   safeCss.push(
-                    property, ':', valueArray.join(' '),
-                    isImportant ? ' !important;' : ';');
+                      property, ':', valueArray.join(' '),
+                      isImportant ? ' !important;' : ';');
                 }
               }
             }

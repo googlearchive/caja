@@ -484,9 +484,11 @@ function HtmlEmitter(makeDOMAccessible, base,
 
     function makeCssUriHandler(baseUri, method, mime) {
       return function(uri, prop) {
-          return (domicile && domicile[method])
-              ? domicile[method](URI.utils.resolve(baseUri, uri), mime, prop)
-              : void 0;
+        // TODO: sanitizeCss* functions resolve URIs, so can we avoid closing
+        // over baseUri here?
+        return (domicile && domicile[method])
+            ? domicile[method](URI.utils.resolve(baseUri, uri), mime, prop)
+            : void 0;
       };
     }
 
