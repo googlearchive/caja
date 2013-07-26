@@ -34,6 +34,17 @@ function assertProperty(propName, source, expected) {
   assertEquals(expected, tokens.join(' '));
 }
 
+function assertSanitizedStylesheet(golden, input) {
+  var selectors = sanitizeStylesheet(
+      'http://example.com/baseurl', input,
+      {
+        containerClass: 'scopeClass',
+        idSuffix: '-suffix',
+        tagPolicy: function (elName, attrs) { return []; }
+      });
+  assertArrayEquals(input, golden, selectors);
+}
+
 jsunitRegister('testFontFamily',
                function testFontFamily() {
   var tokens = ['Arial', ' ', 'Black', ',', 'monospace', ',',
@@ -365,17 +376,6 @@ jsunitRegister('testUntranslatableSelectorHandler',
 });
 
 jsunitRegister('testImportant', function testImportant() {
-  function assertSanitizedStylesheet(golden, input) {
-    var selectors = sanitizeStylesheet(
-        'http://example.com/baseurl', input,
-        {
-          containerClass: 'scopeClass',
-          idSuffix: '-suffix',
-          tagPolicy: function (elName, attrs) { return []; }
-        });
-    assertArrayEquals(input, golden, selectors);
-  }
-
   assertSanitizedStylesheet(
       ''
       + '.scopeClass p{color:red !important;}'
@@ -493,5 +493,74 @@ jsunitRegister('testMediaQueries', function testMediaQueries() {
     var sanitized = sanitizeMediaQuery(tokens);
     assertEquals(css, 'not all', normalizeQuery(sanitized)); 
   }
+  jsunit.pass();
+});
+
+jsunitRegister('testKeyframes', function testKeyframes() {
+  // Mixture of example 1 and example 2 from
+  // http://dev.w3.org/csswg/css-animations/
+  var input = [
+    'div {',
+    '  animation-name: diagonal-slide;',
+    '  animation-duration: 5s;',
+    '  animation-iteration-count: 10;',
+    '}',
+    '',
+    '@keyframes diagonal-slide {',
+    '',
+    '  from {',
+    '    left: 0;',
+    '    top: 0;',
+    '  }',
+    '',
+    '  50% {',
+    '    left: 55px;',
+    '  }',
+    '',
+    '  to {',
+    '    left: 100px;',
+    '    top: 100px;',
+    '  }',
+    '',
+    '}'].join('\n');
+
+  assertSanitizedStylesheet(
+      ''
+      + '.scopeClass div{'
+      + 'animation-name:diagonal-slide-suffix;'
+      + 'animation-duration:5s;'
+      + 'animation-iteration-count:10;'
+      + '}'
+      + '@keyframes diagonal-slide-suffix{'
+      + 'from{left:0;top:0;}'
+      + '50%{left:55px;}'
+      + 'to{left:100px;top:100px;}'
+      + '}',
+      input);
+
+  // "Rules" in @keyframes must match from/to/<percentage>
+  assertSanitizedStylesheet(
+      '@keyframes foo-suffix{}',
+      ''
+      + '@keyframes foo {'
+      + '  whence { left: 0; top: 100px }'
+      + '  .foo { left: 100px; top: 0 }'
+      + '  a[href] { right: 50px }'
+      + '}');
+
+  // Drop @keyframes with bad IDs.
+  assertSanitizedStylesheet(
+      ''
+      + '.scopeClass b{color:blue;}'
+      + '.scopeClass p{color:pink;}',
+
+      ''
+      + '@keyframes foo__  { from { left: 0 } }'
+      + '@keyframes foo_ _ { from { left: 0 } }'
+      + 'b { color: blue }'
+      + '@keyframes "foo"  { from { left: 0 } }'
+      + '@keyframes        { from { left: 0 } }'
+      + 'p { color: pink }');
+
   jsunit.pass();
 });

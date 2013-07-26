@@ -46,6 +46,10 @@ public enum CssPropBit {
    * Allowed to be specified in a history-sensitive manner in a CSS stylesheet.
    */
   ALLOWED_IN_LINK(256),
+  /**
+   * Non-keyword terms treated as global names that need to be namespaced.
+   */
+  GLOBAL_NAME(512),
   ;
 
   /** a single bit. */

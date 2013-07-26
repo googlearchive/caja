@@ -20,6 +20,7 @@
  *
  * @author mikesamuel@gmail.com
  * \@requires CSS_PROP_BIT_ALLOWED_IN_LINK
+ * \@requires CSS_PROP_BIT_GLOBAL_NAME
  * \@requires CSS_PROP_BIT_HASH_VALUE
  * \@requires CSS_PROP_BIT_NEGATIVE_QUANTITY
  * \@requires CSS_PROP_BIT_QUANTITY
@@ -289,6 +290,10 @@ var sanitizeMediaQuery = undefined;
           : (token.charAt(token.length-1) === '(')
           ? sanitizeFunctionCall(tokens, i)
 
+          : ((propBits & CSS_PROP_BIT_GLOBAL_NAME)
+             && /^-?[a-z_][\w\-]*$/.test(token) && !/__$/.test(token))
+          ? token + '-suffix'
+
           : (/^\w+$/.test(token)
              && stringDisposition === CSS_PROP_BIT_UNRESERVED_WORD
              && (propBits & CSS_PROP_BIT_QSTRING))
@@ -460,7 +465,7 @@ var sanitizeMediaQuery = undefined;
         for (;valid && start < end; ++start) {
           tok = selectors[start];
           if (tok.charAt(0) === '#') {
-            if (/^#_|__$|[^#0-9A-Za-z:_\-]/.test(tok)) {
+            if (/^#_|__$|[^\w#:\-]/.test(tok)) {
               valid = false;
             } else {
               // Rewrite ID elements to include the suffix.
@@ -800,6 +805,15 @@ var sanitizeMediaQuery = undefined;
                 atIdent = null;
               } else if (atIdent === '@media') {
                 safeCss.push('@media', ' ', sanitizeMediaQuery(headerArray));
+              } else if (atIdent === '@keyframes') {
+                var animationId = headerArray[0];
+                if (headerArray.length === 1
+                    && !/__$|[^\w\-]/.test(animationId)) {
+                  safeCss.push(
+                      '@keyframes ', animationId + virtualization.idSuffix);
+                } else {
+                  atIdent = null;
+                }
               } else {
                 if (atIdent === '@import' && headerArray.length > 0) {
                   if ('function' === typeof continuation) {
@@ -830,7 +844,7 @@ var sanitizeMediaQuery = undefined;
               blockStack.push(atIdent);
             },
             endAtrule: function () {
-              var atIdent = blockStack.pop();
+              blockStack.pop();
               if (!elide) {
                 safeCss.push(';');
               }
@@ -854,23 +868,35 @@ var sanitizeMediaQuery = undefined;
               var historySensitiveSelectors = void 0;
               var removeHistoryInsensitiveSelectors = false;
               if (!elide) {
-                var selectors = sanitizeCssSelectors(selectorArray,
-                    virtualization);
-                var historyInsensitiveSelectors = selectors[0];
-                historySensitiveSelectors = selectors[1];
-                if (!historyInsensitiveSelectors.length
-                    && !historySensitiveSelectors.length) {
-                  elide = true;
+                var selector = void 0;
+                if (blockStack[blockStack.length - 1] === '@keyframes') {
+                  // Allow [from | to | <percentage>]
+                  selector = selectorArray.join(' ')
+                    .match(/^ *(?:from|to|\d+(?:\.\d+)?%) *$/i);
+                  elide = !selector;
+                  historySensitiveSelectors = [];
+                  if (selector) { selector = selector[0].replace(/ +/g, ''); }
                 } else {
-                  var selector = historyInsensitiveSelectors.join(', ');
-                  if (!selector) {
-                    // If we have only history sensitive selectors,
-                    // use an impossible rule so that we can capture the content
-                    // for later processing by
-                    // history insenstive content for use below.
-                    selector = 'head > html';
-                    removeHistoryInsensitiveSelectors = true;
+                  var selectors = sanitizeCssSelectors(
+                      selectorArray, virtualization);
+                  var historyInsensitiveSelectors = selectors[0];
+                  historySensitiveSelectors = selectors[1];
+                  if (!historyInsensitiveSelectors.length
+                      && !historySensitiveSelectors.length) {
+                    elide = true;
+                  } else {
+                    selector = historyInsensitiveSelectors.join(', ');
+                    if (!selector) {
+                      // If we have only history sensitive selectors, use an
+                      // impossible rule so that we can capture the content for
+                      // later processing by history insenstive content for use
+                      // below.
+                      selector = 'head > html';
+                      removeHistoryInsensitiveSelectors = true;
+                    }
                   }
+                }
+                if (!elide) {
                   safeCss.push(selector, '{');
                 }
               }
@@ -898,7 +924,7 @@ var sanitizeMediaQuery = undefined;
               var propertiesEnd = safeCss.length;
               if (!elide) {
                 safeCss.push('}');
-                if (rules) {
+                if ('object' === typeof rules) {
                   var extraSelectors = rules.historySensitiveSelectors;
                   if (extraSelectors.length) {
                     var propertyGroupTokens =
@@ -910,8 +936,8 @@ var sanitizeMediaQuery = undefined;
               }
               if (rules && rules.removeHistoryInsensitiveSelectors) {
                 safeCss.splice(
-                  // -1 and +1 account for curly braces.
-                  rules.endOfSelectors - 1, propertiesEnd + 1);
+                    // -1 and +1 account for curly braces.
+                    rules.endOfSelectors - 1, propertiesEnd + 1);
               }
               checkElide();
             },
@@ -936,9 +962,7 @@ var sanitizeMediaQuery = undefined;
             }
           });
       function checkElide() {
-        elide = blockStack.length !== 0
-            && blockStack[blockStack.length-1] !== null
-            && blockStack[blockStack.length-1][0] !== '@';
+        elide = blockStack.length && blockStack[blockStack.length-1] === null;
       }
       return {
         result : safeCss.join(''),

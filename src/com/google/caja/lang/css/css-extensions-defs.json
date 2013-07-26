@@ -8,6 +8,86 @@
 
   "types": [
 
+    { "key": "animation",
+      "signature": "<single-animation> [, <single-animation>]*",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-animations/#animation"
+    },
+
+    { "key": "animation-delay",
+      "signature": "<time> [, <time>]*",
+      "initial": "0s",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-animations/#animation-delay"
+    },
+
+    { "key": "animation-direction",
+      "signature": "<single-animation-direction> [, <single-animation-direction>]*",
+      "initial": "normal",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-animations/#animation-direction"
+    },
+
+    { "key": "animation-duration",
+      "signature": "<time> [, <time>]*",
+      "initial": "0s",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-animations/#animation-duration"
+    },
+
+    { "key": "animation-fill-mode",
+      "signature": "<single-animation-fill-mode> [, <single-animation-fill-mode>]*",
+      "initial": "none",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-animations/#animation-fill-mode"
+    },
+
+    { "key": "animation-iteration-count",
+      "signature": "<single-animation-iteration-count> [, <single-animation-iteration-count>]*",
+      "initial": "1",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-animations/#animation-iteration-count"
+    },
+
+    { "key": "animation-name",
+      "signature": "<single-animation-name> [, <single-animation-name>]*",
+      "initial": "none",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-animations/#animation-name"
+    },
+
+    { "key": "animation-play-state",
+      "signature": "<single-animation-play-state> [, <single-animation-play-state>]*",
+      "initial": "running",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-animations/#animation-play-state"
+    },
+
+    { "key": "animation-timing-function",
+      "signature": "<single-timing-function> [, <single-timing-function>]*",
+      "initial": "ease",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-animations/#animation-timing-function"
+    },
+
     { "key": "background",
       "signature": "[ [ <bg-image> || [<bg-position> [/ <bg-size>]? | / <bg-size>] || <repeat-style> || <attachment> || <bg-origin> ] , ]* ['background-color' || <bg-image> || [<bg-position> [/ <bg-size>]? | / <bg-size>] || <repeat-style> || <attachment> || <bg-origin>]",
       "appliesTo": "*",
@@ -525,6 +605,47 @@
       "comment": "the signature was derived from the source by duplicating and reducing to avoid the use of the && operator defined in http://www.w3.org/TR/CSS21/about.html#property-defs which is not supported by the CSS whitelist parser.",
       "source": "http://dev.w3.org/csswg/css-backgrounds/#position",
     },
+
+    { "key": "<single-animation>",
+      "signature": "<single-animation-name> || <time> || <single-timing-function> || <time> || <single-animation-iteration-count> || <single-animation-direction> || <single-animation-fill-mode> || <single-animation-play-state>",
+      "source": "http://dev.w3.org/csswg/css-animations/#single-animation"
+    },
+
+    { "key": "<single-animation-direction>",
+      "default": "normal",
+      "signature": "normal | reverse | alternate | alternate-reverse",
+      "source": "http://dev.w3.org/csswg/css-animations/#animation-direction"
+    },
+
+    { "key": "<single-animation-fill-mode>",
+      "default": "none",
+      "signature": "none | forwards | backwards | both",
+      "source": "http://dev.w3.org/csswg/css-animations/#animation-fill-mode"
+    },
+
+    { "key": "<single-animation-iteration-count>",
+      "default": "1",
+      "signature": "infinite | <number>",
+      "source": "http://dev.w3.org/csswg/css-animations/#single-animation-iteration-count"
+    },
+
+    { "key": "<single-animation-name>",
+      "default": "none",
+      "signature": "none | <global-name>",
+      "source": "http://dev.w3.org/csswg/css-animations/#single-animation-name"
+    },
+
+    { "key": "<single-animation-play-state>",
+      "default": "running",
+      "signature": "running | paused",
+      "source": "http://dev.w3.org/csswg/css-animations/#single-animation-play-state"
+    },
+
+    { "key": "<single-timing-function>",
+      "signature": "ease | linear | ease-in | ease-out | ease-in-out | step-start | step-end | steps(<integer>[, [ start | end ] ]?) | cubic-bezier(<number>, <number>, <number>, <number>)",
+      "default": "ease",
+      "source": "http://dev.w3.org/csswg/css-transitions/#transition-timing-function"
+    }
 
   ]
 }
