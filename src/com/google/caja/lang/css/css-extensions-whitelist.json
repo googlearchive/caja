@@ -18,6 +18,8 @@
     "-moz-outline-width", "-o-text-overflow",
     "opacity", "overflow-x", "overflow-y",
     "text-overflow", "text-shadow", "text-wrap",
+    "transition", "transition-delay", "transition-duration",
+    "transition-property", "transition-timing-function",
     "-webkit-border-bottom-left-radius", "-webkit-border-bottom-right-radius",
     "-webkit-border-radius",
     "-webkit-border-radius-bottom-left", "-webkit-border-radius-bottom-right",

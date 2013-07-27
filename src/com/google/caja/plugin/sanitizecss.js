@@ -23,6 +23,7 @@
  * \@requires CSS_PROP_BIT_GLOBAL_NAME
  * \@requires CSS_PROP_BIT_HASH_VALUE
  * \@requires CSS_PROP_BIT_NEGATIVE_QUANTITY
+ * \@requires CSS_PROP_BIT_PROPERTY_NAME
  * \@requires CSS_PROP_BIT_QUANTITY
  * \@requires CSS_PROP_BIT_QSTRING
  * \@requires CSS_PROP_BIT_UNRESERVED_WORD
@@ -200,6 +201,9 @@ var sanitizeMediaQuery = undefined;
       // to treat ['Arial', 'Black'] equivalently to ['"Arial Black"'].
       var stringDisposition =
         propBits & (CSS_PROP_BIT_URL | CSS_PROP_BIT_UNRESERVED_WORD);
+      // Used to determine what to do with unreserved words.
+      var identDisposition =
+        propBits & (CSS_PROP_BIT_GLOBAL_NAME | CSS_PROP_BIT_PROPERTY_NAME);
 
       // Used to join unquoted keywords into a single quoted string.
       var lastQuoted = NaN;
@@ -299,9 +303,15 @@ var sanitizeMediaQuery = undefined;
           : (token.charAt(token.length-1) === '(')
           ? sanitizeFunctionCall(tokens, i)
 
-          : ((propBits & CSS_PROP_BIT_GLOBAL_NAME)
+          : (identDisposition
              && /^-?[a-z_][\w\-]*$/.test(token) && !/__$/.test(token))
-          ? (opt_idSuffix ? token + opt_idSuffix : '')
+          ? (opt_idSuffix && identDisposition === CSS_PROP_BIT_GLOBAL_NAME
+             ? token + opt_idSuffix
+             : (identDisposition === CSS_PROP_BIT_PROPERTY_NAME
+                && cssSchema[token]
+                && 'number' === typeof cssSchema[token].cssPropBits)
+             ? token
+             : '')
 
           : (/^\w+$/.test(token)
              && stringDisposition === CSS_PROP_BIT_UNRESERVED_WORD

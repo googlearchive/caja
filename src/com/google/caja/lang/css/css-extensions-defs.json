@@ -439,6 +439,50 @@
       "dom2property": "textWrap",
       "source": "http://www.w3.org/TR/css3-text/#text-wrap" },
 
+    { "key": "transition",
+      "signature": "<single-transition> [, <single-transition>]*",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["interactive"],
+      "source": "http://dev.w3.org/csswg/css-transitions/#transition"
+    },
+
+    { "key": "transition-delay",
+      "signature": "<time> [, <time>]*",
+      "initial": "0s",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["interactive"],
+      "source": "http://dev.w3.org/csswg/css-transitions/#transition-delay"
+    },
+
+    { "key": "transition-duration",
+      "signature": "<time> [, <time>]*",
+      "initial": "0s",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["interactive"],
+      "source": "http://dev.w3.org/csswg/css-transitions/#transition-duration"
+    },
+
+    { "key": "transition-property",
+      "signature": "<single-transition-property> [, <single-transition-property>]*",
+      "initial": "all",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["interactive"],
+      "source": "http://dev.w3.org/csswg/css-transitions/#transition-property"
+    },
+
+    { "key": "transition-timing-function",
+      "signature": "<single-timing-function> [, <single-timing-function>]*",
+      "initial": "ease",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["interactive"],
+      "source": "http://dev.w3.org/csswg/css-transitions/#transition-timing-function"
+    },
+
     { "key": "white-space",
       "signature": "normal | pre | nowrap | pre-wrap | pre-line | inherit | -o-pre-wrap | -moz-pre-wrap | -pre-wrap",
       "default": "normal",
@@ -645,6 +689,16 @@
       "signature": "ease | linear | ease-in | ease-out | ease-in-out | step-start | step-end | steps(<integer>[, [ start | end ] ]?) | cubic-bezier(<number>, <number>, <number>, <number>)",
       "default": "ease",
       "source": "http://dev.w3.org/csswg/css-transitions/#transition-timing-function"
+    },
+
+    { "key": "<single-transition>",
+      "signature": "[ none | <single-transition-property> ] || <time> || <single-timing-function> || <time>",
+      "source": "http://dev.w3.org/csswg/css-transitions/#single-transition"
+    },
+
+    { "key": "<single-transition-property>",
+      "signature": "all | <property-name>",
+      "source": "http://dev.w3.org/csswg/css-transitions/#single-transition-property"
     }
 
   ]

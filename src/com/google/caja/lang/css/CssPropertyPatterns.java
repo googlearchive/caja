@@ -292,6 +292,7 @@ public class CssPropertyPatterns {
         .put("length", CssPropBit.QUANTITY)
         .put("number", CssPropBit.QUANTITY)
         .put("percentage", CssPropBit.QUANTITY)
+        .put("property-name", CssPropBit.PROPERTY_NAME)
         .put("quotable-word", CssPropBit.UNRESERVED_WORD)
         .put("specific-voice", CssPropBit.QSTRING)
         .put("string", CssPropBit.QSTRING)

@@ -564,3 +564,38 @@ jsunitRegister('testKeyframes', function testKeyframes() {
 
   jsunit.pass();
 });
+
+jsunitRegister('testTransitions', function testTransitions() {
+  assertSanitizedStylesheet(
+      ['.scopeClass li{',
+         'transition:background-color linear 1s;',
+         'background:blue;',
+       '}',
+       '.scopeClass li:hover{',
+         'background-color:green;',
+         'transition-duration:2s;',
+       '}',
+       '.scopeClass div{',
+         'transition-property:opacity , , left;',  // bogus elided
+         'transition-duration:2s , 4s;',
+         'transition-timing-function:',
+           'ease , step-start , cubic-bezier(0.1 , 0.7 , 1.0 , 0.1);',
+       '}'
+      ].join(''),
+      ['li {',
+       '  transition: background-color linear 1s;',
+       '  background: blue;',
+       '}',
+       'li:hover {',
+       '  background-color: green;',
+       '  transition-duration: 2s;',
+       '}',
+       'div {',
+       '  transition-property: opacity, bogus, left;',
+       '  transition-duration: 2s, 4s;',
+       '  transition-timing-function:',
+       '    ease, step-start, cubic-bezier(0.1, 0.7, 1.0, 0.1)',
+       '}'
+      ].join('\n'));
+  jsunit.pass();
+});

@@ -50,6 +50,11 @@ public enum CssPropBit {
    * Non-keyword terms treated as global names that need to be namespaced.
    */
   GLOBAL_NAME(512),
+  /**
+   * Non-keyword terms treated as property names that need to match an allowed
+   * property in the schema.
+   */
+  PROPERTY_NAME(1024),
   ;
 
   /** a single bit. */
