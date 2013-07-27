@@ -88,6 +88,10 @@
       "source": "http://dev.w3.org/csswg/css-animations/#animation-timing-function"
     },
 
+    { "key": "backface-visibility",
+      "as": "visibility"
+    },
+
     { "key": "background",
       "signature": "[ [ <bg-image> || [<bg-position> [/ <bg-size>]? | / <bg-size>] || <repeat-style> || <attachment> || <bg-origin> ] , ]* ['background-color' || <bg-image> || [<bg-position> [/ <bg-size>]? | / <bg-size>] || <repeat-style> || <attachment> || <bg-origin>]",
       "appliesTo": "*",
@@ -391,6 +395,24 @@
     },
     { "key": "overflow-y", "as": "overflow-x", "dom2property": "overflowY" },
 
+    { "key": "perspective",
+      "signature": "none | <length>",
+      "default": "none",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-transforms/#perspective"
+    },
+
+    { "key": "perspective-origin",
+      "signature": "[ left | center | right | top | bottom | <percentage> | <length> ] | [ left | center | right | <percentage> | <length> ] [ top | center | bottom | <percentage> | <length> ] | [ top | bottom ] [ left | center | right | <percentage> | <length> ]",
+      "default": "50% 50%",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-transforms/#perspective-origin"
+    },
+
     { "key": "text-overflow",
       "signature": "clip | ellipsis",
       "default": null,
@@ -438,6 +460,33 @@
       "mediaGroups": ["visual"],
       "dom2property": "textWrap",
       "source": "http://www.w3.org/TR/css3-text/#text-wrap" },
+
+    { "key": "transform",
+      "signature": "none | <transform-function> [ <transform-function> ]*",
+      "default": "none",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-transforms/#transform"
+    },
+
+    { "key": "transform-origin",
+      "signature": "none | <transform-function> [ <transform-function> ]*",
+      "default": "50% 50%",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-transforms/#transform-origin"
+    },
+
+    { "key": "transform-style",
+      "signature": "flat | preserve-3d",
+      "default": "flat",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-transforms/#transform-style"
+    },
 
     { "key": "transition",
       "signature": "<single-transition> [, <single-transition>]*",
@@ -699,6 +748,32 @@
     { "key": "<single-transition-property>",
       "signature": "all | <property-name>",
       "source": "http://dev.w3.org/csswg/css-transitions/#single-transition-property"
+    },
+
+    { "key": "<transform-function>",
+      "signature": "<transform-matrix> | <transform-function-2d> | <transform-function-3d>",
+      "source": "http://dev.w3.org/csswg/css-transforms/#transform-functions"
+    },
+
+    { "key": "<transform-matrix>",
+      "signature": "matrix(<number>, <number>, <number>, <number>, <number>, <number>[, <number>, <number>, <number>, <number>, <number>, <number>, <number>, <number>, <number>, <number>])",
+      "comment": "6 number version is a 2D transform matrix, and the 16 number version is the full 3-D transform matrix.",
+      "source": "http://dev.w3.org/csswg/css-transforms/#transform-functions"
+    },
+
+    { "key": "<transform-function-2d>",
+      "signature": "translate(<translation-value>[, <translation-value>]) | translateX(<translation-value>) | translateY(<translation-value>) | scale(<number>[, <number>]) | scaleX(<number>) | scaleY(<number>) | rotate(<angle>) | skew(<angle>[, <angle>]) | skewX(<angle>) | skewY(<angle>)",
+      "source": "http://dev.w3.org/csswg/css-transforms/#two-d-transform-functions"
+    },
+
+    { "key": "<transform-function-3d>",
+      "signature": "translate3d(<translation-value>, <translation-value>, <length>) | translateZ(<length>) | scale3d(<number>, <number>, <number>) | scaleZ(<number>) | rotate3d(<number>, <number>, <number>, <angle>) | rotateX(<angle>) | rotateY(<angle>) | rotateZ(<angle>) | perspective(<length>)",
+      "source": "http://dev.w3.org/csswg/css-transforms/#three-d-transform-functions"
+    },
+
+    { "key": "<translation-value>",
+      "signature": "<percentage> | <length>",
+      "source": "http://dev.w3.org/csswg/css-transforms/#transform-functions"
     }
 
   ]

@@ -226,7 +226,7 @@ public class CssPropertyPatternsTest extends CajaTestCase {
       boolean expectedMatchResult, String sig, String... cssPropertyValues)
       throws ParseException {
     CssPropertyPatterns.CssPropertyData data = pp.cssPropertyToData(
-        this.getName(), parseSignature(sig));
+        Strings.lower(this.getName()), parseSignature(sig));
 
     // Collect failures altogether and report at once.
     List<String> failures = Lists.newArrayList();

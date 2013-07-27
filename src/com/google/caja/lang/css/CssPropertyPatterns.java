@@ -139,6 +139,7 @@ public class CssPropertyPatterns {
     final Set<CssPropertySignature.CallSignature> fns;
 
     CssPropertyData(String key, CssPropertySignature sig) {
+      assert key.equals(Strings.lower(key)) : key;
       this.key = key;
       this.sig = sig;
       this.properties = EnumSet.noneOf(CssPropBit.class);
@@ -644,6 +645,7 @@ public class CssPropertyPatterns {
    * The result will have base as a prefix.
    */
   private static final String allocateKey(String base, Set<String> allocated) {
+    base = Strings.lower(base);
     int counter = 0;
     String candidate = base;
     while (!allocated.add(candidate)) {

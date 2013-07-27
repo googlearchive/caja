@@ -225,11 +225,20 @@ public final class CssSchema {
       }
     }
     List<String> members = new ArrayList<String>();
+    if (!(type instanceof List<?>)) {
+      throw new IllegalArgumentException(
+          "type=" + type + ":"
+          + (type != null ? type.getClass().getSimpleName() : "<null>"));
+    }
     for (Object member : (List<?>) type) {
       if (member instanceof String) {
         members.add((String) member);
-      } else {
+      } else if (member instanceof Map<?, ?>) {
         members.add((String) ((Map<?, ?>) member).get("key"));
+      } else {
+        throw new IllegalArgumentException(
+            "type=" + type + ", member=" + member + ":"
+            + (member != null ? member.getClass().getSimpleName() : "<null>"));
       }
     }
     Criterion<String> set = in(members.toArray(new String[0]));
