@@ -14,8 +14,7 @@
 
 /**
  * @fileoverview Mitigate deviations between SES and ES5-strict code
- * by rewriting programs where possible.  The output of this stage is
- * outside the TCB.
+ * by rewriting programs where possible.
  * See http://code.google.com/p/google-caja/wiki/SES#Source-SES_vs_Target-SES
  * for a list of these differences.
  *
@@ -57,6 +56,27 @@ var ses;
     return node.type === 'FunctionDeclaration';
   }
 
+  // (o[3]), (o['p']), and (o.p) are static key property access expressions
+  // (o[x]) for some reference 'x' is not static
+  function isStaticKeyPropertyAccess(node) {
+    return node.type === 'MemberExpression' &&
+           (node.computed
+               ? node.property.type === 'Literal'
+               : true);
+  }
+
+  function isStaticKeyPropertyUpdateExpr(node) {
+    return node.type === 'UpdateExpression' &&
+           isStaticKeyPropertyAccess(node.argument);
+  }
+
+  function isStaticKeyPropertyCompoundAssignmentExpr(node) {
+    return node.type === 'AssignmentExpression' &&
+           node.operator.length > 1 &&
+           node.operator[node.operator.length - 1] === '=' &&
+           isStaticKeyPropertyAccess(node.left);
+  }
+
   /**
    * Detects a call expression where the callee is an identifier.
    *
@@ -75,12 +95,16 @@ var ses;
     return node.type === 'CallExpression' && isId(node.callee);
   }
 
+  function parentNode(scope) {
+    return scope.path[scope.path.length - 2];
+  }
+
   /**
    * Rewrite func decls in place by appending assignments on the global object
    * turning expression "function x() {}" to
    * function x(){}; global.x = x;
    */
-  function rewriteFuncDecl(node, parent) {
+  function rewriteFuncDecl(scope, node) {
     var exprNode = {
       'type': 'ExpressionStatement',
       'expression': {
@@ -90,7 +114,7 @@ var ses;
         'right': node.id
       }
     };
-    var body = parent.body;
+    var body = parentNode(scope).body;
     var currentIdx = body.indexOf(node);
     var nextIdx = currentIdx + 1;
 
@@ -107,7 +131,7 @@ var ses;
    * initializer "for (var x = 1;;) {}" into an expression:
    * "for (this.x = this.x, this.x = 1;;) {}"
    */
-  function rewriteVars(node, parent) {
+  function rewriteVars(scope, node) {
 
     // TODO(jasvir): Consider mitigating top-level vars in for..in
     // loops.  We currently do not support rewriting var declarations
@@ -117,7 +141,7 @@ var ses;
 
     // We can support rewriting these vars iff requested.
 
-    if (parent.type === 'ForInStatement') {
+    if (parentNode(scope).type === 'ForInStatement') {
       return;
     }
     var assignments = [];
@@ -137,7 +161,7 @@ var ses;
         });
       }
     });
-    if (parent.type === 'ForStatement') {
+    if (parentNode(scope).type === 'ForStatement') {
       node.type = 'SequenceExpression';
       node.expressions = assignments;
     } else {
@@ -165,7 +189,7 @@ var ses;
    *   try { return typeof x; } catch (e) { return "undefined"; }
    * })()
    */
-  function rewriteTypeOf(node) {
+  function rewriteTypeOf(scope, node) {
     var arg = node.argument;
     node.type = 'CallExpression';
     node.arguments = [];
@@ -228,26 +252,113 @@ var ses;
    * "https://code.google.com/p/google-caja/issues/detail?id=1755"
    * >Issue 1755: Need rewriteFunctionCalls mitigation</a>
    */
-  function rewriteFunctionCall(node) {
-    var oldCallee = node.callee;
-    node.callee = {
+  function rewriteFunctionCall(scope, node) {
+    node.callee = makeTrivialSequenceExpression(node.callee);
+  }
+
+  function makeTrivialSequenceExpression(rhs) {
+    return {
       type: 'SequenceExpression',
       expressions: [
         {
           type: 'Literal',
-          value: 1,
-          raw: "1"
+          value: 1
         },
-        oldCallee
+        rhs
       ]
     };
+  }
+
+  function rewriteStaticKeyMemberExpression(scope, node) {
+    rewrite(scope, node.object);
+    switch (node.property.type) {
+     case 'Identifier':
+       node.property = makeTrivialSequenceExpression({
+          type: 'Literal',
+          value: node.property.name
+        });
+       break;
+     case 'Literal':
+       node.property = makeTrivialSequenceExpression(node.property);
+       break;
+     default:
+       // Inconsistent
+       throw new Error('Programming error');
+    }
+    node.computed = true;
   }
 
   function needsRewriting(options) {
     return options.rewriteTopLevelVars ||
       options.rewriteTopLevelFuncs ||
       options.rewriteFunctionCalls ||
-      options.rewriteTypeOf;
+      options.rewriteTypeOf ||
+      options.rewritePropertyUpdateExpr ||
+      options.rewritePropertyCompoundAssignmentExpr;
+  }
+
+  function rewrite(scope, node) {
+    ses.rewriter_.traverse(node, {
+      enter: function enter(node) {
+          scope.path.push(node);
+
+          if (scope.options.rewriteTopLevelFuncs &&
+              isFunctionDecl(node) && scope.scopeLevel === 0) {
+            rewriteFuncDecl(scope, node);
+            scope.dirty = true;
+          } else if (scope.options.rewriteTypeOf &&
+              isTypeOf(node) && isId(node.argument)) {
+            rewriteTypeOf(scope, node);
+            scope.dirty = true;
+          } else if (scope.options.rewriteTopLevelVars &&
+                     isVariableDecl(node) && scope.scopeLevel === 0) {
+            rewriteVars(scope, node);
+            scope.dirty = true;
+          } else if (scope.options.rewriteFunctionCalls &&
+                     isFunctionCall(node)) {
+            rewriteFunctionCall(scope, node);
+            scope.dirty = true;
+          } else if (scope.options.rewritePropertyUpdateExpr &&
+                     isStaticKeyPropertyUpdateExpr(node)) {
+            rewriteStaticKeyMemberExpression(scope, node.argument);
+            scope.dirty = true;
+          } else if (scope.options.rewritePropertyCompoundAssignmentExpr &&
+                     isStaticKeyPropertyCompoundAssignmentExpr(node)) {
+            rewriteStaticKeyMemberExpression(scope, node.left);
+            rewrite(scope, node.right);
+            scope.dirty = true;
+          }
+
+          if (introducesVarScope(node)) {
+            scope.scopeLevel++;
+          }
+      },
+      leave: function leave(node) {
+          var last = scope.path.pop();
+          if (node !== last) {
+            throw new Error('Internal error traversing the AST');
+          }
+          if (introducesVarScope(node)) {
+            scope.scopeLevel--;
+          }
+      }
+    });
+    return node;
+  }
+
+  function rewriteProgram(options, ast) {
+    if (needsRewriting(options)) {
+      var scope = {
+        options: options,
+        dirty: false,
+        path: [],
+        scopeLevel: 0
+      };
+      rewrite(scope, ast);
+      return scope.dirty;
+    } else {
+      return false;
+    }
   }
 
   /**
@@ -259,49 +370,8 @@ var ses;
       return funcBodySrc;
     }
     try {
-      var dirty = false;
-      var path = [];
-      var scopeLevel = 0;
       var ast = ses.rewriter_.parse(funcBodySrc);
-      if (needsRewriting(options)) {
-        ses.rewriter_.traverse(ast, {
-          enter: function enter(node) {
-              var parent = path[path.length - 1];
-              path.push(node);
-
-              if (options.rewriteTopLevelFuncs &&
-                  isFunctionDecl(node) && scopeLevel === 0) {
-                rewriteFuncDecl(node, parent);
-                dirty = true;
-              } else if (options.rewriteTypeOf &&
-                  isTypeOf(node) && isId(node.argument)) {
-                rewriteTypeOf(node);
-                dirty = true;
-              } else if (options.rewriteTopLevelVars &&
-                         isVariableDecl(node) && scopeLevel === 0) {
-                rewriteVars(node, parent);
-                dirty = true;
-              } else if (options.rewriteFunctionCalls &&
-                         isFunctionCall(node)) {
-                rewriteFunctionCall(node);
-                dirty = true;
-              }
-
-              if (introducesVarScope(node)) {
-                scopeLevel++;
-              }
-          },
-          leave: function leave(node) {
-              var last = path.pop();
-              if (node !== last) {
-                throw new Error('Internal error traversing the AST');
-              }
-              if (introducesVarScope(node)) {
-                scopeLevel--;
-              }
-          }
-        });
-      }
+      var dirty = rewriteProgram(options, ast);
       if (dirty || options.forceParseAndRender) {
         return "\n"
             + "/*\n"

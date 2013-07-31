@@ -2003,6 +2003,49 @@ var ses;
   }
 
   /**
+   * Detects https://code.google.com/p/v8/issues/detail?id=2779
+   *
+   * A function which is optimized by V8 can mutate frozen properties using
+   * increment/decrement operators.
+   */
+  function test_INCREMENT_IGNORES_FROZEN() {
+    function optimizedFun(o, i) {
+      if (i == 3) {
+        // the count does need to be this high
+        for (var j = 0; j < 100000; j++) {}
+      }
+      o.a++;
+      // The bug also applies to --, +=, and -=, but we would have to have
+      // separate runs for each one to check them.
+    }
+    var x = Object.freeze({a: 88});
+    var threw = true;
+    // multiple executions are needed
+    for (var i = 0; i < 4; i++) {
+      try {
+        optimizedFun(x, i);
+        threw = false;
+      } catch (err) {
+        if (!(err instanceof TypeError)) {
+          return 'Increment failed with: ' + err;
+        }
+      }
+    }
+    if (x.a === 89) {
+      // expected mutation result
+      return true;
+    }
+    if (x.a === 88) {
+      if (threw) {
+        return false;
+      } else {
+        return 'Increment failed silently';
+      }
+    }
+    return 'Unexpected increment outcome: ' + JSON.stringify(x);
+  }
+
+  /**
    * Detects whether calling pop on a frozen array can modify the array.
    * See https://bugs.webkit.org/show_bug.cgi?id=75788
    */
@@ -4050,6 +4093,24 @@ var ses;
                'fixing_override_mistake'],
       sections: ['8.12.4'],
       tests: ['15.2.3.6-4-405']
+    },
+    {
+      id: 'INCREMENT_IGNORES_FROZEN',
+      description: 'Increment operators can mutate frozen properties',
+      test: test_INCREMENT_IGNORES_FROZEN,
+      repair: void 0,
+      // NOTE: We set this to SAFE_SPEC_VIOLATION to allow SES initialization to
+      // succeed, relying on the fact that mitigateGotchas.js will rewrite code
+      // to work around the problem. Otherwise, the problem would be a fatal
+      // NOT_OCAP_SAFE severity.
+      //
+      // TODO(ihab.awad): Build a better system to record problems of fatal
+      // severity that are known to be fixed by mitigateGotchas.
+      preSeverity: severities.SAFE_SPEC_VIOLATION,
+      canRepair: false,
+      urls: ['https://code.google.com/p/v8/issues/detail?id=2779'],
+      sections: ['11.4.4', '8.12.4'],
+      tests: [] // TODO(jasvir): Add to test262
     },
     {
       id: 'POP_IGNORES_FROZEN',

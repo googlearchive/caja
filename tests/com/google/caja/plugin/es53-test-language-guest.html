@@ -925,3 +925,29 @@ problems with browser provided WeakMap), so we have these end-to-end tests.
     pass('testWeakMapAccess');
   });
 </script>
+
+<script type="text/javascript">
+  // See repairES5.js "INCREMENT_IGNORES_FROZEN" flag
+  // See https://code.google.com/p/v8/issues/detail?id=2779
+  jsunitRegister('testIncrementIgnoresFrozen',
+      function testIncrementIgnoresFrozen() {
+        function f(o, i) {
+          if (i == 3) {
+            for (var j = 0; j < 100000; j++) {
+              o.x;
+            }
+          }
+          o.x++;
+        }
+        function dotest(frozen) {
+          var o = {x: 5};
+          if (frozen) { Object.freeze(o); }
+          for (var i = 0; i < 4; i++) {try { f(o, i); } catch (e) {} }
+          return o.x;
+        }
+
+        assertEquals(5, dotest(true));
+        assertEquals(9, dotest(false));
+        pass('testIncrementIgnoresFrozen');
+      });
+</script>
