@@ -37,13 +37,52 @@
   </script>
   <style>
     html {
-      background: #CCC;
+      background: #E5E5E5;
       color: black;
+    }
+    body {
+      margin: 0;
+    }
+    #toolbar {
+      padding: 0.3em;
     }
     #guest {
       background: white;
       color: black;
+      margin: 0.3em;
       border: 0.1em solid black;
+    }
+
+    /* outer layout */
+    #form {
+      display: table;
+      margin: 0;
+      width: 100%;
+      border-collapse: separate;
+    }
+    #config, #contentarea {
+      display: table-cell;
+      vertical-align: top;
+      border-top: 1px solid white;
+      border-bottom: 1px solid white;
+    }
+    #config {
+      width: 30em; /* will stretch anyway */
+      border-right: 1px solid white;
+    }
+    #form p, #form pre {
+      margin-left: 0.5em;
+      margin-right: 0.5em;
+    }
+    #form p {
+      margin-top: 0.7em;
+      margin-bottom: 0.7em;
+    }
+
+    h2 {
+      font-family: sans-serif;
+      font-size: 1.2em;
+      margin: 0.2em;
     }
 
     #form [name="content"] {
@@ -51,43 +90,95 @@
       margin-right: 0;
       box-sizing: border-box;
       width: 100%;
-      height: 20em;
+      height: 26em;
+      border: none;
     }
-    #load {
+    #run {
       float: right;
       padding: 1em;
+      margin: 0.5em;
     }
+    
     #guest {
       clear: right;
     }
+    
+    /* consistent code formatting */
+    pre, #form [name="content"] {
+      font-family: monospace;
+      font-size: 92%;
+    }
   </style>
+  <script>
+    function status(s) {
+      console.info(s);
+      var el = document.getElementById('status');
+      if (el) {
+        el.textContent = s;
+      }
+    }
+  </script>
 </head><body>
   <div id="toolbar">
     <span class='nonwidget'><a href='test-index.html'>other tests</a></span>
   </div>
   <form id="form" action="" method="GET">
-    <label>SES maximum severity<select name="maxAcceptableSeverity">
-      <option>SAFE</option>
-      <option selected>SAFE_SPEC_VIOLATION</option>
-      <option>NO_KNOWN_EXPLOIT_SPEC_VIOLATION</option>
-      <option>UNSAFE_SPEC_VIOLATION</option>
-      <option>NOT_OCAP_SAFE</option>
-      <option>NOT_ISOLATED</option>
-      <option>NEW_SYMPTOM</option>
-      <option>NOT_SUPPORTED</option>
-    </select></label>
-    &middot;
-    <label>
-      <input type="checkbox" name="debug" value="true">
-      Config <code>debug</code>
-    </label>
-    <label>
-      <input type="checkbox" name="alert" value="true">
-      Provide <code>alert</code>
-    </label>
-    <br>
-    <textarea type="text" name="content"></textarea>
-    <button id="load" type="submit">Load</button>
+    <div id="config">
+      <h2>Config</h2>
+      <pre><!--
+-->caja.initialize({
+  cajaServer: '/caja',
+  <label>es5Mode: <select name="es5Mode">
+    <option>true</option>
+    <option>false</option>
+    <option selected value="undefined">undefined (Autodetect)</option>
+  </select></label>,
+  <label>debug: <input type="checkbox" name="debug" value="true"></label>,
+  <label>maxAcceptableSeverity: <select name="maxAcceptableSeverity">
+    <option>SAFE</option>
+    <option selected>SAFE_SPEC_VIOLATION</option>
+    <option>NO_KNOWN_EXPLOIT_SPEC_VIOLATION</option>
+    <option>UNSAFE_SPEC_VIOLATION</option>
+    <option>NOT_OCAP_SAFE</option>
+    <option>NOT_ISOLATED</option>
+    <option>NEW_SYMPTOM</option>
+    <option>NOT_SUPPORTED</option>
+  </select></label>
+});
+
+caja.load(document.getElementById('guest'),
+          <select name="net">
+            <option selected value="ALL">caja.policy.net.ALL</option>
+            <option value="NO_NETWORK">caja.policy.net.NO_NETWORK</option>
+          </select>,
+          function(frame) {
+
+  frame.content('http://caja-host-url.invalid/',
+                <em style='border: 0.1em solid white; padding: 0 0.2em;'><!--
+                    -->content of textarea &mdash;&rarr;</em>,
+                <select name="contentType">
+                  <option selected>text/html</option>
+                  <option>text/javascript</option>
+                </select>);
+  frame.api({
+    <label><input type="checkbox" name="alert" value="true"><!--
+    --> alert: frame.tame(frame.markFunction(function(s) {
+      window.alert('Guest alerts: ' + s);
+    }))</label>
+  });
+  frame.run();
+});<!--
+      --></pre>
+    </div>
+    <div id="contentarea">
+      <h2>Guest content</h2>
+      <textarea type="text" name="content"></textarea>
+      <button id="run" type="submit">Run</button>
+      <!-- This initial status message should not be seen since the first
+           status() call is synchronous -->
+      <p>Status: <span id="status">Internal script error</span></p>
+      </td>
+    </div>
     <script>
       var options = {};
       Array.prototype.forEach.call(document.querySelectorAll(
@@ -102,37 +193,56 @@
       });
     </script>
   </form>
-  <p>Status: <span id="status">&mdash;</span></p>
+  <h2>Result</h2>
   <div id="guest"></div>
   <script>
-    function status(s) {
-      console.info(s);
-      document.getElementById('status').textContent = s;
+
+    // validate, don't evaluate
+    var mode;
+    switch (options.es5Mode) {
+      case 'true': mode = true; break;
+      case 'false': mode = false; break;
+      case 'undefined': mode = undefined; break;
+      default: throw new Error('invalid es5Mode field');
+    }
+    var net;
+    if (caja.policy.net.hasOwnProperty(options.net)) {
+      net = caja.policy.net[options.net];
+    } else {
+      throw new Error('invalid net policy field');
     }
 
     status('caja.initialize()');
     caja.initialize({
       cajaServer: '/caja',
+      es5Mode: mode,
       debug: options.debug,
       maxAcceptableSeverity: options.maxAcceptableSeverity
+    }, function() {
+      // success, no need
+    }, function() {
+      status('caja.initialize() failed');
     });
     status('caja.load()');
-    caja.load(
-        document.getElementById('guest'),
-        caja.policy.net.ALL,
-        function(frame) {
-          status('frame.content().run()');
-          frame.content('http://caja-host-url.invalid/', options.content);
-          if (options.alert) {
-            frame.api({
-                  alert: frame.tame(frame.markFunction(function(s) {
-                    window.alert('Guest alerts: ' + s);
-                  }))
-                });
-          }
-          frame.run(function() {
-                status('Complete');
-              });
+    caja.load(document.getElementById('guest'),
+              net,
+              function(frame) {
+      status('frame.content()');
+      frame.content(
+          'http://caja-host-url.invalid/',
+          options.content,
+          options.contentType);
+      if (options.alert) {
+        frame.api({
+          alert: frame.tame(frame.markFunction(function(s) {
+            window.alert('Guest alerts: ' + s);
+          }))
         });
+      }
+      status('frame.run()');
+      frame.run(function() {
+        status('run complete');
+      });
+    });
   </script>
 </body></html>
