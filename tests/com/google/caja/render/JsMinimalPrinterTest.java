@@ -264,6 +264,14 @@ public class JsMinimalPrinterTest extends CajaTestCase {
         out.toString());
   }
 
+  public final void testInfixAndPrefixOpMerging() throws ParseException {
+    // "x--1" tokenizes to "x", "--", "1" which is an invalid expression.
+    assertTokens("x- -1", "x", "-", "-1");
+    assertTokens("x- -1", "x", "-", "-", "1");
+    assertTokens("x+ +1", "x", "+", "+1");
+    assertTokens("x+ +1", "x", "+", "+", "1");
+  }
+
   private static final JsTokenType[] TYPES = JsTokenType.values();
   private static final String[] PUNCTUATORS;
   static {

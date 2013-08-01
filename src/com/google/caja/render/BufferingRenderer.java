@@ -120,6 +120,23 @@ abstract class BufferingRenderer implements TokenConsumer {
    */
   public final void consume(String text) {
     if ("".equals(text)) { return; }
+    // Some token producers treat "-1" as one token even though the sign is
+    // actually separate.
+    // This is not a problem with parsed code, but is often a problem with
+    // optimized parse trees and other programmatically generated AST nodes.
+    // To avoid problems downstream, such as conflating "x - -1" with "x--1",
+    // we split numeric tokens with a sign into two tokens.
+    if (text.length() >= 2) {
+      char c0 = text.charAt(0);
+      if (c0 == '-' || c0 == '+') {
+        char c1 = text.charAt(1);
+        if ('0' <= c1 && c1 <= '9') {
+          pending.add(c0 == '-' ? "-" : "+");
+          pending.add(text.substring(1));
+          return;
+        }
+      }
+    }
     pending.add(text);
   }
 
