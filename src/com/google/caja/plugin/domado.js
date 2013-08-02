@@ -2108,8 +2108,8 @@ var Domado = (function() {
       }
       var htmlSanitizer = html.makeHtmlSanitizer(tagPolicy);
 
-      // Bundle of all virtualization info, for use by CSS sanitizer
-      var virtualization = cajaVM.def({
+      // needed by HtmlEmitter for stylesheet processing
+      domicile.virtualization = cajaVM.def({
         // Class name matching the virtual document container. May be null (not
         // undefined) if we are taming a complete document and there is no
         // container (note: this case is not yet fully implemented).
@@ -2121,8 +2121,14 @@ var Domado = (function() {
         // Element/attribute rewriter
         tagPolicy: tagPolicy
       });
-      // needed by HtmlEmitter for stylesheet processing
-      domicile.virtualization = virtualization;
+
+      // needed by querySelectorAll, which is always scoped to a tame node,
+      // so we don't want the containerClass prepended to the selector.
+      var qsaVirtualization = cajaVM.def({
+        containerClass: null,
+        idSuffix: idSuffix,
+        tagPolicy: tagPolicy
+      });
 
       /**
        * If str ends with suffix,
@@ -3458,7 +3464,7 @@ var Domado = (function() {
       }
       function tameQuerySelector(rootFeralNode, guestSelector, returnAll) {
         var virtualizedSelectors = sanitizeCssSelectors(
-          lexCss(guestSelector), virtualization, querySelectorFail);
+          lexCss(guestSelector), qsaVirtualization, querySelectorFail);
         var historyInsensitiveVirtualizedSelectors =
           virtualizedSelectors[0].join(',');
         if (returnAll) {
