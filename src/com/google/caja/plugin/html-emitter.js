@@ -27,7 +27,7 @@
  * @provides HtmlEmitter
  * @overrides window
  * @requires bridalMaker html htmlSchema cajaVM URI Q
- * @requires sanitizeStylesheetWithExternals
+ * @requires lexCss sanitizeMediaQuery sanitizeStylesheetWithExternals
  * @overrides window
  */
 
@@ -500,31 +500,37 @@ function HtmlEmitter(makeDOMAccessible, base,
       return makeCssUriHandler(baseUri, 'fetchUri', 'text/css');
     }
 
-    function defineUntrustedStylesheet(styleBaseUri, cssText, styleElement) {
+    function defineUntrustedStylesheet(
+        styleBaseUri, cssText, styleElement, outerMediaQuery) {
+      var safeCss;
       function emitCss(text) {
+        // If a stylesheet has a media attribute, and contains an import with
+        // a media query:
+        //   <style media="screen and (color)">
+        //     @import "foo.css" only (fancy:very)
+        //   </style>
+        // We cannot just AND two media queries, though because media queries
+        // do not arbitrarily parenthesize, so instead we use a master outer
+        // @media block and allow continuation to nest @media inside it.
+        if (outerMediaQuery) {
+          text = '@media ' + outerMediaQuery + ' {\n' + text + '\n}';
+        }
         styleElement.appendChild(styleElement.ownerDocument.createTextNode(
             text + '\n'));
       }
-      var safeCss = [];
-      var safeInlineCss;
       function continuation(sanitizeStyle, moreToCome) {
-        safeCss.push(sanitizeStyle);
-        if (!moreToCome) {
-          emitCss(
-            safeCss.join(' ') + ' ' + safeInlineCss);
+        if (!moreToCome && safeCss) {
+          emitCss(safeCss.toString());
         }
       }
       if (domicile && domicile.emitCss) {
-        var sanitized = sanitizeStylesheetWithExternals(styleBaseUri,
-            cssText, domicile.virtualization,
+        var sanitized = sanitizeStylesheetWithExternals(
+            styleBaseUri, cssText, domicile.virtualization,
             makeCssUriSanitizer(styleBaseUri),
             makeCssUriFetcher(styleBaseUri),
             continuation);
-        if (!sanitized.moreToCome) {
-          emitCss(sanitized.result);
-        } else {
-          safeInlineCss = sanitized.result;
-        }
+        safeCss = sanitized.result;
+        continuation(sanitized.result, sanitized.moreToCome);
       }
     }
 
@@ -546,11 +552,11 @@ function HtmlEmitter(makeDOMAccessible, base,
     }
 
     function defineUntrustedExternalStylesheet(
-        url, styleElement, marker, continuation) {
+        url, styleElement, marker, media, continuation) {
       resolveUntrustedExternal(
           url, 'text/css', marker, function(url, result) {
             if (result !== null) {
-              defineUntrustedStylesheet(url, result, styleElement);
+              defineUntrustedStylesheet(url, result, styleElement, media);
             }
             continuation();
           });
@@ -649,6 +655,8 @@ function HtmlEmitter(makeDOMAccessible, base,
     var pendingExternal = undefined;
     // True iff the pending CDATA tag is defer or async.
     var pendingDelayed = false;
+    // The value of the media attribute of a pending CDATA <style> element.
+    var pendingMedia = '';
 
     var documentLoaded = undefined;
     var depth = 0;
@@ -826,7 +834,7 @@ function HtmlEmitter(makeDOMAccessible, base,
           if (tagName === 'html') {
             insertionModes.inBody.startTag.apply(undefined, arguments);
           } else if (tagName === 'base' || tagName === 'basefont' ||
-              tagName === 'bgsound'  || tagName === 'link') {
+                     tagName === 'bgsound' || tagName === 'link') {
             // Define a stylesheet for <link>
             if (tagName === 'link') {
               // Link types are case insensitive
@@ -835,12 +843,14 @@ function HtmlEmitter(makeDOMAccessible, base,
               var rels = rel ? String(rel).toLowerCase().split(' ') : [];
               if (href && rels.indexOf('stylesheet') >= 0) {
                 var res = resolveUriRelativeToDocument(href);
+                var media = lookupAttr(attribs, 'media');
+                media = media ? sanitizeMediaQuery(lexCss(media)) : '';
                 // Nonconformant and visible to the guest, but needed
                 var styleElement = insertionPoint.ownerDocument
                     .createElement('style');
                 insertionPoint.appendChild(styleElement);
                 defineUntrustedExternalStylesheet(
-                    res, styleElement, marker, continuation);
+                    res, styleElement, marker, media, continuation);
               }
             }
 
@@ -856,7 +866,7 @@ function HtmlEmitter(makeDOMAccessible, base,
             // "Acknowledge the token's self-closing flag, if it is set."
             // Not implemented.
           } else if (tagName === 'command' || tagName === 'meta' ||
-              tagName === 'noscript' || tagName === 'noframes') {
+                     tagName === 'noscript' || tagName === 'noframes') {
             // TODO(kpreid): Spec deviations for noscript, noframes, meta...
             normalInsert(tagName, attribs);
           } else if (tagName === 'title') {
@@ -879,6 +889,10 @@ function HtmlEmitter(makeDOMAccessible, base,
 
             // "Then, switch the insertion mode to "text"."
             insertionMode = insertionModes.text;
+
+            pendingMedia = lookupAttr(attribs, 'media');
+            pendingMedia = pendingMedia
+                ? sanitizeMediaQuery(lexCss(pendingMedia)) : '';
           } else if (tagName === 'script') {
             // "Create an element for the token in the HTML namespace."
             // "Mark the element as being "parser-inserted" and unset the
@@ -1073,10 +1087,12 @@ function HtmlEmitter(makeDOMAccessible, base,
           } else {
             if (tagName === 'style') {
               info = finishCdata();
+              var media = pendingMedia;
+              pendingMedia = '';
               // no info.external since URL'd stylesheets are defined with
               // <link>, not <style>.
               defineUntrustedStylesheet(domicile.pseudoLocation.href,
-                  info.text, node);
+                  info.text, node, media);
             }
 
             // "Pop the current node off the stack of open elements."

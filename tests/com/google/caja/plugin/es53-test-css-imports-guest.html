@@ -15,6 +15,9 @@
 -->
 
 <div class="testcontainer waiting" id="testCssImports">
+  <!-- Low specificity rule lets us detect un-applied rules. -->
+  <style>div { background-color: #ffffff; }</style>
+
   <link href="es53-test-css-imports-1.css" rel="stylesheet">
   <style>
     @import "es53-test-css-imports-2.css";
@@ -23,6 +26,18 @@
 
     .overrideinorder { background-color: #000004; }
   </style>
+
+  <style media="all and (color)">
+    @import "media-test-1-black-bg.css" all and (color: 0);
+  </style>
+  <link href="media-test-1-black-bg.css" rel="stylesheet"
+   media="(color) and (color: 0)">
+  <style media="all and (color), all and (color: 0)">
+    @import "media-test-2-black-bg.css";
+  </style>
+  <link href="media-test-3-black-bg.css" rel="stylesheet"
+   media="all and (color), all and (color: 0)">
+
   <div class="shouldbezero">zeroth</div>
   <div class="shouldbeone">first</div>
   <div class="shouldbetwo">second</div>
@@ -33,6 +48,18 @@
   <div class="overridesequential">override sequentially</div>
   
   <div class="nonstandard">nonstandard</div>
+
+  <div class="media-test-1" style="color:blue">
+    Background is not black due to media queries
+  </div>
+
+  <div class="media-test-2" style="color:blue">
+    Background is black due to media queries
+  </div>
+
+  <div class="media-test-3" style="color:blue">
+    Background is black due to media queries
+  </div>
 <br>
 <script type="text/javascript">
   jsunitRegister('testCssImports',
@@ -48,20 +75,25 @@
 
     assertAsynchronousRequirement(
         'external css',
-        function() { return assertExpectedColor({rgb: 0x000000}, 'shouldbezero',
-            true); },
         function() {
-      assertExpectedColor({rgb: 0x000000}, 'shouldbezero');
-      assertExpectedColor({rgb: 0x000001}, 'shouldbeone');
-      assertExpectedColor({rgb: 0x000002}, 'shouldbetwo');
-      assertExpectedColor({rgb: 0x000003}, 'shouldbethree');
+          return assertExpectedColor({rgb: 0x000000}, 'shouldbezero', true);
+        },
+        function() {
+          assertExpectedColor({rgb: 0x000000}, 'shouldbezero');
+          assertExpectedColor({rgb: 0x000001}, 'shouldbeone');
+          assertExpectedColor({rgb: 0x000002}, 'shouldbetwo');
+          assertExpectedColor({rgb: 0x000003}, 'shouldbethree');
 
-      assertExpectedColor({rgb: 0x000004}, 'overrideinorder');
-      assertExpectedColor({rgb: 0x000005}, 'overriderecurse');
-      assertExpectedColor({rgb: 0x000006}, 'overridesequential');
+          assertExpectedColor({rgb: 0x000004}, 'overrideinorder');
+          assertExpectedColor({rgb: 0x000005}, 'overriderecurse');
+          assertExpectedColor({rgb: 0x000006}, 'overridesequential');
 
-      assertExpectedColor({rgb: 0x000007}, 'nonstandard');
-   });
+          assertExpectedColor({rgb: 0x000007}, 'nonstandard');
+
+          assertExpectedColor({rgb: 0xffffff}, 'media-test-1');
+          assertExpectedColor({rgb: 0x000000}, 'media-test-2');
+          assertExpectedColor({rgb: 0x000000}, 'media-test-3');
+        });
 
    pass('testCssImports');
   });

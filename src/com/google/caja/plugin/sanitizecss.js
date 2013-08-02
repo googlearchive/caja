@@ -795,17 +795,28 @@ var sanitizeMediaQuery = undefined;
      *    (images, sounds) that appear as CSS property values to sanitized
      *    URLs or null if the URL should not be allowed as an external media
      *    file in sanitized CSS.
-     * @param {undefined|function(string, boolean)} continuation callback from
-     *     external CSS URLs.
-     *     The callback is called with a string, the CSS contents and a boolean,
-     *     which is true if the external url itself contained other external
-     *     URLs.
+     * @param {undefined|function({toString: function ():string}, boolean)}
+     *     continuation
+     *     callback that receives the result of loading imported CSS.
+     *     The callback is called with
+     *     (cssContent : function ():string, moreToCome : boolean)
+     *     where cssContent is the CSS at the imported URL, and moreToCome is
+     *     true when the external URL itself loaded other external URLs.
+     *     If the output of the original call is stringified when moreToCome is
+     *     false, then it will be complete.
+     * @param {Array.<number>} opt_importCount the number of imports that need
+     *     to be satisfied before there is no more pending content.
+     * @return {{result:{toString:function ():string},moreToCome:boolean}}
+     *     the CSS text, and a flag that indicates whether there are pending
+     *     imports that will be passed to continuation.
      */
     function sanitizeStylesheetInternal(
         baseUri, cssText, virtualization, naiveUriRewriter, naiveUriFetcher,
-        continuation) {
+        continuation, opt_importCount) {
       var safeCss = void 0;
-      var moreToCome = false;
+      // Return a result with moreToCome===true when the last import has been
+      // sanitized.
+      var importCount = opt_importCount || [0];
       // A stack describing the { ... } regions.
       // Null elements indicate blocks that should not be emitted.
       var blockStack = [];
@@ -835,27 +846,42 @@ var sanitizeMediaQuery = undefined;
                 }
               } else {
                 if (atIdent === '@import' && headerArray.length > 0) {
+                  atIdent = null;
                   if ('function' === typeof continuation) {
-                    moreToCome = true;
-                    // TODO: provide any media query to the continuation.
-                    var cssUrl = safeUri(
-                        resolveUri(baseUri, cssParseUri(headerArray[0])),
-                        function(result) {
-                          var sanitized =
-                            sanitizeStylesheetInternal(cssUrl, result.html,
-                              virtualization,
-                              naiveUriRewriter, naiveUriFetcher, continuation);
-                          continuation(sanitized.result, sanitized.moreToCome);
-                        },
-                        naiveUriFetcher);
-                    atIdent = null;
+                    var mediaQuery = sanitizeMediaQuery(headerArray.slice(1));
+                    if (mediaQuery !== 'not all') {
+                      ++importCount[0];
+                      var placeholder = [];
+                      safeCss.push(placeholder);
+                      var cssUrl = safeUri(
+                          resolveUri(baseUri, cssParseUri(headerArray[0])),
+                          function(result) {
+                            var sanitized = sanitizeStylesheetInternal(
+                                cssUrl, result.html, virtualization,
+                                naiveUriRewriter, naiveUriFetcher,
+                                continuation, importCount);
+                            --importCount[0];
+                            var safeImportedCss = mediaQuery
+                              ? {
+                                toString: function () {
+                                  return (
+                                    '@media ' + mediaQuery + ' {'
+                                    + sanitized.result + '}'
+                                  );
+                                }
+                              }
+                              : sanitized.result;
+                            placeholder[0] = safeImportedCss;
+                            continuation(safeImportedCss, !!importCount[0]);
+                          },
+                          naiveUriFetcher);
+                    }
                   } else {
                     // TODO: Use a logger instead.
                     if (window.console) {
                       window.console.log(
                           '@import ' + headerArray.join(' ') + ' elided');
                     }
-                    atIdent = null;  // Elide the block.
                   }
                 }
               }
@@ -985,8 +1011,8 @@ var sanitizeMediaQuery = undefined;
         elide = blockStack.length && blockStack[blockStack.length-1] === null;
       }
       return {
-        result : safeCss.join(''),
-        moreToCome : moreToCome
+        result : { toString: function () { return safeCss.join(''); } },
+        moreToCome : !!importCount[0]
       };
     }
 
@@ -994,7 +1020,7 @@ var sanitizeMediaQuery = undefined;
         baseUri, cssText, virtualization, naiveUriRewriter) {
       return sanitizeStylesheetInternal(
           baseUri, cssText, virtualization,
-          naiveUriRewriter, undefined, undefined).result;
+          naiveUriRewriter, undefined, undefined).result.toString();
     };
 
     sanitizeStylesheetWithExternals = function (

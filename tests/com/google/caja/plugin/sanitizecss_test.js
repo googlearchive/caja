@@ -35,14 +35,14 @@ function assertProperty(propName, source, expected) {
 }
 
 function assertSanitizedStylesheet(golden, input) {
-  var selectors = sanitizeStylesheet(
+  var stylesheet = sanitizeStylesheet(
       'http://example.com/baseurl', input,
       {
         containerClass: 'scopeClass',
         idSuffix: '-suffix',
         tagPolicy: function (elName, attrs) { return []; }
       });
-  assertArrayEquals(input, golden, selectors);
+  assertArrayEquals(input, golden, stylesheet);
 }
 
 jsunitRegister('testFontFamily',
