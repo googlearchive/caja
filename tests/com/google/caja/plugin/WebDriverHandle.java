@@ -205,9 +205,13 @@ class WebDriverHandle {
     if (!dir.endsWith("/")) { dir = dir + "/"; }
 
     // Try to capture the final html
-    String source = driver.getPageSource();
-    if (source != null) {
-      saveToFile(dir + name + ".capture.html", source);
+    try {
+      String source = driver.getPageSource();
+      if (source != null) {
+        saveToFile(dir + name + ".capture.html", source);
+      }
+    } catch (WebDriverException e) {
+      Echo.echo("capture html failed: " + e);
     }
 
     // Try to capture a screenshot
@@ -217,26 +221,27 @@ class WebDriverHandle {
         byte[] bytes = ss.getScreenshotAs(OutputType.BYTES);
         saveToFile(dir + name + ".capture.png", bytes);
       } catch (WebDriverException e) {
-        Echo.echo("screenshot failed: " + e);
+        Echo.echo("capture screenshot failed: " + e);
       }
     }
 
     // Try to capture logs
-    // This is currently not really useful.
-    // - ChromeDriver doesn't support log capture at all
-    // - FirefoxDriver gives you Error Console messages not Web Console
-    Logs logs = driver.manage().logs();
-    if (logs != null) {
-      if (logs.getAvailableLogTypes().contains(LogType.BROWSER)) {
-        LogEntries entries = logs.get(LogType.BROWSER);
-        if (entries != null) {
-          StringBuilder sb = new StringBuilder();
-          for (LogEntry e : entries) {
-            sb.append(e.toString() + "\n");
+    try {
+      Logs logs = driver.manage().logs();
+      if (logs != null) {
+        if (logs.getAvailableLogTypes().contains(LogType.BROWSER)) {
+          LogEntries entries = logs.get(LogType.BROWSER);
+          if (entries != null) {
+            StringBuilder sb = new StringBuilder();
+            for (LogEntry e : entries) {
+              sb.append(e.toString() + "\n");
+            }
+            saveToFile(dir + name + ".capture.log", sb.toString());
           }
-          saveToFile(dir + name + ".capture.log", sb.toString());
         }
       }
+    } catch (WebDriverException e) {
+      Echo.echo("capture logs failed: " + e);
     }
   }
 
