@@ -3361,8 +3361,8 @@ var Domado = (function() {
           tagName = virtualToRealElementName(tagName);
         }
         var feralList = rootNode.getElementsByTagName(tagName);
-        if (!taming.hasTameTwin(feralList)) {
-          taming.tamesTo(feralList,
+        if (!(nodeListsAreLive && taming.hasTameTwin(feralList))) {
+          taming.reTamesTo(feralList,
               new TameNodeList(feralList, defaultTameNode));
         }
         return taming.tame(feralList);
@@ -3404,8 +3404,8 @@ var Domado = (function() {
         // "unordered set of unique space-separated tokens representing classes"
         if (typeof rootNode.getElementsByClassName === 'function') {
           var feralList = rootNode.getElementsByClassName(classes.join(' '));
-          if (!taming.hasTameTwin(feralList)) {
-            taming.tamesTo(feralList,
+          if (!(nodeListsAreLive && taming.hasTameTwin(feralList))) {
+            taming.reTamesTo(feralList,
                 new TameNodeList(feralList, defaultTameNode));
           }
           return taming.tame(feralList);

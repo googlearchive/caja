@@ -101,6 +101,7 @@
     { "guest": "es53-test-domado-iframe-guest.html" },
     { "driver": "es53-test-domado-special.js" },
     { "driver": "es53-test-domado-foreign.js" },
+    { "guest": "es53-test-domado-listlength.html" },
     { "guest": "es53-test-language-guest.html" },
     { "driver": "es53-test-proxies.js", "mode": "es53" },
     { "guest": "es53-test-inline-script.html" },
