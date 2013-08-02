@@ -611,7 +611,6 @@ function TamingMembrane(privilegedAccess, schema) {
   function untameCajaRecordByPropertyHandlers(t) {
     var f = {};
     Object.getOwnPropertyNames(t).forEach(function(p) {
-      if (isNumericName(p)) { return; }
       var d = Object.getOwnPropertyDescriptor(t, p);
       var read = d.get || d.hasOwnProperty('value');
       var write = d.set || (d.hasOwnProperty('value') && d.writable);

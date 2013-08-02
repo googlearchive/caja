@@ -77,10 +77,9 @@
     tameEval('1;', r);  // Cause 'r' to get un-tamed
     if (inES5Mode) {
       assertEquals(23, r[3]);
-      assertEquals(undefined, tameEval('a[3]', r));
-      expectFailure(function() {
-        tameEval('a[3] = 99', r);
-      }, 'assign to host', function(e) { return e.name === 'TypeError'; });
+      assertEquals(23, tameEval('a[3]', r));
+      tameEval('a[3] = 99', r);
+      assertEquals(99, tameEval('a[3]', r));
     } else {
       // Un-taming the record eviscerates, so the guest-side getter now
       // sees nothing due to the numeric-index optimization.
