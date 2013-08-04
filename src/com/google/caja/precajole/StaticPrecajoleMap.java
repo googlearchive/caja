@@ -38,7 +38,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.codec.binary.Hex;
+
+import javax.xml.bind.DatatypeConverter;
 
 /**
  * This is a PrecajoleMap that looks up precajoled modules from a
@@ -272,7 +273,7 @@ public class StaticPrecajoleMap implements PrecajoleMap {
     try {
       MessageDigest sha1 = MessageDigest.getInstance("SHA1");
       byte[] digest = sha1.digest(s.getBytes("UTF-8"));
-      return new String(Hex.encodeHex(digest));
+      return DatatypeConverter.printHexBinary(digest);
     } catch (NoSuchAlgorithmException e) {
       throw new SomethingWidgyHappenedError(e);
     } catch (UnsupportedEncodingException e) {

@@ -21,8 +21,7 @@ import java.util.regex.Pattern;
 
 import javax.mail.internet.ContentType;
 import javax.mail.internet.ParseException;
-
-import org.apache.commons.codec.binary.Base64;
+import javax.xml.bind.DatatypeConverter;
 
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FetchedData;
@@ -93,10 +92,12 @@ public class DataUriFetcher implements UriFetcher {
     if (m.find()) {
       try {
         String charset = charsetFromMime(m.group(DATA_URI.TYPE.ordinal()));
-        boolean base64 = null != m.group(DATA_URI.BASE64.ordinal());
-        byte[] encoded = m.group(DATA_URI.DATA.ordinal()).getBytes(charset);
-        byte[] decoded = base64 ? new Base64().decode(encoded) : encoded;
-        return decoded;
+        String data = m.group(DATA_URI.DATA.ordinal());
+        if (null != m.group(DATA_URI.BASE64.ordinal())) {
+          return DatatypeConverter.parseBase64Binary(data);
+        } else {
+          return data.getBytes(charset);
+        }
       } catch (UnsupportedEncodingException e) {
         throw new UriFetcher.UriFetchException(ref, mimeType, e);
       }
