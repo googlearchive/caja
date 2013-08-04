@@ -1564,7 +1564,7 @@ ses.startSES = function(global,
           return true;
         }
       }
-    } else if ((desc2.value === void 0 || desc2.value === null) &&
+    } else if (desc2.value !== Object(desc2.value2) && // is primitive
                !desc2.writable &&
                !desc2.configurable) {
       reportProperty(ses.severities.SAFE,
