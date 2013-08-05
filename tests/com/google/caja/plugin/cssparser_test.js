@@ -334,8 +334,9 @@ jsunitRegister('testKeyframes', function testKeyframes() {
     '    left: 100px;',
     '    top: 100px;',
     '  }',
-    '',
-    '}'].join('\n');
+    '}',
+    '@-webkit-keyframes xyzzy {}',
+    ''].join('\n');
   assertParsedCssStylesheet(
     [
       "startStylesheet",     [],
@@ -357,6 +358,10 @@ jsunitRegister('testKeyframes', function testKeyframes() {
               "declaration", ["left", ["100px"]],
               "declaration", ["top", ["100px"]],
             "endRuleset",    [],
+          "endBlock",        [],
+        "endAtrule",         [],
+        "startAtrule",       ["@-webkit-keyframes", ["xyzzy"]],
+          "startBlock",      [],
           "endBlock",        [],
         "endAtrule",         [],
       "endStylesheet",       []

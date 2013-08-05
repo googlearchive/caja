@@ -835,12 +835,14 @@ var sanitizeMediaQuery = undefined;
                 atIdent = null;
               } else if (atIdent === '@media') {
                 safeCss.push('@media', ' ', sanitizeMediaQuery(headerArray));
-              } else if (atIdent === '@keyframes') {
+              } else if (atIdent === '@keyframes'
+                  || atIdent === '@-webkit-keyframes') {
                 var animationId = headerArray[0];
                 if (headerArray.length === 1
                     && !/__$|[^\w\-]/.test(animationId)) {
                   safeCss.push(
-                      '@keyframes ', animationId + virtualization.idSuffix);
+                      atIdent, ' ', animationId + virtualization.idSuffix);
+                  atIdent = '@keyframes';
                 } else {
                   atIdent = null;
                 }

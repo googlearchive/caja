@@ -521,8 +521,8 @@ jsunitRegister('testKeyframes', function testKeyframes() {
     '    left: 100px;',
     '    top: 100px;',
     '  }',
-    '',
-    '}'].join('\n');
+    '}',
+    ''].join('\n');
 
   assertSanitizedStylesheet(
       ''
@@ -537,6 +537,10 @@ jsunitRegister('testKeyframes', function testKeyframes() {
       + 'to{left:100px;top:100px;}'
       + '}',
       input);
+
+  assertSanitizedStylesheet(
+      '@-webkit-keyframes xyzzy-suffix{from{left:0;}}',
+      '@-webkit-keyframes xyzzy { from { left: 0 } }');
 
   // "Rules" in @keyframes must match from/to/<percentage>
   assertSanitizedStylesheet(
