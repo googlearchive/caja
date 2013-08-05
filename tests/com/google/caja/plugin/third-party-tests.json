@@ -96,16 +96,16 @@
       },
       {
         "guest": "traversing",
-        "expected-pass": { "firefox": 297, "chrome": 280 },
+        "expected-pass": 297,
         "comment": [
           "Current failure categories:",
             "We don't implement src= iframes yet.",
-            "Other unexamined."
+            "Test 'find(String)' fails."
         ]
       },
       {
         "guest": "manipulation",
-        "expected-pass": { "firefox": 588, "chrome": 559 },
+        "expected-pass": { "firefox": 588, "chrome": 586 },
         "comment": [
           "Current modifications made to test suite:",
             "Removed SES-incompatible Array.prototype modification; was only",
@@ -196,7 +196,7 @@
       },
       {
         "guest": "button",
-        "expected-pass": 78
+        "expected-pass": "all"
       },
       {
         "guest": "core",
@@ -208,17 +208,17 @@
       },
       {
         "guest": "datepicker",
-        "expected-pass": { "firefox": 482, "chrome": 528 },
+        "expected-pass": { "firefox": 482, "chrome": 558 },
         "comment": [
           "Current failure categories:",
-            "keystroke response discrepancies",
+            "keystroke response discrepancies (Firefox only)",
             "parseDate",
             "got absolute URL where relative expected"
         ]
       },
       {
         "guest": "dialog",
-        "expected-pass": { "firefox": 290, "chrome": 305 },
+        "expected-pass": { "firefox": 291, "chrome": 306 },
         "comment": [
           "Current failure categories:",
             "What may be event simulation failures",
@@ -244,10 +244,6 @@
       {
         "guest": "position",
         "expected-pass": "all",
-        "comment": [
-          "Current failure categories:",
-            "unexamined"
-        ]
       },
       {
         "guest": "progressbar",
@@ -271,7 +267,7 @@
       },
       {
         "guest": "tabs",
-        "expected-pass": { "firefox": 485, "chrome": 517 },
+        "expected-pass": { "firefox": 487, "chrome": 519 },
         "comment": [
           "Current modifications made to test suite:",
             "Work around lost-signal problems due to lack of event simulation",
