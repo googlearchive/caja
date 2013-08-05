@@ -2586,32 +2586,6 @@ var ses;
   var unsafeDefProp = Object.defineProperty;
   var isExtensible = Object.isExtensible;
 
-  function patchMissingProp(base, name, missingFunc) {
-    if (!(name in base)) {
-      Object.defineProperty(base, name, {
-        value: missingFunc,
-        writable: true,
-        enumerable: false,
-        configurable: true
-      });
-    }
-  }
-
-  function repair_MISSING_FREEZE_ETC() {
-    patchMissingProp(Object, 'freeze',
-                     function fakeFreeze(obj) { return obj; });
-    patchMissingProp(Object, 'seal',
-                     function fakeSeal(obj) { return obj; });
-    patchMissingProp(Object, 'preventExtensions',
-                     function fakePreventExtensions(obj) { return obj; });
-    patchMissingProp(Object, 'isFrozen',
-                     function fakeIsFrozen(obj) { return false; });
-    patchMissingProp(Object, 'isSealed',
-                     function fakeIsSealed(obj) { return false; });
-    patchMissingProp(Object, 'isExtensible',
-                     function fakeIsExtensible(obj) { return true; });
-  }
-
   /*
    * Fixes both FUNCTION_PROTOTYPE_DESCRIPTOR_LIES and
    * DEFINING_READ_ONLY_PROTO_FAILS_SILENTLY.
@@ -2633,22 +2607,6 @@ var ses;
     }
     Object.defineProperty(Object, 'defineProperty', {
       value: repairedDefineProperty
-    });
-  }
-
-  function repair_MISSING_CALLEE_DESCRIPTOR() {
-    var realGOPN = Object.getOwnPropertyNames;
-    Object.defineProperty(Object, 'getOwnPropertyNames', {
-      value: function calleeFix(base) {
-        var result = realGOPN(base);
-        if (typeof base === 'function') {
-          var i = result.indexOf('callee');
-          if (i >= 0 && !hop.call(base, 'callee')) {
-            result.splice(i, 1);
-          }
-        }
-        return result;
-      }
     });
   }
 
@@ -2674,88 +2632,6 @@ var ses;
       value: FakeRegExp
     });
     RegExp = FakeRegExp;
-  }
-
-  function repair_REGEXP_TEST_EXEC_UNSAFE() {
-    var unsafeRegExpExec = RegExp.prototype.exec;
-    var unsafeRegExpTest = RegExp.prototype.test;
-
-    Object.defineProperty(RegExp.prototype, 'exec', {
-      value: function fakeExec(specimen) {
-        return unsafeRegExpExec.call(this, String(specimen));
-      }
-    });
-    Object.defineProperty(RegExp.prototype, 'test', {
-      value: function fakeTest(specimen) {
-        return unsafeRegExpTest.call(this, String(specimen));
-      }
-    });
-  }
-
-  function repair_MISSING_BIND() {
-
-    /**
-     * Actual bound functions are not supposed to have a prototype, and
-     * are supposed to curry over both the [[Call]] and [[Construct]]
-     * behavior of their original function. However, in ES5,
-     * functions written in JavaScript cannot avoid having a 'prototype'
-     * property, and cannot reliably distinguish between being called as
-     * a function vs as a constructor, i.e., by {@code new}.
-     *
-     * <p>Since the repair_MISSING_BIND emulation produces a bound
-     * function written in JavaScript, it cannot faithfully emulate
-     * either the lack of a 'prototype' property nor the currying of the
-     * [[Construct]] behavior. So instead, we use BOGUS_BOUND_PROTOTYPE
-     * to reliably give an error for attempts to {@code new} a bound
-     * function. Since we cannot avoid exposing BOGUS_BOUND_PROTOTYPE
-     * itself, it is possible to pass in a this-binding which inherits
-     * from it without using {@code new}, which will also trigger our
-     * error case. Whether this latter error is appropriate or not, it
-     * still fails safe.
-     *
-     * <p>By making the 'prototype' of the bound function be the same as
-     * the current {@code thisFunc.prototype}, we could have emulated
-     * the [[HasInstance]] property of bound functions. But even this
-     * would have been inaccurate, since we would be unable to track
-     * changes to the original {@code thisFunc.prototype}. (We cannot
-     * make 'prototype' into an accessor to do this tracking, since
-     * 'prototype' on a function written in JavaScript is
-     * non-configurable.) And this one partially faithful emulation
-     * would have come at the cost of no longer being able to reasonably
-     * detect construction, in order to safely reject it.
-     */
-    var BOGUS_BOUND_PROTOTYPE = {
-      toString: function BBPToString() { return 'bogus bound prototype'; }
-    };
-    rememberToTamperProof(BOGUS_BOUND_PROTOTYPE);
-    BOGUS_BOUND_PROTOTYPE.toString.prototype = null;
-    rememberToTamperProof(BOGUS_BOUND_PROTOTYPE.toString);
-
-    var defProp = Object.defineProperty;
-    defProp(Function.prototype, 'bind', {
-      value: function fakeBind(self, var_args) {
-        var thisFunc = this;
-        var leftArgs = slice.call(arguments, 1);
-        function funcBound(var_args) {
-          if (this === Object(this) &&
-              getPrototypeOf(this) === BOGUS_BOUND_PROTOTYPE) {
-            throw new TypeError(
-              'Cannot emulate "new" on pseudo-bound function.');
-          }
-          var args = concat.call(leftArgs, slice.call(arguments, 0));
-          return apply.call(thisFunc, self, args);
-        }
-        defProp(funcBound, 'prototype', {
-          value: BOGUS_BOUND_PROTOTYPE,
-          writable: false,
-          configurable: false
-        });
-        return funcBound;
-      },
-      writable: true,
-      enumerable: false,
-      configurable: true
-    });
   }
 
   /**
@@ -2930,262 +2806,6 @@ var ses;
       }
     });
     NEEDS_DUMMY_SETTER_repaired = true;
-  }
-
-
-  function repair_ACCESSORS_INHERIT_AS_OWN() {
-    // restrict these
-    var defProp = Object.defineProperty;
-    var freeze = Object.freeze;
-    var seal = Object.seal;
-
-    // preserve illusion
-    var gopn = Object.getOwnPropertyNames;
-    var gopd = Object.getOwnPropertyDescriptor;
-
-    var complaint = 'Workaround for ' +
-      'https://bugzilla.mozilla.org/show_bug.cgi?id=637994 ' +
-      ' prohibits enumerable non-configurable accessor properties.';
-
-    function isBadAccessor(derived, name) {
-      var desc = gopd(derived, name);
-      if (!desc || !('get' in desc)) { return false; }
-      var base = getPrototypeOf(derived);
-      if (!base) { return false; }
-      var superDesc = gopd(base, name);
-      if (!superDesc || !('get' in superDesc)) { return false; }
-      return (desc.get &&
-              !desc.configurable && !superDesc.configurable &&
-              desc.get === superDesc.get &&
-              desc.set === superDesc.set &&
-              desc.enumerable === superDesc.enumerable);
-    }
-
-    defProp(Object, 'defineProperty', {
-      value: function definePropertyWrapper(base, name, desc) {
-        var oldDesc = gopd(base, name);
-        var testBase = {};
-        if (oldDesc && !isBadAccessor(base, name)) {
-          defProp(testBase, name, oldDesc);
-        }
-        defProp(testBase, name, desc);
-        var fullDesc = gopd(testBase, name);
-         if ('get' in fullDesc &&
-            fullDesc.enumerable &&
-            !fullDesc.configurable) {
-          logger.warn(complaint);
-          throw new TypeError(complaint
-              + ' (Object: ' + base + ' Property: ' + name + ')');
-        }
-        return defProp(base, name, fullDesc);
-      }
-    });
-
-    function ensureSealable(base) {
-      gopn(base).forEach(function(name) {
-        var desc = gopd(base, name);
-        if ('get' in desc && desc.enumerable) {
-          if (!desc.configurable) {
-            logger.error('New symptom: ' +
-                         '"' + name + '" already non-configurable');
-          }
-          logger.warn(complaint);
-          throw new TypeError(complaint + ' (During sealing. Object: '
-              + base + ' Property: ' + name + ')');
-        }
-      });
-    }
-
-    defProp(Object, 'freeze', {
-      value: function freezeWrapper(base) {
-        ensureSealable(base);
-        return freeze(base);
-      }
-    });
-
-    defProp(Object, 'seal', {
-      value: function sealWrapper(base) {
-        ensureSealable(base);
-        return seal(base);
-      }
-    });
-
-    defProp(Object.prototype, 'hasOwnProperty', {
-      value: function hasOwnPropertyWrapper(name) {
-        return hop.call(this, name) && !isBadAccessor(this, name);
-      }
-    });
-
-    defProp(Object, 'getOwnPropertyDescriptor', {
-      value: function getOwnPropertyDescriptorWrapper(base, name) {
-        if (isBadAccessor(base, name)) { return void 0; }
-        return gopd(base, name);
-      }
-    });
-
-    defProp(Object, 'getOwnPropertyNames', {
-      value: function getOwnPropertyNamesWrapper(base) {
-        return gopn(base).filter(function(name) {
-          return !isBadAccessor(base, name);
-        });
-      }
-    });
-  }
-
-  function repair_SORT_LEAKS_GLOBAL() {
-    var unsafeSort = Array.prototype.sort;
-    function sortWrapper(opt_comparefn) {
-      function comparefnWrapper(x, y) {
-        return opt_comparefn(x, y);
-      }
-      if (arguments.length === 0) {
-        return unsafeSort.call(this);
-      } else {
-        return unsafeSort.call(this, comparefnWrapper);
-      }
-    }
-    Object.defineProperty(Array.prototype, 'sort', {
-      value: sortWrapper
-    });
-  }
-
-  function repair_REPLACE_LEAKS_GLOBAL() {
-    var unsafeReplace = String.prototype.replace;
-    function replaceWrapper(searchValue, replaceValue) {
-      var safeReplaceValue = replaceValue;
-      function replaceValueWrapper(m1, m2, m3) {
-        return replaceValue(m1, m2, m3);
-      }
-      if (typeof replaceValue === 'function') {
-        safeReplaceValue = replaceValueWrapper;
-      }
-      return unsafeReplace.call(this, searchValue, safeReplaceValue);
-    }
-    Object.defineProperty(String.prototype, 'replace', {
-      value: replaceWrapper
-    });
-  }
-
-  function repair_CANT_GOPD_CALLER() {
-    var unsafeGOPD = Object.getOwnPropertyDescriptor;
-    function gopdWrapper(base, name) {
-      try {
-        return unsafeGOPD(base, name);
-      } catch (err) {
-        if (err instanceof TypeError &&
-            typeof base === 'function' &&
-            (name === 'caller' || name === 'arguments')) {
-          return (function(message) {
-             function fakePoison() { throw new TypeError(message); }
-             fakePoison.prototype = null;
-             return {
-               get: fakePoison,
-               set: fakePoison,
-               enumerable: false,
-               configurable: false
-             };
-           })(err.message);
-        }
-        throw err;
-      }
-    }
-    Object.defineProperty(Object, 'getOwnPropertyDescriptor', {
-      value: gopdWrapper
-    });
-  }
-
-  function repair_CANT_HASOWNPROPERTY_CALLER() {
-    Object.defineProperty(Object.prototype, 'hasOwnProperty', {
-      value: function hopWrapper(name) {
-        return !!Object.getOwnPropertyDescriptor(this, name);
-      }
-    });
-  }
-
-  function makeHarmless(magicName, func, path) {
-    function poison() {
-      throw new TypeError('Cannot access property ' + path);
-    }
-    poison.prototype = null;
-    var desc = Object.getOwnPropertyDescriptor(func, magicName);
-    if ((!desc && Object.isExtensible(func)) || desc.configurable) {
-      try {
-        Object.defineProperty(func, magicName, {
-          get: poison,
-          set: poison,
-          configurable: false
-        });
-      } catch (cantPoisonErr) {
-        return 'Poisoning failed with ' + cantPoisonErr;
-      }
-      desc = Object.getOwnPropertyDescriptor(func, magicName);
-      if (desc &&
-          desc.get === poison &&
-          desc.set === poison &&
-          !desc.configurable) {
-        return 'Apparently poisoned';
-      }
-      return 'Not poisoned';
-    }
-    if ('get' in desc || 'set' in desc) {
-      return 'Apparently safe';
-    }
-    try {
-      Object.defineProperty(func, magicName, {
-        value: desc.value === null ? null : void 0,
-        writable: false,
-        configurable: false
-      });
-    } catch (cantFreezeHarmlessErr) {
-      return 'Freezing harmless failed with ' + cantFreezeHarmlessErr;
-    }
-    desc = Object.getOwnPropertyDescriptor(func, magicName);
-    if (desc &&
-        (desc.value === null || desc.value === void 0) &&
-        !desc.writable &&
-        !desc.configurable) {
-      return 'Apparently frozen harmless';
-    }
-    return 'Did not freeze harmless';
-  }
-
-  function repair_BUILTIN_LEAKS_CALLER() {
-    // The call to .bind as a method here is fine since it happens
-    // after all repairs which might fix .bind and before any
-    // untrusted code runs.
-    ses.makeCallerHarmless = makeHarmless.bind(void 0, 'caller');
-    //logger.info(ses.makeCallerHarmless(builtInMapMethod));
-  }
-
-  function repair_BUILTIN_LEAKS_ARGUMENTS() {
-    // The call to .bind as a method here is fine since it happens
-    // after all repairs which might fix .bind and before any
-    // untrusted code runs.
-    ses.makeArgumentsHarmless = makeHarmless.bind(void 0, 'arguments');
-    //logger.info(ses.makeArgumentsHarmless(builtInMapMethod));
-  }
-
-  function repair_DELETED_BUILTINS_IN_OWN_NAMES() {
-    var realGOPN = Object.getOwnPropertyNames;
-    var repairedHop = Object.prototype.hasOwnProperty;
-    function getOnlyRealOwnPropertyNames(base) {
-      return realGOPN(base).filter(function(name) {
-        return repairedHop.call(base, name);
-      });
-    }
-    Object.defineProperty(Object, 'getOwnPropertyNames', {
-      value: getOnlyRealOwnPropertyNames
-    });
-  }
-
-  function repair_GETOWNPROPDESC_OF_ITS_OWN_CALLER_FAILS() {
-    var realGOPD = Object.getOwnPropertyDescriptor;
-    function GOPDWrapper(base, name) {
-      return realGOPD(base, name);
-    }
-    Object.defineProperty(Object, 'getOwnPropertyDescriptor', {
-      value: GOPDWrapper
-    });
   }
 
   function repair_JSON_PARSE_PROTO_CONFUSION() {
@@ -3618,7 +3238,7 @@ var ses;
       id: 'MISSING_FREEZE_ETC',
       description: 'Object.freeze is missing',
       test: test_MISSING_FREEZE_ETC,
-      repair: repair_MISSING_FREEZE_ETC,
+      repair: void 0,
       preSeverity: severities.NOT_OCAP_SAFE,
       canRepair: false,           // repair for development, not safety
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=55736'],
@@ -3629,9 +3249,9 @@ var ses;
       id: 'FUNCTION_PROTOTYPE_DESCRIPTOR_LIES',
       description: 'A function.prototype\'s descriptor lies',
       test: test_FUNCTION_PROTOTYPE_DESCRIPTOR_LIES,
-      repair: repair_DEFINE_PROPERTY,
+      repair: void 0,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: true,
+      canRepair: false,
       urls: ['http://code.google.com/p/v8/issues/detail?id=1530',
              'http://code.google.com/p/v8/issues/detail?id=1570'],
       sections: ['15.2.3.3', '15.2.3.6', '15.3.5.2'],
@@ -3641,9 +3261,9 @@ var ses;
       id: 'MISSING_CALLEE_DESCRIPTOR',
       description: 'Phantom callee on strict functions',
       test: test_MISSING_CALLEE_DESCRIPTOR,
-      repair: repair_MISSING_CALLEE_DESCRIPTOR,
+      repair: void 0,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: true,
+      canRepair: false,
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=55537'],
       sections: ['15.2.3.4'],
       tests: ['S15.2.3.4_A1_T1']
@@ -3682,9 +3302,9 @@ var ses;
       id: 'REGEXP_TEST_EXEC_UNSAFE',
       description: 'RegExp.exec leaks match globally',
       test: test_REGEXP_TEST_EXEC_UNSAFE,
-      repair: repair_REGEXP_TEST_EXEC_UNSAFE,
+      repair: void 0,
       preSeverity: severities.NOT_OCAP_SAFE,
-      canRepair: true,
+      canRepair: false,
       urls: ['http://code.google.com/p/v8/issues/detail?id=1393',
              'http://code.google.com/p/chromium/issues/detail?id=75740',
              'https://bugzilla.mozilla.org/show_bug.cgi?id=635017',
@@ -3696,9 +3316,9 @@ var ses;
       id: 'MISSING_BIND',
       description: 'Function.prototype.bind is missing',
       test: test_MISSING_BIND,
-      repair: repair_MISSING_BIND,
+      repair: void 0,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: true,
+      canRepair: false,
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=26382',
              'https://bugs.webkit.org/show_bug.cgi?id=42371'],
       sections: ['15.3.4.5'],
@@ -3708,9 +3328,9 @@ var ses;
       id: 'BIND_CALLS_APPLY',
       description: 'Function.prototype.bind calls .apply rather than [[Call]]',
       test: test_BIND_CALLS_APPLY,
-      repair: repair_MISSING_BIND,
+      repair: void 0,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: true,
+      canRepair: false,
       urls: ['http://code.google.com/p/v8/issues/detail?id=892',
              'http://code.google.com/p/v8/issues/detail?id=828'],
       sections: ['15.3.4.5.1'],
@@ -3753,9 +3373,9 @@ var ses;
       id: 'NEED_TO_WRAP_FOREACH',
       description: 'Array forEach cannot be frozen while in progress',
       test: test_NEED_TO_WRAP_FOREACH,
-      repair: repair_NEED_TO_WRAP_FOREACH,
+      repair: void 0,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: true,
+      canRepair: false,
       urls: ['http://code.google.com/p/v8/issues/detail?id=1447'],
       sections: ['15.4.4.18'],
       tests: ['S15.4.4.18_A1', 'S15.4.4.18_A2']
@@ -3788,9 +3408,9 @@ var ses;
       id: 'FORM_GETTERS_DISAPPEAR',
       description: 'Getter on HTMLFormElement disappears',
       test: test_FORM_GETTERS_DISAPPEAR,
-      repair: repair_NEEDS_DUMMY_SETTER,
+      repair: void 0,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: true,
+      canRepair: false,
       urls: ['http://code.google.com/p/chromium/issues/detail?id=94666',
              'http://code.google.com/p/v8/issues/detail?id=1651',
              'http://code.google.com/p/google-caja/issues/detail?id=1401'],
@@ -3801,9 +3421,9 @@ var ses;
       id: 'ACCESSORS_INHERIT_AS_OWN',
       description: 'Accessor properties inherit as own properties',
       test: test_ACCESSORS_INHERIT_AS_OWN,
-      repair: repair_ACCESSORS_INHERIT_AS_OWN,
+      repair: void 0,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: true,
+      canRepair: false,
       urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=637994'],
       sections: ['8.6.1', '15.2.3.6'],
       tests: ['S15.2.3.6_A2']
@@ -3812,9 +3432,9 @@ var ses;
       id: 'SORT_LEAKS_GLOBAL',
       description: 'Array sort leaks global',
       test: test_SORT_LEAKS_GLOBAL,
-      repair: repair_SORT_LEAKS_GLOBAL,
+      repair: void 0,
       preSeverity: severities.NOT_ISOLATED,
-      canRepair: true,
+      canRepair: false,
       urls: ['http://code.google.com/p/v8/issues/detail?id=1360'],
       sections: ['15.4.4.11'],
       tests: ['S15.4.4.11_A8']
@@ -3823,9 +3443,9 @@ var ses;
       id: 'REPLACE_LEAKS_GLOBAL',
       description: 'String replace leaks global',
       test: test_REPLACE_LEAKS_GLOBAL,
-      repair: repair_REPLACE_LEAKS_GLOBAL,
+      repair: void 0,
       preSeverity: severities.NOT_ISOLATED,
-      canRepair: true,
+      canRepair: false,
       urls: ['http://code.google.com/p/v8/issues/detail?id=1360',
              'https://connect.microsoft.com/IE/feedback/details/' +
                '685928/bad-this-binding-for-callback-in-string-' +
@@ -3837,9 +3457,9 @@ var ses;
       id: 'CANT_GOPD_CALLER',
       description: 'getOwnPropertyDescriptor on strict "caller" throws',
       test: test_CANT_GOPD_CALLER,
-      repair: repair_CANT_GOPD_CALLER,
+      repair: void 0,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
-      canRepair: true,
+      canRepair: false,
       urls: ['https://connect.microsoft.com/IE/feedback/details/' +
                '685436/getownpropertydescriptor-on-strict-caller-throws'],
       sections: ['15.2.3.3', '13.2', '13.2.3'],
@@ -3849,9 +3469,9 @@ var ses;
       id: 'CANT_HASOWNPROPERTY_CALLER',
       description: 'strict_function.hasOwnProperty("caller") throws',
       test: test_CANT_HASOWNPROPERTY_CALLER,
-      repair: repair_CANT_HASOWNPROPERTY_CALLER,
+      repair: void 0,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
-      canRepair: true,
+      canRepair: false,
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=63398#c3'],
       sections: ['15.2.4.5', '13.2', '13.2.3'],
       tests: ['S13.2_A7_T1']
@@ -3904,9 +3524,9 @@ var ses;
       id: 'BUILTIN_LEAKS_CALLER',
       description: 'Built in functions leak "caller"',
       test: test_BUILTIN_LEAKS_CALLER,
-      repair: repair_BUILTIN_LEAKS_CALLER,
+      repair: void 0,
       preSeverity: severities.NOT_OCAP_SAFE,
-      canRepair: true,
+      canRepair: false,
       urls: ['http://code.google.com/p/v8/issues/detail?id=1643',
              'http://code.google.com/p/v8/issues/detail?id=1548',
              'https://bugzilla.mozilla.org/show_bug.cgi?id=591846',
@@ -3919,9 +3539,9 @@ var ses;
       id: 'BUILTIN_LEAKS_ARGUMENTS',
       description: 'Built in functions leak "arguments"',
       test: test_BUILTIN_LEAKS_ARGUMENTS,
-      repair: repair_BUILTIN_LEAKS_ARGUMENTS,
+      repair: void 0,
       preSeverity: severities.NOT_OCAP_SAFE,
-      canRepair: true,
+      canRepair: false,
       urls: ['http://code.google.com/p/v8/issues/detail?id=1643',
              'http://code.google.com/p/v8/issues/detail?id=1548',
              'https://bugzilla.mozilla.org/show_bug.cgi?id=591846',
@@ -3934,9 +3554,9 @@ var ses;
       id: 'BOUND_FUNCTION_LEAKS_CALLER',
       description: 'Bound functions leak "caller"',
       test: test_BOUND_FUNCTION_LEAKS_CALLER,
-      repair: repair_MISSING_BIND,
+      repair: void 0,
       preSeverity: severities.NOT_OCAP_SAFE,
-      canRepair: true,
+      canRepair: false,
       urls: ['http://code.google.com/p/v8/issues/detail?id=893',
              'https://bugs.webkit.org/show_bug.cgi?id=63398'],
       sections: ['15.3.4.5'],
@@ -3946,9 +3566,9 @@ var ses;
       id: 'BOUND_FUNCTION_LEAKS_ARGUMENTS',
       description: 'Bound functions leak "arguments"',
       test: test_BOUND_FUNCTION_LEAKS_ARGUMENTS,
-      repair: repair_MISSING_BIND,
+      repair: void 0,
       preSeverity: severities.NOT_OCAP_SAFE,
-      canRepair: true,
+      canRepair: false,
       urls: ['http://code.google.com/p/v8/issues/detail?id=893',
              'https://bugs.webkit.org/show_bug.cgi?id=63398'],
       sections: ['15.3.4.5'],
@@ -3958,9 +3578,9 @@ var ses;
       id: 'DELETED_BUILTINS_IN_OWN_NAMES',
       description: 'Deleting built-in leaves phantom behind',
       test: test_DELETED_BUILTINS_IN_OWN_NAMES,
-      repair: repair_DELETED_BUILTINS_IN_OWN_NAMES,
+      repair: void 0,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
-      canRepair: true,
+      canRepair: false,
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=70207'],
       sections: ['15.2.3.4'],
       tests: []
@@ -3969,9 +3589,9 @@ var ses;
       id: 'GETOWNPROPDESC_OF_ITS_OWN_CALLER_FAILS',
       description: 'getOwnPropertyDescriptor on its own "caller" fails',
       test: test_GETOWNPROPDESC_OF_ITS_OWN_CALLER_FAILS,
-      repair: repair_GETOWNPROPDESC_OF_ITS_OWN_CALLER_FAILS,
+      repair: void 0,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
-      canRepair: true,
+      canRepair: false,
       urls: ['http://code.google.com/p/v8/issues/detail?id=1769'],
       sections: ['13.2', '15.2.3.3'],
       tests: []
