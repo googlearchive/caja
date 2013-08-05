@@ -741,6 +741,8 @@ var ses;
     throw new TypeError('Unexpected verification outcome');
   }
 
+  var canMitigateSrcGotchas = typeof ses.mitigateSrcGotchas === 'function';
+
   /**
    * Due to https://code.google.com/p/v8/issues/detail?id=2728
    * we can't assume that SyntaxErrors are always early. If they're
@@ -3100,7 +3102,7 @@ var ses;
         !test_STRICT_EVAL_LEAKS_GLOBAL_VARS() &&
         !test_STRICT_EVAL_LEAKS_GLOBAL_FUNCS()) {
       ses.verifyStrictFunctionBody = verifyStrictFunctionBodyByEvalThrowing;
-    } else if (typeof ses.mitigateSrcGotchas === 'function') {
+    } else if (canMitigateSrcGotchas) {
       ses.verifyStrictFunctionBody = verifyStrictFunctionBodyByParsing;
     } else {
       // No known repairs under these conditions
@@ -3719,14 +3721,17 @@ var ses;
       description: 'Increment operators can mutate frozen properties',
       test: test_INCREMENT_IGNORES_FROZEN,
       repair: void 0,
-      // NOTE: We set this to SAFE_SPEC_VIOLATION to allow SES initialization to
-      // succeed, relying on the fact that mitigateGotchas.js will rewrite code
-      // to work around the problem. Otherwise, the problem would be a fatal
-      // NOT_OCAP_SAFE severity.
+      // NOTE: If mitigation by parsing/rewrite is available, we set
+      // this to SAFE_SPEC_VIOLATION to allow SES initialization to
+      // succeed, relying on the fact that startSES will use
+      // mitigateGotchas.js to rewrite code to work around the
+      // problem. Otherwise, the problem is NOT_OCAP_SAFE severity.
       //
-      // TODO(ihab.awad): Build a better system to record problems of fatal
-      // severity that are known to be fixed by mitigateGotchas.
-      preSeverity: severities.SAFE_SPEC_VIOLATION,
+      // TODO(ihab.awad): Build a better system to record problems of
+      // unsafe severity that are known to be fixed by startSES using
+      // mitigateSrcGotchas.
+      preSeverity: canMitigateSrcGotchas ?
+        severities.SAFE_SPEC_VIOLATION : severities.NOT_OCAP_SAFE,
       canRepair: false,
       urls: ['https://code.google.com/p/v8/issues/detail?id=2779'],
       sections: ['11.4.4', '8.12.4'],
