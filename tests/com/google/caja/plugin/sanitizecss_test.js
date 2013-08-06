@@ -517,6 +517,10 @@ jsunitRegister('testKeyframes', function testKeyframes() {
     '    left: 55px;',
     '  }',
     '',
+    '  51%, 52%,53% {',
+    '    left: 56px;',
+    '  }',
+    '',
     '  to {',
     '    left: 100px;',
     '    top: 100px;',
@@ -534,6 +538,7 @@ jsunitRegister('testKeyframes', function testKeyframes() {
       + '@keyframes diagonal-slide-suffix{'
       + 'from{left:0;top:0;}'
       + '50%{left:55px;}'
+      + '51%,52%,53%{left:56px;}'
       + 'to{left:100px;top:100px;}'
       + '}',
       input);

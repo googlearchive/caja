@@ -919,7 +919,7 @@ var sanitizeMediaQuery = undefined;
                 if (blockStack[blockStack.length - 1] === '@keyframes') {
                   // Allow [from | to | <percentage>]
                   selector = selectorArray.join(' ')
-                    .match(/^ *(?:from|to|\d+(?:\.\d+)?%) *$/i);
+                    .match(/^ *(?:from|to|\d+(?:\.\d+)?%) *(?:, *(?:from|to|\d+(?:\.\d+)?%) *)*$/i);
                   elide = !selector;
                   historySensitiveSelectors = [];
                   if (selector) { selector = selector[0].replace(/ +/g, ''); }

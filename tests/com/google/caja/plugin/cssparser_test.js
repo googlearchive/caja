@@ -330,6 +330,10 @@ jsunitRegister('testKeyframes', function testKeyframes() {
     '    left: 55px;',
     '  }',
     '',
+    '  51%, 52%,53% {',
+    '    left: 56px;',
+    '  }',
+    '',
     '  to {',
     '    left: 100px;',
     '    top: 100px;',
@@ -353,6 +357,9 @@ jsunitRegister('testKeyframes', function testKeyframes() {
             "endRuleset",    [],
             "startRuleset",  [["50%"]],   // Not really a ruleset.
               "declaration", ["left", ["55px"]],
+            "endRuleset",    [],
+            "startRuleset",  [["51%", ",", " ", "52%", ",", "53%"]],
+              "declaration", ["left", ["56px"]],
             "endRuleset",    [],
             "startRuleset",  [["to"]],    // Not really a ruleset.
               "declaration", ["left", ["100px"]],
