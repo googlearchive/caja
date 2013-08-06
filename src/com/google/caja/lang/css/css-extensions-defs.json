@@ -510,7 +510,7 @@
       "as": "transform" },
 
     { "key": "transform-origin",
-      "signature": "none | <transform-function> [ <transform-function> ]*",
+      "signature": "<position>",
       "default": "50% 50%",
       "appliesTo": "*",
       "inherited": false,
