@@ -306,7 +306,7 @@ var sanitizeMediaQuery = undefined;
           : (identDisposition
              && /^-?[a-z_][\w\-]*$/.test(token) && !/__$/.test(token))
           ? (opt_idSuffix && identDisposition === CSS_PROP_BIT_GLOBAL_NAME
-             ? token + opt_idSuffix
+             ? tokens[i] + opt_idSuffix  // use original token, not lowercased
              : (identDisposition === CSS_PROP_BIT_PROPERTY_NAME
                 && cssSchema[token]
                 && 'number' === typeof cssSchema[token].cssPropBits)

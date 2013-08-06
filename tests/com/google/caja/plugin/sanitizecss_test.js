@@ -501,12 +501,12 @@ jsunitRegister('testKeyframes', function testKeyframes() {
   // http://dev.w3.org/csswg/css-animations/
   var input = [
     'div {',
-    '  animation-name: diagonal-slide;',
+    '  animation-name: diagonal-Slide;',
     '  animation-duration: 5s;',
     '  animation-iteration-count: 10;',
     '}',
     '',
-    '@keyframes diagonal-slide {',
+    '@keyframes diagonal-Slide {',
     '',
     '  from {',
     '    left: 0;',
@@ -531,11 +531,11 @@ jsunitRegister('testKeyframes', function testKeyframes() {
   assertSanitizedStylesheet(
       ''
       + '.scopeClass div{'
-      + 'animation-name:diagonal-slide-suffix;'
+      + 'animation-name:diagonal-Slide-suffix;'
       + 'animation-duration:5s;'
       + 'animation-iteration-count:10;'
       + '}'
-      + '@keyframes diagonal-slide-suffix{'
+      + '@keyframes diagonal-Slide-suffix{'
       + 'from{left:0;top:0;}'
       + '50%{left:55px;}'
       + '51%,52%,53%{left:56px;}'
