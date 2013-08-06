@@ -608,3 +608,18 @@ jsunitRegister('testTransitions', function testTransitions() {
       ].join('\n'));
   jsunit.pass();
 });
+
+jsunitRegister('testTransform', function testTransform() {
+  assertSanitizedStylesheet(
+      ['.scopeClass p{',
+         'transform:translate(1%);',
+         'transform:translatex(2%) translatey(3%);',
+       '}',
+      ].join(''),
+      ['p {',
+       '  transform: translate(1%);',
+       '  transform: translatex(2%) translateY(3%);',
+       '}',
+      ].join('\n'));
+  jsunit.pass();
+});

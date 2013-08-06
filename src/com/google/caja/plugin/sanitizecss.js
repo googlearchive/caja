@@ -174,7 +174,7 @@ var sanitizeMediaQuery = undefined;
         // Allow error-recovery from unclosed functions by ignoring the call and
         // so allowing resumption at the next ';'.
         if (!parenDepth) {
-          var fnToken = tokens[start];
+          var fnToken = tokens[start].toLowerCase();
           // Cut out the originals, so the caller can step by one token.
           var fnTokens = tokens.splice(start, end - start, '');
           var fns = propertySchema.cssFns;
