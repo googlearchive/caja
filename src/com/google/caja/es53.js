@@ -1385,7 +1385,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     if (hostWeakMapOK) {
       // Whitelist WeakMap methods.
       WeakMap = markFunc(function() {
-        var result = HostWeakMap();
+        var result = new HostWeakMap();
         // DefineOwnProperty___ may not be defined yet.
         markFunc(result.get);
         result.get_v___ = result;
@@ -1424,7 +1424,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     } else {
       // Take advantage of both implementations.
       WeakMap = markFunc(function DoubleWeakMap() {
-        var hmap = HostWeakMap();
+        var hmap = new HostWeakMap();
         var omap = undefined;
         return snowWhite({
           get: markConstFunc(function(key, opt_default) {
@@ -4292,7 +4292,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   // things like nodeLists.  The result, ArrayLike, takes an instance of
   // ArrayLike and two functions, getItem and getLength, which put
   // it in a position to do taming on demand.
-  var makeArrayLike, itemMap = WeakMap(), lengthMap = WeakMap();
+  var makeArrayLike, itemMap = new WeakMap(), lengthMap = new WeakMap();
   var lengthGetter = markConstFunc(function () {
       var getter = lengthMap.get(this);
       return getter ? getter.i___() : void 0;

@@ -1009,7 +1009,7 @@ ses.startSES = function(global,
 
 
     // For use by def below
-    var defended = WeakMap();
+    var defended = new WeakMap();
     var defendingStack = [];
     function pushDefending(val) {
       if (!val) { return; }
@@ -1038,7 +1038,7 @@ ses.startSES = function(global,
           tamperProof(next, pushDefending);
         }
       } catch (err) {
-        defended = WeakMap();
+        defended = new WeakMap();
         defendingStack = [];
         throw err;
       }
@@ -1061,7 +1061,7 @@ ses.startSES = function(global,
      */
     var makeArrayLike;
     (function() {
-      var itemMap = WeakMap(), lengthMap = WeakMap();
+      var itemMap = new WeakMap(), lengthMap = new WeakMap();
       function lengthGetter() {
         var getter = lengthMap.get(this);
         return getter ? getter() : void 0;
@@ -1392,7 +1392,7 @@ ses.startSES = function(global,
    * superclass chains.
    */
   var whitelistSymbols = [true, '*', 'accessor'];
-  var whiteTable = WeakMap();
+  var whiteTable = new WeakMap();
   function register(value, permit) {
     if (value !== Object(value)) { return; }
     if (typeof permit !== 'object') {
@@ -1446,7 +1446,7 @@ ses.startSES = function(global,
     }
   }
 
-  var cleaning = WeakMap();
+  var cleaning = new WeakMap();
 
   /**
    * Delete the property if possible, else try to poison.

@@ -83,7 +83,7 @@ var ses;
       * essentially identical except for identity.
       * </ul>
       */
-     var handlers = WeakMap();
+     var handlers = new WeakMap();
 
      /**
       * Among objects, all and only promises have handlers.
@@ -602,7 +602,7 @@ var ses;
      }
 
      // Will be relevant for remote
-     //var passByCopies = WeakMap();
+     //var passByCopies = new WeakMap();
      function passByCopy(obj) {
        freeze(obj);
        //passByCopies.set(obj, true);
@@ -680,7 +680,7 @@ var ses;
      };
 
      Q.memoize = function(oneArgFuncP, opt_memoMap) {
-       var memoMap = opt_memoMap || WeakMap();
+       var memoMap = opt_memoMap || new WeakMap();
 
        function oneArgMemo(arg) {
          var resultP = memoMap.get(arg);

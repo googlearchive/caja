@@ -123,7 +123,7 @@ var ses;
          }
        };
 
-       var ssts = WeakMap(); // error -> sst
+       var ssts = new WeakMap(); // error -> sst
 
        /**
         * Returns a stack in Causeway format.

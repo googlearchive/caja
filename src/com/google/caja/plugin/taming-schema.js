@@ -24,7 +24,7 @@ function TamingSchema(privilegedAccess) {
   'use strict';
 
   function PropertyFlags() {
-    var map = WeakMap();
+    var map = new WeakMap();
     return Object.freeze({
       has: function(obj, prop, flag) {
         prop = '$' + prop;

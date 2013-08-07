@@ -52,7 +52,7 @@ caja.tamingGoogleLoader = (function() {
   }
 
   function PropertyTamingFlags() {
-    var m = caja.iframe.contentWindow.WeakMap();
+    var m = new (caja.iframe.contentWindow.WeakMap)();
     return {
       set: function(o, k) {
         if (!m.has(o)) { m.set(o, StringMap()); }
@@ -250,9 +250,9 @@ caja.tamingGoogleLoader = (function() {
     var fGrantRead = PropertyTamingFlags();
     var fGrantReadOverride = PropertyTamingFlags();
     var fGrantMethod = PropertyTamingFlags();
-    var fMarkFunction = WeakMap();
-    var fMarkCtor = WeakMap();
-    var fAdviseFunction = WeakMap();
+    var fMarkFunction = new WeakMap();
+    var fMarkCtor = new WeakMap();
+    var fAdviseFunction = new WeakMap();
 
     function grantRead(o, k) {
       if (fGrantRead.has(o, k)) { return; }
