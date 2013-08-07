@@ -39,7 +39,7 @@
                  function () { return {}; });
   } catch (err) {
     ses.updateMaxSeverity(ses.severities.NOT_SUPPORTED);
-    ses.logger.error('hookupSES failed with: ', err);
+    ses.logger.error('hookupSES failed with: ' + err, err);
   } finally {
     // Balanced by beginStartup in logger.js
     ses.logger.endStartup();

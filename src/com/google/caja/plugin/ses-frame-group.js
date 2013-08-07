@@ -59,7 +59,11 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
   var frameGroupTamingMembrane =
       TamingMembrane(tamingHelper, frameGroupTamingSchema.control);
 
-  var domado = Domado(null);
+  var lazyDomado;
+  function getDomado() {
+    // don't construct Domado until we know we need it
+    return lazyDomado || (lazyDomado = Domado(null));
+  }
 
   var bridal = bridalMaker(identity, feralWin.document);
 
@@ -254,7 +258,7 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
       }
     });
 
-    var domicile = domado.attachDocument(
+    var domicile = getDomado().attachDocument(
       '-' + divInfo.idClass, uriPolicyWrapper, divInfo.opt_div,
       config.targetAttributePresets,
       Object.freeze({
@@ -284,7 +288,7 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
     // Invoked by textual event handlers emitted by Domado.
     // TODO(kpreid): Use a name other than ___ for this purpose; perhaps some
     // property of the 'caja' object.
-    feralWin.___.plugin_dispatchEvent___ = domado.plugin_dispatchEvent;
+    feralWin.___.plugin_dispatchEvent___ = getDomado().plugin_dispatchEvent;
 
     return [domicile, htmlEmitter];
   }

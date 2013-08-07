@@ -922,6 +922,44 @@ var ses;
   ses.kludge_test_FREEZING_BREAKS_PROTOTYPES = test_FREEZING_BREAKS_PROTOTYPES;
 
   /**
+   * Problem visible in Chrome 29.0.1547.41 beta and 30.0.1587.2 canary.
+   * Freezing Object.prototype while it is in a WeakMap breaks WeakMaps.
+   * https://code.google.com/p/v8/issues/detail?id=2829
+   */
+  function test_FREEZING_BREAKS_WEAKMAP() {
+    // This problem cannot be detected until Object.prototype is frozen, and
+    // therefore must be tested in a separate frame. This is technically wrong,
+    // because the problem can occur on iframe-less standalone browsers.
+    //
+    // Our repair is to delete WeakMap (and let WeakMap.js construct the
+    // emulated WeakMap), which we can detect here and is obviously sufficient.
+    if (typeof WeakMap === 'undefined') {
+      // No WeakMap, or it has been "repaired", so no need
+      return false;
+    } else {
+      var result = inTestFrame(function(window) {
+        // trigger problem
+        var wm1 = new window.WeakMap();
+        wm1.set(window.Object.prototype, true);
+        window.Object.freeze(window.Object.prototype);
+
+        // test for problem
+        var wm2 = new window.WeakMap();
+        var o = window.Object.create(window.Object.prototype);
+        wm2.set(o, true);
+        return [wm2.get(o)];
+      });
+      if (!result || result[0] === true) {
+        return false;
+      } else if (result[0] === undefined) {
+        return true;
+      } else {
+        return 'Unexpected WeakMap value: ' + result[0];
+      }
+    }
+  }
+
+  /**
    * Detects https://bugs.webkit.org/show_bug.cgi?id=64250
    *
    * <p>No workaround attempted. Just reporting that this platform is
@@ -3061,6 +3099,10 @@ var ses;
     }
   }
 
+  function repair_FREEZING_BREAKS_WEAKMAP() {
+    global.WeakMap = undefined;
+  }
+
   function repair_ERRORS_HAVE_INVISIBLE_PROPERTIES() {
     var baseGOPN = Object.getOwnPropertyNames;
     var baseGOPD = Object.getOwnPropertyDescriptor;
@@ -3913,6 +3955,17 @@ var ses;
       urls: ['https://code.google.com/p/v8/issues/detail?id=2565'],
       sections: ['15.2.3.5'],
       tests: []  // TODO(kpreid): find/add test262
+    },
+    {
+      id: 'FREEZING_BREAKS_WEAKMAP',
+      description: 'Freezing Object.prototype breaks WeakMap',
+      test: test_FREEZING_BREAKS_WEAKMAP,
+      repair: repair_FREEZING_BREAKS_WEAKMAP,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      canRepair: true,
+      urls: ['https://code.google.com/p/v8/issues/detail?id=2829'],
+      sections: [],  // TODO(kpreid): cite when ES6 is final
+      tests: []  // TODO(kpreid): cite when ES6 is final
     },
     {
       id: 'THROWTYPEERROR_UNFROZEN',

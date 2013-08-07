@@ -120,7 +120,7 @@ function GuestManager(frameTamingSchema, frameTamingMembrane, divInfo,
               ? domicile.window
               : (guestWin.___
                  ? guestWin.___.copy(guestWin.___.sharedImports) // for es53
-                 : {})),                                         // for ses
+                 : guestWin.cajaVM.makeImports())),              // for ses
     innerContainer: domicile && domicile.getPseudoDocument(),
     outerContainer: divInfo.opt_div,
 

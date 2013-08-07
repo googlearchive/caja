@@ -146,7 +146,8 @@
   </select></label>
 });
 
-caja.load(document.getElementById('guest'),
+caja.load(<label><input type="checkbox" name="dom" value="true" checked
+              >document.getElementById('guest'),</label>
           <select name="net">
             <option selected value="ALL">caja.policy.net.ALL</option>
             <option value="NO_NETWORK">caja.policy.net.NO_NETWORK</option>
@@ -162,7 +163,7 @@ caja.load(document.getElementById('guest'),
                 </select>);
   frame.api({
     <label><input type="checkbox" name="alert" value="true"><!--
-    --> alert: frame.tame(frame.markFunction(function(s) {
+    -->alert: frame.tame(frame.markFunction(function(s) {
       window.alert('Guest alerts: ' + s);
     }))</label>
   });
@@ -191,6 +192,23 @@ caja.load(document.getElementById('guest'),
           options[el.name] = el.value;
         }
       });
+      form.onsubmit = function() {
+        // Kludge to allow default-checked boxes to work: insert
+        // their opposite in the form data just before submitting.
+        Array.prototype.forEach.call(document.querySelectorAll(
+            '#form [name]'), function(el) {
+          if (el.tagName === 'INPUT' && el.type === 'checkbox') {
+            if (!el.checked) {
+              var inverse = document.createElement('input');
+              inverse.type = 'hidden';
+              inverse.name = el.name;
+              inverse.value = 'false';
+              form.appendChild(inverse);
+            }
+          }
+        });
+        return true;
+      };
     </script>
   </form>
   <h2>Result</h2>
@@ -224,7 +242,7 @@ caja.load(document.getElementById('guest'),
       status('caja.initialize() failed');
     });
     status('caja.load()');
-    caja.load(document.getElementById('guest'),
+    caja.load(options.dom ? document.getElementById('guest') : undefined,
               net,
               function(frame) {
       status('frame.content()');
