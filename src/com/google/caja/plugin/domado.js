@@ -5338,8 +5338,11 @@ var Domado = (function() {
           }
         })),
         col_names: Props.overridable(true, cajaVM.constFunc(function() {
-          // TODO(kpreid): not quite right result set
-          return Object.getOwnPropertyNames(this.target.elements);
+          // TODO(kpreid): verify whether result set is appropriate
+          // Note using keys rather than gOPN, because if we returned 'length'
+          // here it would be a duplicate, but it's conveniently filtered out
+          // by keys() because it is non-enumerable.
+          return Object.keys(this.target.elements);
         }))
       });
       cajaVM.def(FormElementProxyHandler);

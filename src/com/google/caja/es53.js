@@ -4301,6 +4301,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   var nativeProxies = Proxy && (function () {
       var obj = {0: 'hi'};
       var p = Proxy.create({
+          toString: function() { return '[ES5/3 feature test handler]'; },
           get: function(O, P) {
             return obj[P];
           }
@@ -4351,7 +4352,11 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         // pass it on to Object.prototype.
         P = '' + P;
         if (P === 'length') {
-          return { get: lengthGetter };
+          return {
+            get: lengthGetter,
+            enumerable: false,
+            configurable: true  // required proxy invariant
+          };
         } else if (isNumericName(P)) {
           var get = markConstFunc(function () {
               var getter = itemMap.get(this);
@@ -4360,7 +4365,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
           return {
               get: get,
               enumerable: true,
-              configurable: true
+              configurable: true  // required proxy invariant
             };
         }
         return void 0;
@@ -4415,6 +4420,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       };
 
     ArrayLike.prototype = Proxy.create({
+        toString: function() { return '[ES5/3 ArrayLike proxy handler]'; },
         getPropertyDescriptor: propDesc,
         getOwnPropertyDescriptor: ownPropDesc,
         get: get,

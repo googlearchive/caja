@@ -1095,7 +1095,11 @@ ses.startSES = function(global,
           function ownPropDesc(P) {
             P = '' + P;
             if (P === 'length') {
-              return { get: lengthGetter };
+              return {
+                get: lengthGetter,
+                enumerable: false,
+                configurable: true  // required proxy invariant
+              };
             } else if (typeof P === 'number' || P === '' + (+P)) {
               return {
                 get: constFunc(function() {
@@ -1103,7 +1107,7 @@ ses.startSES = function(global,
                   return getter ? getter(+P) : void 0;
                 }),
                 enumerable: true,
-                configurable: true
+                configurable: true  // required proxy invariant
               };
             }
             return void 0;
