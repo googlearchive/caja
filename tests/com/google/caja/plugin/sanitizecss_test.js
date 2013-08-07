@@ -614,12 +614,25 @@ jsunitRegister('testTransform', function testTransform() {
       ['.scopeClass p{',
          'transform:translate(1%);',
          'transform:translatex(2%) translatey(3%);',
-       '}',
+       '}'
       ].join(''),
       ['p {',
        '  transform: translate(1%);',
        '  transform: translatex(2%) translateY(3%);',
-       '}',
+       '}'
+      ].join('\n'));
+  jsunit.pass();
+});
+
+jsunitRegister('testVendorPrefix', function testVendorPrefix() {
+  assertSanitizedStylesheet(
+      ['.scopeClass p{',
+         '-webkit-font:-webkit-monospace;',
+       '}'
+      ].join(''),
+      ['p {',
+       '  -webkit-Font: -webkit-special-font -webkit-monospace',
+       '}'
       ].join('\n'));
   jsunit.pass();
 });

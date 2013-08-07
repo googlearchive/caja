@@ -110,6 +110,18 @@ var sanitizeMediaQuery = undefined;
     }
   }
 
+  function withoutVendorPrefix(ident) {
+    // http://stackoverflow.com/a/5411098/20394 has a fairly extensive list
+    // of vendor prefices.
+    // Blink has not declared a vendor prefix distinct from -webkit-
+    // and http://css-tricks.com/tldr-on-vendor-prefix-drama/ discusses
+    // how Mozilla recognizes some -webkit-
+    // http://wiki.csswg.org/spec/vendor-prefixes talks more about
+    // cross-implementation, and lists other prefixes.
+    return ident.replace(
+        /^-(?:apple|css|epub|khtml|moz|mso?|o|rim|wap|webkit|xv)-(?=[a-z])/, '');
+  }
+
   /**
    * Given a series of normalized CSS tokens, applies a property schema, as
    * defined in CssPropertyPatterns.java, and sanitizes the tokens in place.
@@ -140,7 +152,8 @@ var sanitizeMediaQuery = undefined;
     return function sanitize(
         property, tokens, opt_naiveUriRewriter, opt_baseUri, opt_idSuffix) {
 
-      var propertySchema = cssSchema[property];
+      var propertyKey = withoutVendorPrefix(property);
+      var propertySchema = cssSchema[propertyKey];
 
       // If the property isn't recognized, elide all tokens.
       if (!propertySchema || 'object' !== typeof propertySchema) {
@@ -232,7 +245,7 @@ var sanitizeMediaQuery = undefined;
                        opt_baseUri,
                        // Strip off quotes
                        decodeCss(tokens[i].substring(1, token.length - 1))),
-                     property,
+                     propertyKey,
                      opt_naiveUriRewriter)))
               : '')
             : ((propBits & CSS_PROP_BIT_QSTRING)
@@ -250,7 +263,8 @@ var sanitizeMediaQuery = undefined;
                          // Lazily compute the union from litGroup.
                          || (propertySchema.cssLitMap = unionArrays(litGroup)))
                       : ALLOWED_LITERAL),  // A convenient empty object.
-            (litMap[token] === ALLOWED_LITERAL))
+            (litMap[withoutVendorPrefix(token)] === ALLOWED_LITERAL)
+          )
           // Token is in the literal map or matches extra.
           ? token
 
@@ -293,7 +307,7 @@ var sanitizeMediaQuery = undefined;
           ? ((opt_naiveUriRewriter && (propBits & CSS_PROP_BIT_URL))
              ? normalizeUrl(safeUri(resolveUri(opt_baseUri,
                   tokens[i].substring(5, token.length - 2)),
-                  property,
+                  propertyKey,
                   opt_naiveUriRewriter))
              : '')
 
@@ -836,7 +850,7 @@ var sanitizeMediaQuery = undefined;
               } else if (atIdent === '@media') {
                 safeCss.push('@media', ' ', sanitizeMediaQuery(headerArray));
               } else if (atIdent === '@keyframes'
-                  || atIdent === '@-webkit-keyframes') {
+                         || atIdent === '@-webkit-keyframes') {
                 var animationId = headerArray[0];
                 if (headerArray.length === 1
                     && !/__$|[^\w\-]/.test(animationId)) {
