@@ -38,6 +38,24 @@ import java.util.List;
  * @author mikesamuel@gmail.com (Mike Samuel)
  */
 public final class CssValidatorTest extends CajaTestCase {
+
+  // Note, transition-property is special because it uses <property-name>
+  public final void testValidateTransition() throws Exception {
+    runTest("a { transition-property: color }",
+        "StyleSheet\n"
+        + "  RuleSet\n"
+        + "    Selector\n"
+        + "      SimpleSelector\n"
+        + "        IdentLiteral : a\n"
+        + "    PropertyDeclaration\n"
+        + "      Property : transition-property\n"
+        + "      Expr\n"
+        + "        Term ; cssPropertyPartType=IDENT"
+        +             " ; cssPropertyPart=transition-property::"
+        +                                "single-transition-property\n"
+        + "          IdentLiteral : color\n");
+  }
+
   public final void testValidateColor() throws Exception {
     runTest("a { color: blue }",
             "StyleSheet\n"

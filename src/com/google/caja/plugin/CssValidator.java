@@ -1301,6 +1301,14 @@ final class SignatureResolver {
       }
       candidate.match(term, CssPropertyPartType.IDENT, propertyName);
       ++candidate.exprIdx;
+    } else if ("property-name".equals(symbolName)) {
+      // TODO(felix8a): duplicate the restriction in sanitizecss.js
+      if (!(null == term.getOperator()
+          && atom instanceof CssTree.IdentLiteral)) {
+        return false;
+      }
+      candidate.match(term, CssPropertyPartType.IDENT, propertyName);
+      ++candidate.exprIdx;
     } else {
       throw new SomethingWidgyHappenedError(
           "unhandled symbol " + sig.symbolName + "\n" + dump(atom));
