@@ -117,7 +117,7 @@ public class CssPropertyPatternsTest extends CajaTestCase {
     assertDigest(
         "'background-attachment'",
         "{\n"
-        + "  'lits': [ ',', 'fixed', 'local', 'scroll' ]\n"
+        + "  'lits': [ ',', 'fixed', 'inherit', 'local', 'scroll' ]\n"
         + "}");
   }
 

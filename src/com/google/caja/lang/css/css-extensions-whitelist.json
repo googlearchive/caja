@@ -20,6 +20,7 @@
     "border-top-left-radius",
     "border-top-right-radius",
     "box-shadow",
+    "box-sizing",
     "content",
     "filter",
     "font-stretch",
@@ -36,6 +37,7 @@
     "-moz-outline-width",
     "-o-text-overflow",
     "opacity",
+    "overflow-wrap",
     "overflow-x",
     "overflow-y",
     "perspective",
@@ -81,6 +83,7 @@
     "-webkit-transition-duration",
     "-webkit-transition-property",
     "-webkit-transition-timing-function",
+    "word-break",
     "word-wrap",
     "zoom"
   ],
