@@ -636,3 +636,15 @@ jsunitRegister('testVendorPrefix', function testVendorPrefix() {
       ].join('\n'));
   jsunit.pass();
 });
+
+jsunitRegister('testErrorRecovery', function testErrorRecovery() {
+  assertSanitizedStylesheet(
+      ['.scopeClass p{',
+         'color:red;',
+         'color:blue;',
+       '}',
+      ].join(''),
+      // note, no spaces
+      'p{color:red;*zoom:1;color:blue}');
+  jsunit.pass();
+});

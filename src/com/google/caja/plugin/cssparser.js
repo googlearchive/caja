@@ -243,20 +243,24 @@ var parseCssDeclarations;
 
   var ident = /^-?[a-z]/i;
 
+  function skipDeclaration(toks, i, n) {
+    // TODO(felix8a): maybe skip balanced pairs of {}
+    while (i < n && toks[i] !== ';' && toks[i] !== '}') { ++i; }
+    return i < n && toks[i] === ';' ? i+1 : i;
+  }
+
   // declaration : property ':' S* value;
   // property    : IDENT S*;
   // value       : [ any | block | ATKEYWORD S* ]+;
   function declaration(toks, i, n, handler) {
     var property = toks[i++];
     if (!ident.test(property)) {
-      return i+1;  // skip one token.
+      return skipDeclaration(toks, i, n);
     }
     var tok;
     if (i < n && toks[i] === ' ') { ++i; }
     if (i == n || toks[i] !== ':') {
-      // skip tokens to next semi or close bracket.
-      while (i < n && (tok = toks[i]) !== ';' && tok !== '}') { ++i; }
-      return i;
+      return skipDeclaration(toks, i, n);
     }
     ++i;
     if (i < n && toks[i] === ' ') { ++i; }

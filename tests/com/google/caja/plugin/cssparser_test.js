@@ -309,6 +309,33 @@ jsunitRegister('testMinifiedCss3', function testMinifiedCss3() {
   jsunit.pass();
 });
 
+jsunitRegister('testMinifiedCss4', function testMinifiedCss4() {
+  assertParsedCssStylesheet(
+      ['startStylesheet', [],
+       'startRuleset',    [['b']],
+       'declaration',     ['color', ['red']],
+       'declaration',     ['color', ['blue']],
+       'endRuleset',      [],
+       'endStylesheet',   []],
+      'b{color:red;*zoom:1;color:blue}');
+  jsunit.pass();
+});
+
+jsunitRegister('testMinifiedCss5', function testMinifiedCss5() {
+  assertParsedCssStylesheet(
+      ['startStylesheet', [],
+       'startRuleset',    [['b']],
+       'declaration',     ['color', ['red']],
+       'declaration',     ['color', ['blue']],
+       'endRuleset',      [],
+       'startRuleset',    [['c']],
+       'declaration',     ['color', ['green']],
+       'endRuleset',      [],
+       'endStylesheet',   []],
+      'b{color:red;zoom:;color:blue;zoom:}c{color:green}');
+  jsunit.pass();
+});
+
 jsunitRegister('testKeyframes', function testKeyframes() {
   // Mixture of example 1 and example 2 from
   // http://dev.w3.org/csswg/css-animations/
