@@ -152,7 +152,7 @@ public abstract class BrowserTestCase {
         result = driveBrowser(driver);
         passed = true;
       } finally {
-        wdh.captureResults(label);
+        wdh.captureResults(label, passed);
         wdh.end(passed || isKnownFailure);
       }
     } catch (Exception e) {

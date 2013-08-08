@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -198,11 +199,17 @@ class WebDriverHandle {
     }
   }
 
-  public void captureResults(String name) {
+  public void captureResults(String name, boolean passed) {
     if (driver == null) { return; }
+
+    if (passed && !TestFlag.CAPTURE_PASSES.truthy()) { return; }
+
     String dir = TestFlag.CAPTURE_TO.getString("");
     if ("".equals(dir)) { return; }
+
     if (!dir.endsWith("/")) { dir = dir + "/"; }
+    dir += passed ? "pass/" : "fail/";
+    mkdirs(dir);
 
     // Try to capture the final html
     try {
@@ -242,6 +249,13 @@ class WebDriverHandle {
       }
     } catch (WebDriverException e) {
       Echo.echo("capture logs failed: " + e);
+    }
+  }
+
+  private static void mkdirs(String dirName) {
+    File dir = new File(dirName);
+    if (!dir.isDirectory() && !dir.mkdirs()) {
+      Echo.echo("couldn't mkdir " + dirName);
     }
   }
 
