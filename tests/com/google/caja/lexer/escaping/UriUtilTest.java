@@ -18,6 +18,7 @@ import java.net.URISyntaxException;
 
 import junit.framework.TestCase;
 
+@SuppressWarnings("static-method")
 public class UriUtilTest extends TestCase {
   public final void testUriNormalization() throws URISyntaxException {
     // Don't muck with ':' after protocol or before port, or '=' in query

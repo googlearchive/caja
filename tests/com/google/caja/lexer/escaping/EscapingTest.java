@@ -22,6 +22,7 @@ import junit.framework.TestCase;
 /**
  * @author mikesamuel@gmail.com (Mike Samuel)
  */
+@SuppressWarnings("static-method")
 public class EscapingTest extends TestCase {
 
   private static final String CHARS;

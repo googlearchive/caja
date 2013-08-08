@@ -16,6 +16,7 @@ package com.google.caja.util;
 
 import junit.framework.TestCase;
 
+@SuppressWarnings("static-method")
 public class StringsTest extends TestCase {
   public final void testEqIgnoreCase() {
     assertTrue(Strings.eqIgnoreCase(null, null));

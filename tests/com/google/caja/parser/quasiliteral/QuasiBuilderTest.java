@@ -30,6 +30,7 @@ import java.util.Arrays;
  *
  * @author ihab.awad@gmail.com
  */
+@SuppressWarnings("static-method")
 public class QuasiBuilderTest extends CajaTestCase {
   public final void testParseDoesNotFail() throws Exception {
     QuasiNode n = QuasiBuilder.parseQuasiNode(

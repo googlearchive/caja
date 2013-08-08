@@ -21,6 +21,7 @@ import com.google.caja.parser.js.Identifier;
 
 import junit.framework.TestCase;
 
+@SuppressWarnings("static-method")
 public class ExitModesTest extends TestCase {
   public final void testUnion() {
     assertEquals(

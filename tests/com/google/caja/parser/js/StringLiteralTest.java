@@ -22,6 +22,7 @@ import java.util.Random;
  *
  * @author mikesamuel@gmail.com
  */
+@SuppressWarnings("static-method")
 public class StringLiteralTest extends CajaTestCase {
   public final void testUnquotedValue() {
     assertEquals("", StringLiteral.getUnquotedValueOf(""));

@@ -30,6 +30,7 @@ import org.w3c.dom.DocumentFragment;
 
 import junit.framework.TestCase;
 
+@SuppressWarnings("static-method")
 public class LocalizedHtmlTest extends TestCase {
   public final void testEmptyMessage() throws Exception {
     runTest("", "", "");

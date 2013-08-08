@@ -34,6 +34,7 @@ import com.google.caja.util.TestUtil;
 /**
  * @author jasvir@gmail.com (Jasvir Nagra)
  */
+@SuppressWarnings("static-method")
 public class ParserContextTest extends CajaTestCase {
 
   public final void testNotEnoughInput() {

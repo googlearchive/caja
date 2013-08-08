@@ -22,6 +22,7 @@ import com.google.caja.util.Pair;
 
 import junit.framework.TestCase;
 
+@SuppressWarnings("static-method")
 public class ChardetTest extends TestCase {
   public final void testEmptyDocument() throws IOException {
     assertCharset("", new byte[0], "UTF-8");

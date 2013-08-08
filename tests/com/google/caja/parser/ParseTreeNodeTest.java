@@ -43,6 +43,7 @@ import java.util.Set;
 /**
  * @author mikesamuel@gmail.com (Mike Samuel)
  */
+@SuppressWarnings("static-method")
 public class ParseTreeNodeTest extends CajaTestCase {
   LabeledStmtWrapper root;
   LabeledStmtWrapper b9;

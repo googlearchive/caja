@@ -68,6 +68,7 @@ import org.w3c.dom.NodeList;
  * @author felix8a@gmail.com
  */
 
+@SuppressWarnings("static-method")
 public class NodesRenderTest extends CajaTestCase {
 
   public final void testEmpty() {

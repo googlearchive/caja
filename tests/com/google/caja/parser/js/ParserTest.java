@@ -50,6 +50,7 @@ import junit.framework.AssertionFailedError;
  *
  * @author mikesamuel@gmail.com
  */
+@SuppressWarnings("static-method")
 public class ParserTest extends CajaTestCase {
   // TODO(mikesamuel): better comment each of the test input files.
   // What is each one supposed to test.

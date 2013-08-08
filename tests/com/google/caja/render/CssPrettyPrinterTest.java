@@ -16,6 +16,7 @@ package com.google.caja.render;
 
 import junit.framework.TestCase;
 
+@SuppressWarnings("static-method")
 public class CssPrettyPrinterTest extends TestCase {
   public final void testRender() {
     assertTokens(

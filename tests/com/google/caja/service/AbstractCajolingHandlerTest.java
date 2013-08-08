@@ -19,6 +19,7 @@ import com.google.caja.util.CajaTestCase;
 /**
  * @author ihab.awad@google.com (Ihab Awad)
  */
+@SuppressWarnings("static-method")
 public class AbstractCajolingHandlerTest extends CajaTestCase {
 
   public void testCheckIdentifier() throws Exception {

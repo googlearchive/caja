@@ -20,6 +20,7 @@ import com.google.caja.util.SafeIdentifierMaker;
 import java.util.Iterator;
 import junit.framework.TestCase;
 
+@SuppressWarnings("static-method")
 public class SafeIdentifierMakerTest extends TestCase {
   public final void testSeries() {
     Iterator<String> maker = new SafeIdentifierMaker("abc".toCharArray());

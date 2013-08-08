@@ -20,6 +20,7 @@ import java.util.HashSet;
 
 import junit.framework.TestCase;
 
+@SuppressWarnings("static-method")
 public class AbbreviatorTest extends TestCase {
   public final void testOne() {
     Abbreviator a = new Abbreviator(

@@ -48,6 +48,7 @@ import java.util.Map;
  *
  * @author ihab.awad@gmail.com
  */
+@SuppressWarnings("static-method")
 public class ModuleFormatTest extends CajaTestCase {
   private final Rewriter makeRewriter() {
     return new ES53Rewriter(TestBuildInfo.getInstance(), mq, false);

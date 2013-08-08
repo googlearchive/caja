@@ -31,6 +31,7 @@ import java.util.List;
 
 import junit.framework.TestCase;
 
+@SuppressWarnings("static-method")
 public class ErrorReporterTest extends TestCase {
   enum TestMessageType implements MessageTypeInt {
     MT,

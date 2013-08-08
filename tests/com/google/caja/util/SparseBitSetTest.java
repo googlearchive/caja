@@ -20,6 +20,7 @@ import java.util.Random;
 /**
  * @author msamuel@google.com (Mike Samuel)
  */
+@SuppressWarnings("static-method")
 public class SparseBitSetTest extends CajaTestCase {
 
   public final void testAgainstRegularImplementation() {

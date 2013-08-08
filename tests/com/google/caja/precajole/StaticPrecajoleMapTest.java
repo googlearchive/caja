@@ -20,6 +20,7 @@ import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
 
+@SuppressWarnings("static-method")
 public class StaticPrecajoleMapTest extends CajaTestCase {
 
   private static String CANARY1 =

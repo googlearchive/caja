@@ -16,6 +16,7 @@ package com.google.caja.util;
 
 import junit.framework.TestCase;
 
+@SuppressWarnings("static-method")
 public class NameTest extends TestCase {
   public final void testCss() {
     assertEquals("color", Name.css("color").getCanonicalForm());

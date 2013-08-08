@@ -29,6 +29,7 @@ import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Join;
 
+@SuppressWarnings("static-method")
 public class OptimizeJavascriptStageTest extends PipelineStageTestCase {
   public final void testEmptyInput() throws Exception {
     assertPipeline(

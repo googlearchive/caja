@@ -17,6 +17,7 @@ package com.google.caja.parser.js;
 import java.math.BigDecimal;
 import junit.framework.TestCase;
 
+@SuppressWarnings("static-method")
 public class NumberLiteralTest extends TestCase {
   public final void testNumberToString() {
     assertEquals("NaN", NumberLiteral.numberToString(Double.NaN));

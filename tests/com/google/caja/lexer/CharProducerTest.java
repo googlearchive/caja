@@ -33,6 +33,7 @@ import junit.framework.TestCase;
  *
  * @author mikesamuel@gmail.com
  */
+@SuppressWarnings("static-method")
 public final class CharProducerTest extends TestCase {
   private static final InputSource STRING_SOURCE = new InputSource(
       URI.create("file:///CharProducerTest.java"));

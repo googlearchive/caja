@@ -22,6 +22,7 @@ import java.util.Map;
 
 import junit.framework.TestCase;
 
+@SuppressWarnings("static-method")
 public class CollectionsTest extends TestCase {
   public final void testListMultimaps() {
     Multimap<String, String> m = Multimaps.newListHashMultimap();

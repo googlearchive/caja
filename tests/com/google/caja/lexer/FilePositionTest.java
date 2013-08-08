@@ -18,6 +18,7 @@ import java.net.URI;
 
 import junit.framework.TestCase;
 
+@SuppressWarnings("static-method")
 public class FilePositionTest extends TestCase {
   public final void testInstance1() {
     InputSource is = new InputSource(URI.create("t:///foo"));

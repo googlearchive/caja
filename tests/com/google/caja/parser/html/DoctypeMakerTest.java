@@ -22,6 +22,7 @@ import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 
 import junit.framework.TestCase;
 
+@SuppressWarnings("static-method")
 public class DoctypeMakerTest extends TestCase {
   public final void testSystemIdToNsUri() {
     assertEquals(

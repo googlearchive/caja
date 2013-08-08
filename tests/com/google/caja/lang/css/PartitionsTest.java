@@ -24,6 +24,7 @@ import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.Sets;
 import com.google.common.collect.ImmutableList;
 
+@SuppressWarnings("static-method")
 public class PartitionsTest extends CajaTestCase {
   public final void testPartitions() {
     List<String> a = ImmutableList.of("foo", "bar", "baz", "boo");

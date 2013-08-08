@@ -16,6 +16,7 @@ package com.google.caja.service;
 
 import junit.framework.TestCase;
 
+@SuppressWarnings("static-method")
 public class ContentTypeCheckTest extends TestCase {
   public final void testStrictContentTypeCheck() {
     ContentTypeCheck ctc = new StrictContentTypeCheck();

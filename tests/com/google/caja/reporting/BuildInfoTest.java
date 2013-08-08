@@ -21,6 +21,7 @@ import java.util.ListResourceBundle;
 /**
  * @author ihab.awad@gmail.com
  */
+@SuppressWarnings("static-method")
 public class BuildInfoTest extends TestCase {
   private static BuildInfo getDefaultBuildInfo() {
     return new BuildInfo(

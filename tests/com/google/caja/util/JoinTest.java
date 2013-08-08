@@ -7,6 +7,7 @@ import junit.framework.TestCase;
 /**
  * @author msamuel@google.com (Mike Samuel)
  */
+@SuppressWarnings("static-method")
 public class JoinTest extends TestCase {
   public final void testJoin() {
     assertEquals("", Join.join(""));

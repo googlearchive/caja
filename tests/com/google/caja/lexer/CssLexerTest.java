@@ -22,6 +22,7 @@ import com.google.caja.util.TestUtil;
 /**
  * @author mikesamuel@gmail.com (Mike Samuel)
  */
+@SuppressWarnings("static-method")
 public class CssLexerTest extends CajaTestCase {
 
   @Override

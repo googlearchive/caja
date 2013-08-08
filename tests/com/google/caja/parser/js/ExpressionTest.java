@@ -18,6 +18,7 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.util.CajaTestCase;
 
+@SuppressWarnings("static-method")
 public class ExpressionTest extends CajaTestCase {
   public final void testConditionResult() throws ParseException {
     assertFalse(jsExpr(fromString("false")).conditionResult());

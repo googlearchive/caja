@@ -43,6 +43,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+@SuppressWarnings("static-method")
 public class CssPropertyPatternsTest extends CajaTestCase {
 
   CssPropertyPatterns pp;

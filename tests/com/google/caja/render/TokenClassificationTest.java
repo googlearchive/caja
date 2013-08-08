@@ -16,6 +16,7 @@ package com.google.caja.render;
 
 import junit.framework.TestCase;
 
+@SuppressWarnings("static-method")
 public class TokenClassificationTest extends TestCase {
   public final void testClassify() {
     assertEquals(TokenClassification.LINEBREAK,

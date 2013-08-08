@@ -17,6 +17,7 @@ package com.google.caja.lexer;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.ContentType;
 
+@SuppressWarnings("static-method")
 public class GuessContentTypeTest extends CajaTestCase {
   public final void testGuess() {
     assertEquals(

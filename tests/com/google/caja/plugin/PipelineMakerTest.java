@@ -27,6 +27,7 @@ import com.google.caja.util.Pipeline;
 import java.util.Arrays;
 import java.util.List;
 
+@SuppressWarnings("static-method")
 public class PipelineMakerTest extends CajaTestCase {
   public final void testDefaultPipeline() throws Exception {
     assertPipeline(

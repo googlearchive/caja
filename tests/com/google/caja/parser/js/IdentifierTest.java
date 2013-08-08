@@ -22,6 +22,7 @@ import com.google.caja.util.CajaTestCase;
 
 import javax.annotation.Nullable;
 
+@SuppressWarnings("static-method")
 public class IdentifierTest extends CajaTestCase {
   private static void gwtY(String s) {
     assertTrue(

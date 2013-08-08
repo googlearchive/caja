@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+@SuppressWarnings("static-method")
 public class JsPrettyPrinterTest extends CajaTestCase {
   public final void testEmptyBlock() throws Exception {
     assertRendered("{ {} }", "{}");

@@ -19,6 +19,7 @@ import junit.framework.TestCase;
 /**
  * @author mikesamuel@gmail.com (Mike Samuel)
  */
+@SuppressWarnings("static-method")
 public class ParserBaseTest extends TestCase {
   public final void testIsJavascriptIdentifier() {
     for (String s : new String[] {
