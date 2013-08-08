@@ -3284,7 +3284,7 @@ var ses;
       test: test_MISSING_FREEZE_ETC,
       repair: void 0,
       preSeverity: severities.NOT_OCAP_SAFE,
-      canRepair: false,           // repair for development, not safety
+      canRepair: false,
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=55736'],
       sections: ['15.2.3.9'],
       tests: ['15.2.3.9-0-1']
