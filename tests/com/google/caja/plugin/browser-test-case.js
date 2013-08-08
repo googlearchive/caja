@@ -109,7 +109,7 @@
  *  [ TODO(ihab.awad): Document more as we determine they are useful. ]
  *
  * TODO(kpreid): Clean up stuff not intended to be exported.
- * @requires document, setInterval, setTimeout, clearInterval, Proxy, console,
+ * @requires document, setInterval, setTimeout, clearInterval, console,
  *     jsunit, jsunitRegisterAuxiliaryStatus, jsunitRun, jsunitRegister,
  *     jsunitRegisterIf, jsunitCallback, jsunitPass, jsunitFail, expectFailure,
  *     JsUnitException, assertFailsSafe, fail,
@@ -557,8 +557,8 @@ function createExtraImportsForTesting(frameGroup, frame) {
   standardImports.inES5Mode = inES5Mode;
   standardImports.proxiesAvailableToTamingCode = inES5Mode
       // In ES5, Domado runs in the taming frame's real global env
-      ? typeof Proxy !== 'undefined'
-      // ES5/3 provides proxies.
+      ? typeof frameGroup.iframe.Proxy !== 'undefined'
+      // ES5/3 provides proxies always.
       : true;
 
   standardImports.getUrlParam = frame.tame(frame.markFunction(getUrlParam));
