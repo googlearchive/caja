@@ -408,7 +408,7 @@ public class Linter implements BuildCommand {
     Map<String, ScopeAnalyzer.Use> globalsRead = Maps.newHashMap();
     Map<String, ScopeAnalyzer.Use> globalsSet = Maps.newHashMap();
     Map<String, ScopeAnalyzer.Use> globalsModified = Maps.newHashMap();
-    for (ScopeAnalyzer.Use use : sa.getUses(globalScope.root)) {
+    for (ScopeAnalyzer.Use use : ScopeAnalyzer.getUses(globalScope.root)) {
       String symbolName = use.getSymbolName();
       LexicalScope cscope = ScopeAnalyzer.containingScopeForNode(use.ref.node);
       LexicalScope subScopeOrigin = banned.get(Pair.pair(cscope, symbolName));
