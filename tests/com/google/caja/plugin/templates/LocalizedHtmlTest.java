@@ -51,7 +51,7 @@ public class LocalizedHtmlTest extends TestCase {
         "<ihtml:ph name='greeting'/>, <ihtml:ph name='b_planet'/>!");
   }
 
-  private void runTest(String golden1, String golden2, String input)
+  private static void runTest(String golden1, String golden2, String input)
       throws Exception {
     LocalizedHtml msg = new LocalizedHtml("test", input);
     final Document doc = DomParser.makeDocument(null, null);

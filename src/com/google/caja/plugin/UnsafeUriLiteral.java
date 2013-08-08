@@ -26,6 +26,7 @@ import java.net.URI;
  */
 class UnsafeUriLiteral extends CssTree.UriLiteral {
   UnsafeUriLiteral(FilePosition pos, URI value) { super(pos, value); }
+  @Override
   public void render(com.google.caja.reporting.RenderContext rc) {
     throw new SomethingWidgyHappenedError(
         "UnsafeUriLiteral must never be rendered");

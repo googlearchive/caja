@@ -91,7 +91,7 @@ public class PrecajoleRewriteStage implements Stage<Jobs> {
     return false;
   }
 
-  private void replaceScript(Jobs jobs, Element el, CajoledModule pre) {
+  private static void replaceScript(Jobs jobs, Element el, CajoledModule pre) {
     Node parent = el.getParentNode();
     if (parent == null) {
       return;
@@ -112,7 +112,7 @@ public class PrecajoleRewriteStage implements Stage<Jobs> {
         new JobEnvelope(id, JobCache.none(), ContentType.JS, true, job));
   }
 
-  private String getAttr(Node n, String attrib) {
+  private static String getAttr(Node n, String attrib) {
     if (n instanceof Element) {
       return ((Element) n).getAttributeNS(HTML_NS, attrib);
     } else {

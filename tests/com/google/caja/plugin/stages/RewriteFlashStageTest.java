@@ -140,16 +140,16 @@ public final class RewriteFlashStageTest extends PipelineStageTestCase {
     assertNoErrors();
   }
 
-  private JobStub html(String... content) {
+  private static JobStub html(String... content) {
     return new JobStub(Join.join("", content), ContentType.HTML);
   }
 
-  private JobStub htmlb(String... content) {
+  private static JobStub htmlb(String... content) {
     return new JobStub("<html><head></head><body>" + Join.join("", content) +
         "</body></html>", ContentType.HTML);
   }
 
-  private JobStub js(String... content) {
+  private static JobStub js(String... content) {
     return new JobStub(Join.join("", content), ContentType.JS);
   }
 

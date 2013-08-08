@@ -204,7 +204,7 @@ class Spacer {
     }
   }
 
-  private boolean isKeyword(String s) {
+  private static boolean isKeyword(String s) {
     return KEYWORDS.contains(s);
   }
 

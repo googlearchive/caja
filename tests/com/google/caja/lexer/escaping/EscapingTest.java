@@ -16,6 +16,7 @@ package com.google.caja.lexer.escaping;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import junit.framework.TestCase;
 
 /**

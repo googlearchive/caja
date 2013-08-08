@@ -234,7 +234,8 @@ public abstract class ScopeAnalyzer<S extends AbstractScope> {
    * variable.
    * @param useSite the scope in which symbol is referenced.
    */
-  private ScopeTree<S> definingSite(String symbolName, ScopeTree<S> useSite) {
+  private static <S>
+  ScopeTree<S> definingSite(String symbolName, ScopeTree<S> useSite) {
     if ("this".equals(symbolName)) {
       // "this" is defined in function & program scopes, and cannot be declared.
       for (ScopeTree<S> s = useSite; s != null; s = s.outer) {
@@ -302,7 +303,8 @@ public abstract class ScopeAnalyzer<S extends AbstractScope> {
    * @param id an identifier being declared.
    * @param scope the scope in which the identifier appears.
    */
-  private ScopeTree<S> hoist(AncestorChain<Identifier> id, ScopeTree<S> scope) {
+  private static <S>
+  ScopeTree<S> hoist(AncestorChain<Identifier> id, ScopeTree<S> scope) {
     ScopeTree<S> declScope = scope;
     if (id.parent.parent == null
         || !(id.parent.parent.node instanceof CatchStmt)) {

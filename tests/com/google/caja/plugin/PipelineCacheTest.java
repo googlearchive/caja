@@ -128,7 +128,7 @@ public class PipelineCacheTest extends PipelineStageTestCase {
       return cloneJobList(cached);
     }
 
-    private List<Job> cloneJobList(List<? extends Job> jobs) {
+    private static List<Job> cloneJobList(List<? extends Job> jobs) {
       List<Job> out = Lists.newArrayList();
       for (Job job : jobs) {
         out.add(Job.job(job.getRoot().clone(), job.getBaseUri()));

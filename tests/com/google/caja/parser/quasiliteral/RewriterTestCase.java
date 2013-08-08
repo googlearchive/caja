@@ -175,7 +175,8 @@ public abstract class RewriterTestCase extends CajaTestCase {
     }
   }
 
-  protected boolean containsConsistentMessage(List<Message> list, MessageTypeInt type) {
+  protected static boolean containsConsistentMessage(
+      List<Message> list, MessageTypeInt type) {
     for (Message m : list) {
       System.out.println("**" + m.getMessageType() + "|" + m.getMessageLevel());
       if (m.getMessageType().equals(type)) {
@@ -185,7 +186,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
     return false;
   }
 
-  protected boolean containsConsistentMessage(
+  protected static boolean containsConsistentMessage(
       List<Message> list, MessageTypeInt type, MessageLevel level) {
     for (Message m : list) {
       System.out.println("**" + m.getMessageType() + "|" + m.getMessageLevel());

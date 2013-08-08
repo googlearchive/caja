@@ -133,24 +133,24 @@ public class NodesTest extends CajaTestCase {
             MarkupRenderMode.XML));
   }
 
-  final String TEST_XML = (
+  static final String TEST_XML = (
       "<foo>\n"
       + "before <!-- Test Data --> after \n"
       + "<!-- [if IE ]>"
       + "<link href=\"iecss.css\" rel=\"stylesheet\" type=\"text/css\" />"
       + "<![endif]-->"
       + "</foo>");
-  final String RENDER_WITH_COMMENTS = TEST_XML;
-  final String RENDER_NO_COMMENTS = "<foo>\n"
+  static final String RENDER_WITH_COMMENTS = TEST_XML;
+  static final String RENDER_NO_COMMENTS = "<foo>\n"
       + "before  after \n"
       + "</foo>";
-  final String IE_COMMENTS_TEST_XML = (
+  static final String IE_COMMENTS_TEST_XML = (
       "before <!-- Test Data --> after \n"
       + "<!-- [if IE ]>"
       + "<link href=\"iecss.css\" rel=\"stylesheet\" type=\"text/css\" />"
       + "<!-- with htc -->"
       + "<![endif]-->");
-  final String IE_COMMENTS_WITH_CDATA_TEST_XML = (
+  static final String IE_COMMENTS_WITH_CDATA_TEST_XML = (
       "before <!--[if lt IE 7]>"
       + "<script type=\"text/javascript\">"
       + "//<![CDATA["
@@ -158,11 +158,11 @@ public class NodesTest extends CajaTestCase {
       + "//]]>"
       + "</script>"
       + "<![endif]-->");
-  final String IE_DOWNLEVEL_REVEALED_COMMENTS_TEST_XML = (
+  static final String IE_DOWNLEVEL_REVEALED_COMMENTS_TEST_XML = (
       "before <![if !IE | gte IE 7]>"
       + "<link href=\"special.css\" rel=\"stylesheet\" type=\"text/css\" />"
       + "<![endif]>");
-  final String IE_DOWNLEVEL_REVEALED_COMMENTS_WITH_CDATA_TEST_XML = (
+  static final String IE_DOWNLEVEL_REVEALED_COMMENTS_WITH_CDATA_TEST_XML = (
       "before <![if !IE | gte IE 7]>"
       + "<link href=\"special.css\" rel=\"stylesheet\" type=\"text/css\" />"
       + "<script type=\"text/javascript\">"
@@ -171,7 +171,7 @@ public class NodesTest extends CajaTestCase {
       + "//]]>"
       + "</script>"
       + "<![endif]>");
-  final String IE_NESTED_CONDITIONAL_COMMENTS_TEST_XML = (
+  static final String IE_NESTED_CONDITIONAL_COMMENTS_TEST_XML = (
       "before <!--[if gte IE 5]>"
        + "<p>Greater than IE 5.</p>"
        + "<!--[if gte IE 6]>"
@@ -179,7 +179,7 @@ public class NodesTest extends CajaTestCase {
        + "<![endif]-->"
        + "<p>Back to greater than IE 5.</p>"
        + "<![endif]-->");
-  final String IE_NESTED_CONDITIONAL_COMMENTS2_TEST_XML = (
+  static final String IE_NESTED_CONDITIONAL_COMMENTS2_TEST_XML = (
       "before <!--[if gte IE 5]>"
        + "<p>Greater than IE 5.</p>"
        + "<![if IE 7]>"
@@ -307,8 +307,8 @@ public class NodesTest extends CajaTestCase {
   }
 
   @SuppressWarnings("deprecation")
-  private void assertRendersUnsafe(String expected, Node el,
-      MarkupRenderMode mode) throws Exception {
+  private static void assertRendersUnsafe(
+      String expected, Node el, MarkupRenderMode mode) throws Exception {
     try {
       assertEquals(expected, Nodes.renderUnsafe(el, mode));
     } catch (UncheckedUnrenderableException e) {
@@ -647,7 +647,7 @@ public class NodesTest extends CajaTestCase {
     checkEscapingTextSpans("noscript", "<!-- </noscript> -->", false);
   }
 
-  private void checkEscapingTextSpans(
+  private static void checkEscapingTextSpans(
       String elName, String textContent, Boolean pass) {
     Document doc = DomParser.makeDocument(null, null);
     Element el = doc.createElementNS(Namespaces.HTML_NAMESPACE_URI, elName);
@@ -682,7 +682,7 @@ public class NodesTest extends CajaTestCase {
         " VarZ:" + getClass().getName() + ".msPerRun=" + microsPerRun);
   }
 
-  private int benchmark(int nRuns, DocumentFragment doc) {
+  private static int benchmark(int nRuns, DocumentFragment doc) {
     long t0 = System.nanoTime();
     for (int i = nRuns; --i >= 0;) { Nodes.render(doc); }
     return (int) ((((double) (System.nanoTime() - t0)) / nRuns) / 1e3);
@@ -706,7 +706,7 @@ public class NodesTest extends CajaTestCase {
         Nodes.render(doc.getDoctype(), html, null));
   }
 
-  private Node getOnlyChild(Node parent) {
+  private static Node getOnlyChild(Node parent) {
     NodeList nodes = parent.getChildNodes();
     assertTrue("not only child", nodes.getLength() == 1);
     return nodes.item(0);

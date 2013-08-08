@@ -775,7 +775,7 @@ final class Renderer {
   }
 
   private static final int COMMON_NS_DEPTH = depth(Namespaces.COMMON);
-  private Namespaces addNamespace(
+  private static Namespaces addNamespace(
       Namespaces base, String uri, String suggestedPrefix) {
     if (isAlphaNumericId(suggestedPrefix)
         && base.forPrefix(suggestedPrefix) == null) {
@@ -854,7 +854,7 @@ final class Renderer {
     return name;
   }
 
-  private boolean isAlphaNumericId(String s) {
+  private static boolean isAlphaNumericId(String s) {
     if (s == null) { return false; }
     int n = s.length();
     if (n == 0) { return false; }

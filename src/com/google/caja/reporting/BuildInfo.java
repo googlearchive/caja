@@ -58,7 +58,7 @@ public class BuildInfo {
     return "<unknown>";
   }
 
-  private MessagePart wrapValue(final String value) {
+  private static MessagePart wrapValue(final String value) {
     return new MessagePart() {
       public void format(MessageContext context, Appendable out)
           throws IOException {
@@ -105,5 +105,6 @@ public class BuildInfo {
    * executing operation. This allows us to sequester any nondeterminism in the
    * cajoler's behavior.
    */
+  @SuppressWarnings("static-method")
   public long getCurrentTime() { return System.currentTimeMillis(); }
 }

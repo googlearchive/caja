@@ -111,7 +111,7 @@ public class Localizer {
     }
   }
 
-  private List<Placeholder> extractPlaceholders(Element message) {
+  private static List<Placeholder> extractPlaceholders(Element message) {
     List<Placeholder> placeholders = new ArrayList<Placeholder>();
     Element ph = null;
     for (Element el : IHTML.getPlaceholders(message)) {
@@ -175,7 +175,7 @@ public class Localizer {
     return new IhtmlL10NContext(locale, messages);
   }
 
-  private LocalizedHtml messageToLocalizedHtml(Element message) {
+  private static LocalizedHtml messageToLocalizedHtml(Element message) {
     // Clone the message.
     message = (Element) message.cloneNode(true);
     String name = IHTML.getName(message).getValue();

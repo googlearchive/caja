@@ -93,6 +93,7 @@ abstract class AbstractElementStack implements OpenElementStack {
    * This may be overridden by subclasses if they wish to add at a different
    * location.
    */
+  @SuppressWarnings("static-method")
   protected void doAppend(Node el, Node parent) {
     parent.appendChild(el);
   }

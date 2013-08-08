@@ -59,7 +59,7 @@ public class Html5ElementStackTest extends CajaTestCase {
   }
 
   // Helper method to create an attribute stub.
-  private AttrStub createAttrStub(String name, String value) {
+  private static AttrStub createAttrStub(String name, String value) {
     Token<HtmlTokenType> nameToken = Token.instance(
         name, HtmlTokenType.ATTRNAME, FilePosition.UNKNOWN);
     Token<HtmlTokenType> valueToken = Token.instance(

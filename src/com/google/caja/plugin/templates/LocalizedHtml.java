@@ -182,7 +182,7 @@ public final class LocalizedHtml {
     return new DomParser(
         tq, true, DevNullMessageQueue.singleton()).parseFragment(sourceDoc);
   }
-  private String decodeAttrValue(String tokenText) {
+  private static String decodeAttrValue(String tokenText) {
     int len = tokenText.length();
     if (len >= 2) {
       char ch0 = tokenText.charAt(0);

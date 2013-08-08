@@ -32,9 +32,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Executor.AbnormalExitException;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.net.URISyntaxException;
@@ -203,8 +201,7 @@ public class RhinoTestBed {
   private static CharProducer loadResource(InputSource resource)
       throws IOException {
     File f = new File(resource.getUri());
-    return CharProducer.Factory.create(
-        new InputStreamReader(new FileInputStream(f), "UTF-8"), resource);
+    return CharProducer.Factory.fromFile(f, Charsets.UTF_8);
   }
 
   private static String prefixWithBlankLines(String s, int n) {
@@ -248,6 +245,7 @@ public class RhinoTestBed {
     return CharProducer.Factory.chain(parts.toArray(new CharProducer[0]));
   }
 
+  @SuppressWarnings("static-method")
   public static final class JunitSandBoxSafe {
     public void fail(Object message) {
       Assert.fail("" + message);

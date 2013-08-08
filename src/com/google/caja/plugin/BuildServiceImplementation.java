@@ -450,8 +450,7 @@ public class BuildServiceImplementation implements BuildService {
 
   private static CharProducer read(File f) throws IOException {
     InputSource is = new InputSource(f.toURI());
-    return CharProducer.Factory.create(
-        new InputStreamReader(new FileInputStream(f), Charsets.UTF_8), is);
+    return CharProducer.Factory.fromFile(f, Charsets.UTF_8);
   }
 
   private static Parser parser(CharProducer cp, MessageQueue errs) {

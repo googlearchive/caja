@@ -108,7 +108,7 @@ public final class CssDynamicExpressionRewriter {
     }, null);
   }
 
-  private void rewriteUnsafeUriLiteralsToExpressions(CssTree ss) {
+  private static void rewriteUnsafeUriLiteralsToExpressions(CssTree ss) {
     ss.acceptPreOrder(new Visitor() {
           public boolean visit(AncestorChain<?> ancestors) {
             ParseTreeNode node = ancestors.node;
@@ -365,7 +365,7 @@ class EmbeddedJsExpressionTokenConsumer implements TokenConsumer {
   }
 
   /** (null, a) -> a, but (a, b) -> (a + b) */
-  protected Expression combine(
+  protected static Expression combine(
       @Nullable Expression prefixExpression, Expression suffixExpression) {
     if (prefixExpression != null) {
       return Operation.createInfix(

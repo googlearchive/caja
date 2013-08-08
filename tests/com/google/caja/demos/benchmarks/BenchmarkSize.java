@@ -111,27 +111,27 @@ public class BenchmarkSize extends CajaTestCase {
     }
   }
 
-  private int size(byte[] data) {
+  private static int size(byte[] data) {
     return data == null ? -1 : data.length;
   }
 
-  private void varzJS(String name, String lang, String rendering, String enc,
-      long value) {
+  private static void varzJS(
+      String name, String lang, String rendering, String enc, long value) {
     System.out.println("VarZ:benchmark." + name + ".size.js." +
         lang + "." + rendering +"." + enc + "=" + value);
   }
 
-  private void varzOverhead(String lang, String rendering, String enc,
-      long value) {
+  private static void varzOverhead(
+      String lang, String rendering, String enc, long value) {
     System.out.println("VarZ:benchmark.size.overhead." +
         lang + "." + rendering +"." + enc + "=" + value);
   }
 
-  public byte[] charset(String v) throws UnsupportedEncodingException {
+  public static byte[] charset(String v) throws UnsupportedEncodingException {
     return v == null ? null : v.getBytes("UTF-8");
   }
 
-  public byte[] gzip(byte[] data) throws IOException {
+  public static byte[] gzip(byte[] data) throws IOException {
     if (data == null) {
       return null;
     }

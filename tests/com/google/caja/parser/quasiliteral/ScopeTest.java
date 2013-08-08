@@ -531,14 +531,15 @@ public class ScopeTest extends CajaTestCase {
         MessagePart.Factory.valueOf("arguments"));
   }
 
-  private FunctionConstructor findFunctionConstructor(ParseTreeNode root, String name) {
+  private static FunctionConstructor findFunctionConstructor(
+      ParseTreeNode root, String name) {
     return findNodeWithIdentifier(root, FunctionConstructor.class, name);
   }
 
   private static class Holder<T> { T value; }
 
   @SuppressWarnings("unchecked")
-  private <T extends ParseTreeNode> T findNodeWithIdentifier(
+  private static <T extends ParseTreeNode> T findNodeWithIdentifier(
       ParseTreeNode root,
       final Class<T> clazz,
       final String identifierValue) {
@@ -565,11 +566,11 @@ public class ScopeTest extends CajaTestCase {
     return result.value;
   }
 
-  private void assertMsgType(MessageType type, Message message) {
+  private static void assertMsgType(MessageType type, Message message) {
     assertEquals(type, message.getMessageType());
   }
 
-  private void assertMsgLevel(MessageLevel level, Message message) {
+  private static void assertMsgLevel(MessageLevel level, Message message) {
     assertTrue(level.compareTo(message.getMessageLevel()) <= 0);
   }
 }

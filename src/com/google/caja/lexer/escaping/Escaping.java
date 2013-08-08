@@ -183,6 +183,10 @@ public class Escaping {
     }
   }
 
+  /**
+   * @param asciiOnly unused.  Present for backwards compatibility.
+   * @param embeddable unused.  Present for backwards compatibility.
+   */
   @Deprecated
   public static void normalizeRegex(
       CharSequence s, boolean asciiOnly, boolean embeddable, Appendable out)
@@ -190,6 +194,10 @@ public class Escaping {
     normalizeRegex(s, out);
   }
 
+  /**
+   * @param asciiOnly unused.  Present for backwards compatibility.
+   * @param embeddable unused.  Present for backwards compatibility.
+   */
   @Deprecated
   public static void normalizeRegex(
       CharSequence s, boolean asciiOnly, boolean embeddable,

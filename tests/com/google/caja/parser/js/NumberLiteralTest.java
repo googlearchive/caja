@@ -49,7 +49,7 @@ public class NumberLiteralTest extends TestCase {
                          "99999999999999999999999999999999");
   }
 
-  private void assertNumberToString(String golden, String input) {
+  private static void assertNumberToString(String golden, String input) {
     assertEquals(
         input, golden, NumberLiteral.numberToString(new BigDecimal(input)));
   }

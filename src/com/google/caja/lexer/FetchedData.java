@@ -30,6 +30,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLConnection;
 
+import javax.annotation.WillClose;
 import javax.mail.internet.ContentType;
 import javax.mail.internet.ParseException;
 
@@ -107,7 +108,8 @@ public abstract class FetchedData {
   }
 
   public static FetchedData fromStream(
-      InputStream is, String contentType, String charSet, InputSource src)
+      @WillClose InputStream is, String contentType, String charSet,
+      InputSource src)
       throws IOException {
     return fromBytes(readStream(is), contentType, charSet, src);
   }
@@ -170,7 +172,8 @@ public abstract class FetchedData {
   public String getCharSet() { return charSet; }
 
   private static int MAX_RESPONSE_SIZE_BYTES = 1 << 20;  // 1MB
-  protected static byte[] readStream(InputStream is) throws IOException {
+  protected static byte[] readStream(@WillClose InputStream is)
+      throws IOException {
     try {
       ByteArrayOutputStream buffer = new ByteArrayOutputStream();
       byte[] barr = new byte[4096];

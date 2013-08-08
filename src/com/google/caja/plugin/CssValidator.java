@@ -458,7 +458,7 @@ public final class CssValidator {
    * return the index of the child after the combinator.
    * Otherwise return the index 0.
    */
-  private int skipDescendantOfBody(List<? extends CssTree> children) {
+  private static int skipDescendantOfBody(List<? extends CssTree> children) {
     if (children.size() <= 2) { return 0; }
     CssTree.Combination c = (CssTree.Combination) children.get(1);
     if (c.getCombinator() == Combinator.SIBLING) { return 0; }

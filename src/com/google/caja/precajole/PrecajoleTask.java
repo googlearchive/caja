@@ -262,7 +262,7 @@ public class PrecajoleTask extends Task {
 
       // TODO(felix8a): maybe should use compilation pipeline
       ArrayIndexOptimization.optimize(input);
-      ParseTreeNode result = new ExpressionSanitizerCaja(mgr, null)
+      ParseTreeNode result = new ExpressionSanitizerCaja(mgr)
           .sanitize(input);
 
       if (mq.hasMessageAtLevel(MessageLevel.ERROR)) {

@@ -22,7 +22,7 @@ import java.util.ListResourceBundle;
  * @author ihab.awad@gmail.com
  */
 public class BuildInfoTest extends TestCase {
-  private BuildInfo getDefaultBuildInfo() {
+  private static BuildInfo getDefaultBuildInfo() {
     return new BuildInfo(
       new ListResourceBundle() {
         @Override
@@ -35,7 +35,7 @@ public class BuildInfoTest extends TestCase {
       });
   }
 
-  private Message getMessage(BuildInfo bi) {
+  private static Message getMessage(BuildInfo bi) {
     MessageQueue mq = new SimpleMessageQueue();
     bi.addBuildInfo(mq);
     assertEquals(1, mq.getMessages().size());

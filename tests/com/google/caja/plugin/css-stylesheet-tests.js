@@ -86,7 +86,7 @@ runCssSelectorTests([
       {
         "cssText": "div[zwop] { color: blue }",
         "golden": ""
-      },
+      }
     ]
   },
   {

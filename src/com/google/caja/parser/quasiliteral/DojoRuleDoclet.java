@@ -58,14 +58,14 @@ public class DojoRuleDoclet extends RuleDoclet {
     output.write(dojoDocument.toString());
   }
 
-  private String escape(String js) {
+  private static String escape(String js) {
     StringBuilder result = new StringBuilder();
     Escaping.escapeJsString(js, /* asciiOnly */ false, /* embeddable */ false,
         result);
     return result.toString();
   }
 
-  private String quote(String js) {
+  private static String quote(String js) {
     return "'" + escape(js) + "'";
   }
 

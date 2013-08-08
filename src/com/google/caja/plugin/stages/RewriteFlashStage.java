@@ -113,7 +113,7 @@ final class FlashRewriter {
 
   private Element rewriteEmbed(Element el) {
     String src = getAttr(el, "src");
-    if (empty(src)) {
+    if (isEmptyOrNull(src)) {
       mq.addMessage(Messages.MISSING_SRC, Nodes.getFilePositionFor(el));
       return el;
     }
@@ -158,7 +158,7 @@ final class FlashRewriter {
       if ("param".equals(tagName)) {
         String name = getAttr(c, "name");
         String value = getAttr(c, "value");
-        if (!empty(name) && !empty(value)) {
+        if (!isEmptyOrNull(name) && !isEmptyOrNull(value)) {
           params.put(name, value);
         }
         c.getParentNode().removeChild(c);
@@ -168,15 +168,15 @@ final class FlashRewriter {
     }
 
     String src = getAttr(el, "data");
-    if (empty(src)) {
+    if (isEmptyOrNull(src)) {
       src = params.get("movie");
     }
     String width = getAttr(el, "width");
-    if (empty(width)) {
+    if (isEmptyOrNull(width)) {
       width = params.get("width");
     }
     String height = getAttr(el, "height");
-    if (empty(height)) {
+    if (isEmptyOrNull(height)) {
       height = params.get("height");
     }
 
@@ -199,8 +199,8 @@ final class FlashRewriter {
     return r;
   }
 
-  private Literal literal(String value, FilePosition pos) {
-    if (empty(value)) {
+  private static Literal literal(String value, FilePosition pos) {
+    if (isEmptyOrNull(value)) {
       return new NullLiteral(pos);
     } else {
       return StringLiteral.valueOf(pos, value);
@@ -220,7 +220,7 @@ final class FlashRewriter {
     return span;
   }
 
-  private String getTagName(Node n) {
+  private static String getTagName(Node n) {
     if (n instanceof Element) {
       return Strings.lower(n.getLocalName());
     } else {
@@ -228,7 +228,7 @@ final class FlashRewriter {
     }
   }
 
-  private String getAttr(Node n, String attrib) {
+  private static String getAttr(Node n, String attrib) {
     if (n instanceof Element) {
       return ((Element) n).getAttributeNS(HTML_NS, attrib);
     } else {
@@ -236,7 +236,7 @@ final class FlashRewriter {
     }
   }
 
-  private boolean empty(String s) {
+  private static boolean isEmptyOrNull(String s) {
     return s == null || s.length() == 0;
   }
 
@@ -245,7 +245,7 @@ final class FlashRewriter {
     return "cajaEmbed" + guid;
   }
 
-  private String getPlaceholderId(Element el) {
+  private static String getPlaceholderId(Element el) {
     return el.getAttributeNS(HTML_NS, "class");
   }
 

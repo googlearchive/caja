@@ -373,7 +373,7 @@ class JSONWhiteListLoader {
    * Gather information into a skeleton, so we can deal recursively with
    * inherited whitelists.
    */
-  WhiteListSkeleton makeSkeleton(
+  static WhiteListSkeleton makeSkeleton(
       List<WhiteListSkeleton> loaded, Set<String> allowed, Set<String> denied,
       List<JSONObject> definitions) {
 
@@ -483,7 +483,7 @@ class JSONWhiteListLoader {
     return new WhiteListImpl(src.source(), s.allowed, types);
   }
 
-  WhiteList.TypeDefinition makeTypeDefinition(JSONObject def) {
+  static WhiteList.TypeDefinition makeTypeDefinition(JSONObject def) {
     return new TypeDefinitionImpl(immutable(def));
   }
 

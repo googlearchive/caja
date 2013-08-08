@@ -16,7 +16,6 @@ package com.google.caja.ancillary.opt;
 
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
@@ -41,9 +40,7 @@ import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Lists;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.List;
 
 /**
@@ -144,11 +141,14 @@ public class JsOptimizer {
           opt.setRename(false);
         } else if (arg.startsWith("--envjson=")) {
           String jsonfile = arg.substring(arg.indexOf('=') + 1);
-          opt.setEnvJson((ObjectConstructor) jsExpr(fromFile(jsonfile), mq));
+          CharProducer json = CharProducer.Factory.fromFile(
+              new File(jsonfile), "UTF-8");
+          opt.setEnvJson((ObjectConstructor) jsExpr(json, mq));
         } else {
           if ("--".equals(arg)) { ++i; }
           for (;i < n; ++i) {
-            CharProducer cp = fromFile(args[i]);
+            CharProducer cp = CharProducer.Factory.fromFile(
+                new File(args[i]), "UTF-8");
             mc.addInputSource(cp.getCurrentPosition().source());
             opt.addInput(js(cp, mq));
           }
@@ -192,12 +192,5 @@ public class JsOptimizer {
     JsTokenQueue tq = new JsTokenQueue(lexer, cp.getCurrentPosition().source());
     tq.setInputRange(cp.filePositionForOffsets(cp.getOffset(), cp.getLimit()));
     return new Parser(tq, mq);
-  }
-
-  private static CharProducer fromFile(String path) throws IOException {
-    File f = new File(path);
-    return CharProducer.Factory.create(
-        new InputStreamReader(new FileInputStream(f), "UTF-8"),
-        new InputSource(f.toURI()));
   }
 }

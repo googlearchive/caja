@@ -104,7 +104,7 @@ public final class PunctuationTrie<T> {
   public T getValue() { return value; }
 
   @SuppressWarnings("unchecked")
-  private PunctuationTrie<T>[] ownedChildArray(
+  private static <T> PunctuationTrie<T>[] ownedChildArray(
       PunctuationTrie<?>[] unfilledArray) {
     // This method must only be called with a newly created array or an array
     // of size 0.

@@ -178,7 +178,7 @@ public class DoctypeMakerTest extends TestCase {
                   + "\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">");
 }
 
-  private void assertDoctype(
+  private static void assertDoctype(
       String name, String pubid, String systemId, String text)
       throws Exception {
     Function<DOMImplementation, DocumentType> maker = DoctypeMaker.parse(text);

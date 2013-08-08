@@ -34,11 +34,15 @@ import java.net.URI;
  */
 public class ExpressionSanitizerCaja {
   private final ModuleManager mgr;
-  private final URI baseUri;
 
+  /** @param baseUri Unused.  Provided for backwards compatibility. */
+  @Deprecated
   public ExpressionSanitizerCaja(ModuleManager mgr, URI baseUri) {
+    this(mgr);
+  }
+
+  public ExpressionSanitizerCaja(ModuleManager mgr) {
     this.mgr = mgr;
-    this.baseUri = baseUri;
   }
 
   public ParseTreeNode sanitize(ParseTreeNode input) {
@@ -73,6 +77,6 @@ public class ExpressionSanitizerCaja {
   }
 
   protected Rewriter newES53Rewriter(ModuleManager mgr) {
-    return new ES53Rewriter(baseUri, mgr, false);
+    return new ES53Rewriter(mgr, false);
   }
 }

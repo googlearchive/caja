@@ -113,7 +113,7 @@ public enum TestFlag {
         || "y".equalsIgnoreCase(value) || "yes".equalsIgnoreCase(value);
   }
 
-  private RuntimeException error(String message) {
+  private static RuntimeException error(String message) {
     // System.err is captured by ant-junit and goes to the test logs
     // FileDescriptor.err is captured by ant and goes to stdout.
     @SuppressWarnings("resource")

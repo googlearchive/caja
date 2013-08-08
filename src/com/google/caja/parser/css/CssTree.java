@@ -1167,7 +1167,10 @@ public abstract class CssTree extends AbstractParseTreeNode {
       return null;
     }
 
-    public String suffix() {
+    /**
+     * A suffix that is used to produce suffixed identifiers when rendering.
+     */
+    public static String suffix() {
       return "namespace__";
     }
 

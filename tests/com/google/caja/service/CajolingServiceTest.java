@@ -41,7 +41,7 @@ public class CajolingServiceTest extends ServiceTestCase {
         contentType, contentEncoding, "application/json"));
   }
 
-  protected void assertNoError(JSONObject result)  {
+  protected static void assertNoError(JSONObject result)  {
     JSONArray messages = (JSONArray) result.get("messages");
     for (int i = 0; i < messages.size(); i++) {
       JSONObject message = (JSONObject) messages.get(i);
@@ -50,7 +50,7 @@ public class CajolingServiceTest extends ServiceTestCase {
     }
   }
 
-  protected void assertError(JSONObject result) {
+  protected static void assertError(JSONObject result) {
     JSONArray messages = (JSONArray) result.get("messages");
     for (int i = 0; i < messages.size(); i++) {
       JSONObject message = (JSONObject) messages.get(i);
@@ -60,7 +60,8 @@ public class CajolingServiceTest extends ServiceTestCase {
     fail("Expected errors, but did not find any");
   }
 
-  protected void assertErrorMessage(JSONObject result, String substring) {
+  protected static void assertErrorMessage(
+      JSONObject result, String substring) {
     JSONArray messages = (JSONArray) result.get("messages");
     for (int i = 0; i < messages.size(); i++) {
       JSONObject message = (JSONObject) messages.get(i);

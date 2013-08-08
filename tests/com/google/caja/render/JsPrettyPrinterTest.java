@@ -305,7 +305,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
   private static final Operator[] OPERATORS = Operator.values();
   private static final Keyword[] KEYWORDS = Keyword.values();
 
-  private List<String> generateRandomTokens(Random rnd) {
+  private static List<String> generateRandomTokens(Random rnd) {
     List<String> tokens = new ArrayList<String>();
     for (int i = 10; --i >= 0;) {
       final String tok;
@@ -421,7 +421,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
     assertRendered(golden, node);
   }
 
-  private void assertRendered(String golden, ParseTreeNode node) {
+  private static void assertRendered(String golden, ParseTreeNode node) {
     StringBuilder out = new StringBuilder();
     JsPrettyPrinter pp = new JsPrettyPrinter(out);
     node.render(new RenderContext(pp));
@@ -445,7 +445,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
     assertEquals(golden, out.toString());
   }
 
-  private void assertTokens(String golden, String... input) {
+  private static void assertTokens(String golden, String... input) {
     StringBuilder out = new StringBuilder();
     JsPrettyPrinter pp = new JsPrettyPrinter(out);
 

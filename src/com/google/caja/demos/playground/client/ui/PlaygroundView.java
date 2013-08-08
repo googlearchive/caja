@@ -158,7 +158,7 @@ public class PlaygroundView {
     setPolicySource(defaultPolicy());
   }
 
-  private String defaultPolicy() {
+  private static String defaultPolicy() {
     return PlaygroundResource.INSTANCE.defaultPolicy().getText();
   }
 

@@ -239,7 +239,7 @@ final class ExitModes {
    *   Otherwise, all existing corresponding {@code ExitModes} must have the
    *   always bit set.
    */
-  private ExitModes join(ExitModes a, ExitModes b, boolean unioning) {
+  private static ExitModes join(ExitModes a, ExitModes b, boolean unioning) {
     // TODO(mikesamuel): refactor this
     if (a == b) { return a; }
     if (unioning) {
@@ -298,7 +298,7 @@ final class ExitModes {
     same &= completes == a.completes;
     return same ? a : new ExitModes(exits, completes);
   }
-  private String prefix(String prefix, String suffix) {
+  private static String prefix(String prefix, String suffix) {
     if (suffix == null) { throw new NullPointerException(); }
     if ("".equals(suffix)) { return prefix; }
     return prefix + suffix;

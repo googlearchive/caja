@@ -31,7 +31,7 @@ public class FetchedDataTest extends CajaTestCase {
   private static class TestURLConnection extends URLConnection {
     private String data;
     private String contentType;
-    private boolean connected;
+    private boolean isConnected;
 
     public TestURLConnection(
         URL url, String data, @Nullable String contentType) {
@@ -42,8 +42,8 @@ public class FetchedDataTest extends CajaTestCase {
 
     @Override
     public void connect() {
-      assertFalse(connected);
-      connected = true;
+      assertFalse(isConnected);
+      isConnected = true;
     }
 
     @Override
@@ -53,7 +53,7 @@ public class FetchedDataTest extends CajaTestCase {
 
     @Override
     public InputStream getInputStream() {
-      assertTrue(connected);
+      assertTrue(isConnected);
       return new ByteArrayInputStream(data.getBytes());
     }
   }

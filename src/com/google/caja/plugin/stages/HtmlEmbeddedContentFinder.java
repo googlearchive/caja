@@ -395,12 +395,16 @@ public class HtmlEmbeddedContentFinder {
   }
 
   /** May be overridden to affect JS {@link EmbeddedContent#parse parsing}. */
+  @SuppressWarnings("static-method")
   protected boolean shouldAllowJsQuasis() { return false; }
   /** May be overridden to affect JS {@link EmbeddedContent#parse parsing}. */
+  @SuppressWarnings("static-method")
   protected boolean shouldJsRecover() { return false; }
   /** May be overridden to affect CSS {@link EmbeddedContent#parse parsing}. */
+  @SuppressWarnings("static-method")
   protected boolean shouldAllowCssSubsts() { return false; }
   /** May be overridden to affect CSS {@link EmbeddedContent#parse parsing}. */
+  @SuppressWarnings("static-method")
   protected MessageLevel getCssTolerance() { return MessageLevel.WARNING; }
 
   Parser makeJsParser(CharProducer cp, MessageQueue mq) {

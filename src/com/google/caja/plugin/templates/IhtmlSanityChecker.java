@@ -57,7 +57,7 @@ public class IhtmlSanityChecker {
       return ok;
     }
   }
-  
+
   public boolean check(Element ihtmlRoot) {
     checkIhtmlElements(ihtmlRoot);
     checkDynamicDomParents(ihtmlRoot);
@@ -300,7 +300,7 @@ public class IhtmlSanityChecker {
     }
   }
 
-  private void removeBrokenNodes(Element ihtmlRoot) {
+  private static void removeBrokenNodes(Element ihtmlRoot) {
     List<Element> broken = new ArrayList<Element>();
     for (Element e : Nodes.nodeListIterable(
              ihtmlRoot.getElementsByTagName("*"), Element.class)) {

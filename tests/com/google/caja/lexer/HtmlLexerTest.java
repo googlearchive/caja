@@ -160,7 +160,7 @@ public class HtmlLexerTest extends CajaTestCase {
         "TAGEND: >");
   }
 
-  private void lex(HtmlLexer lexer, Appendable out) throws Exception {
+  private static void lex(HtmlLexer lexer, Appendable out) throws Exception {
     int maxTypeLength = 0;
     for (HtmlTokenType t : HtmlTokenType.values()) {
       maxTypeLength = Math.max(maxTypeLength, t.name().length());

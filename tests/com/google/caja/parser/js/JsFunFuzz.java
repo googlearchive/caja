@@ -52,7 +52,7 @@ public class JsFunFuzz extends CajaTestCase {
    * Useful for generating java test cases for pasting
    * into a JUnit test which meet the style guide
    */
-  private String quoteAndWrap(String testCase) {
+  private static String quoteAndWrap(String testCase) {
     StringBuilder testBlock = new StringBuilder( "      \"\"\n");
     for (int start = 0; start < testCase.length(); start += 60) {
       int end = (start + 60 > testCase.length())
@@ -68,15 +68,16 @@ public class JsFunFuzz extends CajaTestCase {
   /**
    * Generates a snippet of Java code suitable for pasting into a JUnit test
    */
-  private String generateTestCase(String testCase, int testCount, String e) {
-      StringBuilder test = new StringBuilder();
-      test.append("  // Should not throw " + e + "\n");
-      test.append("  public final void testParse" + testCount + "() {\n");
-      test.append("    throwsParseException(\n");
-      test.append(quoteAndWrap(testCase) + "\n");
-      test.append("    );\n");
-      test.append(")}\n\n");
-      return test.toString();
+  private static String generateTestCase(
+      String testCase, int testCount, String e) {
+    StringBuilder test = new StringBuilder();
+    test.append("  // Should not throw " + e + "\n");
+    test.append("  public final void testParse" + testCount + "() {\n");
+    test.append("    throwsParseException(\n");
+    test.append(quoteAndWrap(testCase) + "\n");
+    test.append("    );\n");
+    test.append(")}\n\n");
+    return test.toString();
   }
 
   /**

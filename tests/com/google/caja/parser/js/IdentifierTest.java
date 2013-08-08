@@ -23,13 +23,13 @@ import com.google.caja.util.CajaTestCase;
 import javax.annotation.Nullable;
 
 public class IdentifierTest extends CajaTestCase {
-  private void gwtY(String s) {
+  private static void gwtY(String s) {
     assertTrue(
         "Should be valid GWT identifier: " + s,
         Identifier.isValidGWT(s));
   }
 
-  private void gwtN(String s) {
+  private static void gwtN(String s) {
     assertFalse(
         "Should NOT be valid GWT identifier: " + s,
         Identifier.isValidGWT(s));
@@ -57,12 +57,12 @@ public class IdentifierTest extends CajaTestCase {
     gwtN("@com.foo.Bar::(Ljava/lang/String;)");
   }
 
-  private void parseY(String s) {
+  private static void parseY(String s) {
     @SuppressWarnings("unused")
     Identifier id = new Identifier(FilePosition.UNKNOWN, s);
   }
 
-  private void parseN(String s) {
+  private static void parseN(String s) {
     Identifier id;
     try {
       id = new Identifier(FilePosition.UNKNOWN, s);
@@ -99,7 +99,7 @@ public class IdentifierTest extends CajaTestCase {
     return result;
   }
 
-  private void renderY(String s, JsIdentifierSyntax jis) {
+  private static void renderY(String s, JsIdentifierSyntax jis) {
     Identifier id = new Identifier(FilePosition.UNKNOWN, s);
     Object[] rc = rc(jis);
     id.render((RenderContext) rc[0]);
@@ -111,7 +111,7 @@ public class IdentifierTest extends CajaTestCase {
         rc[1]);
   }
 
-  private void renderN(String s, JsIdentifierSyntax jis) {
+  private static void renderN(String s, JsIdentifierSyntax jis) {
     Identifier id = new Identifier(FilePosition.UNKNOWN, s);
     Object[] rc = rc(jis);
     try {

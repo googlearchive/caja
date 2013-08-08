@@ -82,6 +82,7 @@ class ScopeAnalyzer {
    * a new lexical scope.
    * @return true whether the given node introduces a new lexical scope.
    */
+  @SuppressWarnings("static-method")
   protected boolean introducesScope(AncestorChain<?> ac) {
     ParseTreeNode node = ac.node;
     return node instanceof FunctionConstructor || node instanceof CatchStmt
@@ -93,6 +94,7 @@ class ScopeAnalyzer {
    * @return true iff the given declaration should be hoisted out of the given
    *      scope.
    */
+  @SuppressWarnings("static-method")
   protected boolean hoist(AncestorChain<?> d, LexicalScope s) {
     if (d.node instanceof Declaration && s.isCatchScope()) {
       return d.parent != null && !(d.parent.node instanceof CatchStmt);
@@ -112,6 +114,7 @@ class ScopeAnalyzer {
    * @param scope to have its {@link LexicalScope#symbols symbol table}
    *     modified.
    */
+  @SuppressWarnings("static-method")
   protected void initScope(LexicalScope scope) {
     if (scope.isFunctionScope()) {
       AncestorChain<FunctionConstructor> fn
@@ -183,7 +186,7 @@ class ScopeAnalyzer {
   }
 
   /** Returns all the uses of symbols in the given AST. */
-  List<Use> getUses(AncestorChain<?> root) {
+  static List<Use> getUses(AncestorChain<?> root) {
     List<Use> uses = Lists.newArrayList();
     findUses(root, uses);
     return uses;

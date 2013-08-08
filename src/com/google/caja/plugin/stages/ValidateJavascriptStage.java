@@ -30,7 +30,6 @@ import com.google.caja.util.ContentType;
 import com.google.caja.util.Maps;
 import com.google.caja.util.Pipeline;
 
-import java.net.URI;
 import java.util.ListIterator;
 import java.util.Map;
 
@@ -56,9 +55,8 @@ public final class ValidateJavascriptStage implements Pipeline.Stage<Jobs> {
       Job job = env.job;
       if (job.getType() != ContentType.JS) { continue; }
 
-      URI baseUri = job.getBaseUri();
       Statement s = (Statement) job.getRoot();
-      ParseTreeNode result = new ExpressionSanitizerCaja(mgr, baseUri)
+      ParseTreeNode result = new ExpressionSanitizerCaja(mgr)
           .sanitize(UncajoledModule.of(s));
       if (!(result instanceof CajoledModule)) {
         // Rewriter failed to rewrite so returned its input.

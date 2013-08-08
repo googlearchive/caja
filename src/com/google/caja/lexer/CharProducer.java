@@ -16,11 +16,17 @@ package com.google.caja.lexer;
 
 import com.google.caja.SomethingWidgyHappenedError;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.nio.charset.Charset;
 
 import java.util.Arrays;
+
+import javax.annotation.WillClose;
 
 /**
  * A character reader that tracks character file position information.
@@ -123,7 +129,7 @@ public abstract class CharProducer implements CharSequence, Cloneable {
     /**
      * @param r read and closed as a side-effect of this operation.
      */
-    public static CharProducer create(Reader r, FilePosition pos)
+    public static CharProducer create(@WillClose Reader r, FilePosition pos)
         throws IOException {
       int limit = 0;
       char[] buf = new char[4096];
@@ -140,6 +146,23 @@ public abstract class CharProducer implements CharSequence, Cloneable {
         r.close();
       }
       return new CharProducerImpl(buf, limit, pos);
+    }
+
+    public static CharProducer fromFile(File f, String encoding)
+        throws IOException {
+      return fromFile(f, Charset.forName(encoding));
+    }
+
+    public static CharProducer fromFile(File f, Charset encoding)
+        throws IOException {
+      FileInputStream in = new FileInputStream(f);
+      try {
+        CharProducer cp = create(
+            new InputStreamReader(in, encoding), new InputSource(f.toURI()));
+        return cp;
+      } finally {
+        in.close();
+      }
     }
 
     public static CharProducer fromString(CharSequence s, InputSource src) {
@@ -159,12 +182,13 @@ public abstract class CharProducer implements CharSequence, Cloneable {
       return new CharProducerImpl(buf, buf.length, pos);
     }
 
-    public static CharProducer create(Reader r, InputSource src)
+    public static CharProducer create(@WillClose Reader r, InputSource src)
         throws IOException {
       return create(r, FilePosition.startOfFile(src));
     }
 
-    public static CharProducer create(StringReader r, InputSource src) {
+    public static CharProducer create(
+        @WillClose StringReader r, InputSource src) {
       try {
         return create((Reader) r, FilePosition.startOfFile(src));
       } catch (IOException ex) {
@@ -173,7 +197,8 @@ public abstract class CharProducer implements CharSequence, Cloneable {
       }
     }
 
-    public static CharProducer create(StringReader r, FilePosition pos) {
+    public static CharProducer create(
+        @WillClose StringReader r, FilePosition pos) {
       try {
         return create((Reader) r, pos);
       } catch (IOException ex) {
@@ -182,7 +207,7 @@ public abstract class CharProducer implements CharSequence, Cloneable {
       }
     }
 
-    public static CharProducer fromJsString(CharProducer p) {
+    public static CharProducer fromJsString(@WillClose CharProducer p) {
       return DecodingCharProducer.make(new DecodingCharProducer.Decoder() {
         @Override
         void decode(char[] chars, int offset, int limit) {
@@ -240,7 +265,8 @@ public abstract class CharProducer implements CharSequence, Cloneable {
       }, p);
     }
 
-    public static CharProducer fromHtmlAttribute(CharProducer p) {
+    public static CharProducer fromHtmlAttribute(
+        @WillClose CharProducer p) {
       return DecodingCharProducer.make(new DecodingCharProducer.Decoder() {
         @Override
         void decode(char[] chars, int offset, int limit) {
@@ -252,7 +278,7 @@ public abstract class CharProducer implements CharSequence, Cloneable {
       }, p);
     }
 
-    public static CharProducer fromUri(CharProducer p) {
+    public static CharProducer fromUri(@WillClose CharProducer p) {
       return DecodingCharProducer.make(new UriDecoder(), p);
     }
 

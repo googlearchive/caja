@@ -557,7 +557,7 @@ public class LinterTest extends CajaTestCase {
     MoreAsserts.assertListsEqual(goldenMessageStrs, actualMessageStrs);
   }
 
-  private List<Linter.LintJob> jobs(Linter.LintJob... jobs) {
+  private static List<Linter.LintJob> jobs(Linter.LintJob... jobs) {
     return Arrays.asList(jobs);
   }
 }

@@ -264,7 +264,7 @@ public class JsMinimalPrinterTest extends CajaTestCase {
         out.toString());
   }
 
-  public final void testInfixAndPrefixOpMerging() throws ParseException {
+  public final void testInfixAndPrefixOpMerging() {
     // "x--1" tokenizes to "x", "--", "1" which is an invalid expression.
     assertTokens("x- -1", "x", "-", "-1");
     assertTokens("x- -1", "x", "-", "-", "1");
@@ -281,7 +281,7 @@ public class JsMinimalPrinterTest extends CajaTestCase {
   }
   private static final Keyword[] KEYWORDS = Keyword.values();
 
-  private List<String> generateRandomTokens(Random rnd) {
+  private static List<String> generateRandomTokens(Random rnd) {
     List<String> tokens = new ArrayList<String>();
     String last = null;
     for (int i = 10; --i >= 0;) {
@@ -388,7 +388,7 @@ public class JsMinimalPrinterTest extends CajaTestCase {
     assertRendered(golden, node);
   }
 
-  private void assertRendered(String golden, ParseTreeNode node) {
+  private static void assertRendered(String golden, ParseTreeNode node) {
     StringBuilder out = new StringBuilder();
     JsMinimalPrinter pp = new JsMinimalPrinter(out);
     node.render(new RenderContext(pp));
@@ -412,7 +412,7 @@ public class JsMinimalPrinterTest extends CajaTestCase {
     assertEquals(golden, out.toString());
   }
 
-  private void assertTokens(String golden, String... input) {
+  private static void assertTokens(String golden, String... input) {
     StringBuilder out = new StringBuilder();
     JsMinimalPrinter pp = new JsMinimalPrinter(out);
 

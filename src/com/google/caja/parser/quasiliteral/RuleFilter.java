@@ -60,7 +60,7 @@ public abstract class RuleFilter<KeyT> {
     return Collections.unmodifiableList(someRules);
   }
 
-  private void debugShowRules(List<Rule> someRules, ParseTreeNode node) {
+  private static void debugShowRules(List<Rule> someRules, ParseTreeNode node) {
     System.err.println(someRules.size() + " rules for " + node);
     StringBuilder names = new StringBuilder("  ");
     int ll = 2;

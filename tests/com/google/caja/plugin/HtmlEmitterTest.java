@@ -143,8 +143,7 @@ public class HtmlEmitterTest extends CajaTestCase {
   private DocumentFragment htmlWithScriptsExtracted(
       String html, List<ScriptPlaceholder> extractedScripts)
       throws ParseException {
-    return (DocumentFragment) extract(htmlFragment(fromString(html)),
-        extractedScripts);
+    return extract(htmlFragment(fromString(html)), extractedScripts);
   }
 
   private <N extends Node> N extract(

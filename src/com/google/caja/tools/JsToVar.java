@@ -67,12 +67,12 @@ public final class JsToVar implements BuildCommand {
     return true;
   }
 
-  private String varName(File output) {
+  private static String varName(File output) {
     String name = output.getName();
     return name.endsWith(".js") ? name.substring(0, name.length() - 3) : name;
   }
 
-  private String concatFiles(Iterable<? extends File> inputs)
+  private static String concatFiles(Iterable<? extends File> inputs)
       throws IOException {
     StringBuilder result = new StringBuilder();
     for (File input : inputs) {

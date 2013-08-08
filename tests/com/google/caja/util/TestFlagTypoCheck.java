@@ -22,7 +22,7 @@ public class TestFlagTypoCheck extends Task {
     }
   }
 
-  private void check(Object key, StringBuilder err) {
+  private static void check(Object key, StringBuilder err) {
     if (key instanceof String) {
       String name = (String) key;
       if (name.startsWith("caja.test.")) {

@@ -104,7 +104,7 @@ public class TransformAntTask extends AbstractCajaAntTask {
       List<File> inputs, File output, PrintWriter logger) {
     if (closureOutput == null || closureInputs != inputs) {
       closureInputs = inputs;
-      closureOutput = new ClosureCompiler().build(this, inputs, logger);
+      closureOutput = ClosureCompiler.build(this, inputs);
     }
     if (closureOutput == null) {
       return false;

@@ -52,7 +52,6 @@ import com.google.caja.tools.TestSummary;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.io.StringReader;
 import java.net.URI;
@@ -127,13 +126,13 @@ public abstract class CajaTestCase extends TestCase {
   protected FetchedData dataFromResource(String resourcePath, InputSource is)
       throws IOException {
     ContentType guess = GuessContentType.guess(null, resourcePath, null);
-    InputStream in = TestUtil.getResourceAsStream(getClass(), resourcePath);
     mc.addInputSource(is);
     return FetchedData.fromStream(
-        in, guess != null ? guess.mimeType : "", "UTF-8", is);
+        TestUtil.getResourceAsStream(getClass(), resourcePath),
+        guess != null ? guess.mimeType : "", "UTF-8", is);
   }
 
-  protected String plain(CharProducer cp) {
+  protected static String plain(CharProducer cp) {
     return cp.toString(cp.getOffset(), cp.getLimit());
   }
 
@@ -290,7 +289,7 @@ public abstract class CajaTestCase extends TestCase {
     return sb.toString();
   }
 
-  protected String formatShort(FilePosition p) {
+  protected static String formatShort(FilePosition p) {
     StringBuilder sb = new StringBuilder();
     try {
       p.formatShort(sb);
@@ -301,7 +300,7 @@ public abstract class CajaTestCase extends TestCase {
     return sb.toString();
   }
 
-  protected String minify(ParseTreeNode node) {
+  protected static String minify(ParseTreeNode node) {
     if (node == null) {
       return null;
     }
@@ -365,12 +364,12 @@ public abstract class CajaTestCase extends TestCase {
     }
   }
 
-  protected void assertContains(String haystack, String needle) {
+  protected static void assertContains(String haystack, String needle) {
     assertTrue("Expected result to contain <" + needle + ">",
         haystack != null && haystack.contains(needle));
   }
 
-  protected void assertNotContains(String haystack, String needle) {
+  protected static void assertNotContains(String haystack, String needle) {
     assertTrue("Expected result to not contain <" + needle + ">",
         haystack != null && !haystack.contains(needle));
   }
@@ -444,7 +443,7 @@ public abstract class CajaTestCase extends TestCase {
     }
   }
 
-  protected void assertSerializable(Object o) throws Exception {
+  protected static void assertSerializable(Object o) throws Exception {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     ObjectOutputStream oos = new ObjectOutputStream(out);
     oos.writeObject(o);
@@ -478,10 +477,10 @@ public abstract class CajaTestCase extends TestCase {
     return missing;
   }
 
-  private InputSource sourceOf(CharProducer cp) {
+  private static InputSource sourceOf(CharProducer cp) {
     return cp.getSourceBreaks(0).source();
   }
-  
+
   protected boolean isKnownFailure() {
     return TestSummary.isFailureAnOption(getClass(), getName(),
         new Function<String, Void>() {

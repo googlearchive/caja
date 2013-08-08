@@ -133,7 +133,7 @@ public class Rewriter {
     for (Rule r : rules) { addRule(r); }
   }
 
-  private void logResults(
+  private static void logResults(
       Rule rule,
       ParseTreeNode input,
       ParseTreeNode result,

@@ -90,7 +90,8 @@ public class BenchmarkRunner extends CajaTestCase {
         es53Time < 0 ? -1 : es53Time / uncajoledTime);
   }
 
-  private void varz(String name, String lang, String feature, double value) {
+  private static void varz(
+      String name, String lang, String feature, double value) {
     System.out.println(
         "VarZ:benchmark." + name + "." + feature + "." + lang +
         ".nodebug.rhino.cold=" + value);

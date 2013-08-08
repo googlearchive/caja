@@ -90,7 +90,7 @@ public class CajolingService {
     registerHandlers(buildInfo);
   }
 
-  private boolean emptyOrNull(String str) {
+  private static boolean isEmptyOrNull(String str) {
     return null == str || "".equals(str);
   }
 
@@ -170,7 +170,7 @@ public class CajolingService {
     String inputUrlString = CajaArguments.URL.get(args);
     URI inputUri;
     if (inputUrlString == null && inputFetchedData == null &&
-        emptyOrNull(CajaArguments.CONTENT.get(args))) {
+        isEmptyOrNull(CajaArguments.CONTENT.get(args))) {
       mq.addMessage(
           ServiceMessageType.MISSING_ARGUMENT,
           MessagePart.Factory.valueOf(CajaArguments.URL.toString()));
@@ -199,7 +199,7 @@ public class CajolingService {
 
     if (inputFetchedData == null) {
       String content = CajaArguments.CONTENT.get(args);
-      if (emptyOrNull(content)) {
+      if (isEmptyOrNull(content)) {
         try {
           inputFetchedData = uriFetcher.fetch(
               new ExternalReference(inputUri, FilePosition.UNKNOWN),

@@ -16,7 +16,6 @@ package com.google.caja.plugin;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
@@ -39,6 +38,7 @@ import org.openqa.selenium.safari.SafariDriver;
 
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.util.TestFlag;
+import com.google.gwt.thirdparty.guava.common.base.Charsets;
 
 /**
  * Wrapper around a WebDriver instance.
@@ -152,7 +152,7 @@ class WebDriverHandle {
     }
   }
 
-  private RemoteWebDriver makeDriver() {
+  private static RemoteWebDriver makeDriver() {
     DesiredCapabilities dc = new DesiredCapabilities();
 
     String browserType = TestFlag.BROWSER.getString("firefox");
@@ -245,20 +245,19 @@ class WebDriverHandle {
     }
   }
 
-  private void saveToFile(String fileName, String str) {
-    try {
-      saveToFile(fileName, str.getBytes("UTF-8"));
-    } catch (UnsupportedEncodingException e) {
-      throw new SomethingWidgyHappenedError(e);
-    }
+  private static void saveToFile(String fileName, String str) {
+    saveToFile(fileName, str.getBytes(Charsets.UTF_8));
   }
 
-  private void saveToFile(String fileName, byte[] bytes) {
+  private static void saveToFile(String fileName, byte[] bytes) {
     FileOutputStream out = null;
     try {
       out = new FileOutputStream(fileName);
-      out.write(bytes);
-      out.close();
+      try {
+        out.write(bytes);
+      } finally {
+        out.close();
+      }
     } catch (IOException e) {
       throw new SomethingWidgyHappenedError(e);
     }

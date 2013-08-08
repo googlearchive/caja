@@ -30,7 +30,7 @@ public class CssPrettyPrinterTest extends TestCase {
         "color", ":", " ", "red", ";", "background", ":", " ", "blue");
   }
 
-  private void assertTokens(String golden, String... input) {
+  private static void assertTokens(String golden, String... input) {
     StringBuilder out = new StringBuilder();
     CssPrettyPrinter pp = new CssPrettyPrinter(out);
 

@@ -34,9 +34,7 @@ import com.google.caja.util.Charsets;
 import com.google.caja.util.Pair;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.Writer;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -101,10 +99,8 @@ public class Minify {
         })));
 
     for (Pair<InputSource, File> input : inputs) {
-      CharProducer cp = CharProducer.Factory.create(
-          new InputStreamReader(new FileInputStream(input.b),
-              Charsets.UTF_8.name()),
-          input.a);
+      CharProducer cp = CharProducer.Factory.fromFile(
+          input.b, Charsets.UTF_8.name());
       JsLexer lexer = new JsLexer(cp);
       JsTokenQueue tq = new JsTokenQueue(lexer, input.a);
       Parser p = new Parser(tq, errs);

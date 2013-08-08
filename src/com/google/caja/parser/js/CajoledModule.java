@@ -187,7 +187,8 @@ public final class CajoledModule extends AbstractParseTreeNode
     }
   }
 
-  private void renderModuleExpression(Expression expr, RenderContext rc) {
+  private static void renderModuleExpression(
+      Expression expr, RenderContext rc) {
     // Note that we deliberately add an enclosing block. See:
     // http://code.google.com/p/google-caja/issues/detail?id=1000
     Block block = new Block(
@@ -216,7 +217,7 @@ public final class CajoledModule extends AbstractParseTreeNode
     return new CajoledModule(oc);
   }
 
-  private ObjProperty flattenProperty(ObjProperty op, boolean minify) {
+  private static ObjProperty flattenProperty(ObjProperty op, boolean minify) {
     if (op instanceof ValueProperty) {
       ValueProperty vp = (ValueProperty) op;
       String name = vp.getPropertyName();

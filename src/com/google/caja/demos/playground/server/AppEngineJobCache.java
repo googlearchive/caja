@@ -91,13 +91,19 @@ final class AppEngineJobCache extends JobCache {
   }
 
   private static int serialSize(Object o) {
-    CountingStream cs = new CountingStream();
-    ObjectOutputStream oos;
     try {
-      oos = new ObjectOutputStream(cs);
-      oos.writeObject(o);
-      oos.close();
-      return cs.getCount();
+      CountingStream cs = new CountingStream();
+      try {
+        ObjectOutputStream oos = new ObjectOutputStream(cs);
+        try {
+          oos.writeObject(o);
+          return cs.getCount();
+        } finally {
+          oos.close();
+        }
+      } finally {
+        cs.close();
+      }
     } catch (IOException e) {
       return -1;
     }

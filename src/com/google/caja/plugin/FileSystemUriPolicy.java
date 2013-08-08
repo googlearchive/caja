@@ -28,7 +28,7 @@ final class FileSystemUriPolicy implements UriPolicy {
   FileSystemUriPolicy(UriToFile uriToFile) { this.uriToFile = uriToFile; }
 
   /** Return a new URI with a different fragment. */
-  private URI refragUri(URI uri, String frag) throws URISyntaxException {
+  private static URI refragUri(URI uri, String frag) throws URISyntaxException {
     return new URI(uri.getScheme(), uri.getSchemeSpecificPart(), frag);
   }
 

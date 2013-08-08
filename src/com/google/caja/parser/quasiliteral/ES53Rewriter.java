@@ -2153,10 +2153,16 @@ public class ES53Rewriter extends Rewriter {
     }
   };
 
+  /** @param baseUri unused. */
+  @Deprecated
   public ES53Rewriter(
       URI baseUri, ModuleManager moduleManager, boolean logging) {
+    this(moduleManager, logging);
+  }
+
+  public ES53Rewriter(ModuleManager moduleManager, boolean logging) {
     super(null == moduleManager ? null : moduleManager.getMessageQueue(),
-        true, logging);
+          true, logging);
     this.buildInfo =
       null == moduleManager ? null : moduleManager.getBuildInfo();
     initRules();

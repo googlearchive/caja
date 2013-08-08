@@ -46,7 +46,7 @@ public class DataUriFetcher implements UriFetcher {
   private enum DATA_URI { ALL, TYPE, BASE64, DATA; }
   private static final String DATA_URI_DEFAULT_CHARSET = "US-ASCII";
 
-  private boolean isDataUri(URI uri) {
+  private static boolean isDataUri(URI uri) {
     if (null != uri  && "data".equals(uri.getScheme())
         && uri.isOpaque()) {
       return true;
@@ -54,7 +54,7 @@ public class DataUriFetcher implements UriFetcher {
     return false;
   }
 
-  private String charsetFromMime(String mime) {
+  private static String charsetFromMime(String mime) {
     String charset;
     try {
       ContentType parsedType = new ContentType(mime);
@@ -76,7 +76,7 @@ public class DataUriFetcher implements UriFetcher {
         charsetFromMime(mimeType), new InputSource(ref.getUri()));
   }
 
-  public final byte[] fetchBinary(ExternalReference ref, String mimeType)
+  public static final byte[] fetchBinary(ExternalReference ref, String mimeType)
       throws UriFetchException {
     URI uri = ref.getUri();
     if (!isDataUri(uri)) {

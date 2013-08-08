@@ -337,7 +337,7 @@ public abstract class Operation extends AbstractExpression {
     return ((Reference) children().get(1)).getIdentifierName();
   }
 
-  private boolean isKeyword(String name) {
+  private static boolean isKeyword(String name) {
     return Keyword.fromString(name) != null;
   }
 

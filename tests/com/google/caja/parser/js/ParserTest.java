@@ -316,13 +316,13 @@ public class ParserTest extends CajaTestCase {
     assertEquals("'\\x00'", render(jsExpr(fromString("'\0'"))));
   }
 
-  private String expand(String template, String value) {
+  private static String expand(String template, String value) {
     // Use string replace rather than quasis to avoid invoking the parser when
     // creating tests for the parser
     return template.replace("@@", value);
   }
 
-  private String unicodeMunge(String k) throws IOException {
+  private static String unicodeMunge(String k) throws IOException {
     StringBuilder munged = new StringBuilder();
     munged.append(k, 0, k.length()-1);
     Escaping.unicodeEscape(k.charAt(k.length()-1), munged);
@@ -679,7 +679,7 @@ public class ParserTest extends CajaTestCase {
     assertEquals(code, expectedRendering, sb.toString());
   }
 
-  private void log(String testName, String code) {
+  private static void log(String testName, String code) {
     System.err.println();
     System.err.println("*** " + testName + ": " + code);
   }
@@ -701,7 +701,7 @@ public class ParserTest extends CajaTestCase {
     assertEquals(actual, golden, actual);
   }
 
-  private void assertFilePosition(
+  private static void assertFilePosition(
       String golden, FilePosition actual, MessageContext mc)
       throws IOException {
     StringBuilder sb = new StringBuilder();

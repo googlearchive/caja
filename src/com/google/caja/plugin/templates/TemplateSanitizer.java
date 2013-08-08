@@ -152,7 +152,7 @@ public final class TemplateSanitizer {
     return valid;
   }
 
-  private boolean virtualizeAttribute(
+  private static boolean virtualizeAttribute(
       Attr attrib, Element el, AttribKey attrKey) {
     boolean valid = true;
     // Remove this attribute and create another that
@@ -169,7 +169,7 @@ public final class TemplateSanitizer {
     return valid;
   }
 
-  private boolean removeBadAttribute(Element el, AttribKey attrKey) {
+  private static boolean removeBadAttribute(Element el, AttribKey attrKey) {
     el.removeAttributeNS(attrKey.ns.uri, attrKey.localName);
     return true;
   }
@@ -237,7 +237,7 @@ public final class TemplateSanitizer {
       // sanitize may replace child with another node as another virtualization
       // step.
     }
-    
+
     // Move attributes
     NamedNodeMap attrs = el.getAttributes();
     for (int i = attrs.getLength(); --i >= 0;) {

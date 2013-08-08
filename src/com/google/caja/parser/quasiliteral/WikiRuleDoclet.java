@@ -31,15 +31,15 @@ public class WikiRuleDoclet extends RuleDoclet {
     return "wiki";
   }
 
-  private String heading1(String name) {
+  private static String heading1(String name) {
     return "=" + name + "=\n";
   }
 
-  private String heading2(String name) {
+  private static String heading2(String name) {
     return "==" + name + "==\n";
   }
 
-  private String row(String... cells) {
+  private static String row(String... cells) {
     StringBuilder result = new StringBuilder();
     boolean hasContent = false;
     for (String cell : cells) {
@@ -55,7 +55,7 @@ public class WikiRuleDoclet extends RuleDoclet {
     return result.toString();
   }
 
-  private String code(String code) {
+  private static String code(String code) {
     return code.equals("") ? " " : "{{{" + code + "}}}";
   }
 

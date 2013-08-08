@@ -791,7 +791,8 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
         ? tagName : Strings.lower(tagName);
   }
 
-  private boolean lookahead(char [] buffer, int end, int limit, String textToMatch) {
+  private static boolean lookahead(
+      char [] buffer, int end, int limit, String textToMatch) {
     String currentStr = "";
     int i = end;
     int j = i + textToMatch.length();

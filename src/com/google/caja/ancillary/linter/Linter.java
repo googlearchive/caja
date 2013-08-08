@@ -69,10 +69,8 @@ import com.google.caja.util.Sets;
 import com.google.caja.util.Strings;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.Arrays;
@@ -153,11 +151,11 @@ public class Linter implements BuildCommand {
     List<LintJob> compUnits = Lists.newArrayList();
     // Parse each input, and find annotations.
     for (File inp : inputs) {
-      InputSource src = new InputSource(inp.toURI());
-      mc.addInputSource(src);
+      CharProducer cp = CharProducer.Factory.fromFile(inp, "UTF-8");
+      if (cp.isEmpty()) { continue; }
 
-      CharProducer cp = CharProducer.Factory.create(
-          new InputStreamReader(new FileInputStream(inp), "UTF-8"), src);
+      InputSource src = cp.getCurrentPosition().source();
+      mc.addInputSource(src);
       contents.put(src, new FileContent(cp));
 
       JsTokenQueue tq = new JsTokenQueue(new JsLexer(cp), src);

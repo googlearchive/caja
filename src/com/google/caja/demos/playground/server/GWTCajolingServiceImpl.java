@@ -182,7 +182,7 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
     }
   }
 
-  private String[] formatMessages(
+  private static String[] formatMessages(
       Map<InputSource, ? extends CharSequence> inputMap,
       MessageContext mc, MessageQueue mq) {
     List<Message> messages = mq.getMessages();

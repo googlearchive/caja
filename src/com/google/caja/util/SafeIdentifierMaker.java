@@ -61,7 +61,7 @@ public final class SafeIdentifierMaker implements Iterator<String> {
   public boolean hasNext() { return counter < Integer.MAX_VALUE; }
   public void remove() { throw new UnsupportedOperationException(); }
 
-  public boolean isSafeIdentifier(String ident) {
+  public static boolean isSafeIdentifier(String ident) {
     return !ident.endsWith("__")
         && ParserBase.isJavascriptIdentifier(ident)
         && !Keyword.isKeyword(ident) && !"arguments".equals(ident)

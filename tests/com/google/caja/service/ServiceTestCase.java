@@ -74,8 +74,8 @@ public abstract class ServiceTestCase extends CajaTestCase {
     return JSONValue.parse(json);
   }
 
-  protected void assertMessagesLessSevereThan(JSONArray messages,
-      MessageLevel severity) {
+  protected static void assertMessagesLessSevereThan(
+      JSONArray messages, MessageLevel severity) {
     for (Object m : messages.toArray()) {
       Object level = ((JSONObject) m).get("level");
       assertTrue(((Long) level).longValue() < severity.ordinal());
@@ -130,7 +130,8 @@ public abstract class ServiceTestCase extends CajaTestCase {
 
   // TODO(ihab.awad): Change tests to use structural equality (via quasi
   // matches) rather than golden text to avoid this.
-  protected void assertEqualsIgnoreSpace(String expected, String actual) {
+  protected static void assertEqualsIgnoreSpace(
+      String expected, String actual) {
     assertEquals(
         expected.replaceAll("\\s", ""),
         actual.replaceAll("\\s", ""));
@@ -181,7 +182,7 @@ public abstract class ServiceTestCase extends CajaTestCase {
     assertTrue(m.matches());
   }
 
-  private void assertResponseContentType(String expectedResponseType,
+  private static void assertResponseContentType(String expectedResponseType,
       TestHttpServletResponse resp) {
     assertEquals(expectedResponseType, resp.getContentType().split(";")[0]);
   }

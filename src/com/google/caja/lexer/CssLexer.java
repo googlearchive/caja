@@ -590,7 +590,8 @@ final class CssSplitter implements TokenStream<CssTokenType> {
         cp.filePositionForOffsets(start, end)));
   }
 
-  private int parseUri(CharProducer cp, int start) throws ParseException {
+  private static int parseUri(CharProducer cp, int start)
+      throws ParseException {
     // url     ([!#$%&*-~]|{nonascii}|{escape})*
     char[] buf = cp.getBuffer();
     int limit = cp.getLimit();
@@ -629,7 +630,7 @@ final class CssSplitter implements TokenStream<CssTokenType> {
     }
   }
 
-  private int parseWhitespace(char[] buf, int end, int limit) {
+  private static int parseWhitespace(char[] buf, int end, int limit) {
     // w       [ \t\r\n\f]*
     while (end < limit && CssLexer.isSpaceChar(buf[end])) { ++end; }
     return end;

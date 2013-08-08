@@ -34,7 +34,7 @@ public class SpecialOpFilter extends RuleFilter<Operator> {
     return ruleOperator(rule) == op || rule.canMatch(Operation.class);
   }
 
-  private Operator ruleOperator(Rule rule) {
+  private static Operator ruleOperator(Rule rule) {
     QuasiNode qp = QuasiCache.parse(rule.getRuleDescription().matches());
     if (qp != null && qp instanceof SimpleQuasiNode) {
       SimpleQuasiNode sqp = (SimpleQuasiNode) qp;

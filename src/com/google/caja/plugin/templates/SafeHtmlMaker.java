@@ -702,7 +702,7 @@ final class SafeHtmlMaker {
   /**
    * Put an orphaned node into a DocumentFragment.
    */
-  private DocumentFragment wrapInDocumentFragment(Node node) {
+  private static DocumentFragment wrapInDocumentFragment(Node node) {
     DocumentFragment wrapper = node.getOwnerDocument().createDocumentFragment();
     assert node.getParentNode() == null;
     wrapper.appendChild(node);

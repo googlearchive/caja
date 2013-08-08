@@ -85,6 +85,7 @@ public abstract class AbstractCajaAntTask extends Task {
       }
 
       BuildService buildService = getBuildService();
+      @SuppressWarnings("resource")  // Not closed since not newly opened.
       PrintWriter logger = getLogger();
       try {
         for (Output output : outputs) {
@@ -133,6 +134,7 @@ public abstract class AbstractCajaAntTask extends Task {
         }, true);
   }
 
+  @SuppressWarnings("static-method")
   BuildService getBuildService() throws BuildException {
     return new BuildServiceImplementation();
   }

@@ -100,7 +100,7 @@ public class ResolveUriStage implements Pipeline.Stage<Jobs> {
     return null;
   }
 
-  private URI uriFromBaseElement(Element base) {
+  private static URI uriFromBaseElement(Element base) {
     Attr a = base.getAttributeNodeNS(BASE_HREF.ns.uri, BASE_HREF.localName);
     if (a == null) { return null; }
     String value = a.getValue();

@@ -65,9 +65,9 @@ public class JsonTestServlet extends HttpServlet {
         "contentType", req.getContentType());
   }
 
-  private void respond(HttpServletResponse resp,
-                       String jsonpCallbackName,
-                       String... keyValuePairs)
+  private static void respond(HttpServletResponse resp,
+                              String jsonpCallbackName,
+                              String... keyValuePairs)
       throws ServletException {
     StringBuilder sb = new StringBuilder();
     if (jsonpCallbackName != null) { sb.append(jsonpCallbackName + "("); }
@@ -82,7 +82,7 @@ public class JsonTestServlet extends HttpServlet {
     respondString(resp, sb.toString());
   }
 
-  private void respondString(HttpServletResponse resp, String response)
+  private static void respondString(HttpServletResponse resp, String response)
       throws ServletException {
 
     System.err.println(response);
@@ -101,7 +101,7 @@ public class JsonTestServlet extends HttpServlet {
     }
   }
 
-  private String readInputStream(HttpServletRequest req)
+  private static String readInputStream(HttpServletRequest req)
       throws ServletException {
     try {
       Reader r = new InputStreamReader(req.getInputStream(), "UTF-8");

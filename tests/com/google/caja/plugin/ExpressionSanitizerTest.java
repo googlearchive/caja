@@ -73,7 +73,7 @@ public class ExpressionSanitizerTest extends CajaTestCase {
     ModuleManager mgr = new ModuleManager(
         new PluginMeta(), TestBuildInfo.getInstance(),
         UriFetcher.NULL_NETWORK, mq);
-    return new ExpressionSanitizerCaja(mgr, null) {
+    return new ExpressionSanitizerCaja(mgr) {
       @Override
       protected Rewriter newES53Rewriter(ModuleManager mgr) {
         return new Rewriter(mq, true, true) {{
@@ -98,7 +98,7 @@ public class ExpressionSanitizerTest extends CajaTestCase {
     ModuleManager mgr = new ModuleManager(
         new PluginMeta(), TestBuildInfo.getInstance(),
         UriFetcher.NULL_NETWORK, mq);
-    ParseTreeNode sanitized = new ExpressionSanitizerCaja(mgr, null)
+    ParseTreeNode sanitized = new ExpressionSanitizerCaja(mgr)
         .sanitize(inputNode);
     String inputCmp = render(sanitized);
 

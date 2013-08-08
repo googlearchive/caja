@@ -17,7 +17,6 @@ package com.google.caja.parser.js;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.reporting.RenderContext;
 import com.google.javascript.jscomp.jsonml.JsonML;
 import com.google.javascript.jscomp.jsonml.TagAttr;
 import com.google.javascript.jscomp.jsonml.TagType;
@@ -74,7 +73,7 @@ public abstract class LabeledStatement extends AbstractStatement {
   public final Object getValue() { return this.label; }
 
   /** @return null if no label to render. */
-  protected final String getRenderedLabel(RenderContext rc) {
+  protected final String getRenderedLabel() {
     if (label == null || "".equals(label)) { return null; }
     StringBuilder escapedLabel = new StringBuilder();
     Escaping.escapeJsIdentifier(label, true, escapedLabel);

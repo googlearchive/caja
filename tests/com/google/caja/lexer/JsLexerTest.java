@@ -286,7 +286,7 @@ public class JsLexerTest extends CajaTestCase {
     return new JsLexer(fromString(src), isQuasiliteral);
   }
 
-  private void assertNext(JsLexer lexer, JsTokenType type, String text) {
+  private static void assertNext(JsLexer lexer, JsTokenType type, String text) {
     Token<JsTokenType> tok = null;
     try {
       tok = lexer.next();
@@ -299,7 +299,7 @@ public class JsLexerTest extends CajaTestCase {
                  text, tok.text);
   }
 
-  public void assertEmpty(JsLexer lexer) {
+  public static void assertEmpty(JsLexer lexer) {
     try {
       assertFalse(lexer.hasNext());
     } catch (ParseException e) {

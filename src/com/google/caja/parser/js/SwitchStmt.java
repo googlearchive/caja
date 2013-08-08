@@ -81,7 +81,7 @@ public final class SwitchStmt extends LabeledStatement {
   public void render(RenderContext rc) {
     TokenConsumer out = rc.getOut();
     out.mark(getFilePosition());
-    String label = getRenderedLabel(rc);
+    String label = getRenderedLabel();
     if (null != label) {
       out.consume(label);
       out.consume(":");

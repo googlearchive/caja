@@ -53,7 +53,7 @@ public class PartitionsTest extends CajaTestCase {
         "rainbow");
   }
 
-  private <T> void assertPartitionOf(
+  private static <T> void assertPartitionOf(
       Partitions.Partition<T> p, List<List<T>> sets) {
     assertEquals(p.unions.length, sets.size());
 
@@ -89,7 +89,7 @@ public class PartitionsTest extends CajaTestCase {
     }
   }
 
-  private <T> void assertPartition(
+  private static <T> void assertPartition(
       Partitions.Partition<?> p, String... golden) {
     String[] actual = new String[p.partition.length];
     int i = 0;
@@ -109,7 +109,7 @@ public class PartitionsTest extends CajaTestCase {
     MoreAsserts.assertListsEqual(Arrays.asList(golden), Arrays.asList(actual));
   }
 
-  private void assertSortedAndUnique(int[] arr) {
+  private static void assertSortedAndUnique(int[] arr) {
     if (arr.length == 0) { return; }
     for (int i = 1; i < arr.length; ++i) {
       if (arr[i - 1] >= arr[i]) {

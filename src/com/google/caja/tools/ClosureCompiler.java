@@ -62,7 +62,14 @@ public class ClosureCompiler {
     DiagnosticGroups.VISIBILITY,
   };
 
-  public String build(Task task, List<File> inputs, PrintWriter logger) {
+  /** @param logger not used. */
+  @Deprecated
+  public static final String build(
+      Task task, List<File> inputs, PrintWriter logger) {
+    return build(task, inputs);
+  }
+
+  public static String build(Task task, List<File> inputs) {
     List<SourceFile> externs;
     try {
       externs = CommandLineRunner.getDefaultExterns();

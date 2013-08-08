@@ -15,10 +15,10 @@
 package com.google.caja.service;
 
 import com.google.caja.precajole.StaticPrecajoleMap;
+import com.google.caja.util.Charsets;
 import com.google.caja.util.Json;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -87,7 +87,7 @@ public class PrecajoleInfoServlet extends HttpServlet {
     }
   }
 
-  private String formatHtml(JSONObject info) {
+  private static String formatHtml(JSONObject info) {
     StringBuilder out = new StringBuilder();
     out.append("<!doctype html>\n");
     out.append("<html>\n");
@@ -132,22 +132,18 @@ public class PrecajoleInfoServlet extends HttpServlet {
     }
   }
 
-  @SuppressWarnings("unchecked")
-  private List<String> jsonKeys(JSONObject obj) {
+  private static List<String> jsonKeys(JSONObject obj) {
+    @SuppressWarnings("unchecked")
     List<String> list = new ArrayList<String>(obj.keySet());
     Collections.sort(list);
     return list;
   }
 
-  private byte[] utf8(String s) throws ServletException {
-    try {
-      return s.getBytes("UTF-8");
-    } catch (UnsupportedEncodingException e) {
-      throw new ServletException(e);
-    }
+  private static byte[] utf8(String s) {
+    return s.getBytes(Charsets.UTF_8);
   }
 
-  private JSONObject jsonInfo() {
+  private static JSONObject jsonInfo() {
     JSONObject info = new JSONObject();
 
     JSONArray comment = new JSONArray();
@@ -169,7 +165,7 @@ public class PrecajoleInfoServlet extends HttpServlet {
     return info;
   }
 
-  private List<List<String>> getUrlGroups() {
+  private static List<List<String>> getUrlGroups() {
     StaticPrecajoleMap spm = StaticPrecajoleMap.getInstance();
     List<List<String>> urlGroups = spm.getUrlGroups();
 

@@ -96,21 +96,29 @@ public class RenderContext {
 
   /** Always true now. */
   @Deprecated
+  @SuppressWarnings("static-method")
   public final boolean isEmbeddable() { return true; }
   /** Always true now. */
   @Deprecated
+  @SuppressWarnings("static-method")
   public final boolean isAsciiOnly() { return true; }
   /** Use {@link #propertyNameQuotingMode} instead. */
   @Deprecated
   public final boolean rawObjKeys() {
     return propertyNameQuotingMode == PropertyNameQuotingMode.NO_QUOTES;
   }
-  /** Has no effect any more. */
+  /**
+   * Has no effect any more.
+   * @param b Unused.  Provided for backwards compatibility.
+   */
   @Deprecated
   public RenderContext withAsciiOnly(boolean b) {
     return this;
   }
-  /** Has no effect any more. */
+  /**
+   * Has no effect any more.
+   * @param b Unused.  Provided for backwards compatibility.
+   */
   @Deprecated
   public RenderContext withEmbeddable(boolean b) {
     return this;

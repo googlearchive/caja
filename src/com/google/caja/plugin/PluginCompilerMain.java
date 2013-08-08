@@ -84,7 +84,7 @@ public final class PluginCompilerMain {
 
     @Override
     protected Reader newReader(File f) throws FileNotFoundException {
-      return createReader(new FileInputStream(f));
+      return new InputStreamReader(new FileInputStream(f), Charsets.UTF_8);
     }
 
     @Override
@@ -366,10 +366,6 @@ public final class PluginCompilerMain {
     return maxLevel;
   }
 
-  private Reader createReader(InputStream stream) {
-    return new InputStreamReader(stream, Charsets.UTF_8);
-  }
-
   public static void main(String[] args) {
     int exitCode;
     try {
@@ -387,7 +383,7 @@ public final class PluginCompilerMain {
     }
   }
 
-  private void pause() {
+  private static void pause() {
     try {
       BufferedReader b = new BufferedReader(new InputStreamReader(System.in));
       System.out.println("press return...");
@@ -423,7 +419,7 @@ public final class PluginCompilerMain {
         fmt.format(all_times / (trials * 1e6)) + ": all runs");
   }
 
-  private void runBenchOnce(String[] argv) {
+  private static void runBenchOnce(String[] argv) {
     // We create a new PluginCompilerMain because it's not re-usable.
     PluginCompilerMain pc = new PluginCompilerMain();
     pc.config.processArguments(argv);
