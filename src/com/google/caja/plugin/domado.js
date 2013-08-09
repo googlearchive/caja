@@ -4672,32 +4672,24 @@ var Domado = (function() {
           return specimen;
         }
 
-        function matchesStyleFully(cssPropertyName, value) {
-          if (typeof value !== "string") { return false; }
+        /** Returns '' if invalid, which native canvas will ignore. */
+        function sanitizeCssValue(cssPropertyName, value) {
+          if (typeof value !== 'string') { return ''; }
           var tokens = lexCss(value);
-          var k = 0;
-          for (var i = 0, n = tokens.length; i < n; ++i) {
-            var tok = tokens[i];
-            if (tok !== ' ') { tokens[k++] = tok; }
-          }
-          tokens.length = k;
-          // sanitizeCssProperty lowercases non-URL/content-string tokens.
-          var unfiltered = tokens.join(' ').toLowerCase();
           sanitizeCssProperty(cssPropertyName, tokens);
-          return unfiltered === tokens.join(' ') ? unfiltered : false;
+          return tokens.join(' ');
         }
-
-        function isFont(value) {
-          return !!matchesStyleFully('font', value);
+        function sanitizeFont(value) {
+          return sanitizeCssValue('font', value);
         }
-        function isColor(value) {
-          // Note: we're testing against the pattern for the CSS "color:"
-          // property, but what is actually referenced by the draft canvas spec
-          // is
-          // the CSS syntactic element <color>, which is why we need to
-          // specifically exclude "inherit".
-          var style = matchesStyleFully('color', value);
-          return style && style.toLowerCase() !== 'inherit';
+        function sanitizeColor(value) {
+          // Note: we're sanitizing against the CSS "color:" property, but what
+          // is actually referenced by the draft canvas spec is the CSS
+          // syntactic element <color>, which is why we need to specifically
+          // exclude "inherit".
+          var style = sanitizeCssValue('color', value);
+          if (/\binherit\b/.test(style)) { return ''; }
+          return style;
         }
         var colorNameTable = {
           // http://dev.w3.org/csswg/css3-color/#html4 as cited by
@@ -4835,11 +4827,12 @@ var Domado = (function() {
                 throw new Error(INDEX_SIZE_ERROR);
                 // TODO(kpreid): should be a DOMException per spec
               }
-              if (!isColor(color)) {
+              var sanColor = sanitizeColor(color);
+              if (sanColor === '') {
                 throw new Error('SYNTAX_ERR');
                 // TODO(kpreid): should be a DOMException per spec
               }
-              privates.feral.addColorStop(offset, color);
+              privates.feral.addColorStop(offset, sanColor);
             })
           });
           return cajaVM.def(TameGradient);
@@ -5178,8 +5171,9 @@ var Domado = (function() {
                 }
               }),
               set: env.amplifying(function(privates, newValue) {
-                if (isColor(newValue)) {
-                  privates.feral[prop] = newValue;
+                var safeColor = sanitizeColor(newValue);
+                if (safeColor !== '') {
+                  privates.feral[prop] = safeColor;
                 } else if (typeof(newValue) === 'object' &&
                            cajaVM.passesGuard(TameGradientT, newValue)) {
                   privates.feral[prop] = taming.untame(newValue);
@@ -5246,11 +5240,11 @@ var Domado = (function() {
                 enumerable: true,
                 // TODO(kpreid): Better tools for deriving descriptors
                 get: CP_STYLE(env).get,
-                set: PT.RWCond(isColor)(env).set
+                set: PT.filterProp(identity, sanitizeColor)(env).set
               };
             }),
 
-            font: PT.RWCond(isFont),
+            font: PT.filterProp(identity, sanitizeFont),
             textAlign: PT.RWCond(
                 StringTest([
                   'start',

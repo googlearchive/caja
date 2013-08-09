@@ -105,13 +105,17 @@
                  ["aardvarks", {toString:function(){return "xor";}}]);
 
     // context.fillStyle
-    testProperty("fillStyle", "#000000", "#ff0000",
-                 ["aardvarks", 999, {toString:function(){return "#ff0000";}},
-                  "inherit"]);
+    testProperty('fillStyle', '#000000', '#ff0000',
+                 ['aardvarks', 'rgba()', 999,
+                  {toString:function(){return '#ff0000';}}, "inherit"]);
     context.fillStyle = "black";
     assertEquals("named fillStyle", "#000000", context.fillStyle);
     context.fillStyle = "#FF0000";
     assertEquals("uppercase fillStyle", "#ff0000", context.fillStyle);
+    context.fillStyle = 'rgb(0, 255, 0)';
+    assertEquals('rgb fillStyle', '#00ff00', context.fillStyle);
+    context.fillStyle = 'rgba(0, 0, 255, 0.0)';
+    assertEquals('rgba fillStyle', 'rgba(0, 0, 255, 0)', context.fillStyle);
 
     // context.strokeStyle
     // assume strokeStyle has the same taming structure as fillStyle,
