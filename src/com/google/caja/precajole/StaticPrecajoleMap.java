@@ -263,7 +263,11 @@ public class StaticPrecajoleMap implements PrecajoleMap {
       return null;
     }
     try {
-      return ByteStreams.toByteArray(is);
+      try {
+        return ByteStreams.toByteArray(is);
+      } finally {
+        is.close();
+      }
     } catch (IOException e) {
       return null;
     }

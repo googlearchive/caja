@@ -92,12 +92,6 @@ public final class Chardet {
     } else {
       // Use jchardet which tries a variety of heuristics to choose an encoding.
       nsDetector det = new nsDetector(nsPSMDetector.ALL);
-      class Observer implements nsICharsetDetectionObserver {
-        String charset;
-        public void Notify(String charset) {
-          this.charset = charset;
-        }
-      }
       // The below is adapted from the main method in HtmlCharsetDetector.
       Observer observer = new Observer();
       det.Init(observer);
@@ -116,6 +110,13 @@ public final class Chardet {
     return Pair.pair(
         joinStreamsWithCharset(buffered.toByteArray(), in, charset),
         charset);
+  }
+
+  static final class Observer implements nsICharsetDetectionObserver {
+    String charset;
+    public void Notify(String charset) {
+      this.charset = charset;
+    }
   }
 
   private static final byte[] CHARSET_BYTES;
@@ -234,59 +235,59 @@ public final class Chardet {
   private static Reader joinStreamsWithCharset(
       byte[] buffered, InputStream tail, String charset)
       throws IOException {
-
-    class JoinedStream extends InputStream {
-      byte[] buffered;
-      int pos;
-      final InputStream tail;
-
-      JoinedStream(byte[] buffered, InputStream tail) {
-        this.buffered = buffered;
-        this.tail = tail;
-      }
-
-      @Override
-      public int read() throws IOException {
-        if (buffered != null) {
-          if (pos < buffered.length) { return buffered[pos++]; }
-          buffered = null;
-        }
-        return tail.read();
-      }
-
-      @Override
-      public int read(byte[] out, int off, int len) throws IOException {
-        int nRead = 0;
-        if (buffered != null) {
-          int avail = buffered.length - pos;
-          if (avail != 0) {
-            int k = Math.min(len, avail);
-            int p1 = pos + k;
-            int p2 = off + k;
-            pos = p1;
-            while (--p2 >= off) { out[p2] = buffered[--p1]; }
-            off += k;
-            len -= k;
-            nRead = k;
-          } else {
-            buffered = null;
-          }
-        }
-        if (len == 0) { return nRead; }
-        int nFromTail = tail.read(out, off, len);
-        if (nFromTail > 0) { return nFromTail + nRead; }
-        return nRead != 0 ? nRead : -1;
-      }
-
-      @Override
-      public void close() throws IOException {
-        buffered = null;
-        tail.close();
-      }
-    }
-
     return new InputStreamReader(new JoinedStream(buffered, tail), charset);
   }
+
+  static final class JoinedStream extends InputStream {
+    byte[] buffered;
+    int pos;
+    final InputStream tail;
+
+    JoinedStream(byte[] buffered, InputStream tail) {
+      this.buffered = buffered;
+      this.tail = tail;
+    }
+
+    @Override
+    public int read() throws IOException {
+      if (buffered != null) {
+        if (pos < buffered.length) { return buffered[pos++]; }
+        buffered = null;
+      }
+      return tail.read();
+    }
+
+    @Override
+    public int read(byte[] out, int off, int len) throws IOException {
+      int nRead = 0;
+      if (buffered != null) {
+        int avail = buffered.length - pos;
+        if (avail != 0) {
+          int k = Math.min(len, avail);
+          int p1 = pos + k;
+          int p2 = off + k;
+          pos = p1;
+          while (--p2 >= off) { out[p2] = buffered[--p1]; }
+          off += k;
+          len -= k;
+          nRead = k;
+        } else {
+          buffered = null;
+        }
+      }
+      if (len == 0) { return nRead; }
+      int nFromTail = tail.read(out, off, len);
+      if (nFromTail > 0) { return nFromTail + nRead; }
+      return nRead != 0 ? nRead : -1;
+    }
+
+    @Override
+    public void close() throws IOException {
+      buffered = null;
+      tail.close();
+    }
+  }
+
 
   private static boolean isAlnum(byte b) {
     if (b < '0' || b > 'z') { return false; }

@@ -45,7 +45,6 @@ public class BrowserTestCatalog {
 
   /**
    * Obtain a catalog parsed from JSON at the given <em>resource</em> URL.
-   * @throws IOException
    */
   public static BrowserTestCatalog get(URL url) throws IOException {
     // thread-safe sloppy memoization
@@ -86,16 +85,33 @@ public class BrowserTestCatalog {
     private ParserOutput(List<Entry> entries) {
       this.entries = entries;
     }
+    /**
+     * @param label unused in this stub.
+     * @param comment unused in this stub.
+     */
     public ParserOutput addGroup(String label, String comment) {
       return this;
     }
+    /**
+     * @param label unused in this stub.
+     * @param comment unused in this stub.
+     */
     public ParserOutput addMiniGroup(String label, String comment) {
       return this;
     }
+    /**
+     * @param label unused in this stub.
+     * @param comment unused in this stub.
+     * @param manual unused in this stub.
+     */
     public void addTest(String url, String label, String longLabel,
         String comment, boolean manual, String expectedFailure) {
       entries.add(new Entry(url, longLabel, expectedFailure));
     }
+    /**
+     * @param label unused in this stub.
+     * @param comment unused in this stub.
+     */
     public void addNonTest(String label, String comment) {}
   }
 

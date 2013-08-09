@@ -113,7 +113,7 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
     return unknown;
   }
 
-  public String[] getMessageLevels() {
+  public static String[] getMessageLevels() {
     MessageLevel[] values = MessageLevel.values();
     String[] result = new String[values.length];
     for (int i = 0; i < values.length; i++) {
@@ -207,6 +207,7 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
     return BuildInfo.getInstance().getBuildInfo();
   }
 
+  @SuppressWarnings("static-method")
   protected PluginCompiler makePluginCompiler(
       PluginMeta meta, MessageQueue mq) {
     PluginCompiler compiler = new PluginCompiler(

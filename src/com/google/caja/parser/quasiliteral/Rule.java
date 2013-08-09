@@ -298,7 +298,7 @@ public abstract class Rule implements MessagePart {
    * We operate under the (currently unchecked) assumption
    * that node contains no variables whose names contain a "$_".
    */
-  protected String nym(ParseTreeNode node, String baseName, String ext) {
+  protected static String nym(ParseTreeNode node, String baseName, String ext) {
     String result;
     if (node != null && baseName.indexOf("$_") != -1) {
       result = baseName + "$";
@@ -322,7 +322,8 @@ public abstract class Rule implements MessagePart {
    * function expression, where the name is derived from baseName.
    * For all other nodes, currently returns the node itself.
    */
-  protected ParseTreeNode nymize(ParseTreeNode node, String baseName, String ext) {
+  protected static ParseTreeNode nymize(
+      ParseTreeNode node, String baseName, String ext) {
     Map<String, ParseTreeNode> bindings = makeBindings();
     if (QuasiBuilder.match("function (@ps*) {@bs*;}", node, bindings)) {
       return QuasiBuilder.substV(

@@ -45,8 +45,7 @@ public class CatalogRunner extends ParentRunner<Entry> {
   public CatalogRunner(Class<?> testClass) throws InitializationError {
     super(testClass);
     try {
-      CatalogName annotation = (CatalogName) testClass
-          .getAnnotation(CatalogName.class);
+      CatalogName annotation = testClass.getAnnotation(CatalogName.class);
       if (annotation == null) {
         throw new NullPointerException(testClass +
             " does not have CatalogName annotation");

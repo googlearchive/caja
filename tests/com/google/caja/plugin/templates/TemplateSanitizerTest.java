@@ -276,7 +276,7 @@ public class TemplateSanitizerTest extends CajaTestCase {
             "<html alpha='a' beta='b'>"
             + "<body alpha='a' background='#bbb'></body></html>")),
         "<caja-v-html data-caja-alpha=\"a\" data-caja-beta=\"b\">" +
-            "<caja-v-head></caja-v-head>" + 
+            "<caja-v-head></caja-v-head>" +
             "<caja-v-body data-caja-alpha=\"a\" data-caja-background=\"#bbb\">" +
             "</caja-v-body></caja-v-html>");
   }

@@ -274,6 +274,8 @@ public final class RhinoExecutor implements Executor {
     return sb.toString();
   }
 
+  // Methods are accessed reflectively by script engine.
+  @SuppressWarnings("static-method")
   public static class ScriptPowerBox {
     private final Context cx;
     private final Scriptable global;

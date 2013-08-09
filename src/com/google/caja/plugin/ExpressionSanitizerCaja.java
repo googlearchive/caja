@@ -76,6 +76,7 @@ public class ExpressionSanitizerCaja {
     return result;
   }
 
+  @SuppressWarnings("static-method")
   protected Rewriter newES53Rewriter(ModuleManager mgr) {
     return new ES53Rewriter(mgr, false);
   }

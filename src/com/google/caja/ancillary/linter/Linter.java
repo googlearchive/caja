@@ -261,7 +261,7 @@ public class Linter implements BuildCommand {
 
     checkDeclarations(scopes, overrides, mq);
     checkLabels(lc, buckets, mq);
-    checkUses(scopes, lc.vars, sa, provides, requires, overrides, mq);
+    checkUses(scopes, lc.vars, provides, requires, overrides, mq);
     checkSideEffects(buckets, mq);
     checkDeadCode(buckets, mq);
     checkStringsEmbeddable((Block) ac.node, buckets, mq);
@@ -379,7 +379,7 @@ public class Linter implements BuildCommand {
   }
 
   private static void checkUses(
-      List<LexicalScope> scopes, LiveSet liveAtEnd, ScopeAnalyzer sa,
+      List<LexicalScope> scopes, LiveSet liveAtEnd,
       Set<String> provides, Set<String> requires, Set<String> overrides,
       MessageQueue mq) {
     LexicalScope globalScope = scopes.get(0);

@@ -96,7 +96,7 @@ public abstract class OrigSourceRendererTestCase extends TestCase {
       Map<InputSource, ? extends CharSequence> originalSource,
       MessageContext mc, RenderContext rc);
 
-  private FilePosition toFilePosition(
+  private static FilePosition toFilePosition(
       String testInputLine, Map<InputSource, String> originalSrcs) {
     Matcher m = Pattern.compile(
         "(.*):(\\d+)\\+(\\d+)-(?:(\\d+)\\+)?(\\d+)$")

@@ -473,7 +473,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
     // then its NUM___ descriptor will be writable and configurable afterward.
     // This occurred because a bad test was not registering it as an own
     // property descriptor.
-    
+
     // Test for symptom
     rewriteAndExecute(
         "var o = {0: 'foo'};" +
@@ -1930,7 +1930,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
    * Properties on any object with certain protected names such as 'toString'
    * are virtualized. Virtualized properties are implemented as accessors even
    * if they are data.
-   * 
+   *
    * Test that they appear as data or accessor properties when defined so, and
    * that the writable flag is preserved.
    */
@@ -2064,7 +2064,7 @@ public class ES53RewriterTest extends CommonJsRewriterTestCase {
         "var testImports = ___.copy(___.sharedImports);");
     for (String f : assertFunctions) {
       importsSetup
-          .append("testImports.DefineOwnProperty___('" + f + "', " + 
+          .append("testImports.DefineOwnProperty___('" + f + "', " +
                       "{ value: ___.markFunc(" + f + ") });");
     }
     importsSetup.append(
