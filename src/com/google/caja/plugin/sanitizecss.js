@@ -373,12 +373,16 @@ var sanitizeMediaQuery = undefined;
    * @param {{
    *     containerClass: ?string,
    *     idSuffix: string,
-   *     tagPolicy: function(string, Array.<string>): ?Array.<string>
+   *     tagPolicy: function(string, Array.<string>): ?Array.<string>,
+   *     virtualizeAttrName: ?function(string, string): ?string
    *   }} virtualization An object like <pre<{
    *   containerClass: class name prepended to all selectors to scope them (if
    *       not null)
    *   idSuffix: appended to all IDs to scope them
    *   tagPolicy: As in html-sanitizer, used for rewriting element names.
+   *   virtualizeAttrName: Rewrite a single attribute name for attribute
+   *       selectors, or return null if not possible. Should be consistent
+   *       with tagPolicy if possible.
    * }</pre>
    *    If containerClass is {@code "sfx"} and idSuffix is {@code "-sfx"}, the
    *    selector
@@ -514,12 +518,33 @@ var sanitizeMediaQuery = undefined;
             }
           } else if (start + 1 < end && selectors[start] === '[') {
             ++start;
-            var attr = selectors[start++].toLowerCase();
-            var atype = html4.ATTRIBS[element + '::' + attr];
-            if (atype !== +atype) { atype = html4.ATTRIBS['*::' + attr]; }
-            if (atype !== +atype) {
-              valid = false;
+            var vAttr = selectors[start++].toLowerCase();
+            // Schema lookup for type information
+            var atype = html4.ATTRIBS[element + '::' + vAttr];
+            if (atype !== +atype) { atype = html4.ATTRIBS['*::' + vAttr]; }
+
+            var rAttr;
+            // Consult policy
+            // TODO(kpreid): Making this optional is a kludge to avoid changing
+            // the public interface until we have a more well-structured design.
+            if (virtualization.virtualizeAttrName) {
+              rAttr = virtualization.virtualizeAttrName(element, vAttr);
+              if (typeof rAttr !== 'string') {
+                // rejected
+                valid = false;
+                rAttr = vAttr;
+              }
+              // don't reject even if not in schema
+              if (valid && atype !== +atype) {
+                atype = html4.atype['NONE'];
+              }
+            } else {
+              rAttr = vAttr;
+              if (atype !== +atype) {  // not permitted according to schema
+                valid = false;
+              }
             }
+
             var op = '', value = '', ignoreCase = false;
             if (/^[~^$*|]?=$/.test(selectors[start])) {
               op = selectors[start++];
@@ -582,7 +607,8 @@ var sanitizeMediaQuery = undefined;
               valid = false;
             }
             if (valid) {
-              attrs += '[' + attr + op + value + (ignoreCase ? ' i]' : ']');
+              attrs += '[' + rAttr.replace(/[^\w-]/g, '\\$&') + op + value +
+                  (ignoreCase ? ' i]' : ']');
             }
           } else if (start < end && selectors[start] === ':') {
             tok = selectors[++start];
@@ -794,12 +820,16 @@ var sanitizeMediaQuery = undefined;
      * @param {{
      *     containerClass: ?string,
      *     idSuffix: string,
-     *     tagPolicy: function(string, Array.<string>): ?Array.<string>
+     *     tagPolicy: function(string, Array.<string>): ?Array.<string>,
+     *     virtualizeAttrName: ?function(string, string): ?string
      *   }} virtualization An object like <pre<{
      *   containerClass: class name prepended to all selectors to scope them (if
      *       not null)
-     *   idSuffix: appended to all ids to scope them
+     *   idSuffix: appended to all IDs to scope them
      *   tagPolicy: As in html-sanitizer, used for rewriting element names.
+     *   virtualizeAttrName: Rewrite a single attribute name for attribute
+     *       selectors, or return null if not possible. Should be consistent
+     *       with tagPolicy if possible. Optional.
      * }</pre>
      *    If containerClass is {@code "sfx"} and idSuffix is {@code "-sfx"}, the
      *    selector

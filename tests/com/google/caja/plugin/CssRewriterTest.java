@@ -98,6 +98,10 @@ public class CssRewriterTest extends CajaTestCase {
     // [{ test_name: ..., tests: [] }]
     for (Expression test : ((ArrayConstructor) testArray).children()) {
       ObjectConstructor obj = (ObjectConstructor) test;
+      ValueProperty es5Prop = (ValueProperty) obj.propertyWithName("es5only");
+      if (es5Prop != null && (Boolean) es5Prop.getValueExpr().getValue()) {
+        continue;
+      }
       String name = (String)
            ((ValueProperty) obj.propertyWithName("test_name"))
            .getValueExpr().getValue();

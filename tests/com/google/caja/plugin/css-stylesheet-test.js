@@ -31,15 +31,23 @@ function runCssSelectorTests(testGroups) {
       } else {
         return null;
       }
+    },
+    virtualizeAttrName: function(elName, attrName) {
+      if (attrName === 'rejectedfortest') {
+        return null;
+      } else if (elName + '::' + attrName in html4.ATTRIBS ||
+          '*::' + attrName in html4.ATTRIBS) {
+        return attrName;
+      } else {
+        return 'data-caja-' + attrName;
+      }
     }
   };
 
-  function testCssStylesheets() {
-    for (var j = 0, m = testGroups.length; j < m; ++j) {
-      var testGroup = testGroups[j];
-      var name = testGroup.test_name;
-      assertEquals('testGroups[' + j + '].name', 'string', typeof name);
-      var tests = testGroup.tests;
+  // Create a test method that will be called by jsUnit.
+  function makeTestFunction(testGroup) {
+    var tests = testGroup.tests;
+    return function cssTestFn() {
       for (var i = 0, n = tests.length; i < n; ++i) {
         var test = tests[i];
         var input = test.cssText;
@@ -61,11 +69,16 @@ function runCssSelectorTests(testGroups) {
         }
         assertEquals('stylesheet test ' + i + ': ' + input, golden, actual);
       }
-    }
-    jsunitPass('testCssStylesheets');
+      jsunitPass();
+    };
   }
-  // Create a test method that will be called by jsUnit.
-  jsunitRegister('testCssStylesheets', testCssStylesheets);
+
+  for (var j = 0, m = testGroups.length; j < m; ++j) {
+    var testGroup = testGroups[j];
+    var name = testGroup.test_name;
+    assertEquals('testGroups[' + j + '].name', 'string', typeof name);
+    jsunitRegister(name, makeTestFunction(testGroup));
+  }
 }
 
 function sanitizeUri(uri) {

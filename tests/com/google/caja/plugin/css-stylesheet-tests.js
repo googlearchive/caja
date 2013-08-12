@@ -54,6 +54,38 @@ runCssSelectorTests([
     ]
   },
   {
+    "test_name": "AttrRewritten",
+    "es5only": true,
+    "tests": [
+      {
+        "cssText": "div[id=x] { color: blue }",
+        "golden": ".namespace__ div[id=\"x-namespace__\"]{color:blue}"
+      },
+    ]
+  },
+  {
+    "test_name": "UnknownAttrsVirtualized",
+    "es5only": true,
+    "tests": [
+      {
+        "cssText": "div[zwop] { color: blue }",
+        "golden": ".namespace__ div[data-caja-zwop]{color:blue}"
+      },
+      {
+        "cssText": "div[zwop=zing] { color: blue }",
+        "golden": ".namespace__ div[data-caja-zwop=\"zing\"]{color:blue}"
+      },
+      {
+        "cssText": "div[ng\\:app=zing] { color: blue }",
+        "golden": ".namespace__ div[data-caja-ng\\:app=\"zing\"]{color:blue}"
+      },
+      {
+        "cssText": "div[rejectedfortest] { color: blue }",
+        "golden": ""
+      },
+    ]
+  },
+  {
     "test_name": "BadTagsRemoved",
     "tests": [
       {
@@ -84,7 +116,7 @@ runCssSelectorTests([
     "test_name": "BadAttribsRemoved",
     "tests": [
       {
-        "cssText": "div[zwop] { color: blue }",
+        "cssText": "div[rejectedfortest] { color: blue }",
         "golden": ""
       }
     ]

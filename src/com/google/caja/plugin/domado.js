@@ -2089,6 +2089,34 @@ var Domado = (function() {
         }
         return attribs;
       }
+      function sanitizeOneAttr(tagName, attribName) {
+        // Should be consistent with sanitizeAttrs
+        // TODO(kpreid): Factor out duplicate code, also use htmlSchema
+        var attribKey;
+        if ((attribKey = tagName + '::' + attribName,
+             html4.ATTRIBS.hasOwnProperty(attribKey)) ||
+            (attribKey = '*::' + attribName,
+             html4.ATTRIBS.hasOwnProperty(attribKey))) {
+          var atype = html4.ATTRIBS[attribKey];
+          // Use rewriteAttribute to implement policy
+          // TODO(kpreid): This is wrong, because rewriteAttribute might reject
+          // an attr with an empty string value. We need a value-less code path.
+          var dummyValue = rewriteAttribute(tagName, attribName, atype, '');
+          if (dummyValue === null) {
+            // rejected
+            return null;
+          } else {
+            // permitted
+            return attribName;
+          }
+        } else if (/__$/.test(attribName)) {
+          // prohibited
+          return null;
+        } else {
+          // virtualized attribute
+          return cajaPrefix + attribName;
+        }
+      }
       function tagPolicy(tagName, attrs) {
         var schemaElem = htmlSchema.element(tagName);
         if (!schemaElem.allowed) {
@@ -2119,7 +2147,10 @@ var Domado = (function() {
         idSuffix: idSuffix,
 
         // Element/attribute rewriter
-        tagPolicy: tagPolicy
+        tagPolicy: tagPolicy,
+
+        // Attribute-name-only rewriter
+        virtualizeAttrName: sanitizeOneAttr
       });
 
       // needed by querySelectorAll, which is always scoped to a tame node,
