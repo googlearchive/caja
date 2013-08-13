@@ -1461,6 +1461,7 @@
         undefined, null, 'testUniverse', 'not an/id')));
     argsByProp('getElementsByTagName', freshResult(genMethod(genElementName)));
     argsByProp('getElementsByClassName', freshResult(genMethod(genClassName)));
+    argsByProp('getElementsByName', freshResult(genMethod(genString)));
     argsByProp('addEventListener', argsByProp('removeEventListener',
         genMethod(genEventName, G.value(function stubL() {}), genBoolean)));
 

@@ -937,6 +937,35 @@ document.write(
   });
 </script>
 
+<div id="testGetElementsByName" class="testcontainer"></div>
+  <!-- true name attribute -->
+  <input id="testGetElementsByName-1" name="testGetElementsByName-name">
+  <!-- virtualized name attribute -->
+  <div id="testGetElementsByName-2" name="testGetElementsByName-name"></div>
+  <!-- special characters test -->
+  <div id="testGetElementsByName-s" name="testGetElementsByName-]!&nbsp;:">
+      </div>
+<script>
+  jsunitRegisterIf(!!document.getElementsByName,  // impl is conditional
+      'testGetElementsByName', function() {
+    var els = document.getElementsByName('testGetElementsByName-name');
+    for (var i = 0; i < els.length; i++) {
+      console.log(String(els[i]), els[i]);
+    }
+    assertTrue('first', els[0] ===
+        document.getElementById('testGetElementsByName-1'));
+    assertTrue('second', els[1] ===
+        document.getElementById('testGetElementsByName-2'));
+    assertEquals('length', 2, els.length);
+    pass();
+
+    var special = document.getElementsByName('testGetElementsByName-]!\u00A0:');
+    assertTrue('special', special[0] ===
+        document.getElementById('testGetElementsByName-s'));
+    assertEquals('special length', 1, special.length);
+  });
+</script>
+
 <p id="testClassSetByEmitter" class="testcontainer"></p>
 <script type="text/javascript">
   jsunitRegister('testClassSetByEmitter',

@@ -6174,6 +6174,11 @@ var Domado = (function() {
         'CustomEvent': 0
       };
 
+      function escapeCSSString(value) {
+        // TODO(kpreid): refactor so this isn't duplicated from sanitizecss.js
+        return '"' + String(value).replace(/[^\w-]/g, '\\$&') + '"';
+      }
+
       function TameHTMLDocument(doc, container, domain) {
         TameNode.call(this, nodePolicyEditable);
         nodeAmplify(this, function(privates) {
@@ -6359,6 +6364,16 @@ var Domado = (function() {
           return tameGetElementsByClassName(
               privates.feralContainerNode, className);
         }),
+        getElementsByName: Props.cond(elementForFeatureTests.querySelector,
+            Props.ampMethod(function(privates, name) {
+          // knowingly non-live for our own sanity
+          var escName = escapeCSSString(name);
+          var selector = '[name=' + escName + '], [data-caja-name=' + escName +
+              ']';
+          return new TameNodeList(
+              privates.feralContainerNode.querySelectorAll(selector),
+              defaultTameNode);
+        })),
         querySelector: Props.cond(elementForFeatureTests.querySelector,
             Props.ampMethod(function(privates, selector) {
               return tameQuerySelector(privates.feralContainerNode, selector,
