@@ -160,7 +160,7 @@
       },
       {
         "guest": "dimensions",
-        "expected-pass": { "firefox": 131, "chrome": 141 }
+        "expected-pass": { "firefox": 131, "chrome": 141 },
         "comment": [
           "Current failure categories:",
             "We don't support navigating iframes.",
@@ -247,7 +247,7 @@
       },
       {
         "guest": "position",
-        "expected-pass": "all",
+        "expected-pass": "all"
       },
       {
         "guest": "progressbar",
