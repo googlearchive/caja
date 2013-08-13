@@ -188,8 +188,7 @@ public final class CssValidator {
     }
     CssSchema.CssPropertyInfo pinfo = cssSchema.getCssProperty(
         prop.getPropertyName());
-    if (null == pinfo
-        && prop.getPropertyName().getCanonicalForm().startsWith("_")) {
+    if (null == pinfo && prop.getString().startsWith("_")) {
       // From {@link "http://en.wikipedia.org/wiki/CSS_filter#Underscore_hack"}:
       //     Versions 6 and below of Internet Explorer recognize properties
       //     which are preceded by an underscore.  All other browsers ignore
@@ -204,7 +203,13 @@ public final class CssValidator {
       //     3. MSIE 5+ for Windows ignores the "_" at the beginning of any CSS
       //        property name
       pinfo = cssSchema.getCssProperty(
-          Name.css(prop.getPropertyName().getCanonicalForm().substring(1)));
+          Name.css(prop.getString().substring(1)));
+    }
+    if (null == pinfo && prop.getString().startsWith("-")) {
+      String baseProp = removeVendorPrefix(prop.getString());
+      if (baseProp != null) {
+        pinfo = cssSchema.getCssProperty(Name.css(baseProp));
+      }
     }
     if (null == pinfo) {
       mq.addMessage(
@@ -228,6 +233,31 @@ public final class CssValidator {
     }
 
     return true;
+  }
+
+  // See the similar function withoutVendorPrefix in sanitizecss.js
+  private static String[] vendorPrefixes = {
+    "-apple-",
+    "-css-",
+    "-epub-",
+    "-khtml-",
+    "-moz-",
+    "-ms-",
+    "-mso-",
+    "-o-",
+    "-rim-",
+    "-wap-",
+    "-webkit-",
+    "-xv-",
+  };
+
+  private static String removeVendorPrefix(String name) {
+    for (String prefix : vendorPrefixes) {
+      if (name.startsWith(prefix)) {
+        return name.substring(prefix.length());
+      }
+    }
+    return null;
   }
 
   /** User agent hacks' declarations must be valid. */

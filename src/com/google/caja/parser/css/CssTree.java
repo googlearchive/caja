@@ -496,6 +496,10 @@ public abstract class CssTree extends AbstractParseTreeNode {
       return ident;
     }
 
+    public String getString() {
+      return ident.getCanonicalForm();
+    }
+
     public void render(RenderContext r) {
       r.getOut().mark(getFilePosition());
       renderCssIdent(ident.getCanonicalForm(), r);

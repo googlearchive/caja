@@ -118,6 +118,7 @@ var sanitizeMediaQuery = undefined;
     // how Mozilla recognizes some -webkit-
     // http://wiki.csswg.org/spec/vendor-prefixes talks more about
     // cross-implementation, and lists other prefixes.
+    // Note: info is duplicated in CssValidator.java
     return ident.replace(
         /^-(?:apple|css|epub|khtml|moz|mso?|o|rim|wap|webkit|xv)-(?=[a-z])/, '');
   }

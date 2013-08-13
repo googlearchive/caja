@@ -39,6 +39,21 @@ import java.util.List;
  */
 public final class CssValidatorTest extends CajaTestCase {
 
+  public final void testVendorPrefix() throws Exception {
+    runTest("a { -moz-animation-duration: 1s }",
+        "StyleSheet\n"
+        + "  RuleSet\n"
+        + "    Selector\n"
+        + "      SimpleSelector\n"
+        + "        IdentLiteral : a\n"
+        + "    PropertyDeclaration\n"
+        + "      Property : -moz-animation-duration\n"
+        + "      Expr\n"
+        + "        Term ; cssPropertyPartType=TIME"
+        +             " ; cssPropertyPart=animation-duration\n"
+        + "          QuantityLiteral : 1s\n");
+  }
+
   // Note, transition-property is special because it uses <property-name>
   public final void testValidateTransition() throws Exception {
     runTest("a { transition-property: color }",

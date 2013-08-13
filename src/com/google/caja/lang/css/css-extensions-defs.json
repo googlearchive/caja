@@ -16,9 +16,6 @@
       "source": "http://dev.w3.org/csswg/css-animations/#animation"
     },
 
-    { "key": "-webkit-animation",
-      "as": "animation" },
-
     { "key": "animation-delay",
       "signature": "<time> [, <time>]*",
       "initial": "0s",
@@ -27,9 +24,6 @@
       "mediaGroups": ["visual"],
       "source": "http://dev.w3.org/csswg/css-animations/#animation-delay"
     },
-
-    { "key": "-webkit-animation-delay",
-      "as": "animation-delay" },
 
     { "key": "animation-direction",
       "signature": "<single-animation-direction> [, <single-animation-direction>]*",
@@ -40,9 +34,6 @@
       "source": "http://dev.w3.org/csswg/css-animations/#animation-direction"
     },
 
-    { "key": "-webkit-animation-direction",
-      "as": "animation-direction" },
-
     { "key": "animation-duration",
       "signature": "<time> [, <time>]*",
       "initial": "0s",
@@ -51,9 +42,6 @@
       "mediaGroups": ["visual"],
       "source": "http://dev.w3.org/csswg/css-animations/#animation-duration"
     },
-
-    { "key": "-webkit-animation-duration",
-      "as": "animation-duration" },
 
     { "key": "animation-fill-mode",
       "signature": "<single-animation-fill-mode> [, <single-animation-fill-mode>]*",
@@ -64,9 +52,6 @@
       "source": "http://dev.w3.org/csswg/css-animations/#animation-fill-mode"
     },
 
-    { "key": "-webkit-animation-fill-mode",
-      "as": "animation-fill-mode" },
-
     { "key": "animation-iteration-count",
       "signature": "<single-animation-iteration-count> [, <single-animation-iteration-count>]*",
       "initial": "1",
@@ -75,9 +60,6 @@
       "mediaGroups": ["visual"],
       "source": "http://dev.w3.org/csswg/css-animations/#animation-iteration-count"
     },
-
-    { "key": "-webkit-animation-iteration-count",
-      "as": "animation-iteration-count" },
 
     { "key": "animation-name",
       "signature": "<single-animation-name> [, <single-animation-name>]*",
@@ -88,9 +70,6 @@
       "source": "http://dev.w3.org/csswg/css-animations/#animation-name"
     },
 
-    { "key": "-webkit-animation-name",
-      "as": "animation-name" },
-
     { "key": "animation-play-state",
       "signature": "<single-animation-play-state> [, <single-animation-play-state>]*",
       "initial": "running",
@@ -99,9 +78,6 @@
       "mediaGroups": ["visual"],
       "source": "http://dev.w3.org/csswg/css-animations/#animation-play-state"
     },
-
-    { "key": "-webkit-animation-play-state",
-      "as": "animation-play-state" },
 
     { "key": "animation-timing-function",
       "signature": "<single-timing-function> [, <single-timing-function>]*",
@@ -112,15 +88,9 @@
       "source": "http://dev.w3.org/csswg/css-animations/#animation-timing-function"
     },
 
-    { "key": "-webkit-animation-timing-function",
-      "as": "animation-timing-function" },
-
     { "key": "backface-visibility",
       "as": "visibility"
     },
-
-    { "key": "-webkit-backface-visibility",
-      "as": "visibility" },
 
     { "key": "background",
       "signature": "[ [ <bg-image> || [<bg-position> [/ <bg-size>]? | / <bg-size>] || <repeat-style> || <attachment> || <bg-origin> ] , ]* ['background-color' || <bg-image> || [<bg-position> [/ <bg-size>]? | / <bg-size>] || <repeat-style> || <attachment> || <bg-origin>]",
@@ -211,14 +181,6 @@
       "source": "http://dev.w3.org/csswg/css3-background/#the-border-radius",
       "dom2property": "borderRadius"
     },
-    { "key": "-moz-border-radius",
-      "as": "border-radius",
-      "source": "http://www.the-art-of-web.com/css/border-radius/",
-      "dom2property": "MozBorderRadius" },
-    { "key": "-webkit-border-radius",
-      "as": "border-radius",
-      "source": "http://www.the-art-of-web.com/css/border-radius/",
-      "dom2property": "WebkitBorderRadius" },
 
     { "key": "border-top-left-radius",
       "signature": "[<length> | <percentage>] [<length> | <percentage>]?",
@@ -227,51 +189,27 @@
       "inherited": false,
       "mediaGroups": ["visual"],
       "source": "http://dev.w3.org/csswg/css3-background/#the-border-radius" },
+    { "key": "-moz-border-radius-topleft",
+      "as": "border-top-left-radius",
+      "comment": "Note the nonstandard name. Used in Firefox 1.0 - 12.0" },
 
     { "key": "border-top-right-radius",
       "as": "border-top-left-radius" },
+    { "key": "-moz-border-radius-topright",
+      "as": "border-top-left-radius",
+      "comment": "Note the nonstandard name. Used in Firefox 1.0 - 12.0" },
 
     { "key": "border-bottom-left-radius",
       "as": "border-top-left-radius" },
+    { "key": "-moz-border-radius-bottomleft",
+      "as": "border-top-left-radius",
+      "comment": "Note the nonstandard name. Used in Firefox 1.0 - 12.0" },
 
     { "key": "border-bottom-right-radius",
       "as": "border-top-left-radius" },
-
-    { "key": "-moz-border-radius-topleft",
-      "as": "border-top-left-radius" },
-
-    { "key": "-webkit-border-radius-top-left",
-      "as": "border-top-left-radius" },
-
-    { "key": "-webkit-border-top-left-radius",
-      "as": "border-top-left-radius" },
-
-    { "key": "-moz-border-radius-topright",
-      "as": "border-top-left-radius" },
-
-    { "key": "-webkit-border-radius-top-right",
-      "as": "border-top-left-radius" },
-
-    { "key": "-webkit-border-top-right-radius",
-      "as": "border-top-left-radius" },
-
-    { "key": "-moz-border-radius-bottomleft",
-      "as": "border-top-left-radius" },
-
-    { "key": "-webkit-border-radius-bottom-left",
-      "as": "border-top-left-radius" },
-
-    { "key": "-webkit-border-bottom-left-radius",
-      "as": "border-top-left-radius" },
-
     { "key": "-moz-border-radius-bottomright",
-      "as": "border-top-left-radius" },
-
-    { "key": "-webkit-border-radius-bottom-right",
-      "as": "border-top-left-radius" },
-
-    { "key": "-webkit-border-bottom-right-radius",
-      "as": "border-top-left-radius" },
+      "as": "border-top-left-radius",
+      "comment": "Note the nonstandard name. Used in Firefox 1.0 - 12.0" },
 
     { "key": "box-sizing",
       "signature": "content-box | padding-box | border-box | inherit",
@@ -394,34 +332,11 @@
       "mediaGroups": ["visual"],
       "dom2property": "opacity",
       "source": "http://dev.w3.org/csswg/css3-color/#transparency" },
-    { "key": "-moz-opacity",
-      "signature": "<alphavalue> | inherit",
-      "default": "1",
-      "appliesTo": "*",
-      "inherited": true,
-      "mediaGroups": ["visual"],
-      "dom2property": "MozOpacity",
-      "source": "https://developer.mozilla.org/en/CSS/opacity" },
     { "key": "<alphavalue>",
       "signature": "<number:0,1>",
       "source": "http://dev.w3.org/csswg/css3-color/#alphavaluedt"
     },
     { "key": "<alpha>", "signature": "<integer:0,255>|<number:0,1>|<percentage:0,100>" },
-
-    { "key": "-moz-outline",
-      "as": "outline",
-      "dom2property": "MozOutline",
-      "source": "https://developer.mozilla.org/en/CSS/-moz-outline"
-    },
-    { "key": "-moz-outline-color",
-      "as": "outline-color",
-      "dom2property": "MozOutlineColor" },
-    { "key": "-moz-outline-style",
-      "as": "outline-style",
-      "dom2property": "MozOutlineStyle" },
-    { "key": "-moz-outline-width",
-      "as": "outline-width",
-      "dom2property": "MozOutlineWidth" },
 
     { "key": "overflow-wrap",
       "signature": "normal | break-word | inherit",
@@ -452,9 +367,6 @@
       "source": "http://dev.w3.org/csswg/css-transforms/#perspective"
     },
 
-    { "key": "-webkit-perspective",
-      "as": "perspective" },
-
     { "key": "perspective-origin",
       "signature": "[ left | center | right | top | bottom | <percentage> | <length> ] | [ left | center | right | <percentage> | <length> ] [ top | center | bottom | <percentage> | <length> ] | [ top | bottom ] [ left | center | right | <percentage> | <length> ]",
       "default": "50% 50%",
@@ -463,9 +375,6 @@
       "mediaGroups": ["visual"],
       "source": "http://dev.w3.org/csswg/css-transforms/#perspective-origin"
     },
-
-    { "key": "-webkit-perspective-origin",
-      "as": "perspective-origin" },
 
     { "key": "text-overflow",
       "signature": "clip | ellipsis",
@@ -476,10 +385,6 @@
       "dom2property": "textOverflow",
       "source": "http://www.css3.com/css-text-overflow/" },
 
-    { "key": "-o-text-overflow",
-      "as": "text-overflow",
-      "dom2property": "OTextOverflow" },
-
     { "key": "box-shadow",
       "signature": "none | [ <shadow>, ]* <shadow>",
       "default": "none",
@@ -488,12 +393,6 @@
       "mediaGroups": ["visual"],
       "dom2property": "boxShadow",
       "source": "http://dev.w3.org/csswg/css3-background/#box-shadow" },
-
-    { "key": "-moz-box-shadow",
-      "as": "box-shadow" },
-
-    { "key": "-webkit-box-shadow",
-      "as": "box-shadow" },
 
     { "key": "text-shadow",
       "signature": "none | [ <shadow>, ]* <shadow>",
@@ -524,9 +423,6 @@
       "source": "http://dev.w3.org/csswg/css-transforms/#transform"
     },
 
-    { "key": "-webkit-transform",
-      "as": "transform" },
-
     { "key": "transform-origin",
       "signature": "<position>",
       "default": "50% 50%",
@@ -535,9 +431,6 @@
       "mediaGroups": ["visual"],
       "source": "http://dev.w3.org/csswg/css-transforms/#transform-origin"
     },
-
-    { "key": "-webkit-transform-origin",
-      "as": "transform-origin" },
 
     { "key": "transform-style",
       "signature": "flat | preserve-3d",
@@ -548,9 +441,6 @@
       "source": "http://dev.w3.org/csswg/css-transforms/#transform-style"
     },
 
-    { "key": "-webkit-transform-style",
-      "as": "transform-style" },
-
     { "key": "transition",
       "signature": "<single-transition> [, <single-transition>]*",
       "appliesTo": "*",
@@ -558,9 +448,6 @@
       "mediaGroups": ["interactive"],
       "source": "http://dev.w3.org/csswg/css-transitions/#transition"
     },
-
-    { "key": "-webkit-transition",
-      "as": "transition" },
 
     { "key": "transition-delay",
       "signature": "<time> [, <time>]*",
@@ -571,9 +458,6 @@
       "source": "http://dev.w3.org/csswg/css-transitions/#transition-delay"
     },
 
-    { "key": "-webkit-transition-delay",
-      "as": "transition-delay" },
-
     { "key": "transition-duration",
       "signature": "<time> [, <time>]*",
       "initial": "0s",
@@ -582,9 +466,6 @@
       "mediaGroups": ["interactive"],
       "source": "http://dev.w3.org/csswg/css-transitions/#transition-duration"
     },
-
-    { "key": "-webkit-transition-duration",
-      "as": "transition-duration" },
 
     { "key": "transition-property",
       "signature": "<single-transition-property> [, <single-transition-property>]*",
@@ -595,9 +476,6 @@
       "source": "http://dev.w3.org/csswg/css-transitions/#transition-property"
     },
 
-    { "key": "-webkit-transition-property",
-      "as": "transition-property" },
-
     { "key": "transition-timing-function",
       "signature": "<single-timing-function> [, <single-timing-function>]*",
       "initial": "ease",
@@ -606,9 +484,6 @@
       "mediaGroups": ["interactive"],
       "source": "http://dev.w3.org/csswg/css-transitions/#transition-timing-function"
     },
-
-    { "key": "-webkit-transition-timing-function",
-      "as": "transition-timing-function" },
 
     { "key": "white-space",
       "signature": "normal | pre | nowrap | pre-wrap | pre-line | inherit | -o-pre-wrap | -moz-pre-wrap | -pre-wrap",
