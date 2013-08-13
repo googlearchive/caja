@@ -3695,9 +3695,10 @@ var Domado = (function() {
       }
 
       var tameDispatchEventProp = Props.ampMethod(function(privates, evt) {
-        eventAmplify(evt, function(evtPriv) {
-          bridal.dispatchEvent(getFeralEventTarget(privates), evtPriv.feral);
-        });
+        return Boolean(eventAmplify(evt, function(evtPriv) {
+          return bridal.dispatchEvent(
+              getFeralEventTarget(privates), evtPriv.feral);
+        }));
       });
 
 
@@ -6132,6 +6133,20 @@ var Domado = (function() {
                 String(key), Number(location), String(modifiers),
                 Boolean(repeat), String(locale)]);
           })),
+          initCustomEvent: Props.ampMethod(function(
+              privates, type, bubbles, cancelable, detail) {
+            tameInitSomeEvent.call(this, privates, 'initCustomEvent', type,
+                bubbles, cancelable, [undefined]);
+            // Because the detail is an arbitrary guest value, don't pass it
+            // to the host DOM (which would be a membrane breach and which our
+            // .detail taming wouldn't let back in), but stash it as a
+            // guest-view override just like the guest assigned it.
+            // An alternative would be to do
+            //    ...initCustomEvent(..., taming.untame(detail));
+            // but it is unclear whether that would be the right thing since
+            // the taming membrane does not permit all objects.
+            this.detail = detail;
+          }),
 
           toString: Props.overridable(false, innocuous(function() {
             return '[domado object Event]';
@@ -6155,7 +6170,8 @@ var Domado = (function() {
         'MouseEvents': 0, 'MouseEvent': 0,
         // omitted MutationEvent, not particularly likely to be desirable
         'HTMLEvents': 0,
-        'KeyEvents': 0, 'KeyboardEvent': 0
+        'KeyEvents': 0, 'KeyboardEvent': 0,
+        'CustomEvent': 0
       };
 
       function TameHTMLDocument(doc, container, domain) {

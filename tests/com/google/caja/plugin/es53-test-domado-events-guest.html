@@ -755,10 +755,10 @@ TODO(felix8a): fix javascript url handling
       }), true);
 
       eventToSend = constructEvent();
-      eventTarget.dispatchEvent(eventToSend);
+      var dispatchResult = eventTarget.dispatchEvent(eventToSend);
       assertTrue('event did fire', fired);
-      
-      assertFinally();
+
+      assertFinally(dispatchResult);
     });
   }
 </script>
@@ -783,7 +783,8 @@ TODO(felix8a): fix javascript url handling
         function assertProperties(event) {
           assertEquals("received correct details", 'hiya', event.details);
         },
-        function assertFinally() {
+        function assertFinally(dispatchResult) {
+          assertEquals('dispatchEvent return value', true, dispatchResult);
         });
     pass('testCustomEvents');
   });
@@ -844,11 +845,60 @@ TODO(felix8a): fix javascript url handling
         function assertProperties(event) {
           assertEquals('received correct data', 7, event.screenX);
         },
-        function assertFinally() {
+        function assertFinally(dispatchResult) {
+          assertEquals('dispatchEvent return value', true, dispatchResult);
           assertEquals('check final state not changed', false,
             eventTarget.checked);
         });
     pass('testDispatchedNoncustom');
+  });
+</script>
+
+<p id="testStopPropagation" class="testcontainer">
+  <span id="testStopPropagation-inner">testStopPropagation</span>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testStopPropagation', function() {
+    var outerFired = false;
+    document.getElementById('testStopPropagation').addEventListener(
+        'foo', function(event) { outerFired = true; }, false);
+    runEventDispatchTest(
+        'foo',
+        document.getElementById('testStopPropagation-inner'),
+        function constructEvent() {
+          var eventToSend = document.createEvent('Events');
+          eventToSend.initEvent('foo', true, true);
+          return eventToSend;
+        },
+        function assertProperties(event) {
+          event.stopPropagation();
+        },
+        function assertFinally(dispatchResult) {
+          assertEquals('dispatchEvent return value', true, dispatchResult);
+          assertFalse('event was stopped', outerFired);
+        });
+    pass();
+  });
+</script>
+
+<p id="testPreventDefault" class="testcontainer">testPreventDefault</p>
+<script type="text/javascript">
+  jsunitRegister('testPreventDefault', function() {
+    runEventDispatchTest(
+        'foo',
+        document.getElementById('testPreventDefault'),
+        function constructEvent() {
+          var eventToSend = document.createEvent('Events');
+          eventToSend.initEvent('foo', true, true);
+          return eventToSend;
+        },
+        function assertProperties(event) {
+          event.preventDefault();
+        },
+        function assertFinally(dispatchResult) {
+          assertEquals('dispatchEvent return value', false, dispatchResult);
+        });
+    pass();
   });
 </script>
 
@@ -974,6 +1024,16 @@ TODO(felix8a): fix javascript url handling
     }
     assertTrue('one of initKeyboardEvent or initKeyEvent is available',
         keyboardOK);
+
+    // worst-case detail value: see comments in initCustomEvent implementation
+    // about the issues.
+    var detailObj = new (function DetailTestCtor() {})();
+    event = document.createEvent('CustomEvent');
+    event.initCustomEvent('foo', false, true, detailObj);
+    assertEquals('initCustomEvent type', 'foo', event.type);
+    assertEquals('initCustomEvent bubbles', false, event.bubbles);
+    assertEquals('initCustomEvent cancelable', true, event.cancelable);
+    assertTrue('initCustomEvent detail', event.detail === detailObj);
 
     pass('testInitEvent');
   });

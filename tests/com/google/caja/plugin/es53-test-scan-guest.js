@@ -1418,6 +1418,8 @@
     argsByProp('createDocumentFragment', genNoArgMethod);
     argsByProp('createEvent', freshResult(genMethod(genEventClass)));
     argsByProp('initEvent', genMethod(genEventName, genBoolean, genBoolean));
+    argsByProp('initCustomEvent', genMethod(genEventName, genBoolean,
+          genBoolean, genJSONValue /* TODO(kpreid): interesting objects */));
     argsByProp('initUIEvent', G.none);  // implemented like initEvent
     argsByProp('initKeyEvent', G.none);  // implemented like initEvent
     argsByProp('initKeyboardEvent', G.none);  // implemented like initEvent
