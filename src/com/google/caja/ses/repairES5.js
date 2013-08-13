@@ -1036,6 +1036,85 @@ var ses;
   }
 
   /**
+   * v8 bug: Array prototype methods operate on window if called as functions
+   * (literally, not with .call()/.apply()).
+   */
+  function test_GLOBAL_LEAKS_FROM_ARRAY_METHODS() {
+    var readCanary = {};
+    var writeCanary = {};
+
+    var saved = [];
+    function save(name) {
+      var opt_desc = Object.getOwnPropertyDescriptor(global, name);
+      saved.push([name, opt_desc]);
+      return !!opt_desc;
+    }
+    // Save the state of all properties that our test might mutate. We save
+    // 'length' and all numeric-indexed properties which
+    //   * have indexes less than global.length,
+    //   * are numbered consecutively from other saved properties, or
+    //   * are possibly mutated by our tests (the + 2).
+    var lengthVal = global.length;
+    var minSaveLength =
+        ((typeof lengthVal === 'number' && isFinite(lengthVal))
+            ? lengthVal : 0) + 2;
+    save('length');
+    var found = true;
+    for (var i = 0; found || i < minSaveLength; i++) {
+      found = save(i);
+    }
+
+    function subtest(name, args, failPredicate) {
+      var method = Array.prototype[name];
+      try {
+        var result = method(args[0], args[1], args[2]);
+      } catch (err) {
+        if (err instanceof TypeError) { return false; }
+        return 'Unexpected error from ' + name + ': ' + err;
+      }
+      if (failPredicate(result)) { return true; }
+      return 'Unexpected result from ' + name + ': ' + result;
+    }
+
+    try {
+      // Insert a dummy value to use.
+      try {
+        Array.prototype.push.call(global, readCanary);
+      } catch (e) {
+        // Fails on Firefox (which doesn't have this bug). Continue with the
+        // test anyway just in case (but readCanary-using subtests will report
+        // unexpected rather than true).
+      }
+
+      return (
+        subtest('concat', [[]], function(result) {
+            return result[0] === global; })
+        || subtest('slice', [0], function(result) {
+            return result[result.length-1] === readCanary; })
+        || subtest('pop', [], function(result) {
+            return result === readCanary; })
+        || subtest('push', [writeCanary], function(result) {
+            return global[global.length-1] === writeCanary; })
+        || subtest('shift', [], function(result) { return true; })
+        || subtest('slice', [], function(result) {
+            return result.indexOf(readCanary) !== -1; })
+        || subtest('splice', [0, 1, writeCanary], function(result) {
+            return global[0] === writeCanary; })
+        || subtest('unshift', [writeCanary], function(result) {
+            return global[0] === writeCanary; })
+      );
+    } finally {
+      saved.forEach(function(record) {
+        if (record[1]) {
+          Object.defineProperty(global, record[0], record[1]);
+        } else {
+          delete global[record[0]];
+        }
+      });
+    }
+  }
+
+  /**
    * Detects https://bugs.webkit.org/show_bug.cgi?id=55736
    *
    * <p>As of this writing, the only major browser that does implement
@@ -3151,6 +3230,32 @@ var ses;
     }
   }
 
+  function repair_GLOBAL_LEAKS_FROM_ARRAY_METHODS() {
+    var object = Array.prototype;
+    [
+      'concat', 'pop', 'push', 'shift', 'slice', 'splice', 'unshift'
+    ].forEach(function(name) {
+      // reuse desc to avoid reiterating prop attributes
+      var desc = Object.getOwnPropertyDescriptor(object, name);
+      var existingMethod = desc.value;
+
+      if (Function.prototype.toString.call(existingMethod)
+          .indexOf('[native code]') === -1) {
+        // If the function has already been wrapped by one of our other repairs,
+        // then we don't need to introduce this additional wrapper.
+        return;
+      }
+
+      desc.value = function globalLeakDefenseWrapper() {
+        // To repair this bug it is sufficient to force the method to be called
+        // using .apply(), as it only occurs if it is called as a literal
+        // function, e.g. var concat = Array.prototype.concat; concat().
+        return existingMethod.apply(this, arguments);
+      };
+      Object.defineProperty(object, name, desc);
+    });
+  }
+
   ////////////////////// Kludge Records /////////////////////
   //
   // Each kludge record has a <dl>
@@ -4022,7 +4127,22 @@ var ses;
 	     'https://bugs.webkit.org/show_bug.cgi?id=106160'],
       sections: ['15.3.2.1'],
       tests: []
+    },
+    {
+      id: 'GLOBAL_LEAKS_FROM_ARRAY_METHODS',
+      description: 'Array methods as functions operate on global object',
+      test: test_GLOBAL_LEAKS_FROM_ARRAY_METHODS,
+      repair: repair_GLOBAL_LEAKS_FROM_ARRAY_METHODS,
+      preSeverity: severities.NOT_ISOLATED,
+      canRepair: true,
+      urls: ['https://code.google.com/p/google-caja/issues/detail?id=1789',
+             'http://code.google.com/p/v8/issues/detail?id=2758'],
+      sections: ['15.4.4'],
+      tests: [] // TODO(kpreid): Add to test262
     }
+    // Note: GLOBAL_LEAKS_FROM_ARRAY_METHODS should be LAST in this list so as
+    // to run its repair last, which reduces the number of chained wrapper
+    // functions resulting from repairs.
   ];
 
   ////////////////////// Testing, Repairing, Reporting ///////////
