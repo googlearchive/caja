@@ -2252,6 +2252,38 @@ var ses;
     return (x.length !== 2 || x[0] !== 1 || x[1] !== 2);
   }
 
+  var unrepairedArrayPush = Array.prototype.push;
+  /**
+   * Detects the array-length aspect of
+   * <a href="https://code.google.com/p/v8/issues/detail?id=2711">v8 bug 2711
+   * </a>. We detect this specifically because repairing it avoids the need
+   * to patch .push() at performance cost.
+   */
+  function test_ARRAY_LENGTH_MUTABLE() {
+    for (var i = 0; i < 2; i++) {  // Only shows up the second time
+      var x = [1,2];
+      Object.freeze(x);
+      try {
+        // Call the unrepaired Array.prototype.push which is known to trigger
+        // the internal mutability bug (whereas e.g. repair_PUSH_IGNORES_SEALED
+        // would hide it). This is being used as a test mechanism and not
+        // because the bug is in push.
+        unrepairedArrayPush.call(x, 3);
+      } catch (e) {
+        // Don't care whether or not push throws; if it does not mutate and
+        // does not throw, that's a bug but not this bug.
+      }
+      if (x[0] !== 1 || x[1] !== 2 || x[2] !== undefined) {
+        return 'Unexpected modification to elements of array';
+      }
+      if (x.length === 3) { return true; }
+      if (x.length !== 2) {
+        return 'Unexpected modification to length of array';
+      }
+    }
+    return false;
+  }
+
   /**
    * In some browsers, assigning to array length can delete
    * non-configurable properties.
@@ -3090,6 +3122,34 @@ var ses;
     });
   }
 
+  function repair_ARRAY_LENGTH_MUTABLE() {
+    var freeze = Object.freeze;
+    var seal = Object.seal;
+    var preventExtensions = Object.preventExtensions;
+    var isArray = Array.isArray;
+    ['freeze', 'seal', 'preventExtensions'].forEach(function(prop) {
+      var desc = Object.getOwnPropertyDescriptor(Object, prop);
+      var existingMethod = desc.value;
+      desc.value = function protectLengthWrapper(O) {
+        if (isArray(O)) {
+          var lengthDesc = Object.getOwnPropertyDescriptor(O, 'length');
+          // This is the key repair: making length specifically non-writable
+          // forces the slow path for array-modifying operations where an
+          // ordinary freeze doesn't. Note that this is technically incorrect
+          // for seal and preventExtensions, but modifying the length of such
+          // an array makes little sense anyway.
+          if (typeof lengthDesc.writable === 'boolean') {
+            lengthDesc.writable = false;
+            Object.defineProperty(O, 'length', lengthDesc);
+          }
+        }
+        existingMethod(O);
+        return O;
+      };
+      Object.defineProperty(Object, prop, desc);
+    });
+  }
+
   // error message is matched elsewhere (for tighter bounds on catch)
   var NO_CREATE_NULL =
       'Repaired Object.create can not support Object.create(null)';
@@ -3253,6 +3313,72 @@ var ses;
         return existingMethod.apply(this, arguments);
       };
       Object.defineProperty(object, name, desc);
+    });
+  }
+
+  ////////////////////// Generic tests/repairs /////////////////////
+  //
+  // These are tests and repairs which follow a pattern, such that it is
+  // more practical to define them programmatically.
+
+  function arrayMutatorKludge(destination, prop, testArgs) {
+    function testArrayMutator(op) {
+      return function() {
+        var x = [2, 1];  // disordered to detect sort()
+        Object[op](x);
+        try {
+          x[prop].apply(x, testArgs);
+        } catch (e) {
+          if (x.length === 2 && x[0] === 2 && x[1] === 1) { return false; }
+        }
+        // It is actually still a non-conformance if the array was not
+        // mutated but the method did not throw, but not an
+        // UNSAFE_SPEC_VIOLATION.
+        return (x.length !== 2 || x[0] !== 2 || x[1] !== 1);
+      };
+    }
+
+    function repairArrayMutator() {
+      var originalMethod = Array.prototype[prop];
+      var isSealed = Object.isSealed;
+      Object.defineProperty(Array.prototype, prop, {
+        value: function repairedArrayMutator(var_args) {
+          if (isSealed(this)) {
+            throw new TypeError('Cannot mutate a sealed array.');
+          }
+          return originalMethod.apply(this, arguments);
+        },
+        configurable: true,
+        writable: true
+      });
+    }
+
+    destination.push({
+      id: (prop + '_IGNORES_SEALED').toUpperCase(),
+      description: 'Array.prototype.' + prop + ' ignores sealing',
+      test: testArrayMutator('seal'),
+      repair: repairArrayMutator,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      canRepair: false,  // does not protect individual properties, only
+          // fully sealed objects
+      urls: [
+          'https://code.google.com/p/v8/issues/detail?id=2615',
+          'https://code.google.com/p/v8/issues/detail?id=2711'],
+      sections: ['15.2.3.8'],
+      tests: [] // TODO(jasvir): Add to test262
+    });
+    destination.push({
+      id: (prop + '_IGNORES_FROZEN').toUpperCase(),
+      description: 'Array.prototype.' + prop + ' ignores freezing',
+      test: testArrayMutator('freeze'),
+      repair: repairArrayMutator,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      canRepair: true,
+      urls: [
+          'https://code.google.com/p/v8/issues/detail?id=2615',
+          'https://code.google.com/p/v8/issues/detail?id=2711'],
+      sections: ['15.2.3.9'],
+      tests: [] // TODO(jasvir): Add to test262
     });
   }
 
@@ -3789,7 +3915,7 @@ var ses;
       canRepair: true,
       urls: ['http://code.google.com/p/v8/issues/detail?id=2441'],
       sections: ['8.6.2'],
-      tests: [] // TODO(erights): Add to test262
+      tests: [] // TODO(jasvir): Add to test262
     },
     {
       id: 'STRICT_EVAL_LEAKS_GLOBAL_VARS',
@@ -3822,7 +3948,7 @@ var ses;
       canRepair: false,
       urls: ['http://code.google.com/p/v8/issues/detail?id=2396'],
       sections: ['10.2'],
-      tests: [] // TODO(erights): Add to test262
+      tests: [] // TODO(jasvir): Add to test262
     },
     {
       id: 'PARSEINT_STILL_PARSING_OCTAL',
@@ -3893,7 +4019,7 @@ var ses;
       canRepair: true,
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=75788'],
       sections: ['15.4.4.6'],
-      tests: [] // TODO(erights): Add to test262
+      tests: [] // TODO(jasvir): Add to test262
     },
     {
       id: 'SORT_IGNORES_FROZEN',
@@ -3904,18 +4030,18 @@ var ses;
       canRepair: true,
       urls: ['http://code.google.com/p/v8/issues/detail?id=2419'],
       sections: ['15.4.4.11'],
-      tests: [] // TODO(erights): Add to test262
+      tests: [] // TODO(jasvir): Add to test262
     },
     {
       id: 'PUSH_IGNORES_SEALED',
       description: 'Array.prototype.push ignores sealing',
       test: test_PUSH_IGNORES_SEALED,
-      repair: repair_PUSH_IGNORES_SEALED,
+      repair: repair_ARRAY_LENGTH_MUTABLE,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
       canRepair: true,
       urls: ['http://code.google.com/p/v8/issues/detail?id=2412'],
       sections: ['15.4.4.11'],
-      tests: [] // TODO(erights): Add to test262
+      tests: [] // TODO(jasvir): Add to test262
     },
     {
       id: 'PUSH_DOES_NOT_THROW_ON_FROZEN_ARRAY',
@@ -3926,18 +4052,18 @@ var ses;
       canRepair: true,
       urls: ['https://code.google.com/p/v8/issues/detail?id=2711'],
       sections: ['15.2.3.9'],
-      tests: [] // TODO(erights): Add to test262
+      tests: [] // TODO(jasvir): Add to test262
     },
     {
       id: 'PUSH_IGNORES_FROZEN',
       description: 'Array.prototype.push ignores frozen',
       test: test_PUSH_IGNORES_FROZEN,
-      repair: repair_PUSH_IGNORES_SEALED,
+      repair: repair_ARRAY_LENGTH_MUTABLE,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
       canRepair: true,
       urls: ['https://code.google.com/p/v8/issues/detail?id=2711'],
       sections: ['15.2.3.9'],
-      tests: [] // TODO(erights): Add to test262
+      tests: [] // TODO(jasvir): Add to test262
     },
     {
       id: 'ARRAYS_DELETE_NONCONFIGURABLE',
@@ -3948,7 +4074,18 @@ var ses;
       canRepair: false,
       urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=590690'],
       sections: ['15.4.5.2'],
-      tests: [] // TODO(erights): Add to test262
+      tests: [] // TODO(jasvir): Add to test262
+    },
+    {
+      id: 'ARRAY_LENGTH_MUTABLE',
+      description: 'Freezing an array does not make .length immutable',
+      test: test_ARRAY_LENGTH_MUTABLE,
+      repair: repair_ARRAY_LENGTH_MUTABLE,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      canRepair: true,
+      urls: ['https://code.google.com/p/v8/issues/detail?id=2711'],
+      sections: ['15.4.5.1'],
+      tests: [] // TODO(jasvir): Add to test262
     },
     {
       id: 'ARRAYS_MODIFY_READONLY',
@@ -3959,7 +4096,7 @@ var ses;
       canRepair: false,
       urls: ['http://code.google.com/p/v8/issues/detail?id=2379'],
       sections: ['15.4.5.1.3.f'],
-      tests: [] // TODO(erights): Add to test262
+      tests: [] // TODO(jasvir): Add to test262
     },
     {
       id: 'CANT_REDEFINE_NAN_TO_ITSELF',
@@ -3970,7 +4107,7 @@ var ses;
       canRepair: true,
       urls: [], // Seen on WebKit Nightly. TODO(erights): report
       sections: ['8.12.9', '15.1.1.1'],
-      tests: [] // TODO(erights): Add to test262
+      tests: [] // TODO(jasvir): Add to test262
     },
     {
       id: 'FREEZE_IS_FRAME_DEPENDENT',
@@ -4048,7 +4185,7 @@ var ses;
         'https://mail.mozilla.org/pipermail/es-discuss/2013-March/029177.html'],
       sections: [],  // Not spelled out in spec, according to Brendan Eich (see
                      // es-discuss link)
-      tests: []  // TODO(kpreid): add to test262 once we have a section to cite
+      tests: []  // TODO(jasvir): Add to test262 once we have a section to cite
     },
     {
       id: 'FREEZING_BREAKS_PROTOTYPES',
@@ -4085,7 +4222,7 @@ var ses;
              // TODO(kpreid): find or file Firefox bug (writable props)
              // TODO(kpreid): find or file Chrome bug (has a .prototype)
       sections: ['13.2.3'],
-      tests: []  // TODO(kpreid): add to test262
+      tests: []  // TODO(jasvir): Add to test262
     },
     {
       id: 'THROWTYPEERROR_PROPERTIES',
@@ -4099,7 +4236,7 @@ var ses;
              // TODO(kpreid): find or file Firefox bug (has writable props)
              // TODO(kpreid): find or file Chrome bug (has a .prototype!)
       sections: ['13.2.3'],
-      tests: []  // TODO(kpreid): add to test262
+      tests: []  // TODO(jasvir): Add to test262
     },
     {
       id: 'SYNTAX_ERRORS_ARENT_ALWAYS_EARLY',
@@ -4128,22 +4265,36 @@ var ses;
       sections: ['15.3.2.1'],
       tests: []
     },
-    {
-      id: 'GLOBAL_LEAKS_FROM_ARRAY_METHODS',
-      description: 'Array methods as functions operate on global object',
-      test: test_GLOBAL_LEAKS_FROM_ARRAY_METHODS,
-      repair: repair_GLOBAL_LEAKS_FROM_ARRAY_METHODS,
-      preSeverity: severities.NOT_ISOLATED,
-      canRepair: true,
-      urls: ['https://code.google.com/p/google-caja/issues/detail?id=1789',
-             'http://code.google.com/p/v8/issues/detail?id=2758'],
-      sections: ['15.4.4'],
-      tests: [] // TODO(kpreid): Add to test262
-    }
-    // Note: GLOBAL_LEAKS_FROM_ARRAY_METHODS should be LAST in this list so as
-    // to run its repair last, which reduces the number of chained wrapper
-    // functions resulting from repairs.
   ];
+
+  // UNSHIFT_IGNORES_SEALED
+  // UNSHIFT_IGNORES_FROZEN
+  // SPLICE_IGNORES_SEALED
+  // SPLICE_IGNORES_FROZEN
+  // SHIFT_IGNORES_SEALED
+  // SHIFT_IGNORES_FROZEN
+  arrayMutatorKludge(supportedKludges, 'unshift', ['foo']);
+  arrayMutatorKludge(supportedKludges, 'splice', [0, 1, 'foo']);
+  arrayMutatorKludge(supportedKludges, 'shift', []);
+  // Array.prototype.{push,pop,sort} are also subject to the problem
+  // arrayMutatorKludge handles, but are handled separately and more
+  // precisely.
+
+  // Note: GLOBAL_LEAKS_FROM_ARRAY_METHODS should be LAST in the list so as
+  // to run its repair last, which reduces the number of chained wrapper
+  // functions resulting from repairs.
+  supportedKludges.push({
+    id: 'GLOBAL_LEAKS_FROM_ARRAY_METHODS',
+    description: 'Array methods as functions operate on global object',
+    test: test_GLOBAL_LEAKS_FROM_ARRAY_METHODS,
+    repair: repair_GLOBAL_LEAKS_FROM_ARRAY_METHODS,
+    preSeverity: severities.NOT_ISOLATED,
+    canRepair: true,
+    urls: ['https://code.google.com/p/google-caja/issues/detail?id=1789',
+           'http://code.google.com/p/v8/issues/detail?id=2758'],
+    sections: ['15.4.4'],
+    tests: [] // TODO(kpreid): Add to test262
+  });
 
   ////////////////////// Testing, Repairing, Reporting ///////////
 
@@ -4212,7 +4363,7 @@ var ses;
             status = statuses.NOT_REPAIRED;
           }
         } else { // succeeded after
-          if (kludge.repair && !disposition(kludge).doNotRepair) {
+          if (kludge.repair && repairs.lastIndexOf(kludge.repair) !== -1) {
             if (!kludge.canRepair) {
               // repair for development, not safety
               postSeverity = kludge.preSeverity;

@@ -445,6 +445,9 @@ var caja = (function () {
           // we don't use partly-unmodifiable arrays, and the repair for push
           // is too slow to use unless necessary (i.e. PUSH_IGNORES_FROZEN)
           'PUSH_IGNORES_SEALED': { 'permit': true, 'doNotRepair': true },
+          'UNSHIFT_IGNORES_SEALED': { 'permit': true },
+          'SPLICE_IGNORES_SEALED': { 'permit': true },
+          'SHIFT_IGNORES_SEALED': { 'permit': true },
           'PUSH_DOES_NOT_THROW_ON_FROZEN_ARRAY':
               { 'permit': true, 'doNotRepair': true },
           'ARRAYS_DELETE_NONCONFIGURABLE': { 'permit': true },
