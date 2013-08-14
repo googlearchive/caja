@@ -192,7 +192,7 @@ var parseTestCatalog;
   function labelFromFilename(prefix, name) {
     forEach([
       /^\.\.\//,
-      /^es53-test-/,
+      /^test-/,
       new RegExp("^" + prefix),
       /(-guest|-test|_test)?.(html|js)$/
     ], function(pat) {

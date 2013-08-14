@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Google Inc.
+// Copyright (C) 2012 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,20 +13,21 @@
 // limitations under the License.
 
 /**
- * @fileoverview This test attempts to run some guest code as a cajoled module,
- * where the embedded Caja version number in the cajoled module does not match
- * the version of the JavaScript files. It asserts that this situation fails
- * safe and logs an appropriate error.
+ * @fileoverview This test attempts to run some guest code as a
+ * cajoled module, where the embedded Caja version number in the
+ * cajoled module does not match the version of the JavaScript files
+ * exactly but differs in the minor version.
  *
+ * @author jasvir@gmail.com
  * @author ihab.awad@gmail.com
  * @requires caja, jsunitRun, readyToTest
  */
 
-jsunitRegister('testVersionSkew', function testVersionSkew() {
-  fetch('es53-test-guest.out.js', function(script) {
+jsunitRegister('testMinorVersionSkew', function testMinorVersionSkew() {
+  fetch('fixture-guest.out.js', function(script) {
     script = script.replace(
         new RegExp(cajaBuildVersion, 'g'),
-        '0000');
+        cajaBuildVersion + 'M2');
     caja.initialize({
       cajaServer: '/caja',
       debug: !minifiedMode,
@@ -38,15 +39,12 @@ jsunitRegister('testVersionSkew', function testVersionSkew() {
       clientSideLoaded = true;
       try {
         frame.cajoled('/', script, undefined)
+             .api({ x : 1, y : 2 })
              .run(function(result) {
-               clearInterval(checkErrorsInterval);
-               // If we succeed in running, we fail the test!
-               fail('testVersionSkew');
+               jsunitPass('testMinorVersionSkew');
              });
       } catch (e) {
-        if (/Version error/.test(e)) {
-          jsunitPass('testVersionSkew');
-        }
+        fail('testMinorVersionSkew');
       }
     });
   });

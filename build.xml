@@ -736,18 +736,18 @@ For help on building and testing Caja, see:
 
     <!-- Statically cajole some tests for caja.js testing -->
     <transform>
-     <input file="${tests.caja}/plugin/es53-test-guest.js"/>
-     <output file="${testlib}/com/google/caja/plugin/es53-test-guest.out.js"
+     <input file="${tests.caja}/plugin/fixture-guest.js"/>
+     <output file="${testlib}/com/google/caja/plugin/fixture-guest.out.js"
              language="caja"/>
     </transform>
     <transform>
-     <input file="${tests.caja}/plugin/es53-test-guest.html"/>
-     <output file="${testlib}/com/google/caja/plugin/es53-test-guest.out.html"
+     <input file="${tests.caja}/plugin/fixture-guest.html"/>
+     <output file="${testlib}/com/google/caja/plugin/fixture-guest.out.html"
              language="caja"/>
     </transform>
     <transform>
-     <input file="${tests.caja}/plugin/es53-test-cajoled.js"/>
-     <output file="${testlib}/com/google/caja/plugin/es53-test-cajoled.out.js"
+     <input file="${tests.caja}/plugin/test-cajoled.js"/>
+     <output file="${testlib}/com/google/caja/plugin/test-cajoled.out.js"
              language="caja"/>
     </transform>
 
@@ -1078,7 +1078,7 @@ For help on building and testing Caja, see:
       <input file="${testlib}/com/google/caja/plugin/default-test-driver.js"/>
 
       <!-- an interestingly complicated test program -->
-      <input file="${testlib}/com/google/caja/plugin/es53-test-scan-guest.js"/>
+      <input file="${testlib}/com/google/caja/plugin/test-scan-guest.js"/>
     </transform>
 
     <copy todir="${testlib}">

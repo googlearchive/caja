@@ -50,7 +50,7 @@
   jsunitRegister('testES5ExplicitFailoverToES53', 
       function testES5ExplicitFailoverToES53() {
     caja.load(undefined, uriPolicy, function (frame) {
-      frame.code('es53-test-assert-es53mode.js', 'text/javascript')
+      frame.code('test-assert-es53mode.js', 'text/javascript')
            .api(createExtraImportsForTesting(caja, frame))
            .run(function(result) {
              jsunitPass('testES5ExplicitFailoverToES53');

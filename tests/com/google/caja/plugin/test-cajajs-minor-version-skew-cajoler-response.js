@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Google Inc.
+// Copyright (C) 2012 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,9 +17,10 @@
  * asserts that an error is returned from the request to cajole the guest code.
  * This test assumes it is run in an environment where "caja.js" and all its
  * client side dependencies are consistently of one version, but the cajoling
- * server is of a different version. It asserts that this situation will end in
- * failure, which is required to maintain invariants.
+ * server is of a different minor version. It asserts that this situation does
+ * not end in failure.
  *
+ * @author jasvir@gmail.com
  * @author ihab.awad@gmail.com
  * @requires caja, jsunitRun, readyToTest
  */
@@ -43,22 +44,23 @@ var testConsole = {
 
 var clientSideLoaded = false;
 
-jsunitRegister('testVersionSkew', function testVersionSkew() {
+jsunitRegister('testMinorVersionSkew', function testMinorVersionSkew() {
   caja.initialize({
     server: '/caja',
-    resources: '/caja/testing/skew-0000',
+    resources: '/caja/testing/skew-mmm',
     console: testConsole,
     es5Mode: false
   });
   caja.load(undefined, undefined, function (frame) {
     clientSideLoaded = true;
     var extraImports = { x: 4, y: 3 };
-    frame.code('es53-test-guest.js', 'text/javascript')
+    frame.code('fixture-guest.js', 'text/javascript')
          .api(extraImports)
          .run(function(result) {
-           clearInterval(checkErrorsInterval);
-           // If we succeed in running, we fail the test!
-           fail('testVersionSkew');
+           // Minor version skew should succeed
+           assertEquals(12, result);
+           assertContains('Build version error', consoleMessages);
+           jsunitPass('testMinorVersionSkew');
          });
   });
 });
@@ -67,18 +69,3 @@ jsunitRegister('testVersionSkew', function testVersionSkew() {
 
 readyToTest();
 jsunitRun();
-
-// Check for error strings in the console and pass if the expected error
-// is seen.
-
-function checkErrors() {
-  // TODO(ihab.awad): If we can pass the expected error message on the URL
-  // to the test, we can look for custom errors for each individual case. We
-  // would have to URL-encode/decode the expected message.
-  if (clientSideLoaded && /Build version error/.test(consoleMessages)) {
-    clearInterval(checkErrorsInterval);
-    jsunitPass('testVersionSkew');
-  }
-}
-
-checkErrorsInterval = setInterval(checkErrors, 125);

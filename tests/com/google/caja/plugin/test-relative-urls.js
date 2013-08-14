@@ -21,7 +21,7 @@
 
   caja.initialize(basicCajaConfig);
 
-  fetch('es53-test-relative-urls.html', function(testHtml) {
+  fetch('test-relative-urls.html', function(testHtml) {
     jsunitRegister('testRelativeUrls', function testRelativeUrls () {
       var div = createDiv();
       caja.load(div, caja.policy.net.ALL, function (frame) {

@@ -50,7 +50,7 @@
             },
             rewrite: function (uri, uriEffect, loaderType, hints) {
               if (uri.getPath().indexOf('test-image-41x13.png') !== -1) {
-                // used by es53-test-domado-dom-guest.html
+                // used by test-domado-dom-guest.html
                 return 'test-image-41x13.png';
               }
               return URI.create(

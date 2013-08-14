@@ -25,7 +25,7 @@
   document.title += ' {closured=' + !caja.closureCanary + '}';
 
   /**
-   * Assert that a cajoled and loaded es53-test-guest.js has the right 
+   * Assert that a cajoled and loaded fixture-guest.js has the right
    * results.
    */
   function assertGuestJsCorrect(frame, div, result) {
@@ -39,7 +39,7 @@
   }
 
   /**
-   * Assert that a cajoled and loaded es53-test-guest.html has the right 
+   * Assert that a cajoled and loaded fixture-guest.html has the right
    * results.
    */
   function assertGuestHtmlCorrect(frame, div) {
@@ -211,7 +211,7 @@
   jsunitRegister('testBuilderApiHtml', function testBuilderApiHtml() {
     var div = createDiv();
     caja.load(div, uriPolicy, function (frame) {
-      frame.code('es53-test-guest.html', 'text/html')
+      frame.code('fixture-guest.html', 'text/html')
            .run(function(result) {
               assertGuestHtmlCorrect(frame, div);
               jsunitPass('testBuilderApiHtml');
@@ -225,7 +225,7 @@
       function testBuilderApiXhr() {
     var div = createDiv();
     caja.load(div, xhrUriPolicy, function (frame) {
-      frame.code('es53-test-guest.html', 'text/html')
+      frame.code('fixture-guest.html', 'text/html')
            .run(function(result) {
               assertGuestHtmlCorrect(frame, div);
               jsunitPass('testBuilderApiXhr');
@@ -284,7 +284,7 @@
   jsunitRegister('testBuilderApiJsNoDom', function testBuilderApiJsNoDom() {
     caja.load(undefined, uriPolicy, function (frame) {
       var extraImports = { x: 4, y: 3 };
-      frame.code('es53-test-guest.js', 'text/javascript')
+      frame.code('fixture-guest.js', 'text/javascript')
            .api(extraImports)
            .run(function(result) {
              assertGuestJsCorrect(frame, undefined, result);
@@ -386,7 +386,7 @@
       function testBuilderApiContentHtml() {
     var div = createDiv();
     caja.load(div, uriPolicy, function (frame) {
-        fetch('es53-test-guest.html', function(resp) {
+        fetch('fixture-guest.html', function(resp) {
           frame.code(
               location.protocol + '//' + location.host + '/',
               'text/html', resp)
@@ -401,7 +401,7 @@
   jsunitRegister('testBuilderApiContentJs', function testBuilderApiContentJs() {
     caja.load(undefined, uriPolicy, function (frame) {
       var extraImports = { x: 4, y: 3 };
-      fetch('es53-test-guest.js', function(resp) {
+      fetch('fixture-guest.js', function(resp) {
         frame.code(
               location.protocol + '//' + location.host + '/',
               'application/javascript', resp)
@@ -419,7 +419,7 @@
       function testBuilderApiContentCajoledHtml() {
     var div = createDiv();
     caja.load(div, uriPolicy, function (frame) {
-      fetch('es53-test-guest.out.html', function(resp) {
+      fetch('fixture-guest.out.html', function(resp) {
         var htmlAndJs = splitHtmlAndScript(resp);
 
         frame.cajoled('/', htmlAndJs[1], htmlAndJs[0])
@@ -436,7 +436,7 @@
       function testBuilderApiContentCajoledJs() {
     caja.load(undefined, uriPolicy, function (frame) {
       var extraImports = { x: 4, y: 3 };
-      fetch('es53-test-guest.out.js', function(script) {
+      fetch('fixture-guest.out.js', function(script) {
         frame.cajoled(undefined, script, undefined)
              .api(extraImports)
              .run(function (result) {
@@ -454,8 +454,8 @@
       var imports = {
         setStatus: frame.tame(frame.markFunction(function(s) { status = s; }))
       };
-      fetch('es53-test-cajoled.out.js', function (cajoled) {
-        fetch('es53-test-uncajoled.js', function (uncajoled) {
+      fetch('test-cajoled.out.js', function (cajoled) {
+        fetch('test-uncajoled.js', function (uncajoled) {
           frame.cajoled(undefined, cajoled, undefined)
             .code(undefined, 'application/javascript', uncajoled)
             .api(imports)
@@ -477,7 +477,7 @@
     // TODO(ihab.awad): Test 'base url' functionality, esp. for "content" cases
     if (!inES5Mode)
     jsunitRegister('testContentCajoledHtml', function testContentCajoledHtml() {
-      fetch('es53-test-guest.out.html', function(resp) {
+      fetch('fixture-guest.out.html', function(resp) {
         var htmlAndScript = splitHtmlAndScript(resp);
         var div = createDiv();
         frameGroup.makeES5Frame(div, uriPolicy, function (frame) {
@@ -492,7 +492,7 @@
 
     if (!inES5Mode)
     jsunitRegister('testContentCajoledJs', function testContentCajoledJs() {
-      fetch('es53-test-guest.out.js', function(script) {
+      fetch('fixture-guest.out.js', function(script) {
         frameGroup.makeES5Frame(undefined, uriPolicy, function (frame) {
           var extraImports = { x: 4, y: 3 };
           frame.contentCajoled(undefined, script, undefined)
@@ -506,7 +506,7 @@
 
     if (!inES5Mode)
     jsunitRegister('testNoImports', function testNoImports() {
-      fetch('es53-test-guest.out.html', function(resp) {
+      fetch('fixture-guest.out.html', function(resp) {
         var htmlAndScript = splitHtmlAndScript(resp);
         var div = createDiv();
         frameGroup.makeES5Frame(div, uriPolicy, function (frame) {
@@ -524,7 +524,7 @@
     // jsunitRegister('testUrlCajoledJs', function testUrlCajoledJs() { });
 
     jsunitRegister('testContentHtml', function testContentHtml() {
-      fetch('es53-test-guest.html', function(resp) {
+      fetch('fixture-guest.html', function(resp) {
         var div = createDiv();
         frameGroup.makeES5Frame(div, uriPolicy, function (frame) {
           frame.content(location.protocol + '//' + location.host + '/',
@@ -538,7 +538,7 @@
     });
 
     jsunitRegister('testContentJs', function testContentJs() {
-      fetch('es53-test-guest.js', function(resp) {
+      fetch('fixture-guest.js', function(resp) {
         frameGroup.makeES5Frame(undefined, uriPolicy, function (frame) {
           var extraImports = { x: 4, y: 3 };
           frame.content(location.protocol + '//' + location.host + '/',
@@ -554,7 +554,7 @@
     jsunitRegister('testUrlHtml', function testUrlHtml() {
       var div = createDiv();
       frameGroup.makeES5Frame(div, uriPolicy, function (frame) {
-        frame.url('es53-test-guest.html').run({}, function (result) {
+        frame.url('fixture-guest.html').run({}, function (result) {
           assertGuestHtmlCorrect(frame, div);
           jsunitPass('testUrlHtml');
         });
@@ -564,7 +564,7 @@
     jsunitRegister('testUrlJs', function testUrlJs() {
       frameGroup.makeES5Frame(undefined, uriPolicy, function (frame) {
         var extraImports = { x: 4, y: 3 };
-        frame.url('es53-test-guest.js').run(extraImports, function (result) {
+        frame.url('fixture-guest.js').run(extraImports, function (result) {
           assertGuestJsCorrect(frame, undefined, result);
           jsunitPass('testUrlJs');
         });
@@ -575,7 +575,7 @@
       var div = createDiv();
       frameGroup.makeES5Frame(div, uriPolicy, function (frame) {
         var extraImports = { x: 4, y: 3 };
-        frame.url('es53-test-guest.js').run(extraImports, function (result) {
+        frame.url('fixture-guest.js').run(extraImports, function (result) {
           assertEmptyGuestHtmlCorrect(frame, div);
           assertGuestJsCorrect(frame, undefined, result);
           jsunitPass('testUrlJsWithDiv');
@@ -586,7 +586,7 @@
     jsunitRegister('testUrlHtmlWithMimeType', function testUrlHtml() {
       var div = createDiv();
       frameGroup.makeES5Frame(div, uriPolicy, function (frame) {
-        frame.url('es53-test-guest.html', 'text/html').run({},
+        frame.url('fixture-guest.html', 'text/html').run({},
             function (result) {
           assertGuestHtmlCorrect(frame, div);
           jsunitPass('testUrlHtmlWithMimeType');

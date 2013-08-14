@@ -45,7 +45,7 @@
           }
         }));
 
-        frame.code('es53-test-domado-events-guest.html')
+        frame.code('test-domado-events-guest.html')
              .api(extraImports)
              .run(function(result) {
                    readyToTest();

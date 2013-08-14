@@ -62,7 +62,7 @@
           },
         });
 
-    frame.code('es53-test-defensible-objects-guest.js')
+    frame.code('test-defensible-objects-guest.js')
          .api(extraImports)
          .run(function (_) {
              readyToTest();

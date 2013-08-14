@@ -52,7 +52,7 @@ caja.load(
       extraImports.getExternalForeignNode.i___ =
           extraImports.getExternalForeignNode;
 
-      frame.code('es53-test-domado-foreign-guest.html')
+      frame.code('test-domado-foreign-guest.html')
            .api(extraImports)
            .run(function(result) {
                  readyToTest();

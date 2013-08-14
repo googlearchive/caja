@@ -107,7 +107,7 @@
 
     extraImports.advisedAll = frame.tame(frame.markFunction(advisedAll));
 
-    frame.code('es53-test-taming-advice-guest.html')
+    frame.code('test-taming-advice-guest.html')
          .api(extraImports)
          .run(function (_) {
              readyToTest();

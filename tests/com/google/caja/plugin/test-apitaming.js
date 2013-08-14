@@ -123,7 +123,7 @@ function runtests() {
     t.whitelistApi('google.foo');
     t.whitelistApi('google.bar');
 
-    frame.code('es53-test-apitaming-guest-0.html')
+    frame.code('test-apitaming-guest-0.html')
          .api(createExtraImportsForTesting(caja, frame))
          .run(function (_) { goArray[0] = t; });
   });
@@ -137,7 +137,7 @@ function runtests() {
     var t = caja.tamingGoogleLoader.applyToFrame(frame);
     t.whitelistApi('google.foo');
 
-    frame.code('es53-test-apitaming-guest-1.html')
+    frame.code('test-apitaming-guest-1.html')
          .api(createExtraImportsForTesting(caja, frame))
          .run(function (_) { goArray[1] = t; });
   });

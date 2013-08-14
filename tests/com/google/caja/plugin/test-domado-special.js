@@ -87,7 +87,7 @@ jsunitRegister(
 var testDiv = document.createElement('div');
 document.body.appendChild(testDiv);
 
-fetch('es53-test-domado-special-initial-state.html', function(initialHtml) {
+fetch('test-domado-special-initial-state.html', function(initialHtml) {
   testDiv.innerHTML = initialHtml;
   var virtualDoc = document.getElementById('untrusted_content');
 
@@ -118,7 +118,7 @@ fetch('es53-test-domado-special-initial-state.html', function(initialHtml) {
       extraImports.rulebreakerBreachSimulation = rulebreaker;
     }
 
-    frame.code('es53-test-domado-special-guest.html')
+    frame.code('test-domado-special-guest.html')
          .api(extraImports)
          .run(function(result) {
                readyToTest();

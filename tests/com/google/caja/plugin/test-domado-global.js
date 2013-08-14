@@ -59,8 +59,8 @@
   }
 
   function fetches(callback) {
-    fetch('es53-test-domado-global-html-guest.js', function(htmlGuestJs) {
-      fetch('es53-test-domado-global-location.js', function(locationJs) {
+    fetch('test-domado-global-html-guest.js', function(htmlGuestJs) {
+      fetch('test-domado-global-location.js', function(locationJs) {
         callback(htmlGuestJs, locationJs);
       });
     });
@@ -306,7 +306,7 @@
 
       registerLocationTest('original',
           'http://localhost:8000/ant-testlib/com/google/caja/plugin/'
-          + 'es53-test-domado-dom-guest.html',
+          + 'test-domado-dom-guest.html',
           true);
 
       registerLocationTest('noPath',

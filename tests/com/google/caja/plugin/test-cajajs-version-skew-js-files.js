@@ -46,7 +46,7 @@ jsunitRegister('testVersionSkew', function testVersionSkew() {
   });
   caja.load(undefined, undefined, function (frame) {
     var extraImports = { x: 4, y: 3 };
-    frame.code('es53-test-guest.js', 'text/javascript')
+    frame.code('fixture-guest.js', 'text/javascript')
          .api(extraImports)
          .run(function(result) {
            clearInterval(checkErrorsInterval);

@@ -76,7 +76,7 @@
   jsunitRegister('testUriInAttr', function testUriInAttr() {
     var div = createDiv();
     caja.load(div, uriCallback, jsunitCallback(function(frame) {
-      frame.code('es53-test-client-uri-rewriting-guest.html')
+      frame.code('test-client-uri-rewriting-guest.html')
           .run(jsunitCallback(function(_) {
         var result = canonInnerHtml(div.innerHTML);
         assertStringContains(
@@ -108,7 +108,7 @@
     var div = createDiv();
     caja.load(div, uriCallback, jsunitCallback(function frameCb(frame) {
       var capture = patchEmitCss(frame);
-      frame.code('es53-test-client-uri-rewriting-guest.html')
+      frame.code('test-client-uri-rewriting-guest.html')
           .run(jsunitCallback(function runCb(_) {
         // TODO(kpreid): kludge, should accept both or we should change our
         // rewriters to consistently use one quote form. I don't understand how

@@ -28,7 +28,7 @@ function testLocation(beSpecific) {
         'href specific',
         'http://' + window.location.hostname
         + ':' + window.location.port
-        + '/ant-testlib/com/google/caja/plugin/es53-test-domado-dom-guest.html',
+        + '/ant-testlib/com/google/caja/plugin/test-domado-dom-guest.html',
         window.location.href);
     assertEquals(
         'hash',
@@ -36,7 +36,7 @@ function testLocation(beSpecific) {
         window.location.hash);
     assertEquals(
         'pathname specific',
-        '/ant-testlib/com/google/caja/plugin/es53-test-domado-dom-guest.html',
+        '/ant-testlib/com/google/caja/plugin/test-domado-dom-guest.html',
         window.location.pathname);
     assertTrue(
         'port',

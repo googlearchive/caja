@@ -12,7 +12,7 @@
   ]},
   { "label": "cajajs", "tests": [
     {
-      "driver": "es53-test-cajajs-invocation.js",
+      "driver": "test-cajajs-invocation.js",
       "comment": "Including non-minified execution in automated tests",
       "tests": [
         { "label": "nomin", "params": { "minified": "false" } },
@@ -20,14 +20,14 @@
       ]
     },
     { 
-      "driver": "es53-test-cajajs-version-skew-js-files.js",
+      "driver": "test-cajajs-version-skew-js-files.js",
       "comment": ["Changing the version baked into the taming frame JS will",
           "cause a version mismatch error in caja.js.",
           "TODO(felix8a): test taming.js right but guest.js wrong"]
     },
     {
       "label": "version-skew-cajajs",
-      "driver": "es53-test-cajajs-never-starts.js",
+      "driver": "test-cajajs-never-starts.js",
       "params": { "cajajs": "/caja/testing/skew-0000/caja.js" },
       "comment": ["Changing the version baked into caja.js will cause it to",
           "load the wrongly-named files for the host and guest frames, which",
@@ -35,7 +35,7 @@
           "calls."]
     },
     {
-      "driver": "es53-test-cajajs-version-skew-cajoler-response.js",
+      "driver": "test-cajajs-version-skew-cajoler-response.js",
       "params": { "cajajs": "/caja/testing/skew-0000/caja.js" },
       "comment": ["Changing the version baked into *all* the JS will cause an",
           "incorrect version number to be sent to the cajoler, which should",
@@ -43,23 +43,23 @@
           "instead."]
     },
     {
-      "driver": "es53-test-cajajs-minor-version-skew-cajoler-response.js",
+      "driver": "test-cajajs-minor-version-skew-cajoler-response.js",
       "params": { "cajajs": "/caja/testing/skew-mmm/caja.js" },
       "comment": ["Changing the version baked into *all* the JS will cause a",
           "different minor version number to be sent to the cajoler, which",
           "should emit a LINT warning when compiling the given content"]
     },
     {
-      "driver": "es53-test-cajajs-version-skew-cajoled-module.js",
+      "driver": "test-cajajs-version-skew-cajoled-module.js",
       "mode": "es53"
     },
     {
-      "driver": "es53-test-cajajs-minor-version-skew-cajoled-module.js",
+      "driver": "test-cajajs-minor-version-skew-cajoled-module.js",
       "mode": "es53"
     },
     {
       "label": "version-skew-nonexistent-resources",
-      "driver": "es53-test-cajajs-never-starts.js",
+      "driver": "test-cajajs-never-starts.js",
       "params": { "resources": "/caja/testing/nonexistent" },
       "comment": ["Placing the wrong resources files where caja.js is",
           "expecting them should cause it to never make progress in load() or",
@@ -67,70 +67,70 @@
     },
     {
       "label": "version-skew-wrong-resources",
-      "driver": "es53-test-cajajs-never-starts.js",
+      "driver": "test-cajajs-never-starts.js",
       "params": { "resources": "/caja/testing/skew-0000" },
       "comment": ["Placing the wrong resources files where caja.js is",
           "expecting them should cause it to never make progress in load() or",
           "whenReady() calls."]
     },
-    { "driver": "es53-test-client-uri-rewriting.js" },
+    { "driver": "test-client-uri-rewriting.js" },
     { "bare": "cajajs-bare-test.html", "mode": "both" },
-    { "driver": "es53-test-automode1.js", "mode": "es53" },
-    { "driver": "es53-test-automode2.js", "mode": "es53" },
-    { "driver": "es53-test-automode3.js", "mode": "es53" },
-    { "driver": "es53-test-automode4.js", "mode": "es53" }
+    { "driver": "test-automode1.js", "mode": "es53" },
+    { "driver": "test-automode2.js", "mode": "es53" },
+    { "driver": "test-automode3.js", "mode": "es53" },
+    { "driver": "test-automode4.js", "mode": "es53" }
   ]},
   { "label": "cajoler", "mode": "es53", "tests": [
-    { "guest": "es53-test-precajole-guest.html" },
-    { "driver": "es53-test-custom-cajoling-service-client.js" }
+    { "guest": "test-precajole-guest.html" },
+    { "driver": "test-custom-cajoling-service-client.js" }
   ]},
   {
-    "driver": "es53-test-compare-modes.js",
+    "driver": "test-compare-modes.js",
     "mode": "es5",
     "comment": ["Mode flag is ignored, but this test should be classified as",
         "requiring SES compatibility. TODO(kpreid): better scheme"],
     "params": { "minified": "n/a" }
   },
   { "label": "guest", "tests": [
-    { "guest": "es53-test-basic-functions-guest.html" },
-    { "guest": "es53-test-domado-dom-guest.html" },
-    { "driver": "es53-test-domado-global.js" },
-    { "driver": "es53-test-domado-events.js" },
-    { "guest": "es53-test-domado-canvas-guest.html" },
-    { "guest": "es53-test-domado-forms-guest.html" },
-    { "guest": "es53-test-domado-iframe-guest.html" },
-    { "driver": "es53-test-domado-special.js" },
-    { "driver": "es53-test-domado-foreign.js" },
-    { "guest": "es53-test-domado-listlength.html" },
-    { "guest": "es53-test-language-guest.html" },
-    { "driver": "es53-test-proxies.js", "mode": "es53" },
-    { "guest": "es53-test-inline-script.html" },
-    { "guest": "es53-test-external-script-guest.html", "mode": "es5" },
-    { "driver": "es53-test-relative-urls.js" },
-    { "driver": "es53-test-defensible-objects.js" },
-    { "driver": "es53-test-container-overflow.js" },
-    { "driver": "es53-test-target-attribute-presets.js" },
-    { "driver": "es53-test-unicode.js", "tests": [
+    { "guest": "test-basic-functions-guest.html" },
+    { "guest": "test-domado-dom-guest.html" },
+    { "driver": "test-domado-global.js" },
+    { "driver": "test-domado-events.js" },
+    { "guest": "test-domado-canvas-guest.html" },
+    { "guest": "test-domado-forms-guest.html" },
+    { "guest": "test-domado-iframe-guest.html" },
+    { "driver": "test-domado-special.js" },
+    { "driver": "test-domado-foreign.js" },
+    { "guest": "test-domado-listlength.html" },
+    { "guest": "test-language-guest.html" },
+    { "driver": "test-proxies.js", "mode": "es53" },
+    { "guest": "test-inline-script.html" },
+    { "guest": "test-external-script-guest.html", "mode": "es5" },
+    { "driver": "test-relative-urls.js" },
+    { "driver": "test-defensible-objects.js" },
+    { "driver": "test-container-overflow.js" },
+    { "driver": "test-target-attribute-presets.js" },
+    { "driver": "test-unicode.js", "tests": [
       { "mode": "es53", "failureIsAnOption":
           "http://code.google.com/p/google-caja/issues/detail?id=1621" },
       { "mode": "es5" }
     ]},
-    { "driver": "es53-test-mitigating-url-rewriter.js", "mode": "es5" },
-    { "guest": "es53-test-css-imports-guest.html", "tests": [
+    { "driver": "test-mitigating-url-rewriter.js", "mode": "es5" },
+    { "guest": "test-css-imports-guest.html", "tests": [
       { "mode": "es53", "failureIsAnOption":
           "Cajoler fails to handle relative urls in external CSS" },
       { "mode": "es5" }
     ]},
-    { "guest": "es53-test-scan-guest.html" }
+    { "guest": "test-scan-guest.html" }
   ]},
   { "label": "taming", "tests": [
-    { "driver": "es53-test-taming-tamed.js" },
-    { "driver": "es53-test-taming-untamed.js" },
-    { "driver": "es53-test-taming-inout.js" },
-    { "driver": "es53-test-taming-errors.js" },
-    { "driver": "es53-test-taming-advice.js" },
-    { "driver": "es53-test-taming-primitives.js", "mode": "es53" },
-    { "driver": "es53-test-apitaming.js" }
+    { "driver": "test-taming-tamed.js" },
+    { "driver": "test-taming-untamed.js" },
+    { "driver": "test-taming-inout.js" },
+    { "driver": "test-taming-errors.js" },
+    { "driver": "test-taming-advice.js" },
+    { "driver": "test-taming-primitives.js", "mode": "es53" },
+    { "driver": "test-apitaming.js" }
   ]},
   {
     "label": "headless",

@@ -27,9 +27,9 @@
     fetch: caja.policy.net.fetcher.USE_XHR,
     rewrite: caja.policy.net.rewriter.ALL,
     mitigate: function (uri) {
-      var before = '/es53-test-precajole.js';
+      var before = '/test-precajole.js';
       var prefix = '/ant-testlib/com/google/caja/plugin/';
-      var after = prefix + 'es53-test-precajole-precajoled.js';
+      var after = prefix + 'test-precajole-precajoled.js';
       return (uri.getPath() == before) ? after : null;
     }
   };
@@ -43,7 +43,7 @@
           location.protocol + '//' + location.host + '/',
           'text/html',
           '<div>' +
-          '<script src="/es53-test-precajole.js">' +
+          '<script src="/test-precajole.js">' +
           '</script>' +
           '</div>')
           .api(extraImports)

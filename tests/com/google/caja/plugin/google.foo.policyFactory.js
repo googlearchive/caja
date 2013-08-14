@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /**
- * Policy factory for test api named "google.foo"; see es53-test-apitaming.js.
+ * Policy factory for test api named "google.foo"; see test-apitaming.js.
  */
 caja.tamingGoogleLoader.addPolicyFactory('google.foo', function(frame, utils) {
 

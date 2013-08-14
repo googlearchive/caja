@@ -121,7 +121,7 @@
   }
 
   caja.load(containerDiv, undefined, function (frame) {
-    frame.code('es53-test-container-overflow-guest.html')
+    frame.code('test-container-overflow-guest.html')
          .run(function (_) { runTests(); });
   });
 })();

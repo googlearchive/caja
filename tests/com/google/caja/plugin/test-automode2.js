@@ -45,7 +45,7 @@
     caja.load(undefined, uriPolicy, function (frame) {
       var extraImports = createExtraImportsForTesting(caja, frame);
       extraImports.inES5Mode = inES5Mode;
-      frame.code('es53-test-assert-es5mode.js', 'text/javascript')
+      frame.code('test-assert-es5mode.js', 'text/javascript')
            .api(extraImports)
            .run(function(result) {
              jsunitPass('testES5Autodetected');

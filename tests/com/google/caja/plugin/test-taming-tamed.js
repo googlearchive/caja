@@ -382,7 +382,7 @@
     };
     extraImports.evalInHost.i___ = extraImports.evalInHost;
 
-    frame.code('es53-test-taming-tamed-guest.html')
+    frame.code('test-taming-tamed-guest.html')
          .api(extraImports)
          .run(function (_) {
              readyToTest();

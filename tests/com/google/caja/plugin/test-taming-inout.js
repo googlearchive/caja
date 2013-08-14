@@ -111,7 +111,7 @@
     extraImports.getTamedTestObject = getTamedTestObject;
     extraImports.evalInHost = evalInHost;
 
-    frame.code('es53-test-taming-inout-guest.js')
+    frame.code('test-taming-inout-guest.js')
          .api(extraImports)
          .run(function (_) {
              readyToTest();
