@@ -123,6 +123,7 @@ function TamingMembrane(privilegedAccess, schema) {
         t = new String(privilegedAccess.getValueOf(o));
         break;
       case '[object Error]':
+      case '[object DOMException]':
         // paranoia -- Error constructor is specified to stringify
         var msg = '' + privilegedAccess.getProperty(o, 'message');
         var name = privilegedAccess.getProperty(o, 'name');
@@ -148,6 +149,8 @@ function TamingMembrane(privilegedAccess, schema) {
           case 'URIError':
             t = new URIError(msg);
             break;
+          // no case for DOMException as DOMException is not constructible
+          // (and also not whitelisted, and in general more funky).
           default:
             t = new Error(msg);
             t.name = '' + name;
@@ -271,14 +274,16 @@ function TamingMembrane(privilegedAccess, schema) {
     }
     if (ftype === 'object') {
       var ctor = privilegedAccess.directConstructor(f);
-      if (ctor === void 0) {
-        throw new TypeError('Cannot determine ctor of: ' + f);
-      } else if (ctor === privilegedAccess.BASE_OBJECT_CONSTRUCTOR) {
+      if (ctor === privilegedAccess.BASE_OBJECT_CONSTRUCTOR) {
         t = preventExtensions(tameRecord(f));
       } else {
         t = copyBuiltin(f);
         if (t === void 0) {
-          t = tamePreviouslyConstructedObject(f, ctor);
+          if (ctor === void 0) {
+            throw new TypeError('Cannot determine ctor of: ' + f);
+          } else {
+            t = tamePreviouslyConstructedObject(f, ctor);
+          }
         }
       }
     } else if (ftype === 'function') {

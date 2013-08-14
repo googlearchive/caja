@@ -338,6 +338,20 @@
       return e;
     }
 
+    // Produce a host DOMException
+    // DOMException is not always an instanceof Error (yes on Chrome, no on
+    // Firefox and Safari), but we want it to be tamed in the same way as one.
+    // (It is also imposssible to construct an arbitrary DOMException.)
+    function DOMExceptionShim() {
+      try {
+        var el = document.createElement('div');
+        el.appendChild(el);
+      } catch (e) {
+        return e;
+      }
+      throw new Error("didn't fail");
+    }
+
     ////////////////////////////////////////////////////////////////////////
     // Object with getters and setters that throw
 

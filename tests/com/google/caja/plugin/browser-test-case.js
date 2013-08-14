@@ -644,20 +644,6 @@ function createExtraImportsForTesting(frameGroup, frame) {
     }
   };
 
-  function makeCallable(f) { f.f___ = f; }
-
-  makeCallable(directAccess.click);
-  makeCallable(directAccess.emitCssHook);
-  makeCallable(directAccess.getInnerHTML);
-  makeCallable(directAccess.getAttribute);
-  makeCallable(directAccess.getParentNode);
-  makeCallable(directAccess.getVdocNode);
-  makeCallable(directAccess.getComputedStyle);
-  makeCallable(directAccess.makeUnattachedScriptNode);
-  makeCallable(directAccess.evalInHostFrame);
-  makeCallable(directAccess.evalInTamingFrame);
-  makeCallable(directAccess.scrollToEnd);
-
   if (!inES5Mode) {
     // TODO(kpreid): This wrapper could be replaced by the 'makeDOMAccessible'
     // tool defined in caja.js for use by Domado.

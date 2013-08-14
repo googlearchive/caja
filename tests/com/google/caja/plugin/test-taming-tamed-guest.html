@@ -1061,28 +1061,33 @@
       assertEquals(
           '[object Error]',
           Object.prototype.toString.call(e));
-      assertEquals(
-          name + ': ' + msg,
-          e.toString());
-      assertEquals(
-          name,
-          e.name);
-      assertEquals(
-          msg,
-          e.message);
-      var tamingFrameCtor;
-      try {
-        tamingFrameCtor = getTamingFrameObject(name);
-      } catch (e) {
-        if (e.name === 'ReferenceError') {
-          // for CustomNamedError
-          tamingFrameCtor = getTamingFrameObject('Error');
-        } else {
-          throw e;
+      if (name === 'DOMExceptionShim') {
+        assertEquals('toString', 'string', typeof e.toString());
+        assertEquals('name', 'string', typeof e.name);
+        assertEquals('message', 'string', typeof e.message);
+      } else {
+        assertEquals(
+            name + ': ' + msg,
+            e.toString());
+        assertEquals(
+            name,
+            e.name);
+        assertEquals(
+            msg,
+            e.message);
+        var tamingFrameCtor;
+        try {
+          tamingFrameCtor = getTamingFrameObject(name);
+        } catch (e) {
+          if (name === 'TestCustomNamedError' && e.name === 'ReferenceError') {
+            tamingFrameCtor = getTamingFrameObject('Error');
+          } else {
+            throw e;
+          }
         }
+        assertTrue(
+            e instanceof tamingFrameCtor);
       }
-      assertTrue(
-          e instanceof tamingFrameCtor);
     }
 
     function getReturned(name) {
@@ -1110,7 +1115,8 @@
       'SyntaxError',
       'TypeError',
       'URIError',
-      'TestCustomNamedError'
+      'TestCustomNamedError',
+      'DOMExceptionShim'
     ]).forEach(testException);
 
     // Make sure e.message is not a hole in the membrane

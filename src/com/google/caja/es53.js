@@ -325,9 +325,9 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       // of a primitive.
       return void 0;
     }
-    var result;
+    var proto, result;
     if (obj.hasOwnProperty('Prototype___')) {
-      var proto = obj.Prototype___;
+      proto = obj.Prototype___;
       // At this point we know that (typeOf(proto) === 'object')
       if (proto === null) { return void 0; }
       result = proto.constructor;
@@ -336,7 +336,18 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         result = directConstructor(proto);
       }
     } else {
-      if (!obj.hasOwnProperty('constructor')) {
+      if (Object.getPrototypeOf) {  // note ES5 platforms only
+        proto = Object.getPrototypeOf(obj);
+        result = proto.constructor;
+        if ((result === result.FERAL_FRAME_OBJECT___
+             || result === obj.CAJA_FRAME_OBJECT___)
+            && !Object.prototype.hasOwnProperty.call(proto, 'constructor')) {
+          // don't answer BASE_OBJECT_CONSTRUCTOR for prototypes which just
+          // didn't bother to set .constructor and inherited it from Object
+          // (Safari's DOMException is the motivating case).
+          return void 0;
+        }
+      } else if (!obj.hasOwnProperty('constructor')) {
         // TODO(erights): Detect whether this is a valid constructor
         // property in the sense that result is a proper answer. If
         // not, at least give a sensible error, which will be hard to

@@ -1583,10 +1583,6 @@
     //expectedUnfrozen.setByConstructor(NodeList, true);
     //expectedUnfrozen.setByConstructor(NamedNodeMap, true);
     //expectedUnfrozen.setByConstructor(HTMLOptionsCollection, true);
-    expectedUnfrozen.setByPathSuffix('.get stack', true);
-    expectedUnfrozen.setByPathSuffix('.set stack', true);
-    expectedUnfrozen.setByPathSuffix('.get stack.prototype', true);
-    expectedUnfrozen.setByPathSuffix('.set stack.prototype', true);
 
     var obtainInstance = scanner.obtainInstance;
 

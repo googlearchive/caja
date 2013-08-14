@@ -149,7 +149,17 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
     if (!directProto) { return void 0; }
     var directCtor = directProto.constructor;
     if (!directCtor) { return void 0; }
-    if (directCtor === feralWin.Object) { return BASE_OBJECT_CONSTRUCTOR; }
+    if (directCtor === feralWin.Object) {
+      if (!Object.prototype.hasOwnProperty.call(directProto, 'constructor')) {
+        // detect prototypes which just didn't bother to set .constructor and
+        // inherited it from Object (Safari's DOMException is the motivating
+        // case).
+        // Ditto for loop below.
+        return void 0;
+      } else {
+        return BASE_OBJECT_CONSTRUCTOR;
+      }
+    }
     Array.prototype.slice.call(feralWin.frames).forEach(function(w) {
       var O;
       try {
@@ -159,7 +169,11 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
         return;
       }
       if (directCtor === O) {
-        directCtor = BASE_OBJECT_CONSTRUCTOR;
+        if (!Object.prototype.hasOwnProperty.call(directProto, 'constructor')) {
+          directCtor = void 0;
+        } else {
+          directCtor = BASE_OBJECT_CONSTRUCTOR;
+        }
       }
     });
     return directCtor;
