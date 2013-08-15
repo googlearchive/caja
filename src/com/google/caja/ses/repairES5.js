@@ -3322,23 +3322,57 @@ var ses;
   // more practical to define them programmatically.
 
   function arrayMutatorKludge(destination, prop, testArgs) {
-    function testArrayMutator(op) {
-      return function() {
-        var x = [2, 1];  // disordered to detect sort()
-        Object[op](x);
-        try {
-          x[prop].apply(x, testArgs);
-        } catch (e) {
-          if (x.length === 2 && x[0] === 2 && x[1] === 1) { return false; }
-        }
+    /**
+     * Tests only for likley symptoms of a seal violation or a
+     * malformed array.
+     *
+     * <p>A sealed object can neither acquire new own properties
+     * (because it is non-extensible) nor lose existing own properties
+     * (because all its existing own properties are non-configurable),
+     * so we check that the own properties that these methods would
+     * normally manipulate remain in their original state. Changing
+     * the "length" property of the array would not itself be a seal
+     * violation, but if there is no other seal violation, such a
+     * length change would result in a malformed array. (If needed,
+     * the extensibility, non-deletability, and length change tests
+     * could be separated into distinct tests.)
+     */
+    function test_method_IGNORES_SEALED() {
+      var x = [2, 1];  // disordered to detect sort()
+      Object.seal(x);
+      try {
+        x[prop].apply(x, testArgs);
+      } catch (e) {
+        // It is actually still a non-conformance if the array was not
+        // badly mutated but the method did not throw, but not an
+        // UNSAFE_SPEC_VIOLATION.
+      }
+      return !(x.length === 2 && ('0' in x) && ('1' in x) && !('2' in x));
+    }
+
+    /**
+     * Tests for likely symptoms of a freeze violation.
+     *
+     * <p>A frozen object can neither acquire new own properties
+     * (because it is non-extensible) nor can any of its existing own
+     * data properties be mutated (since they are non-configurable,
+     * non-writable). So we check for any of the mutations that these
+     * methods would normally cause.
+     */
+    function test_method_IGNORES_FROZEN() {
+      var x = [2, 1];  // disordered to detect sort()
+      Object.freeze(x);
+      try {
+        x[prop].apply(x, testArgs);
+      } catch (e) {
         // It is actually still a non-conformance if the array was not
         // mutated but the method did not throw, but not an
         // UNSAFE_SPEC_VIOLATION.
-        return (x.length !== 2 || x[0] !== 2 || x[1] !== 1);
-      };
+      }
+      return !(x.length === 2 && x[0] === 2 && x[1] === 1 && !('2' in x));
     }
 
-    function repairArrayMutator() {
+    function repair_method_IGNORES_SEALED() {
       var originalMethod = Array.prototype[prop];
       var isSealed = Object.isSealed;
       Object.defineProperty(Array.prototype, prop, {
@@ -3356,8 +3390,8 @@ var ses;
     destination.push({
       id: (prop + '_IGNORES_SEALED').toUpperCase(),
       description: 'Array.prototype.' + prop + ' ignores sealing',
-      test: testArrayMutator('seal'),
-      repair: repairArrayMutator,
+      test: test_method_IGNORES_SEALED,
+      repair: repair_method_IGNORES_SEALED,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
       canRepair: false,  // does not protect individual properties, only
           // fully sealed objects
@@ -3370,8 +3404,8 @@ var ses;
     destination.push({
       id: (prop + '_IGNORES_FROZEN').toUpperCase(),
       description: 'Array.prototype.' + prop + ' ignores freezing',
-      test: testArrayMutator('freeze'),
-      repair: repairArrayMutator,
+      test: test_method_IGNORES_FROZEN,
+      repair: repair_method_IGNORES_SEALED,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
       canRepair: true,
       urls: [
@@ -4274,7 +4308,7 @@ var ses;
   // SHIFT_IGNORES_SEALED
   // SHIFT_IGNORES_FROZEN
   arrayMutatorKludge(supportedKludges, 'unshift', ['foo']);
-  arrayMutatorKludge(supportedKludges, 'splice', [0, 1, 'foo']);
+  arrayMutatorKludge(supportedKludges, 'splice', [0, 0, 'foo']);
   arrayMutatorKludge(supportedKludges, 'shift', []);
   // Array.prototype.{push,pop,sort} are also subject to the problem
   // arrayMutatorKludge handles, but are handled separately and more
