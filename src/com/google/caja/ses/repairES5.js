@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+// https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,7 +15,7 @@
 /**
  * @fileoverview Monkey patch almost ES5 platforms into a closer
  * emulation of full <a href=
- * "http://code.google.com/p/es-lab/wiki/SecureableES5">Secureable
+ * "https://code.google.com/p/es-lab/wiki/SecureableES5">Secureable
  * ES5</a>.
  *
  * <p>Assumes only ES3, but only proceeds to do useful repairs when
@@ -80,7 +80,7 @@ var ses;
  * incomplete. We need to revisit this when we support Confined-ES5,
  * as a variant of SES in which the primordials are not frozen. See
  * previous failed attempt at <a
- * href="http://codereview.appspot.com/5278046/" >Speeds up
+ * href="https://codereview.appspot.com/5278046/" >Speeds up
  * WeakMap. Preparing to support unfrozen primordials.</a>. From
  * analysis of this failed attempt, it seems that the only practical
  * way to support CES is by use of two frames, where most of initSES
@@ -993,7 +993,7 @@ var ses;
    * Detects
    * https://bugs.webkit.org/show_bug.cgi?id=51097
    * https://bugs.webkit.org/show_bug.cgi?id=58338
-   * http://code.google.com/p/v8/issues/detail?id=1437
+   * https://code.google.com/p/v8/issues/detail?id=1437
    *
    * <p>No workaround attempted. Just reporting that this platform is
    * not SES-safe.
@@ -1133,7 +1133,7 @@ var ses;
   }
 
   /**
-   * Detects http://code.google.com/p/v8/issues/detail?id=1530
+   * Detects https://code.google.com/p/v8/issues/detail?id=1530
    *
    * <p>Detects whether the value of a function's "prototype" property
    * as seen by normal object operations might deviate from the value
@@ -1213,7 +1213,7 @@ var ses;
   }
 
   /**
-   * Detects http://code.google.com/p/v8/issues/detail?id=1393
+   * Detects https://code.google.com/p/v8/issues/detail?id=1393
    *
    * <p>This kludge is safety preserving.
    */
@@ -1244,7 +1244,7 @@ var ses;
   }
 
   /**
-   * Detects http://code.google.com/p/v8/issues/detail?id=892
+   * Detects https://code.google.com/p/v8/issues/detail?id=892
    *
    * <p>This tests whether the built-in bind method violates the spec
    * by calling the original using its current .apply method rather
@@ -1298,7 +1298,7 @@ var ses;
   }
 
   /**
-   * Detects http://code.google.com/p/google-caja/issues/detail?id=1362
+   * Detects https://code.google.com/p/google-caja/issues/detail?id=1362
    *
    * <p>This is an unfortunate oversight in the ES5 spec: Even if
    * Date.prototype is frozen, it is still defined to be a Date, and
@@ -1357,7 +1357,7 @@ var ses;
   }
 
   /**
-   * Detects http://code.google.com/p/v8/issues/detail?id=1447
+   * Detects https://code.google.com/p/v8/issues/detail?id=1447
    *
    * <p>This bug is fixed as of V8 r8258 bleeding-edge, but is not yet
    * available in the latest dev-channel Chrome (13.0.782.15 dev).
@@ -1372,7 +1372,7 @@ var ses;
    * the real forEach is frozen even in the success case, since we
    * have to freeze it in order to test for this failure. We could
    * repair this non-transparency by replacing it with a transparent
-   * wrapper (as http://codereview.appspot.com/5278046/ does), but
+   * wrapper (as https://codereview.appspot.com/5278046/ does), but
    * since the SES use of this will freeze it anyway and the
    * indirection is costly, we choose not to for now.
    */
@@ -1398,7 +1398,7 @@ var ses;
   }
 
   /**
-   * Detects http://code.google.com/p/v8/issues/detail?id=2273
+   * Detects https://code.google.com/p/v8/issues/detail?id=2273
    *
    * A strict mode function should receive a non-coerced 'this'
    * value. That is, in strict mode, if 'this' is a primitive, it
@@ -1439,7 +1439,7 @@ var ses;
   var NEEDS_DUMMY_SETTER_repaired = false;
 
   /**
-   * Detects http://code.google.com/p/chromium/issues/detail?id=94666
+   * Detects https://code.google.com/p/chromium/issues/detail?id=94666
    */
   function test_FORM_GETTERS_DISAPPEAR() {
     function getter() { return 'gotten'; }
@@ -1521,7 +1521,7 @@ var ses;
   }
 
   /**
-   * Detects http://code.google.com/p/v8/issues/detail?id=1360
+   * Detects https://code.google.com/p/v8/issues/detail?id=1360
    *
    * Our workaround wraps {@code sort} to wrap the comparefn.
    */
@@ -1534,7 +1534,7 @@ var ses;
   }
 
   /**
-   * Detects http://code.google.com/p/v8/issues/detail?id=1360
+   * Detects https://code.google.com/p/v8/issues/detail?id=1360
    *
    * <p>Our workaround wraps {@code replace} to wrap the replaceValue
    * if it's a function.
@@ -1814,7 +1814,7 @@ var ses;
   }
 
   /**
-   * Detects http://code.google.com/p/v8/issues/detail?id=893
+   * Detects https://code.google.com/p/v8/issues/detail?id=893
    */
   function test_BOUND_FUNCTION_LEAKS_CALLER() {
     if (!('bind' in Function.prototype)) { return false; }
@@ -1836,7 +1836,7 @@ var ses;
   }
 
   /**
-   * Detects http://code.google.com/p/v8/issues/detail?id=893
+   * Detects https://code.google.com/p/v8/issues/detail?id=893
    */
   function test_BOUND_FUNCTION_LEAKS_ARGUMENTS() {
     if (!('bind' in Function.prototype)) { return false; }
@@ -1887,7 +1887,7 @@ var ses;
   }
 
   /**
-   * Detects http://code.google.com/p/v8/issues/detail?id=1769
+   * Detects https://code.google.com/p/v8/issues/detail?id=1769
    */
   function test_GETOWNPROPDESC_OF_ITS_OWN_CALLER_FAILS() {
     try {
@@ -1901,7 +1901,7 @@ var ses;
   }
 
   /**
-   * Detects http://code.google.com/p/v8/issues/detail?id=621
+   * Detects https://code.google.com/p/v8/issues/detail?id=621
    *
    */
   function test_JSON_PARSE_PROTO_CONFUSION() {
@@ -1929,7 +1929,7 @@ var ses;
    * inherits from.
    *
    * TODO(erights): investigate the following:
-   * At http://goo.gl/ycCmo Mike Stay says
+   * At https://goo.gl/ycCmo Mike Stay says
    * <blockquote>
    * Kevin notes in domado.js that on some versions of FF, event
    * objects switch prototypes when moving between frames. You should
@@ -2009,7 +2009,7 @@ var ses;
   }
 
   /**
-   * Detects http://code.google.com/p/v8/issues/detail?id=1624
+   * Detects https://code.google.com/p/v8/issues/detail?id=1624
    * regarding variables.
    *
    * <p>Both a direct strict eval operator and an indirect strict eval
@@ -2026,7 +2026,7 @@ var ses;
   }
 
   /**
-   * Detects http://code.google.com/p/v8/issues/detail?id=1624
+   * Detects https://code.google.com/p/v8/issues/detail?id=1624
    * regarding functions
    *
    * <p>Both a direct strict eval operator and an indirect strict eval
@@ -2043,7 +2043,7 @@ var ses;
   }
 
   /**
-   * Detects http://code.google.com/p/v8/issues/detail?id=2396
+   * Detects https://code.google.com/p/v8/issues/detail?id=2396
    *
    * <p>Commenting out the eval does the right thing.  Only fails in
    * non-strict mode.
@@ -2061,7 +2061,7 @@ var ses;
 
 
   /**
-   * Detects http://code.google.com/p/v8/issues/detail?id=1645
+   * Detects https://code.google.com/p/v8/issues/detail?id=1645
    */
   function test_PARSEINT_STILL_PARSING_OCTAL() {
     var n = parseInt('010');
@@ -2181,6 +2181,10 @@ var ses;
       // Behavior seen on Opera 12.10 mobile and 12.15
       return true;
     }
+    if (x.length === 1 && x[0] === 1 && !('1' in x)) {
+      // Behavior seen on Safari 5.1.9 (6534.59.8)
+      return true;
+    }
     if (x.length !== 2) {
       return 'Unexpected silent modification of frozen array';
     }
@@ -2190,7 +2194,7 @@ var ses;
 
   /**
    * Detects whether calling sort on a frozen array can modify the array.
-   * See http://code.google.com/p/v8/issues/detail?id=2419
+   * See https://code.google.com/p/v8/issues/detail?id=2419
    */
   function test_SORT_IGNORES_FROZEN() {
     var x = [2,1];
@@ -2209,7 +2213,7 @@ var ses;
 
   /**
    * Detects whether calling push on a sealed array can modify the array.
-   * See http://code.google.com/p/v8/issues/detail?id=2412
+   * See https://code.google.com/p/v8/issues/detail?id=2412
    */
   function test_PUSH_IGNORES_SEALED() {
     var x = [1,2];
@@ -2273,6 +2277,10 @@ var ses;
         // Don't care whether or not push throws; if it does not mutate and
         // does not throw, that's a bug but not this bug.
       }
+      if (x.length === 3 && x[0] === 1 && x[1] === 2 && x[2] === 3) {
+        // Behavior seen on Safari 5.1.9 (6534.59.8)
+        return true;
+      }
       if (x[0] !== 1 || x[1] !== 2 || x[2] !== undefined) {
         return 'Unexpected modification to elements of array';
       }
@@ -2302,7 +2310,7 @@ var ses;
   /**
    * In some versions of Chrome, extending an array can
    * modify a read-only length property.
-   * http://code.google.com/p/v8/issues/detail?id=2379
+   * https://code.google.com/p/v8/issues/detail?id=2379
    */
   function test_ARRAYS_MODIFY_READONLY() {
     var x = [];
@@ -2923,16 +2931,16 @@ var ses;
           } else {
             if (objToString.call(base) === '[object HTMLFormElement]') {
               // This repair was triggering bug
-              // http://code.google.com/p/chromium/issues/detail?id=94666
+              // https://code.google.com/p/chromium/issues/detail?id=94666
               // on Chrome, causing
-              // http://code.google.com/p/google-caja/issues/detail?id=1401
+              // https://code.google.com/p/google-caja/issues/detail?id=1401
               // so if base is an HTMLFormElement we skip this
               // fix. Since this repair and this situation are both
               // Chrome only, it is ok that we're conditioning this on
               // the unspecified [[Class]] value of base.
               //
               // To avoid the further bug identified at Comment 2
-              // http://code.google.com/p/chromium/issues/detail?id=94666#c2
+              // https://code.google.com/p/chromium/issues/detail?id=94666#c2
               // We also have to reconstruct the requested desc so that
               // the setter is absent. This is why we additionally
               // condition this special case on the absence of an own
@@ -2967,7 +2975,7 @@ var ses;
         // validate that it is not NaN, Infinity, -Infinity, or
         // (if nested) undefined. However, we are currently only
         // trying to repair
-        // http://code.google.com/p/v8/issues/detail?id=621
+        // https://code.google.com/p/v8/issues/detail?id=621
         // That's why this special case validate function is private
         // to this repair.
         return;
@@ -2976,7 +2984,7 @@ var ses;
       if (proto !== Object.prototype && proto !== Array.prototype) {
         throw new TypeError(
           'Parse resulted in invalid JSON. ' +
-            'See http://code.google.com/p/v8/issues/detail?id=621');
+            'See https://code.google.com/p/v8/issues/detail?id=621');
       }
       Object.keys(plainJSON).forEach(function(key) {
         validate(plainJSON[key]);
@@ -3526,7 +3534,7 @@ var ses;
       canRepair: false,
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=51097',
              'https://bugs.webkit.org/show_bug.cgi?id=58338',
-             'http://code.google.com/p/v8/issues/detail?id=1437',
+             'https://code.google.com/p/v8/issues/detail?id=1437',
              'https://connect.microsoft.com/IE/feedback/details/' +
                '685430/global-object-leaks-from-built-in-methods'],
       sections: ['15.2.4.4'],
@@ -3561,8 +3569,8 @@ var ses;
       repair: void 0,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
       canRepair: false,
-      urls: ['http://code.google.com/p/v8/issues/detail?id=1530',
-             'http://code.google.com/p/v8/issues/detail?id=1570'],
+      urls: ['https://code.google.com/p/v8/issues/detail?id=1530',
+             'https://code.google.com/p/v8/issues/detail?id=1570'],
       sections: ['15.2.3.3', '15.2.3.6', '15.3.5.2'],
       tests: ['S15.3.3.1_A4']
     },
@@ -3614,10 +3622,10 @@ var ses;
       repair: void 0,
       preSeverity: severities.NOT_OCAP_SAFE,
       canRepair: false,
-      urls: ['http://code.google.com/p/v8/issues/detail?id=1393',
-             'http://code.google.com/p/chromium/issues/detail?id=75740',
+      urls: ['https://code.google.com/p/v8/issues/detail?id=1393',
+             'https://code.google.com/p/chromium/issues/detail?id=75740',
              'https://bugzilla.mozilla.org/show_bug.cgi?id=635017',
-             'http://code.google.com/p/google-caja/issues/detail?id=528'],
+             'https://code.google.com/p/google-caja/issues/detail?id=528'],
       sections: ['15.10.6.2'],
       tests: ['S15.10.6.2_A12']
     },
@@ -3640,8 +3648,8 @@ var ses;
       repair: void 0,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
       canRepair: false,
-      urls: ['http://code.google.com/p/v8/issues/detail?id=892',
-             'http://code.google.com/p/v8/issues/detail?id=828'],
+      urls: ['https://code.google.com/p/v8/issues/detail?id=892',
+             'https://code.google.com/p/v8/issues/detail?id=828'],
       sections: ['15.3.4.5.1'],
       tests: ['S15.3.4.5_A4']
     },
@@ -3663,7 +3671,7 @@ var ses;
       repair: repair_MUTABLE_DATE_PROTO,
       preSeverity: severities.NOT_OCAP_SAFE,
       canRepair: true,
-      urls: ['http://code.google.com/p/google-caja/issues/detail?id=1362'],
+      urls: ['https://code.google.com/p/google-caja/issues/detail?id=1362'],
       sections: ['15.9.5'],
       tests: []
     },
@@ -3685,7 +3693,7 @@ var ses;
       repair: void 0,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
       canRepair: false,
-      urls: ['http://code.google.com/p/v8/issues/detail?id=1447'],
+      urls: ['https://code.google.com/p/v8/issues/detail?id=1447'],
       sections: ['15.4.4.18'],
       tests: ['S15.4.4.18_A1', 'S15.4.4.18_A2']
     },
@@ -3696,7 +3704,7 @@ var ses;
       repair: repair_NEED_TO_WRAP_FOREACH,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
       canRepair: true,
-      urls: ['http://code.google.com/p/v8/issues/detail?id=2273',
+      urls: ['https://code.google.com/p/v8/issues/detail?id=2273',
              'https://developer.mozilla.org/en-US/docs/JavaScript/' +
                'Reference/Global_Objects/Array/forEach'],
       sections: ['15.4.4.18'],
@@ -3720,9 +3728,9 @@ var ses;
       repair: void 0,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
       canRepair: false,
-      urls: ['http://code.google.com/p/chromium/issues/detail?id=94666',
-             'http://code.google.com/p/v8/issues/detail?id=1651',
-             'http://code.google.com/p/google-caja/issues/detail?id=1401'],
+      urls: ['https://code.google.com/p/chromium/issues/detail?id=94666',
+             'https://code.google.com/p/v8/issues/detail?id=1651',
+             'https://code.google.com/p/google-caja/issues/detail?id=1401'],
       sections: ['15.2.3.6'],
       tests: ['S15.2.3.6_A1']
     },
@@ -3744,7 +3752,7 @@ var ses;
       repair: void 0,
       preSeverity: severities.NOT_ISOLATED,
       canRepair: false,
-      urls: ['http://code.google.com/p/v8/issues/detail?id=1360'],
+      urls: ['https://code.google.com/p/v8/issues/detail?id=1360'],
       sections: ['15.4.4.11'],
       tests: ['S15.4.4.11_A8']
     },
@@ -3755,7 +3763,7 @@ var ses;
       repair: void 0,
       preSeverity: severities.NOT_ISOLATED,
       canRepair: false,
-      urls: ['http://code.google.com/p/v8/issues/detail?id=1360',
+      urls: ['https://code.google.com/p/v8/issues/detail?id=1360',
              'https://connect.microsoft.com/IE/feedback/details/' +
                '685928/bad-this-binding-for-callback-in-string-' +
                'prototype-replace'],
@@ -3836,8 +3844,8 @@ var ses;
       repair: void 0,
       preSeverity: severities.NOT_OCAP_SAFE,
       canRepair: false,
-      urls: ['http://code.google.com/p/v8/issues/detail?id=1643',
-             'http://code.google.com/p/v8/issues/detail?id=1548',
+      urls: ['https://code.google.com/p/v8/issues/detail?id=1643',
+             'https://code.google.com/p/v8/issues/detail?id=1548',
              'https://bugzilla.mozilla.org/show_bug.cgi?id=591846',
              'http://wiki.ecmascript.org/doku.php?id=' +
                'conventions:make_non-standard_properties_configurable'],
@@ -3851,8 +3859,8 @@ var ses;
       repair: void 0,
       preSeverity: severities.NOT_OCAP_SAFE,
       canRepair: false,
-      urls: ['http://code.google.com/p/v8/issues/detail?id=1643',
-             'http://code.google.com/p/v8/issues/detail?id=1548',
+      urls: ['https://code.google.com/p/v8/issues/detail?id=1643',
+             'https://code.google.com/p/v8/issues/detail?id=1548',
              'https://bugzilla.mozilla.org/show_bug.cgi?id=591846',
              'http://wiki.ecmascript.org/doku.php?id=' +
                'conventions:make_non-standard_properties_configurable'],
@@ -3866,7 +3874,7 @@ var ses;
       repair: void 0,
       preSeverity: severities.NOT_OCAP_SAFE,
       canRepair: false,
-      urls: ['http://code.google.com/p/v8/issues/detail?id=893',
+      urls: ['https://code.google.com/p/v8/issues/detail?id=893',
              'https://bugs.webkit.org/show_bug.cgi?id=63398'],
       sections: ['15.3.4.5'],
       tests: ['S13.2.3_A1', 'S15.3.4.5_A1']
@@ -3878,7 +3886,7 @@ var ses;
       repair: void 0,
       preSeverity: severities.NOT_OCAP_SAFE,
       canRepair: false,
-      urls: ['http://code.google.com/p/v8/issues/detail?id=893',
+      urls: ['https://code.google.com/p/v8/issues/detail?id=893',
              'https://bugs.webkit.org/show_bug.cgi?id=63398'],
       sections: ['15.3.4.5'],
       tests: ['S13.2.3_A1', 'S15.3.4.5_A2']
@@ -3901,7 +3909,7 @@ var ses;
       repair: void 0,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
       canRepair: false,
-      urls: ['http://code.google.com/p/v8/issues/detail?id=1769'],
+      urls: ['https://code.google.com/p/v8/issues/detail?id=1769'],
       sections: ['13.2', '15.2.3.3'],
       tests: []
     },
@@ -3912,8 +3920,8 @@ var ses;
       repair: repair_JSON_PARSE_PROTO_CONFUSION,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
       canRepair: true,
-      urls: ['http://code.google.com/p/v8/issues/detail?id=621',
-             'http://code.google.com/p/v8/issues/detail?id=1310'],
+      urls: ['https://code.google.com/p/v8/issues/detail?id=621',
+             'https://code.google.com/p/v8/issues/detail?id=1310'],
       sections: ['15.12.2'],
       tests: ['S15.12.2_A1']
     },
@@ -3947,7 +3955,7 @@ var ses;
       repair: repair_DEFINE_PROPERTY,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
       canRepair: true,
-      urls: ['http://code.google.com/p/v8/issues/detail?id=2441'],
+      urls: ['https://code.google.com/p/v8/issues/detail?id=2441'],
       sections: ['8.6.2'],
       tests: [] // TODO(jasvir): Add to test262
     },
@@ -3958,7 +3966,7 @@ var ses;
       repair: void 0,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
       canRepair: false,
-      urls: ['http://code.google.com/p/v8/issues/detail?id=1624'],
+      urls: ['https://code.google.com/p/v8/issues/detail?id=1624'],
       sections: ['10.4.2.1'],
       tests: ['S10.4.2.1_A1']
     },
@@ -3969,7 +3977,7 @@ var ses;
       repair: void 0,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
       canRepair: false,
-      urls: ['http://code.google.com/p/v8/issues/detail?id=1624'],
+      urls: ['https://code.google.com/p/v8/issues/detail?id=1624'],
       sections: ['10.4.2.1'],
       tests: ['S10.4.2.1_A1']
     },
@@ -3980,7 +3988,7 @@ var ses;
       repair: void 0,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
       canRepair: false,
-      urls: ['http://code.google.com/p/v8/issues/detail?id=2396'],
+      urls: ['https://code.google.com/p/v8/issues/detail?id=2396'],
       sections: ['10.2'],
       tests: [] // TODO(jasvir): Add to test262
     },
@@ -3991,7 +3999,7 @@ var ses;
       repair: repair_PARSEINT_STILL_PARSING_OCTAL,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
       canRepair: true,
-      urls: ['http://code.google.com/p/v8/issues/detail?id=1645'],
+      urls: ['https://code.google.com/p/v8/issues/detail?id=1645'],
       sections: ['15.1.2.2'],
       tests: ['S15.1.2.2_A5.1_T1']
     },
@@ -4014,8 +4022,8 @@ var ses;
       repair: repair_ASSIGN_CAN_OVERRIDE_FROZEN,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
       canRepair: false,
-      urls: ['http://code.google.com/p/v8/issues/detail?id=1169',
-             'http://code.google.com/p/v8/issues/detail?id=1475',
+      urls: ['https://code.google.com/p/v8/issues/detail?id=1169',
+             'https://code.google.com/p/v8/issues/detail?id=1475',
              'https://mail.mozilla.org/pipermail/es-discuss/' +
                '2011-November/017997.html',
              'http://wiki.ecmascript.org/doku.php?id=strawman:' +
@@ -4062,7 +4070,7 @@ var ses;
       repair: repair_SORT_IGNORES_FROZEN,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
       canRepair: true,
-      urls: ['http://code.google.com/p/v8/issues/detail?id=2419'],
+      urls: ['https://code.google.com/p/v8/issues/detail?id=2419'],
       sections: ['15.4.4.11'],
       tests: [] // TODO(jasvir): Add to test262
     },
@@ -4073,7 +4081,7 @@ var ses;
       repair: repair_ARRAY_LENGTH_MUTABLE,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
       canRepair: true,
-      urls: ['http://code.google.com/p/v8/issues/detail?id=2412'],
+      urls: ['https://code.google.com/p/v8/issues/detail?id=2412'],
       sections: ['15.4.4.11'],
       tests: [] // TODO(jasvir): Add to test262
     },
@@ -4128,7 +4136,7 @@ var ses;
       repair: void 0,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
       canRepair: false,
-      urls: ['http://code.google.com/p/v8/issues/detail?id=2379'],
+      urls: ['https://code.google.com/p/v8/issues/detail?id=2379'],
       sections: ['15.4.5.1.3.f'],
       tests: [] // TODO(jasvir): Add to test262
     },
@@ -4203,7 +4211,7 @@ var ses;
       preSeverity: severities.SAFE_SPEC_VIOLATION,
       canRepair: false,
       urls: ['https://bugs.ecmascript.org/show_bug.cgi?id=284',
-             'http://code.google.com/p/v8/issues/detail?id=1977',
+             'https://code.google.com/p/v8/issues/detail?id=1977',
              'https://bugzilla.mozilla.org/show_bug.cgi?id=732669'],
       sections: ['10.4.3'],
       tests: ['10.4.3-1-59-s']
@@ -4294,8 +4302,8 @@ var ses;
       preSeverity: severities.NOT_ISOLATED,
       canRepair: true,
       urls: ['https://code.google.com/p/google-caja/issues/detail?id=1616',
-	     'http://code.google.com/p/v8/issues/detail?id=2470',
-	     'https://bugs.webkit.org/show_bug.cgi?id=106160'],
+             'https://code.google.com/p/v8/issues/detail?id=2470',
+             'https://bugs.webkit.org/show_bug.cgi?id=106160'],
       sections: ['15.3.2.1'],
       tests: []
     },
@@ -4325,7 +4333,7 @@ var ses;
     preSeverity: severities.NOT_ISOLATED,
     canRepair: true,
     urls: ['https://code.google.com/p/google-caja/issues/detail?id=1789',
-           'http://code.google.com/p/v8/issues/detail?id=2758'],
+           'https://code.google.com/p/v8/issues/detail?id=2758'],
     sections: ['15.4.4'],
     tests: [] // TODO(kpreid): Add to test262
   });
