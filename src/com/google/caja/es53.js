@@ -50,6 +50,65 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   var gopd = Object.getOwnPropertyDescriptor;
   var defProp = Object.defineProperty;
 
+  /**
+   * Like host-level Object.defineProperty, but when defining a
+   * accessor property with only a getter, additionally provide a
+   * setter allowing this property to be overridden by host-level
+   * assignment. 
+   *
+   * <p>To explain the problem addressed by this function, we need to
+   * carefully distinguish the two levels of language that es53.js
+   * stands between. The guest language is essentially the SES secure
+   * subset of EcmaScript 5 with WeakMaps and Proxies from EcmaScript
+   * 6. The host language is generally assumed by the EcmaScript 3,
+   * although we feature test for some EcmaScript 5 features, like
+   * accessor properties, in order to use them for better
+   * implementation of some specialized extensions, like array-likes.
+   *
+   * <p>Since the host language is generally assumed to be ES3-like,
+   * the guest-level ES5 Object.defineProperty (See
+   * DefineOwnProperty___) is implemented using simple host-level
+   * assignment, which is generally assumed to work the way it does on
+   * ES3 -- creating a host-level own data property. In the absence of
+   * host-level accessors or host-level read-only data properties,
+   * both of which are absent from ES3, this assumption is safe.
+   *
+   * <p>However, some of the array-like definitions below use host-level
+   * getters without setters. Without additional mechanism, this was
+   * preventing host-level assignments that would override these
+   * properties. So defOverridableProp, when it detects that it would
+   * define a host-level getter-only accessor, also installs a setter
+   * that allows override by simple host-level assignment.
+   *
+   * <p>See <a href=
+   * "https://code.google.com/p/google-caja/issues/detail?id=1842"
+   * >Safari 5 es5/3 using platform accessors in array-likes
+   * badly</a>.
+   */
+  function defOverridableProp(obj, name, desc) {
+    function setter(newValue) {
+      if (obj === this) {
+        throw new TypeError('property "' + name + 
+			    '" not defined to be settable');
+      }
+      if (!!gopd(this, name)) {
+        this[name] = newValue;
+      }
+      // TODO(erights): Do all the inherited property checks
+      defProp(this, name, {
+        value: newValue,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+    }
+    if (('get' in desc) && !('set' in desc)) {
+      desc.set = setter; // TODO(erights): Should make a derived copy      
+    }
+    return defProp(obj, name, desc);
+  }
+  
+
   // Given an object defined in an es53 frame, we can tell which
   // Object.prototype it inherits from.
   Object.prototype.baseProto___ = Object.prototype;
@@ -4322,7 +4381,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
   var numericGetters = (function () {
       var obj = {};
       try {
-        defProp(obj, 0, {
+        defOverridableProp(obj, 0, {
             get: function () { return obj; }
           });
         if (obj[0] !== obj) { return false; }
@@ -4497,7 +4556,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
           // Install native numeric getters.
           for (var i = 0; i < len; i++) {
             (function(j) {
-              defProp(BAL.prototype, j, {
+              defOverridableProp(BAL.prototype, j, {
                   get: markConstFunc(function() {
                     var itemGetter = itemMap.get(this);
                     return itemGetter ? itemGetter.i___(j) : void 0;
@@ -4507,7 +4566,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
             })(i);
           }
           // Install native length getter.
-          defProp(BAL.prototype, 'length', { get: lengthGetter });
+          defOverridableProp(BAL.prototype, 'length', { get: lengthGetter });
           // Whitelist prototype and prototype.constructor for ES5/3.
           BAL.DefineOwnProperty___('prototype', { value: BAL.prototype });
           BAL.prototype.DefineOwnProperty___('constructor', { value: BAL });
