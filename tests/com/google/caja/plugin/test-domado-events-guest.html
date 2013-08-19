@@ -457,6 +457,52 @@
   });
 </script>
 
+<p class="testcontainer" id="testRequestAnimationFrame">
+  requestAnimationFrame<br>
+</p>
+<script type="text/javascript">
+  var hasRAF = directAccess.evalInHostFrame('!!window.requestAnimationFrame');
+  jsunitRegisterIf(hasRAF,
+                   'testRequestAnimationFrame',
+                   function testRequestAnimationFrame() {
+    // We use the same cancel-wrapper as setTimeout does, so not bothering to
+    // test cancel matching, just that the functionality works.
+    
+    var frame1Ran = 0;
+    var frame2Ran = 0;
+    var frame2Time = -1;
+    var frame3Ran = 0;
+    function r1f(time) { frame1Ran++; }
+    function r2f(time) { frame2Ran++; frame2Time = time; }
+    function r3f(time) {
+      assertEquals('2 before 3', 2, frame2Ran);
+      assertEquals('same time as previous callback', frame2Time, time);
+      frame3Ran++;
+      final();
+    }
+
+    var r1 = requestAnimationFrame(r1f);
+    var r21 = requestAnimationFrame(r2f);
+    var r22 = requestAnimationFrame(r2f);  // spec'd to queue duplicate
+    var r3 = requestAnimationFrame(jsunitCallback(r3f));
+    
+    var cr = cancelAnimationFrame(r1);
+    assertEquals('cancel return value', undefined, cr);
+    cancelAnimationFrame(undefined);  // should not fail
+    
+    var final = jsunitCallback(function final_() {
+      requestAnimationFrame(jsunitCallback(function(time) {
+        assertEquals('final #1', 0, frame1Ran);
+        assertEquals('final #2', 2, frame2Ran);
+        assertEquals('final #3', 1, frame3Ran);
+        assertTrue('timing (' + frame2Time + ' ' + time + ')',
+            frame2Time < time);
+        pass('testRequestAnimationFrame');
+      }));
+    });
+  });
+</script>
+
 <p class="clickme testcontainer" id="testInnerhtmlOnclick">
   do not click yet
 </p>

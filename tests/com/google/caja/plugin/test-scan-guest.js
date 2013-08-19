@@ -20,6 +20,7 @@
  *
  * @requires JSON, WeakMap, Proxy, document, console, location,
  *     setTimeout, clearTimeout, setInterval, clearInterval,
+ *     requestAnimationFrame, cancelAnimationFrame,
  *     cajaVM, directAccess, inES5Mode, getUrlParam,
  *     assertTrue, assertEquals, pass, jsunitFail,
  *     Event, HTMLInputElement, HTMLMediaElement, HTMLTableRowElement,
@@ -1352,6 +1353,10 @@
     argsByIdentity(clearTimeout, genCall());
     argsByIdentity(setInterval, G.none);
     argsByIdentity(clearInterval, genCall());
+    if (window.requestAnimationFrame) {
+      argsByIdentity(requestAnimationFrame, genCall(genString));
+      argsByIdentity(cancelAnimationFrame, genCall());
+    }
     argsByIdentity(isNaN, genCall(genSmallInteger));
     argsByIdentity(parseInt, genCall(genString));
     argsByIdentity(parseFloat, genCall(genString));

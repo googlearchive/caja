@@ -1431,13 +1431,15 @@ var Domado = (function() {
     }
 
     /*
-     * Implementations of setTimeout, setInterval, clearTimeout, and
-     * clearInterval that only allow simple functions as timeouts and
-     * that treat timeout ids as capabilities.
-     * This is safe even if accessed across frame since the same
-     * map is never used with more than one version of setTimeout.
+     * Generic wrapper for the timing APIs
+     *   setTimeout/clearTimeout
+     *   setInterval/clearInterval
+     *   requestAnimationFrame/cancelAnimationFrame
+     * which treats timeout IDs as capabilities so that the guest cannot clear
+     * a timeout it didn't set, and prevents the callback from being a string
+     * value which would be evaluated outside the sandbox.
      */
-    function tameSetAndClear(target, set, clear, setName, clearName) {
+    function tameSetAndClear(target, set, clear, setName, clearName, passArg) {
       var ids = new WeakMap();
       makeFunctionAccessible(set);
       makeFunctionAccessible(clear);
@@ -1457,9 +1459,9 @@ var Domado = (function() {
           //   * Passing a string-like object which gets taken as code.
           //   * Non-standard arguments to the callback.
           //   * Non-standard effects of callback's return value.
-          var actionWrapper = function() {
-            action();
-          };
+          var actionWrapper = passArg
+            ? function(time) { action(+time); }  // requestAnimationFrame
+            : function() { action(); };  // setTimeout, setInterval
           id = set(actionWrapper, delayMillis | 0);
         } else {
           id = undefined;
@@ -7021,14 +7023,22 @@ var Domado = (function() {
       // this way.
       tameSetAndClear(
           TameWindow.prototype,
-          function (code, millis) { return window.setTimeout(code, millis); },
-          function (id) { return window.clearTimeout(id); },
-          'setTimeout', 'clearTimeout');
+          function(code, millis) { return window.setTimeout(code, millis); },
+          function(id) { return window.clearTimeout(id); },
+          'setTimeout', 'clearTimeout', false);
       tameSetAndClear(
           TameWindow.prototype,
-          function (code, millis) { return window.setInterval(code, millis); },
-          function (id) { return window.clearInterval(id); },
-          'setInterval', 'clearInterval');
+          function(code, millis) { return window.setInterval(code, millis); },
+          function(id) { return window.clearInterval(id); },
+          'setInterval', 'clearInterval', false);
+      if (window.requestAnimationFrame) {
+        tameSetAndClear(
+            TameWindow.prototype,
+            function(code, ignored) {  // no time arg like setTimeout has
+                return window.requestAnimationFrame(code); },
+            function(id) { return window.cancelAnimationFrame(id); },
+            'requestAnimationFrame', 'cancelAnimationFrame', true);
+      }
       var noopWindowFunctionProp = Props.markPropMaker(function(env) {
         var prop = env.prop;
         var notify = true;
