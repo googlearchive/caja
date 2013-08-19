@@ -1339,9 +1339,13 @@ final class SignatureResolver {
       }
       candidate.match(term, CssPropertyPartType.IDENT, propertyName);
       ++candidate.exprIdx;
+    } else if ("global-name".equals(symbolName)) {
+      // <global-name> is used by @keyframes and animation-name. Since es53
+      // doesn't support @keyframes, we just fail the match.
+      return false;
     } else {
-      throw new SomethingWidgyHappenedError(
-          "unhandled symbol " + sig.symbolName + "\n" + dump(atom));
+      // Unrecognized atom: fail the match.
+      return false;
     }
 
     if (null != constraints

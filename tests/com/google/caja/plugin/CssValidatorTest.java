@@ -39,6 +39,18 @@ import java.util.List;
  */
 public final class CssValidatorTest extends CajaTestCase {
 
+  public final void testGlobalName() throws Exception {
+    runTest("a { animation-name: foo; }",
+        "StyleSheet\n"
+        + "  RuleSet\n"
+        + "    Selector\n"
+        + "      SimpleSelector\n"
+        + "        IdentLiteral : a\n"
+        + "    EmptyDeclaration\n",
+        "WARNING: css property animation-name has bad value: ==>foo<==");
+  }
+
+
   public final void testVendorPrefix() throws Exception {
     runTest("a { -moz-animation-duration: 1s }",
         "StyleSheet\n"
