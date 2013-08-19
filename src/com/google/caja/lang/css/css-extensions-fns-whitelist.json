@@ -1,4 +1,0 @@
-{
-  "inherits": ["css21-fns-whitelist.json"],
-  "allowed": [ "rgba" ]
-}

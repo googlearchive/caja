@@ -1,6 +1,0 @@
-{
-  "inherits": ["css21-fns-defs.json"],
-  "types": [
-    { "key": "rgba", "signature": "<red> <green> <blue> <alphavalue>" }
-  ]
-}

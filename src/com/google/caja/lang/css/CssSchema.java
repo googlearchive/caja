@@ -51,9 +51,9 @@ import java.util.regex.Pattern;
 public final class CssSchema {
   // Public strings for convenience of c.g.c.plugin.Config.
   public static final URI defaultPropWhitelistURL = URI.create(
-      "resource:///com/google/caja/lang/css/css-extensions.json");
+      "resource:///com/google/caja/lang/css/css3.json");
   public static final URI defaultFnWhitelistURL= URI.create(
-      "resource:///com/google/caja/lang/css/css-extensions-fns.json");
+      "resource:///com/google/caja/lang/css/css3-fns.json");
 
   private final Map<Name, CssPropertyInfo> properties =
     new HashMap<Name, CssPropertyInfo>();

@@ -1,0 +1,29 @@
+{
+  "description": [
+    "Defines functions allowed in CSS.",
+    "See http://www.w3.org/TR/css3-values/#functional"
+    ],
+
+  "types": [
+    { "key": "counter",
+      "signature": "<ident> <list-style-type>?" },
+
+    { "key": "calc",
+      "signature": "<length-expression>" },
+
+    { "key": "attr",
+      "signature": "<ident> ((string|value|url|integer|number|length|angle|time|frequency|em|ex|px|gd|rem|vw|vh|vm|mm|cm|in|pt|pc|deg|grad|rad|ms|s|Hz|kHz|percentage) <value>?)?" },
+
+    { "key": "rect",
+      "signature": "<top> <right> <bottom> <left>" },
+
+    { "key": "rgb",
+      "signature": "<red> <green> <blue>" },
+
+    { "key": "rgba",
+      "signature": "<red> <green> <blue> <alphavalue>" }
+
+    { "key": "url",
+      "signature": "<uri>|<string>" }
+  ]
+}

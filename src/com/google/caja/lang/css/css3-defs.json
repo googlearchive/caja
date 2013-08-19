@@ -1,0 +1,1577 @@
+{
+  "description": [
+      "CSS properties as defined at http://www.w3.org/TR/CSS21/propidx.html",
+      " and http://www.w3.org/TR/REC-CSS2/descidx.html. ",
+      "This differs from the spec in that it has ranges on some numeric values",
+      " and it includes in the dom2property field, the corresponding property",
+      " name from http://www.w3.org/TR/DOM-Level-2-Style/css.html#CSS-ElementCSSInlineStyle",
+      " (see also http://developer.mozilla.org/en/docs/DOM:CSS)"
+      ],
+
+  "types": [
+
+    { "key": "animation",
+      "signature": "<single-animation> [, <single-animation>]*",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-animations/#animation"
+    },
+
+    { "key": "animation-delay",
+      "signature": "<time> [, <time>]*",
+      "initial": "0s",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-animations/#animation-delay"
+    },
+
+    { "key": "animation-direction",
+      "signature": "<single-animation-direction> [, <single-animation-direction>]*",
+      "initial": "normal",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-animations/#animation-direction"
+    },
+
+    { "key": "animation-duration",
+      "signature": "<time> [, <time>]*",
+      "initial": "0s",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-animations/#animation-duration"
+    },
+
+    { "key": "animation-fill-mode",
+      "signature": "<single-animation-fill-mode> [, <single-animation-fill-mode>]*",
+      "initial": "none",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-animations/#animation-fill-mode"
+    },
+
+    { "key": "animation-iteration-count",
+      "signature": "<single-animation-iteration-count> [, <single-animation-iteration-count>]*",
+      "initial": "1",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-animations/#animation-iteration-count"
+    },
+
+    { "key": "animation-name",
+      "signature": "<single-animation-name> [, <single-animation-name>]*",
+      "initial": "none",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-animations/#animation-name"
+    },
+
+    { "key": "animation-play-state",
+      "signature": "<single-animation-play-state> [, <single-animation-play-state>]*",
+      "initial": "running",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-animations/#animation-play-state"
+    },
+
+    { "key": "animation-timing-function",
+      "signature": "<single-timing-function> [, <single-timing-function>]*",
+      "initial": "ease",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-animations/#animation-timing-function"
+    },
+
+    { "key": "azimuth",
+      "signature": "<angle> | [[ left-side | far-left | left | center-left | center | center-right | right | far-right | right-side ] || behind ] | leftwards | rightwards | inherit",
+      "default": "center",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["aural"],
+      "dom2property": "azimuth" },
+
+    { "key": "backface-visibility",
+      "as": "visibility"
+    },
+
+    { "key": "background",
+      "signature": "[ [ <bg-image> || [<bg-position> [/ <bg-size>]? | / <bg-size>] || <repeat-style> || <attachment> || <bg-origin> ] , ]* ['background-color' || <bg-image> || [<bg-position> [/ <bg-size>]? | / <bg-size>] || <repeat-style> || <attachment> || <bg-origin>]",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-backgrounds/#the-background",
+      "dom2property": "background"
+    },
+
+    { "key": "background-attachment",
+      "signature": "<attachment> [ , <attachment> ]*",
+      "default": "scroll",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-backgrounds/#background-attachment",
+      "dom2property": "backgroundAttachment"
+    },
+
+    { "key": "background-clip",
+      "signature": "<box> [, <box>]*",
+      "default": "border-box",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-backgrounds/#the-background-clip",
+      "dom2property": "backgroundClip",
+      "comment": "affects clipping but does not allow it to exceed bounds of box"
+    },
+
+    { "key": "background-color",
+      "signature": "<color> | transparent | inherit",
+      "default": "transparent",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "backgroundColor" },
+
+    { "key": "background-image",
+      "signature": "<bg-image> [ , <bg-image> ]*",
+      "default": "none",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-backgrounds/#the-background-image",
+      "dom2property": "backgroundImage"
+    },
+
+    { "key": "background-origin",
+      "signature": "<box> [ , <box> ]*",
+      "default": "padding-box",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css3-background/#background-origin",
+      "dom2property": "backgroundOrigin"
+    },
+
+    { "key": "background-position",
+      "signature": "<bg-position> [ , <bg-position> ]*",
+      "default": "0% 0%",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-backgrounds/#the-background-position",
+      "dom2property": "backgroundPosition"
+    },
+
+    { "key": "background-repeat",
+      "signature": "<repeat-style> [ , <repeat-style> ]*",
+      "default": "repeat",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-backgrounds/#the-background-repeat",
+      "dom2property": "backgroundRepeat"
+    },
+
+    { "key": "background-size",
+      "signature": "<bg-size> [ , <bg-size> ]*",
+      "default": "auto",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-backgrounds/#background-size",
+      "dom2property": "backgroundSize"
+    },
+
+    { "key": "border",
+      "signature": "[ <border-width> || <border-style> || [<color> | transparent] ] | inherit",
+      "default": null, "default-comment": "see individual properties",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "border",
+      "signature-comment": [
+        "signature is the portion of the CSS3 signature ",
+        "(minus border-image-transform) that is equivalent to CSS2.1 in the ",
+        "strings matched but not confusing around whether a border applies to ",
+        "the top only or to the entire box"] },
+
+    { "key": "border-bottom",
+      "as": "border-top",
+      "dom2property": "borderBottom" },
+
+    { "key": "border-bottom-color",
+      "as": "border-top-color",
+      "dom2property": "borderBottomColor" },
+
+    { "key": "border-bottom-left-radius",
+      "as": "border-top-left-radius" },
+    { "key": "-moz-border-radius-bottomleft",
+      "as": "border-top-left-radius",
+      "comment": "Note the nonstandard name. Used in Firefox 1.0 - 12.0" },
+
+    { "key": "border-bottom-right-radius",
+      "as": "border-top-left-radius" },
+    { "key": "-moz-border-radius-bottomright",
+      "as": "border-top-left-radius",
+      "comment": "Note the nonstandard name. Used in Firefox 1.0 - 12.0" },
+
+    { "key": "border-bottom-style",
+      "as": "border-top-style",
+      "dom2property": "borderBottomStyle" },
+
+    { "key": "border-bottom-width",
+      "as": "border-top-width",
+      "dom2property": "borderBottomWidth" },
+
+    { "key": "border-collapse",
+      "signature": "collapse | separate | inherit",
+      "default": "separate",
+      "appliesTo": { "include": ["table", "inline-table"] },
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "borderCollapse" },
+
+    { "key": "border-color",
+      "signature": "[ <color> | transparent ]{1,4} | inherit",
+      "default": null, "default-comment": "see individual properties",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "borderColor" },
+
+    { "key": "border-left",
+      "as": "border-top",
+      "dom2property": "borderLeft" },
+
+    { "key": "border-left-color",
+      "as": "border-top-color",
+      "dom2property": "borderLeftColor" },
+
+    { "key": "border-left-style",
+      "as": "border-top-style",
+      "dom2property": "borderLeftStyle" },
+
+    { "key": "border-left-width",
+      "as": "border-top-width",
+      "dom2property": "borderLeftWidth" },
+
+    { "key": "border-radius",
+      "signature": "[<length> | <percentage>]{1,4} [ / [<length> | <percentage>]{1,4} ]?",
+      "default": "0",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css3-background/#the-border-radius",
+      "dom2property": "borderRadius"
+    },
+
+    { "key": "border-right",
+      "as": "border-top",
+      "dom2property": "borderRight" },
+
+    { "key": "border-right-color",
+      "as": "border-top-color",
+      "dom2property": "borderRightColor" },
+
+    { "key": "border-right-style",
+      "as": "border-top-style",
+      "dom2property": "borderRightStyle" },
+
+    { "key": "border-right-width",
+      "as": "border-top-width",
+      "dom2property": "borderRightWidth" },
+
+    { "key": "border-spacing",
+      "signature": "<length> <length>? | inherit",
+      "default": "0",
+      "appliesTo": { "include": ["table", "inline-table"] },
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "borderSpacing" },
+
+    { "key": "border-style",
+      "signature": "<border-style>{1,4} | inherit",
+      "default": null, "default-comment": "see individual properties",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "borderStyle" },
+
+    { "key": "border-top",
+      "signature": "[ <border-width> || <border-style> || 'border-top-color' ] | inherit",
+      "default": null, "default-comment": "see individual properties",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "borderTop" },
+
+    { "key": "border-top-color",
+      "signature": "<color> | transparent | inherit",
+      "default": null, "default-comment": "the value of the 'color' property",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "borderTopColor" },
+
+    { "key": "border-top-left-radius",
+      "signature": "[<length> | <percentage>] [<length> | <percentage>]?",
+      "default": "0",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css3-background/#the-border-radius" },
+    { "key": "-moz-border-radius-topleft",
+      "as": "border-top-left-radius",
+      "comment": "Note the nonstandard name. Used in Firefox 1.0 - 12.0" },
+
+    { "key": "border-top-right-radius",
+      "as": "border-top-left-radius" },
+    { "key": "-moz-border-radius-topright",
+      "as": "border-top-left-radius",
+      "comment": "Note the nonstandard name. Used in Firefox 1.0 - 12.0" },
+
+    { "key": "border-top-style",
+      "signature": "<border-style> | inherit",
+      "default": "none",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "borderTopStyle" },
+
+    { "key": "border-top-width",
+      "signature": "<border-width> | inherit",
+      "default": "medium",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "borderTopWidth" },
+
+    { "key": "border-width",
+      "signature": "<border-width>{1,4} | inherit",
+      "default": null, "default-comment": "see individual properties",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "borderWidth" },
+
+    { "key": "bottom",
+      "signature": "<length> | <percentage> | auto | inherit",
+      "default": "auto",
+      "appliesTo": { "include": ["positioned"] },
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "bottom" },
+
+    { "key": "box-shadow",
+      "signature": "none | [ <shadow>, ]* <shadow>",
+      "default": "none",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "boxShadow",
+      "source": "http://dev.w3.org/csswg/css3-background/#box-shadow" },
+
+    { "key": "box-sizing",
+      "signature": "content-box | padding-box | border-box | inherit",
+      "default": "content-box",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-ui/#box-sizing",
+      "dom2property": "boxSizing"
+    },
+
+    { "key": "caption-side",
+      "signature": "top | bottom | inherit",
+      "default": "top",
+      "appliesTo": { "include": ["table-caption"] },
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "captionSide" },
+
+    { "key": "clear",
+      "signature": "none | left | right | both | inherit",
+      "default": "none",
+      "appliesTo": { "include": ["block"] },
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "clear" },
+
+    { "key": "clip",
+      "signature": "<shape> | auto | inherit",
+      "default": "auto",
+      "appliesTo": { "include": ["absolutely-positioned"] },
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "clip" },
+
+    { "key": "color",
+      "signature": "<color> | inherit",
+      "default": null, "default-comment": "depends on user agent",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "color" },
+
+    { "key": "content",
+      "signature": "normal | none | <string> +",
+      "default": " \"\" ",
+      "description": [
+        "Allow per CSS spec with some exceptions",
+        "Reject <counter> because it exposes global page state",
+        "Reject attr(<identifier>) because it circumvents Domado attribute value virtualizations",
+        "Reject inherit because of possible strange semantics with stuff outside the Domado container",
+        "Reject <uri> because, if we accept it, our CSS sanitizers assume any string is a URI",
+        "Reject no-open-quote and no-close-quote because they expose a global counter",
+        "Reject open-quote and close-quote because we cannot test for them yet"
+      ]
+    },
+
+    { "key": "counter-increment",
+      "signature": "[ <identifier> <integer>? ]+ | none | inherit",
+      "default": "none",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": "*",
+      "dom2property": "counterIncrement" },
+
+    { "key": "counter-reset",
+      "signature": "[ <identifier> <integer>? ]+ | none | inherit",
+      "default": "none",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": "*",
+      "dom2property": "counterReset" },
+
+    { "key": "cue",
+      "signature": "[ 'cue-before' || 'cue-after' ] | inherit",
+      "default": null, "default-comment": "see individual properties",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["aural"],
+      "dom2property": "cue" },
+
+    { "key": "cue-after",
+      "signature": "<uri> | none | inherit",
+      "default": "none",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["aural"],
+      "dom2property": "cueAfter" },
+
+    { "key": "cue-before",
+      "signature": "<uri> | none | inherit",
+      "default": "none",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["aural"],
+      "dom2property": "cueBefore" },
+
+    { "key": "cursor",
+      "signature": "[ [<uri> ,]* [ auto | crosshair | default | pointer | move | e-resize | ne-resize | nw-resize | n-resize | se-resize | sw-resize | s-resize | w-resize | text | wait | help | progress | all-scroll | col-resize | hand | no-drop | not-allowed | row-resize | vertical-text ] ] | inherit",
+      "default": "auto",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual", "interactive"],
+      "dom2property": "cursor",
+      "source": "http://www.quirksmode.org/css/cursor.html" },
+
+    { "key": "direction",
+      "signature": "ltr | rtl | inherit",
+      "default": "ltr",
+      "appliesTo": "*", "appliesTo-comment": "but see prose",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "direction" },
+
+    { "key": "display",
+      "signature": "inline | block | list-item | run-in | inline-block | table | inline-table | table-row-group | table-header-group | table-footer-group | table-row | table-column-group | table-column | table-cell | table-caption | none | inherit | -moz-inline-box | -moz-inline-stack",
+      "default": "inline",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": "*",
+      "dom2property": "display" },
+
+    { "key": "elevation",
+      "signature": "<angle> | below | level | above | higher | lower | inherit",
+      "default": "level",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["aural"],
+      "dom2property": "elevation" },
+
+    { "key": "empty-cells",
+      "signature": "show | hide | inherit",
+      "default": "show",
+      "appliesTo": { "include": ["table-cell"] },
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "emptyCells" },
+
+    { "key": "filter",
+      "signature": "[ <ie-filter-opacity> | <prog-id> ]+",
+      "default": null,
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "filter",
+      "source":
+          "http://msdn2.microsoft.com/en-us/library/ms532853%28VS.85%29.aspx"
+    },
+    { "key": "<ie-filter-opacity>",
+      "signature": "alpha(opacity=[<percentage:0,100> | <number:0,100>])",
+      "default": "100",
+      "source": "http://msdn2.microsoft.com/en-us/library/ms532910(VS.85).aspx"
+    },
+
+    { "key": "float",
+      "signature": "left | right | none | inherit",
+      "default": "none",
+      "appliesTo": "*",
+      "appliesTo-comment": "but see 9.7",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": ["cssFloat", "styleFloat"],
+      "dom2property-comment": "float is a future reserved keyword" },
+
+    { "key": "font",
+      "signature": "[ [ 'font-style' || 'font-variant' || 'font-weight' ]? 'font-size' [ / 'line-height' ]? 'font-family' ] | caption | icon | menu | message-box | small-caption | status-bar | inherit",
+      "default": null, "default-comment": "see individual properties",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "font" },
+
+    { "key": "font-family",
+      "signature": "[[ <family-name> | <generic-family> ] [, [ <family-name> | <generic-family> ]]* ] | inherit",
+      "default": null, "default-comment": "depends on user agent",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "fontFamily" },
+
+    { "key": "font-size",
+      "signature": "<absolute-size> | <relative-size> | <length:0,> | <percentage:0,> | inherit",
+      "default": "medium",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "fontSize" },
+
+    { "key": "font-stretch",
+      "signature": "normal | wider | narrower | ultra-condensed | extra-condensed | condensed | semi-condensed | semi-expanded | expanded | extra-expanded | ultra-expanded",
+      "default": "normal",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "fontStretch",
+      "source": "http://dev.w3.org/csswg/css3-fonts/#font-stretch"
+    },
+
+    { "key": "font-style",
+      "signature": "normal | italic | oblique | inherit",
+      "default": "normal",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "fontStyle" },
+
+    { "key": "font-variant",
+      "signature": "normal | small-caps | inherit",
+      "default": "normal",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "fontVariant" },
+
+    { "key": "font-weight",
+      "signature": "normal | bold | bolder | lighter | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | inherit",
+      "default": "normal",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "fontWeight" },
+
+    { "key": "height",
+      "signature": "<length> | <percentage> | auto | inherit",
+      "default": "auto",
+      "appliesTo": "*",
+      "appliesTo-comment":
+          "but non-replaced inline elements, table columns, and column groups.",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "height" },
+
+    { "key": "left",
+      "signature": "<length> | <percentage> | auto | inherit",
+      "default": "auto",
+      "appliesTo": { "include": ["positioned"] },
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "left" },
+
+    { "key": "letter-spacing",
+      "signature": "normal | <length> | inherit",
+      "default": "normal",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "letterSpacing" },
+
+    { "key": "line-height",
+      "signature": "normal | <number:0,> | <length:0,> | <percentage:0,> | inherit",
+      "default": "normal",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "lineHeight" },
+
+    { "key": "list-style",
+      "signature": "[ 'list-style-type' || 'list-style-position' || 'list-style-image' ] | inherit",
+      "default": null, "default-comment": "see individual properties",
+      "appliesTo": { "include": ["display: list-item"] },
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "listStyle" },
+
+    { "key": "list-style-image",
+      "signature": "<image> | none | inherit",
+      "default": "none",
+      "appliesTo": { "include": ["display: list-item"] },
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "listStyleImage" },
+
+    { "key": "list-style-position",
+      "signature": "inside | outside | inherit",
+      "default": "outside",
+      "appliesTo": { "include": ["display: list-item"] },
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "listStylePosition" },
+
+    { "key": "list-style-type",
+      "signature": "disc | circle | square | decimal | decimal-leading-zero | lower-roman | upper-roman | lower-greek | lower-latin | upper-latin | armenian | georgian | lower-alpha | upper-alpha | none | inherit",
+      "default": "disc",
+      "appliesTo": { "include": ["display: list-item"] },
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "listStyleType" },
+
+    { "key": "margin",
+      "signature": "<margin-width>{1,4} | inherit",
+      "default": null, "default-comment": "see individual properties",
+      "appliesTo":
+          { "exclude": [ "tr", "tbody", "thead", "tfoot", "col", "colgroup", "td", "th"] },
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "margin" },
+
+    { "key": "margin-bottom", "as": "margin-top",
+      "dom2property": "marginBottom" },
+
+    { "key": "margin-left", "as": "margin-right",
+      "dom2property": "marginLeft" },
+
+    { "key": "margin-right",
+      "signature": "<margin-width> | inherit",
+      "default": "0",
+      "appliesTo":
+          { "exclude": [ "tr", "tbody", "thead", "tfoot", "col", "colgroup", "td", "th"] },
+      "appliesTo-comment":
+          "All elements except elements with table display types other than table-caption, table and inline-table.  See http://www.w3.org/TR/CSS21/tables.html",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "marginRight" },
+
+    { "key": "margin-top",
+      "signature": "<margin-width> | inherit",
+      "default": "0",
+      "appliesTo":
+          { "exclude": [ "tr", "tbody", "thead", "tfoot", "col", "colgroup", "td", "th"] },
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "marginTop" },
+
+    { "key": "max-height",
+      "signature": "<length:0,> | <percentage:0,> | none | inherit | auto",
+      "default": "none",
+      "appliesTo": { "exclude": [ "col", "colgroup"] },
+      "appliesTo-comment": "All elements but non-replaced inline elements, table columns, and column groups",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "description": "the value 'auto' is a quirk specific to IE7",
+      "dom2property": "maxHeight" },
+
+    { "key": "max-width",
+      "signature": "<length:0,> | <percentage:0,> | none | inherit | auto",
+      "default": "none",
+      "appliesTo": { "exclude": [ "tbody", "thead", "tfoot", "row", "tr"] },
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "description": "the value 'auto' is a quirk specific to IE7",
+      "dom2property": "maxWidth" },
+
+    { "key": "min-height",
+      "signature": "<length:0,> | <percentage:0,> | inherit | auto",
+      "default": "0",
+      "appliesTo": { "include": ["inline", "table-column", "column-group"] },
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "description": "the value 'auto' is a quirk specific to IE7",
+      "dom2property": "minHeight" },
+
+    { "key": "min-width",
+      "signature": "<length:0,> | <percentage:0,> | inherit | auto",
+      "default": "0",
+      "appliesTo": { "include": ["inline", "table-row", "row-group"] },
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "description": "the value 'auto' is a quirk specific to IE7",
+      "dom2property": "minWidth" },
+
+    { "key": "opacity",
+      "signature": "<alphavalue> | inherit",
+      "default": "1",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "opacity",
+      "source": "http://dev.w3.org/csswg/css3-color/#transparency" },
+    { "key": "<alphavalue>",
+      "signature": "<number:0,1>",
+      "source": "http://dev.w3.org/csswg/css3-color/#alphavaluedt"
+    },
+    { "key": "<alpha>", "signature": "<integer:0,255>|<number:0,1>|<percentage:0,100>" },
+
+    { "key": "orphans",
+      "signature": "<integer:0,> | inherit",
+      "default": "2",
+      "appliesTo": { "include": ["block"] },
+      "inherited": true,
+      "mediaGroups": ["visual", "paged"],
+      "dom2property": "orphans" },
+
+    { "key": "outline",
+      "signature": "[ 'outline-color' || 'outline-style' || 'outline-width' ] | inherit",
+      "default": null, "default-comment": "see individual properties",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual", "interactive"],
+      "dom2property": "outline" },
+
+    { "key": "outline-color",
+      "signature": "<color> | invert | inherit",
+      "default": "invert",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual", "interactive"],
+      "dom2property": "outlineColor" },
+
+    { "key": "outline-style",
+      "signature": "<border-style> | inherit",
+      "default": "none",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual", "interactive"],
+      "dom2property": "outlineStyle" },
+
+    { "key": "outline-width",
+      "signature": "<border-width> | inherit",
+      "default": "medium",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual", "interactive"],
+      "dom2property": "outlineWidth" },
+
+    { "key": "overflow",
+      "signature": "visible | hidden | scroll | auto | inherit",
+      "default": "visible",
+      "appliesTo": { "include": ["block", "table cell", "inline block"] },
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "overflow" },
+
+    { "key": "overflow-wrap",
+      "signature": "normal | break-word | inherit",
+      "default": "normal",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "overflowWrap",
+      "source": "http://dev.w3.org/csswg/css3-text/#overflow-wrap" },
+
+    { "key": "overflow-x",
+      "signature": "visible | hidden | scroll | auto | no-display | no-content",
+      "default": "visible",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "overflowX",
+      "source": "http://dev.w3.org/csswg/css3-box/#overflow"
+    },
+    { "key": "overflow-y", "as": "overflow-x", "dom2property": "overflowY" },
+
+    { "key": "padding",
+      "signature": "<padding-width>{1,4} | inherit",
+      "default": null, "default-comment": "see individual properties",
+      "appliesTo": { "exclude": [
+            "table-row-group", "table-header-group", "table-footer-group",
+            "table-column", "table-column-group", "table-row"] },
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "padding" },
+
+    { "key": "padding-bottom", "as": "padding-top",
+      "dom2property": "paddingBottom" },
+
+    { "key": "padding-left", "as": "padding-top",
+      "dom2property": "paddingLeft" },
+
+    { "key": "padding-right", "as": "padding-top",
+      "dom2property": "paddingRight" },
+
+    { "key": "padding-top",
+      "signature": "<padding-width> | inherit",
+      "default": "0",
+      "appliesTo": { "exclude": [
+            "table-row-group", "table-header-group", "table-footer-group",
+            "table-column", "table-column-group", "table-row"] },
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "paddingTop" },
+
+    { "key": "page-break-after",
+      "signature": "auto | always | avoid | left | right | inherit",
+      "default": "auto",
+      "appliesTo": { "include": ["block"] },
+      "inherited": false,
+      "mediaGroups": ["visual", "paged"],
+      "dom2property": "pageBreakAfter" },
+
+    { "key": "page-break-before",
+      "signature": "auto | always | avoid | left | right | inherit",
+      "default": "auto",
+      "appliesTo": { "include": ["block"] },
+      "inherited": false,
+      "mediaGroups": ["visual", "paged"],
+      "dom2property": "pageBreakBefore" },
+
+    { "key": "page-break-inside",
+      "signature": "avoid | auto | inherit",
+      "default": "auto",
+      "appliesTo": { "include": ["block"] },
+      "inherited": true,
+      "mediaGroups": ["visual", "paged"],
+      "dom2property": "pageBreakInside" },
+
+    { "key": "pause",
+      "signature": "[ [<time> | <percentage>]{1,2} ] | inherit",
+      "default": null, "default-comment": "see individual properties",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["aural"],
+      "dom2property": "pause" },
+
+    { "key": "pause-after",
+      "signature": "<time> | <percentage> | inherit",
+      "default": "0",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["aural"],
+      "dom2property": "pauseAfter" },
+
+    { "key": "pause-before",
+      "signature": "<time> | <percentage> | inherit",
+      "default": "0",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["aural"],
+      "dom2property": "pauseBefore" },
+
+    { "key": "perspective",
+      "signature": "none | <length>",
+      "default": "none",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-transforms/#perspective"
+    },
+
+    { "key": "perspective-origin",
+      "signature": "[ left | center | right | top | bottom | <percentage> | <length> ] | [ left | center | right | <percentage> | <length> ] [ top | center | bottom | <percentage> | <length> ] | [ top | bottom ] [ left | center | right | <percentage> | <length> ]",
+      "default": "50% 50%",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-transforms/#perspective-origin"
+    },
+
+    { "key": "pitch",
+      "signature": "<frequency> | x-low | low | medium | high | x-high | inherit",
+      "default": "medium",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["aural"],
+      "dom2property": "pitch" },
+
+    { "key": "pitch-range",
+      "signature": "<number> | inherit",
+      "default": "50",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["aural"],
+      "dom2property": "pitchRange" },
+
+    { "key": "play-during",
+      "signature": "<uri> [ mix || repeat ]? | auto | none | inherit",
+      "default": "auto",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["aural"],
+      "dom2property": "playDuring" },
+
+    { "key": "position",
+      "signature": "static | relative | absolute | inherit",
+      "signature-comment": "'fixed' is not allowed",
+      "default": "static",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "position",
+    },
+
+    { "key": "quotes",
+      "signature": "[<string> <string>]+ | none | inherit",
+      "default": null, "default-comment": "depends on user agent",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "quotes" },
+
+    { "key": "richness",
+      "signature": "<number> | inherit",
+      "default": "50",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["aural"],
+      "dom2property": "richness" },
+
+    { "key": "right",
+      "signature": "<length> | <percentage> | auto | inherit",
+      "default": "auto",
+      "appliesTo": { "include": ["positioned"] },
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "right" },
+
+    { "key": "speak",
+      "signature": "normal | none | spell-out | inherit",
+      "default": "normal",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["aural"],
+      "dom2property": "speak" },
+
+    { "key": "speak-header",
+      "signature": "once | always | inherit",
+      "default": "once",
+      "appliesTo": { "exclude": ["thead"] },
+      "appliesTo-comment": "elements that have table header information",
+      "inherited": true,
+      "mediaGroups": ["aural"],
+      "dom2property": "speakHeader" },
+
+    { "key": "speak-numeral",
+      "signature": "digits | continuous | inherit",
+      "default": "continuous",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["aural"],
+      "dom2property": "speakNumeral" },
+
+    { "key": "speak-punctuation",
+      "signature": "code | none | inherit",
+      "default": "none",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["aural"],
+      "dom2property": "speakPunctuation" },
+
+    { "key": "speech-rate",
+      "signature": "<number> | x-slow | slow | medium | fast | x-fast | faster | slower | inherit",
+      "default": "medium",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["aural"],
+      "dom2property": "speechRate" },
+
+    { "key": "stress",
+      "signature": "<number> | inherit",
+      "default": "50",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["aural"],
+      "dom2property": "stress" },
+
+    { "key": "table-layout",
+      "signature": "auto | fixed | inherit",
+      "default": "auto",
+      "appliesTo": { "include": ["table", "inline-table"] },
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "tableLayout" },
+
+    { "key": "text-align",
+      "signature": "left | right | center | justify | inherit",
+      "default":  null,
+      "default-comment":
+          "'left' if 'direction' is 'ltr'; 'right' if 'direction' is 'rtl'",
+      "appliesTo": { "include": ["block", "table cell", "inline block"] },
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "textAlign" },
+
+    { "key": "text-decoration",
+      "signature": "none | [ underline || overline || line-through || blink ] | inherit",
+      "default": "none",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "textDecoration" },
+
+    { "key": "text-indent",
+      "signature": "<length> | <percentage> | inherit",
+      "default": "0",
+      "appliesTo": { "include": ["block", "table cell", "inline block"] },
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "textIndent" },
+
+    { "key": "text-overflow",
+      "signature": "clip | ellipsis",
+      "default": null,
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "textOverflow",
+      "source": "http://www.css3.com/css-text-overflow/" },
+
+    { "key": "text-shadow",
+      "signature": "none | [ <shadow>, ]* <shadow>",
+      "default": "none",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "textShadow",
+      "source": "http://dev.w3.org/csswg/css3-text/#text-shadow" },
+    { "key": "<shadow>",
+      "signature": "[<color> <length>{2,4} inset?] | [ inset? <length>{2,4} <color>?]" },
+
+    { "key": "text-transform",
+      "signature": "capitalize | uppercase | lowercase | none | inherit",
+      "default": "none",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "textTransform" },
+
+    { "key": "text-wrap",
+      "signature": "normal | unrestricted | none | suppress",
+      "default": "normal",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "textWrap",
+      "source": "http://dev.w3.org/csswg/css3-text/#text-wrap" },
+
+    { "key": "top",
+      "signature": "<length> | <percentage> | auto | inherit",
+      "default": "auto",
+      "appliesTo": { "include": ["positioned"] },
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "top" },
+
+    { "key": "transform",
+      "signature": "none | <transform-function> [ <transform-function> ]*",
+      "default": "none",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-transforms/#transform"
+    },
+
+    { "key": "transform-origin",
+      "signature": "<position>",
+      "default": "50% 50%",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-transforms/#transform-origin"
+    },
+
+    { "key": "transform-style",
+      "signature": "flat | preserve-3d",
+      "default": "flat",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "http://dev.w3.org/csswg/css-transforms/#transform-style"
+    },
+
+    { "key": "transition",
+      "signature": "<single-transition> [, <single-transition>]*",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["interactive"],
+      "source": "http://dev.w3.org/csswg/css-transitions/#transition"
+    },
+
+    { "key": "transition-delay",
+      "signature": "<time> [, <time>]*",
+      "initial": "0s",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["interactive"],
+      "source": "http://dev.w3.org/csswg/css-transitions/#transition-delay"
+    },
+
+    { "key": "transition-duration",
+      "signature": "<time> [, <time>]*",
+      "initial": "0s",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["interactive"],
+      "source": "http://dev.w3.org/csswg/css-transitions/#transition-duration"
+    },
+
+    { "key": "transition-property",
+      "signature": "<single-transition-property> [, <single-transition-property>]*",
+      "initial": "all",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["interactive"],
+      "source": "http://dev.w3.org/csswg/css-transitions/#transition-property"
+    },
+
+    { "key": "transition-timing-function",
+      "signature": "<single-timing-function> [, <single-timing-function>]*",
+      "initial": "ease",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["interactive"],
+      "source": "http://dev.w3.org/csswg/css-transitions/#transition-timing-function"
+    },
+
+    { "key": "unicode-bidi",
+      "signature": "normal | embed | bidi-override | inherit",
+      "default": "normal",
+      "appliesTo": "*",
+      "appliesTo-comment": "but see prose",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "unicodeBidi" },
+
+    { "key": "vertical-align",
+      "signature": "baseline | sub | super | top | text-top | middle | bottom | text-bottom | <percentage> | <length> | inherit",
+      "default": "baseline",
+      "appliesTo": { "include": ["inline", "table-cell"] },
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "verticalAlign" },
+
+    { "key": "visibility",
+      "signature": "visible | hidden | collapse | inherit",
+      "default": "visible",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "visibility" },
+
+    { "key": "voice-family",
+      "signature": "[[<specific-voice> | <generic-voice> ],]* [<specific-voice> | <generic-voice> ] | inherit",
+      "default": null, "default-comment": "depends on user agent",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["aural"],
+      "dom2property": "voiceFamily" },
+
+    { "key": "volume",
+      "signature": "<number:0,> | <percentage:0,> | silent | x-soft | soft | medium | loud | x-loud | inherit",
+      "default": "medium",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["aural"],
+      "dom2property": "volume" },
+
+    { "key": "white-space",
+      "signature": "normal | pre | nowrap | pre-wrap | pre-line | inherit | -o-pre-wrap | -moz-pre-wrap | -pre-wrap",
+      "default": "normal",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "whiteSpace",
+      "source": "http://www.w3.org/TR/2007/WD-css3-text-20070306/#white-space"
+    },
+
+    { "key": "widows",
+      "signature": "<integer:0,> | inherit",
+      "default": "2",
+      "appliesTo": { "include": ["block"] },
+      "inherited": true,
+      "mediaGroups": ["visual", "paged"],
+      "dom2property": "widows" },
+
+    { "key": "width",
+      "signature": "<length:0,> | <percentage:0,> | auto | inherit",
+      "default": "auto",
+      "appliesTo": { "exclude": ["inline", "table row", "row group"] },
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "width" },
+
+    { "key": "word-break",
+      "signature": "normal | keep-all | break-all | inherit",
+      "default": "normal",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "wordBreak",
+      "source": "http://dev.w3.org/csswg/css-text/#word-break" },
+
+    { "key": "word-spacing",
+      "signature": "normal | <length> | inherit",
+      "default": "normal",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "wordSpacing" },
+
+    { "key": "word-wrap",
+      "as": "overflow-wrap" },
+
+    { "key": "z-index",
+      "signature": "auto | <z-index:-9999999,9999999> | inherit",
+      "default": "auto",
+      "appliesTo": { "include": ["positioned"] },
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "zIndex",
+      "source": "http://www.w3.org/TR/css3-box/#stacking" },
+
+    { "key": "zoom",
+      "signature": "normal | <number:0,> | <percentage:0,>",
+      "default": "normal",
+      "appliesTo": "*",
+      "inherited": "true",
+      "mediaGroups": ["visual"],
+      "dom2property": "zoom",
+      "source": "http://msdn2.microsoft.com/en-us/library/ms531189(VS.85).aspx"
+    },
+
+
+
+
+    { "key": "<absolute-size>",
+      "see": "http://www.w3.org/TR/CSS21/fonts.html#propdef-font-size",
+      "signature": "xx-small|x-small|small|medium|large|x-large|xx-large" },
+
+    { "key": "<attachment>",
+      "signature": "scroll | fixed | local | inherit",
+      "source": "http://dev.w3.org/csswg/css-backgrounds/#ltattachmentgt"
+    },
+
+    { "key": "<bg-image>",
+      "signature": "<image> | none | inherit",
+      "source": "http://dev.w3.org/csswg/css-backgrounds/#ltbg-imagegt"
+    },
+
+    { "key": "<bg-origin>",
+      "signature": "border-box | padding-box | content-box",
+      "source": "http://dev.w3.org/csswg/css-backgrounds/#ltbg-origingt"
+    },
+
+    { "key": "<bg-position>",
+      "signature": "[ [ [ <percentage> | <length> | left | center | right ] ] [ [ <percentage> | <length> | top | center | bottom ] ]? | [ [ center | [ left | right ] [ <percentage> | <length> ]? ] || [ center | [ top | bottom ] [ <percentage> | <length> ]? ] ] ] | inherit",
+      "source": "http://dev.w3.org/csswg/css-backgrounds/#ltbg-positiongt"
+    },
+
+    { "key": "<bg-size>",
+      "signature": "[ <length:0,> | <percentage> | auto ]{1, 2} | cover | contain",
+      "source": "http://dev.w3.org/csswg/css-backgrounds/#ltbg-origingt"
+    },
+
+    { "key": "<border-style>",
+      "see": "http://www.w3.org/TR/REC-CSS2/box.html#value-def-border-style",
+      "signature":
+          "none|hidden|dotted|dashed|solid|double|groove|ridge|inset|outset" },
+
+    { "key": "<border-width>",
+      "signature": "thin|medium|thick|<length>" },
+
+    { "key": "<box>",
+      "signature": "border-box | padding-box | content-box | inherit",
+      "source": "http://dev.w3.org/csswg/css3-background/#background-clip"
+    },
+
+    { "key": "<color-stop>",
+      "signature": "<color> [ <percentage> | <length> ]?",
+      "source": "http://dev.w3.org/csswg/css-images-3/#color-stop-syntax"
+    },
+
+    { "key": "<color>",
+      "signature": "<hex-color>|aliceblue|antiquewhite|aqua|aquamarine|azure|beige|bisque|black|blanchedalmond|blue|blueviolet|brown|burlywood|cadetblue|chartreuse|chocolate|coral|cornflowerblue|cornsilk|crimson|cyan|darkblue|darkcyan|darkgoldenrod|darkgray|darkgreen|darkkhaki|darkmagenta|darkolivegreen|darkorange|darkorchid|darkred|darksalmon|darkseagreen|darkslateblue|darkslategray|darkturquoise|darkviolet|deeppink|deepskyblue|dimgray|dodgerblue|firebrick|floralwhite|forestgreen|fuchsia|gainsboro|ghostwhite|gold|goldenrod|gray|green|greenyellow|honeydew|hotpink|indianred|indigo|ivory|khaki|lavender|lavenderblush|lawngreen|lemonchiffon|lightblue|lightcoral|lightcyan|lightgoldenrodyellow|lightgreen|lightgrey|lightpink|lightsalmon|lightseagreen|lightskyblue|lightslategray|lightsteelblue|lightyellow|lime|limegreen|linen|magenta|maroon|mediumaquamarine|mediumblue|mediumorchid|mediumpurple|mediumseagreen|mediumslateblue|mediumspringgreen|mediumturquoise|mediumvioletred|midnightblue|mintcream|mistyrose|moccasin|navajowhite|navy|oldlace|olive|olivedrab|orange|orangered|orchid|palegoldenrod|palegreen|paleturquoise|palevioletred|papayawhip|peachpuff|peru|pink|plum|powderblue|purple|red|rosybrown|royalblue|saddlebrown|salmon|sandybrown|seagreen|seashell|sienna|silver|skyblue|slateblue|slategray|snow|springgreen|steelblue|tan|teal|thistle|tomato|turquoise|violet|wheat|white|whitesmoke|yellow|yellowgreen|rgb(<red>,<green>,<blue>)|rgba(<red>,<green>,<blue>,<alpha>)",
+      "source": "http://www.w3.org/TR/css3-iccprof#colorunits"
+    },
+
+    { "key": "<counter>",
+      "see": "http://www.w3.org/TR/CSS21/syndata.html#value-def-counter",
+      "signature": "counter(<identifier>) | counter(<identifier>, <list-style-type>)" },
+
+    { "key": "<ending-shape>",
+      "signature": "circle | ellipse",
+      "default": "circle",
+      "source": "http://dev.w3.org/csswg/css-images-3/#shape"
+    },
+
+    { "key": "<family-name>",
+      "see": "http://www.w3.org/TR/CSS21/fonts.html#value-def-family-name",
+      "signature": "<string>|<loose-quotable-words>",
+      "caveat": ["Font names containing any such characters or whitespace",
+                 " should be quoted.",
+                 "If quoting is omitted, any whitespace characters before",
+                 " and after the font name are ignored and any sequence of",
+                 " whitespace characters inside the font name is converted to",
+                 " a single space. Font family names that happen to be the",
+                 " same as a keyword value (e.g. 'initial', 'inherit',",
+                 " 'default', 'serif', 'sans-serif', 'monospace', 'fantasy',",
+                 " and 'cursive') must be quoted to prevent confusion with",
+                 " the keywords with the same names."]
+    },
+
+    { "key": "<filter-opacity>",
+      "signature": "<number:0,100>",
+      "default": "0",
+      "source": "http://msdn.microsoft.com/en-us/library/ms532910(VS.85).aspx"
+    },
+
+    { "key": "<generic-family>",
+      "see": "http://www.w3.org/TR/CSS21/fonts.html#value-def-family-name",
+      "signature": "serif|sans-serif|cursive|fantasy|monospace" },
+
+    { "key": "<generic-voice>",
+      "see": "http://www.w3.org/TR/CSS21/aural.html#value-def-generic-voice",
+      "signature": "male|female|child" },
+
+    { "key": "<gradient>",
+      "signature": "[ <linear-gradient> | <radial-gradient> | <repeating-linear-gradient> | <repeating-radial-gradient> ]",
+      "source": "http://dev.w3.org/csswg/css-images-3/#linear-gradient-type"
+    },
+
+    { "key": "<image-decl>",
+      "signature": "<uri>",
+      "source": "http://dev.w3.org/csswg/css-images-3/#image-notation"
+    },
+
+    { "key": "<image-list>",
+      "signature": "image( [ <image-decl> , ]* [ <image-decl> | <color> ] )",
+      "source": "http://dev.w3.org/csswg/css-images-3/#image-notation"
+    },
+
+    { "key": "<image>",
+      "signature": "<uri> | <image-list> | <gradient>",
+      "source": "http://dev.w3.org/csswg/css-images-3/#image-values"
+    },
+
+    { "key": "<linear-gradient>",
+      "signature": "linear-gradient ( [ [ <angle> | to <side-or-corner> ] ,]? <color-stop> [ , <color-stop>]+ )",
+      "source": "http://dev.w3.org/csswg/css-images-3/#linear-gradient-type"
+    },
+
+    { "key": "<loose-quotable-words>",
+      "description": [
+          "Space separated words that should be quoted.",
+          "The validator contains a separate pass that finds adjacent loose",
+          " words and turns them into a single quoted term.",
+          "Subsequent words need not be unreserved since a 'font-family'",
+          " cannot be followed directly by a reserved keyword."],
+      "signature": "<unreserved-word> <quotable-word>*" }
+
+    { "key": "<margin-width>",
+      "see": "http://www.w3.org/TR/CSS21/box.html#value-def-margin-width",
+      "signature": "<length>|<percentage>|auto" },
+
+    { "key": "<padding-width>",
+      "see": "http://www.w3.org/TR/CSS21/box.html#value-def-padding-width",
+      "signature": "<length:0,>|<percentage:0,>" },
+
+    { "key": "<page-url>",
+      "signature": "<uri>",
+      "description": "A URI that is resolved relative to the base URL of the document containing the styled node, not the containing stylesheet."
+    },
+
+    { "key": "<position>",
+      "default": "center",
+      "signature": "[ <percentage>  |  <length>  |  [[ left | right ] [ <percentage> | <length> ]? [ center | [ top | bottom ] [ <percentage> | <length> ]? ]? ]  |  [ [ top | bottom ] [ <percentage> | <length> ]? [ center | [ left | right ] [ <percentage> | <length> ]? ]? ]  |  [ center [ center | [ left | right | top | bottom ] [ <percentage> | <length> ]? ]? ] ]",
+      "comment": "the signature was derived from the source by duplicating and reducing to avoid the use of the && operator defined in http://www.w3.org/TR/CSS21/about.html#property-defs which is not supported by the CSS whitelist parser.",
+      "source": "http://dev.w3.org/csswg/css-backgrounds/#position",
+    },
+
+    { "key": "<prog-id-alpha-image-loader>",
+      "signature":
+          "progid:DXImageTransform.Microsoft.AlphaImageLoader(src=<page-url>, sizingMethod=<sizing-method>)",
+      "source": "http://msdn.microsoft.com/en-us/library/ms532969(VS.85).aspx"
+    },
+
+    { "key": "<prog-id-alpha>",
+      "signature":
+          "progid:DXImageTransform.Microsoft.Alpha(opacity=<filter-opacity>)",
+      "source": "http://msdn.microsoft.com/en-us/library/ms532967(VS.85).aspx"
+    },
+
+    { "key": "<prog-id>",
+      "signature": "<prog-id-alpha>|<prog-id-alpha-image-loader>",
+      "source": "http://msdn.microsoft.com/en-us/library/ms532853(VS.85).aspx"
+    },
+
+    { "key": "<radial-gradient>",
+      "signature": "radial-gradient ( [ [ <ending-shape> || <size> ] [ at <position> ]? , | at <position> , ]? <color-stop> [ , <color-stop> ]+ )",
+      "source": "http://dev.w3.org/csswg/css-images-3/#radial-gradients"
+    },
+
+    { "key": "<red>", "signature": "<integer:0,255>|<percentage:0,100>" },
+    { "key": "<green>", "as": "<red>" },
+    { "key": "<blue>", "as": "<red>" },
+
+    { "key": "<relative-size>",
+      "see": "http://www.w3.org/TR/CSS21/fonts.html#propdef-font-size",
+      "signature": "smaller|larger" },
+
+    { "key": "<repeat-style>",
+      "signature": "repeat-x | repeat-y | [repeat | space | round | no-repeat]{1,2} | inherit",
+      "source": "http://dev.w3.org/csswg/css-backgrounds/#ltrepeat-stylegt"
+    },
+
+    { "key": "<repeating-linear-gradient>",
+      "signature": "repeating-linear-gradient ( [ [ <angle> | to <side-or-corner> ] ,]? <color-stop>[, <color-stop>]+ )",
+      "source": "http://dev.w3.org/csswg/css-images-3/#repeating-gradients"
+    },
+
+    { "key": "<repeating-radial-gradient>",
+      "signature": "repeating-radial-gradient ( [ [ <ending-shape> || <size> ] [ at <position> ]? , | at <position> , ]? <color-stop> [ , <color-stop> ]+ )",
+      "source": "http://dev.w3.org/csswg/css-images-3/#repeating-gradients"
+    },
+
+    { "key": "<shape>",
+      "see": "http://www.w3.org/TR/CSS21/visufx.html#value-def-shape",
+      "signature": "rect(<top>, <right>, <bottom>, <left>)" },
+
+    { "key": "<side-or-corner>",
+      "signature": "[left | right] || [top | bottom]",
+      "source": "http://dev.w3.org/csswg/css-images-3/#linear-gradient-type"
+    },
+
+    { "key": "<single-animation-direction>",
+      "default": "normal",
+      "signature": "normal | reverse | alternate | alternate-reverse",
+      "source": "http://dev.w3.org/csswg/css-animations/#animation-direction"
+    },
+
+    { "key": "<single-animation-fill-mode>",
+      "default": "none",
+      "signature": "none | forwards | backwards | both",
+      "source": "http://dev.w3.org/csswg/css-animations/#animation-fill-mode"
+    },
+
+    { "key": "<single-animation-iteration-count>",
+      "default": "1",
+      "signature": "infinite | <number>",
+      "source": "http://dev.w3.org/csswg/css-animations/#single-animation-iteration-count"
+    },
+
+    { "key": "<single-animation-name>",
+      "default": "none",
+      "signature": "none | <global-name>",
+      "source": "http://dev.w3.org/csswg/css-animations/#single-animation-name"
+    },
+
+    { "key": "<single-animation-play-state>",
+      "default": "running",
+      "signature": "running | paused",
+      "source": "http://dev.w3.org/csswg/css-animations/#single-animation-play-state"
+    },
+
+    { "key": "<single-animation>",
+      "signature": "<single-animation-name> || <time> || <single-timing-function> || <time> || <single-animation-iteration-count> || <single-animation-direction> || <single-animation-fill-mode> || <single-animation-play-state>",
+      "source": "http://dev.w3.org/csswg/css-animations/#single-animation"
+    },
+
+    { "key": "<single-timing-function>",
+      "signature": "ease | linear | ease-in | ease-out | ease-in-out | step-start | step-end | steps(<integer>[, [ start | end ] ]?) | cubic-bezier(<number>, <number>, <number>, <number>)",
+      "default": "ease",
+      "source": "http://dev.w3.org/csswg/css-transitions/#transition-timing-function"
+    },
+
+    { "key": "<single-transition-property>",
+      "signature": "all | <property-name>",
+      "source": "http://dev.w3.org/csswg/css-transitions/#single-transition-property"
+    },
+
+    { "key": "<single-transition>",
+      "signature": "[ none | <single-transition-property> ] || <time> || <single-timing-function> || <time>",
+      "source": "http://dev.w3.org/csswg/css-transitions/#single-transition"
+    },
+
+    { "key": "<size>",
+      "signature": "[ closest-side | farthest-side | closest-corner | farthest-corner | <length> | [<length> | <percentage>] [<length> | <percentage>] ]",
+      "default": "farthest-corner",
+      "source": "http://dev.w3.org/csswg/css-images-3/#size"
+    },
+
+    { "key": "<sizing-method>",
+      "signature": "\"crop\" | \"image\" | \"scale\"",
+      "default": "image",
+      "source": "http://msdn.microsoft.com/en-us/library/ms532920(VS.85).aspx"
+    },
+
+    { "key": "<top>", "signature": "<length>|auto" },
+    { "key": "<right>", "as": "<top>" },
+    { "key": "<bottom>", "as": "<top>" },
+    { "key": "<left>", "as": "<top>" },
+
+    { "key": "<transform-function-2d>",
+      "signature": "translate(<translation-value>[, <translation-value>]) | translateX(<translation-value>) | translateY(<translation-value>) | scale(<number>[, <number>]) | scaleX(<number>) | scaleY(<number>) | rotate(<angle>) | skew(<angle>[, <angle>]) | skewX(<angle>) | skewY(<angle>)",
+      "source": "http://dev.w3.org/csswg/css-transforms/#two-d-transform-functions"
+    },
+
+    { "key": "<transform-function-3d>",
+      "signature": "translate3d(<translation-value>, <translation-value>, <length>) | translateZ(<length>) | scale3d(<number>, <number>, <number>) | scaleZ(<number>) | rotate3d(<number>, <number>, <number>, <angle>) | rotateX(<angle>) | rotateY(<angle>) | rotateZ(<angle>) | perspective(<length>)",
+      "source": "http://dev.w3.org/csswg/css-transforms/#three-d-transform-functions"
+    },
+
+    { "key": "<transform-function>",
+      "signature": "<transform-matrix> | <transform-function-2d> | <transform-function-3d>",
+      "source": "http://dev.w3.org/csswg/css-transforms/#transform-functions"
+    },
+
+    { "key": "<transform-matrix>",
+      "signature": "matrix(<number>, <number>, <number>, <number>, <number>, <number>[, <number>, <number>, <number>, <number>, <number>, <number>, <number>, <number>, <number>, <number>])",
+      "comment": "6 number version is a 2D transform matrix, and the 16 number version is the full 3-D transform matrix.",
+      "source": "http://dev.w3.org/csswg/css-transforms/#transform-functions"
+    },
+
+    { "key": "<translation-value>",
+      "signature": "<percentage> | <length>",
+      "source": "http://dev.w3.org/csswg/css-transforms/#transform-functions"
+    }
+  ]
+}

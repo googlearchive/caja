@@ -592,16 +592,12 @@ For help on building and testing Caja, see:
     </javac>
     <genrule class="com.google.caja.lang.css.CssPropertyPatterns$Builder">
       <output file="${lib.caja}/plugin/css-defs.js"/>
-      <input file="${src.caja}/lang/css/css-extensions.json"/>
-      <depend file="${src.caja}/lang/css/css21.json"/>
-      <depend file="${src.caja}/lang/css/css21-defs.json"/>
-      <depend file="${src.caja}/lang/css/css21-whitelist.json"/>
-      <depend file="${src.caja}/lang/css/css-extensions.json"/>
-      <depend file="${src.caja}/lang/css/css-extensions-defs.json"/>
-      <depend file="${src.caja}/lang/css/css-extensions-whitelist.json"/>
-      <input file="${src.caja}/lang/css/css21-fns.json"/>
-      <depend file="${src.caja}/lang/css/css21-fns-defs.json"/>
-      <depend file="${src.caja}/lang/css/css21-fns-whitelist.json"/>
+      <input file="${src.caja}/lang/css/css3.json"/>
+      <depend file="${src.caja}/lang/css/css3-defs.json"/>
+      <depend file="${src.caja}/lang/css/css3-whitelist.json"/>
+      <input file="${src.caja}/lang/css/css3-fns.json"/>
+      <depend file="${src.caja}/lang/css/css3-fns-defs.json"/>
+      <depend file="${src.caja}/lang/css/css3-fns-whitelist.json"/>
       <depend file="${src.caja}/lang/css/CssPropertyPatterns.java"/>
     </genrule>
     <genrule class="com.google.caja.lang.html.HtmlDefinitions$Builder">

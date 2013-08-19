@@ -1,0 +1,5 @@
+{
+  "inherits": [
+    "css3-fns-defs.json",
+    "css3-fns-whitelist.json" ]
+}

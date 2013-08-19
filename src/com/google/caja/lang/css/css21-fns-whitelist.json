@@ -1,9 +1,0 @@
-{
-  "allowed": [ "rect", "rgb", "url" ],
-
-  "denied": [
-    { "key": "attr", "reason": "unknown semantics" },
-    { "key": "counter", "reason": "affects global state" },
-    { "key": "expression", "reason": "executes arbitrary javascript" }
-  ]
-}
