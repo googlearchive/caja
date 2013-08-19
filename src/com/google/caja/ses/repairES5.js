@@ -871,11 +871,13 @@ var ses;
   function inTestFrame(callback) {
     if (!document || !document.createElement) { return undefined; }
     var iframe = document.createElement('iframe');
-    document.body.appendChild(iframe);
+    var container = document.body || document.getElementsByTagName('head')[0] ||
+        document.documentElement || document;
+    container.appendChild(iframe);
     try {
       return callback(iframe.contentWindow);
     } finally {
-      iframe.parentNode.removeChild(iframe);
+      container.removeChild(iframe);
     }
   }
 

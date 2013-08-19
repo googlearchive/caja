@@ -1,6 +1,6 @@
 [
   {
-    "label": "ses loading tests",
+    "label": "ses-loading",
     "bare": "../ses/test-ses-loading.html",
     "mode": "none",
     "tests": [
@@ -31,11 +31,16 @@
       {
         "label": "fail-2",
         "params": { "load": "initSES.js", "failAtStage": "2" }
+      },
+      {
+        "label": "early",
+        "comment": "Ensure loading in <head> works.",
+        "bare": "../ses/test-ses-early.html"
       }
     ]
   },
   {
-    "label": "ses mitigation tests",
+    "label": "ses-mitigation",
     "bare": "../ses/test-ses-mitigation.html",
     "mode": "none",
     "tests": [

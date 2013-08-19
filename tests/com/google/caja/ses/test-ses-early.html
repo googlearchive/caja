@@ -1,0 +1,17 @@
+<!doctype html>
+<html>
+  <head>
+    <title>SES in &lt;head&gt; test</title>
+    <script src="initSES-minified.js"></script>
+  </head>
+  <body class="readytotest">
+    <script type="text/javascript">
+      'use strict';
+      if (ses.ok(ses.severities.NEW_SYMPTOM)) {
+        document.title = 'all tests passed - ' + document.title;
+      } else {
+        document.title = 'failed - ' + document.title;
+        console.error('test-ses: assertions failed');
+      }
+    </script>
+</html>
