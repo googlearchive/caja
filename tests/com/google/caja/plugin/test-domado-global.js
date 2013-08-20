@@ -188,7 +188,6 @@
      */
     (function () {
       registerGuestTest('testOnloadProp',
-          '<body>' + // TODO(kpreid): That this is required is a HtmlEmitter bug
           '<script>' +
           'window.onload = function () { ' + 
           '  window.testresult = (window.testresult || 0)+1; };' +

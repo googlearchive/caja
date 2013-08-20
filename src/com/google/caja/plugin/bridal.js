@@ -231,28 +231,6 @@ var bridalMaker = function (makeDOMAccessible, targetDocNode) {
           break;
       }
     }
-
-    // Do not copy listeners since DOM2 specifies that only attributes and
-    // children are copied, and that children should only be copied if the
-    // deep flag is set.
-    // The children are handled in constructClone.
-    // TODO(kpreid): This is interpreting Domado's expando-attributes map;
-    // modularity problem?
-    var originalAttribs = node._d_attributes;
-    if (originalAttribs) {
-      var attribs = {};
-      clone._d_attributes = attribs;
-      var k, v;
-      for (k in originalAttribs) {
-        if (/__$/.test(k)) { continue; }
-        v = originalAttribs[k];
-        switch (typeof v) {
-          case 'string': case 'number': case 'boolean':
-            attribs[k] = v;
-            break;
-        }
-      };
-    }
   }
 
   ////////////////////////////////////////////////////////////////////////////

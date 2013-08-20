@@ -52,10 +52,8 @@
 </div>
 <script type="text/javascript">
   var foo = 0;
-  // TODO(kpreid): Enable for ES5 mode after implementing proper scoping
-  jsunitRegisterIf(!inES5Mode,
-                   'testGlobalWindowProperties',
-                   function testGlobalWindowProperties() {
+  jsunitRegister('testGlobalWindowProperties',
+                 function testGlobalWindowProperties() {
     assertEquals(0, foo);
     window.foo = 1;
     assertEquals(1, foo);
@@ -72,10 +70,8 @@
   testGlobalWindowReassignment
 </div>
 <script type="text/javascript">
-  // TODO(kpreid): Enable for ES5 mode and debug 'Cannot set "window"'
-  jsunitRegisterIf(!inES5Mode,
-                   'testGlobalWindowReassignment',
-                   function testGlobalWindowReassignment() {
+  jsunitRegister('testGlobalWindowReassignment',
+                 function testGlobalWindowReassignment() {
     assertEquals(globalThis, window);
     var origWindow = window;
     window = 1;
@@ -90,10 +86,8 @@
   testGlobalSelfReassignment
 </div>
 <script type="text/javascript">
-// TODO(kpreid): Enable for ES5 mode and debug 'Cannot set "self"'
-  jsunitRegisterIf(!inES5Mode,
-                   'testGlobalSelfReassignment',
-                   function testGlobalSelfReassignment() {
+  jsunitRegister('testGlobalSelfReassignment',
+                 function testGlobalSelfReassignment() {
     assertEquals(globalThis, self);
     var origSelf = self;
     self = 1;
@@ -108,10 +102,8 @@
   testGlobalNodeClassesReassignment
 </div>
 <script type="text/javascript">
-// TODO(kpreid): Enable for ES5 mode and debug 'Cannot set "HTMLElement"'
-  jsunitRegisterIf(!inES5Mode,
-                   'testGlobalNodeClassesReassignment',
-                   function testGlobalNodeClassesReassignment() {
+  jsunitRegister('testGlobalNodeClassesReassignment',
+                 function testGlobalNodeClassesReassignment() {
     var origElement = HTMLElement;
     HTMLElement = 1;
     assertEquals(1, window.HTMLElement);

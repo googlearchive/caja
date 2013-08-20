@@ -6454,8 +6454,9 @@ var Domado = (function() {
           if (!domicile.writeHook) {
             throw new Error('document.write not provided for this document');
           }
-          // TODO(kpreid): Per HTML5, document.write is void, so why are we
-          // returning anything?
+          // TODO(kpreid): Per HTML5, document.write is void. This return value
+          // is used internally by ses-frame-group.js to call the run()
+          // callback, and ought to be a strictly internal interface.
           return domicile.writeHook.write.apply(undefined,
               Array.prototype.slice.call(arguments, 1));
         }),
