@@ -3254,28 +3254,30 @@ Test row cell
 </script>
 
 <div class="testcontainer" id="testHash">
-  <a id='test-hash' href="#foo">test a.hash</a>
+  <a id='test-hash' href="#foo">test a.hash and hash in a.href</a>
 </div>
 <script type="text/javascript">
   jsunitRegister('testHash', function testHash() {
     var a = document.getElementById('test-hash');
+
     assertEquals('#foo', a.hash);
     // a.href is an absolute url; a.getAttribute('href') is just the hash
     assertEquals('#foo', a.getAttribute('href'));
-    // TODO(felix8a): maybe this should succeed?
-    //assertEquals('#foo', a.href.substr(-4));
+    assertEquals(window.location + '#foo', a.href);
+
     a.hash = '#bar';
     assertEquals('#bar', a.hash);
     // setting a.hash forces a.getAttribute('href') to be a resolved url
-    // TODO(felix8a): maybe this should succeed?
-    //assertEquals('#bar', a.href.substr(-4));
-    pass('testHash');
+    assertEquals(window.location + '#bar', a.getAttribute('href'));
+    assertEquals(window.location + '#bar', a.href);
+
+    pass();
   });
 </script>
 
 <div class="testcontainer" id="testBaseURI"></div>
 <script type="text/javascript">
-  jsunitRegister('testBaseURI', function testHash() {
+  jsunitRegister('testBaseURI', function testBaseURI() {
     // http://www.w3.org/TR/DOM-Level-3-Core/core.html#Node3-baseURI
     var loc = window.location;
     assertEquals(

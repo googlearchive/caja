@@ -51,6 +51,8 @@ function testLocation(beSpecific) {
         window.location.search);
   }
 
+  assertEquals('implicit toString', window.location.href, '' + window.location);
+
   // document.location is an identical property to window.location
   assertTrue('document.location', window.location === document.location);
 }

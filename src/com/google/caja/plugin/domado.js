@@ -323,8 +323,15 @@ var Domado = (function() {
    * Alias for a common pattern: non-enumerable toString method.
    */
   function setToString(obj, fn) {
-    Object.defineProperty(obj, 'toString',
-        allowNonWritableOverride(obj, 'toString', {value: fn}));
+    // ES5/3's virtualization of toString does not work properly w/
+    // defineProperty
+    if ('USELESS' in cajaVM) {  // TODO(kpreid): Better condition/kill this code
+      // Under ES5/3, this will have the overridable semantics we wanted anyway
+      obj.toString = fn;
+    } else {
+      Object.defineProperty(obj, 'toString',
+          allowNonWritableOverride(obj, 'toString', {value: fn}));
+    }
   }
 
   /**
@@ -1827,6 +1834,8 @@ var Domado = (function() {
       var window = bridalMaker.getWindow(outerContainerNode, makeDOMAccessible);
       window = makeDOMAccessible(window);
 
+      makeDOMAccessible(document.location);
+
       // Note that feralPseudoWindow may be an Element or a Window depending.
       var feralPseudoDocument, feralPseudoWindow;
       if (outerContainerNode.nodeType === 9) { // Document node
@@ -2179,6 +2188,14 @@ var Domado = (function() {
         }
       }
 
+      /** Split a URI reference into URI and fragment (still escaped). */
+      function splitURIFragment(uriString) {
+        var parsed = URI.parse(uriString);
+        var frag = parsed.getRawFragment();
+        parsed.setRawFragment('');
+        return {frag: frag, uri: parsed.toString()};
+      }
+
       var ID_LIST_PARTS_PATTERN = new RegExp(
         '([^' + XML_SPACE + ']+)([' + XML_SPACE + ']+|$)', 'g');
 
@@ -2199,7 +2216,19 @@ var Domado = (function() {
             if (realValue && '#' === realValue.charAt(0)) {
               return unsuffix(realValue, idSuffix, realValue);
             } else {
-              return realValue;
+              // convert "http://hostpage#fragment-suffix___" into
+              // "http://guestpage#fragment"
+              var valueSplit = splitURIFragment(realValue);
+              var baseSplit = splitURIFragment(
+                    // .baseURI not available on IE
+                    document.baseURI || document.location.href);
+              // compare against document's base URL
+              if (valueSplit.uri === baseSplit.uri) {
+                valueSplit.uri = domicile.pseudoLocation.href;
+              }
+              return valueSplit.uri +
+                  (valueSplit.frag === null ? '' : '#' +
+                      unsuffix(valueSplit.frag, idSuffix, valueSplit.frag));
             }
           case html4.atype.URI_FRAGMENT:
             if (realValue && '#' === realValue.charAt(0)) {
@@ -2778,6 +2807,25 @@ var Domado = (function() {
       // This alias exists so as to document *why* we're doing this particular
       // configuration.
       var NP_writePolicyOnly = PT.filter(false, identity, true, identity);
+
+      function NP_UriValuedProperty(schemaEl, schemaAttr) {
+        return Props.markPropMaker(function(env) {
+          var prop = env.prop;
+          return {
+            // this is not just an attribute wrapper because the .href is
+            // expected to be absolute even if the attribute is not.
+            // But we can still use the same virt logic.
+            get: env.amplifying(function(privates) {
+              return virtualizeAttributeValue(
+                  html4.atype.URI, privates.feral[prop]);
+            }),
+            set: env.amplifying(function(privates, value) {
+              privates.feral.href = rewriteAttribute(
+                  schemaEl, schemaAttr, html4.atype.URI, value);
+            })
+          };
+        });
+      }
 
       var nodeClassNoImplWarnings = {};
       var elementTamerCache = {};
@@ -4609,8 +4657,7 @@ var Domado = (function() {
             false,
             // TODO(felix8a): add suffix if href is self
             identity),
-          // TODO(felix8a): fragment rewriting?
-          href: NP_writePolicyOnly
+          href: NP_UriValuedProperty('a', 'href')
         }; }
       });
 
