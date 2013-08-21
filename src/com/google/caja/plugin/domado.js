@@ -5584,7 +5584,9 @@ var Domado = (function() {
         superclass: 'CajaFormField',
         domClass: 'HTMLButtonElement',
         properties: function() { return {
-          type: PT.rw
+          // On Safari, the .type property is not writable, so use setAttribute
+          // for consistency.
+          type: PT.filter(false, String, true, String)
         }; }
       });
 

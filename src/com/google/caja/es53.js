@@ -547,7 +547,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
 
   function assertValidPropertyName(P) {
     if (endsWith__.test(P)) {
-      throw new TypeError('Properties may not end in double underscore.');
+      throw new TypeError('Property name may not end in double underscore.');
     }
   }
 
@@ -3509,7 +3509,9 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       funcBound.f___ = funcBound.apply;
       funcBound.ok___ = true;
       // 15.3.5.2
-      rawDelete(funcBound, 'prototype');
+      if (!rawDelete(funcBound, 'prototype')) {
+        funcBound.prototype = null;
+      }
       funcBound.new___ = function () {
           throw "Constructing the result of a bind() not yet implemented.";
         };

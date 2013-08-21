@@ -24,8 +24,9 @@
  *     cajaVM, directAccess, inES5Mode, getUrlParam,
  *     assertTrue, assertEquals, pass, jsunitFail,
  *     Event, HTMLInputElement, HTMLMediaElement, HTMLTableRowElement,
- *     HTMLTableSectionElement, HTMLTableElement,
- *     Audio, Image, Option, XMLHttpRequest, Window, Document, Node,
+ *     HTMLTableSectionElement, HTMLTableElement, HTMLImageElement,
+ *     HTMLTextAreaElement, HTMLVideoElement, HTMLButtonElement,
+ *     Audio, Image, Option, XMLHttpRequest, Window, Document, Node, Element,
  *     Attr, Text, CSSStyleDeclaration, CanvasRenderingContext2D,
  *     CanvasGradient, ImageData, Location
  * @overrides window
@@ -55,6 +56,19 @@
     } else {
       throw new EvalError('simpleEval does not implement: ' + expr);
     }
+  }
+
+  function getPropertyDescriptor(object, prop) {
+    if (object === null) { return null; }
+    return Object.getOwnPropertyDescriptor(object, prop) ||
+        getPropertyDescriptor(Object.getPrototypeOf(object), prop);
+  }
+
+  function getGetter(object, prop) {
+    return (getPropertyDescriptor(object, prop) || {}).get;
+  }
+  function getSetter(object, prop) {
+    return (getPropertyDescriptor(object, prop) || {}).set;
   }
 
   /**
@@ -253,6 +267,8 @@
     var prototypeTable = new WeakMap();
     var specialCases = [];
 
+    var self = this;
+
     function setByIdentity(obj, value) {
       switch (typeof obj) {
         case 'object':
@@ -260,6 +276,8 @@
           identityTable.set(obj, value);
           break;
         case 'undefined':
+          // TODO(kpreid): make this looseness optional, so things which
+          // aren't optional aren't subject to lack of typo checking
           return;
         default:
           throw new TypeError('setByIdentity: key is not an object: ' + obj);
@@ -277,6 +295,16 @@
 
     function setByConstructor(ctor, value) {
       prototypeTable.set(ctor.prototype, value);
+    }
+
+    /** Use a Ref object to add to this map. */
+    function set(ref, value) {
+      ref.putInMap(self, value);
+    }
+
+    /** Shorthand for this.set(ref, true) for boolean-valued maps. */
+    function mark(ref) {
+      set(ref, true);
     }
 
     /**
@@ -333,9 +361,56 @@
     this.setByPropertyName = setByPropertyName;
     this.setByPathSuffix = setByPathSuffix;
     this.setByConstructor = setByConstructor;
+    this.set = set;
+    this.mark = mark;
     this.addSpecialCase = addSpecialCase;
   }
-
+  
+  /**
+   * Designate one or more objects, in the ways MatchingMap supports.
+   */
+  var Ref = cajaVM.def({
+    is: function refIs(obj) {
+      return {
+        putInMap: function(map, value) {
+          map.setByIdentity(obj, value);
+        }
+      };
+    },
+    prop: function refProp(prop) {
+      return {
+        putInMap: function(map, value) {
+          map.setByPropertyName(prop, value);
+          map.setByPropertyName('get ' + prop + '<THIS>()', value);
+        }
+      };
+    },
+    path: function refPath(path) {
+      return {
+        putInMap: function(map, value) {
+          map.setByPathSuffix(path, value);
+        }
+      };
+    },
+    ctor: function refCtor(ctor) {
+      return {
+        putInMap: function(map, value) {
+          map.setByConstructor(ctor, value);
+        }
+      };
+    },
+    all: function refAll(var_args) {
+      var refs = Array.prototype.slice.call(arguments);
+      return {
+        putInMap: function(map, value) {
+          refs.forEach(function(ref) {
+            ref.putInMap(map, value);
+          });
+        }
+      };
+    }
+  });
+  
   var Context = (function() {
     /**
      * Holds an object, information about where it came from, and information
@@ -473,7 +548,7 @@
     var noThisContext = makeContext(
         undefined,
         '<noThis>',
-        function() { return noThisContext; },
+        'self',
         function() { return noThisContext; },
         function() { return 'undefined'; });
 
@@ -482,7 +557,7 @@
         return makeContext(
             o,
             path,
-            function() { return noThisContext; },
+            'self',
             function() { return noThisContext; },
             function() { return code; });
       }
@@ -564,6 +639,7 @@
 
     // exported configuration
     var expectedUnfrozen = this.expectedUnfrozen = new MatchingMap();
+    var expectedAlwaysThrow = this.expectedAlwaysThrow = new MatchingMap();
     var functionArgs = this.functionArgs = new MatchingMap();
     var obtainInstance = this.obtainInstance =
         new UniversalConstructor(noteGap);
@@ -680,10 +756,20 @@
             noteGap('No argument generator for function', context);
             argGenerator = G.none;
           }
+
+          var didSomeCall = false;
+          var didNonThrowingCall = false;
+
           argGenerator(function(tuple) {
             var thisArg = tuple[0];
             var args = tuple[1];
             var hook = tuple[2];
+            if (tuple.length < 2 || tuple.length > 3 ||
+                !(args instanceof Array) ||
+                !(hook === undefined || hook instanceof Function)) {
+              throw new Error('Malformed invocation description: ' + tuple +
+                  '\n' + context.toDetailsString());
+            }
             var result;
             var thisArgStr = '<' + thisArg + '>';
             var thrown;
@@ -693,6 +779,8 @@
                 switch (args.length) {
                   case 0: result = new object(); break;
                   case 1: result = new object(args[0]); break;
+                  case 2: result = new object(args[0], args[1]); break;
+                  case 3: result = new object(args[0], args[1], args[2]); break;
                   default:
                     noteGap('Construction for ' + args.length +
                         ' args not implemented');
@@ -719,6 +807,8 @@
                 thrown = true;
               }
             }
+            didSomeCall = true;
+            didNonThrowingCall = didNonThrowingCall || !thrown;
             // TODO(kpreid): Make these live objects instead of strings, so that
             // we can print clearer paths and more complete programs.
             var subcontext = context.invocation(result, thisArgStr + '(' +
@@ -729,6 +819,11 @@
             }
             traverse(subcontext);
           });
+
+          if (didSomeCall && !didNonThrowingCall &&
+              !expectedAlwaysThrow.get(context)) {
+            noteGap('No non-throwing call', context);
+          }
         }
 
         // traversal
@@ -884,6 +979,9 @@
       finished: finished
     });
     var expectedUnfrozen = scanner.expectedUnfrozen;
+    var expectedAlwaysThrow = scanner.expectedAlwaysThrow;
+    var functionArgs = scanner.functionArgs;
+    var obtainInstance = scanner.obtainInstance;
 
     // skip test environment things
     scanner.skip('$');
@@ -920,6 +1018,18 @@
     scanner.skip('testUniverse');
     scanner.skip('testScanner');
 
+    // returns its parameters to help catch leaks
+    function dummyFunction() {
+      return Object.freeze([this].concat(
+          Array.prototype.slice.call(arguments)));
+    }
+    cajaVM.constFunc(dummyFunction);
+
+    // value we expect NOT to see
+    var refLeakCanary = Object.freeze({
+      toString: function() { return 'reference leak canary'; }
+    });
+
     // TODO(kpreid): add more useful erroneous invocations
     var genString = G.value(null /* deliberately wrong */, '', 'foo', 'bar',
         '1', 'NaN');
@@ -943,14 +1053,45 @@
     var genJS = G.value(null, '', '{', 'return true;');
     var genEventHandlerSet = G.tuple(G.value(THIS), G.tuple(genJS));
     var largestSmallInteger = 63;
-    var genSmallInteger = G.value(-1, 0, 1, 2, 63, NaN, null, 1.5, '1', 'a');
+    var genSmallInteger = G.value(-1, 0, 1, 2, 63, NaN, null, 1.5, '1', 'foo');
     var genNumber = G.any(genSmallInteger, G.value(Infinity, -Infinity,
         Math.pow(2, 53), Math.pow(2, 60)));
-    var genRegex = G.value(null, '', 'a(.*)b', '*');
+    var genRegexBase = G.value(null, '', 'f(.*)o', '*');
+    var genRegex = G.any(
+        genRegexBase,
+        G.apply(function() { return new RegExp('f(.*)o'); }));
     var genPseudoElement = G.value(null, ':', ':after', ':before', ':marker',
         ':line-marker');
+    var genArray = G.value(undefined, null, 'abc',
+        Object.freeze(['a', , 'c']),
+        Object.freeze({length: 3, 0: 'a', 2: 'c'}));
+    var genFreshArray = G.any(G.value(undefined, null, 'abc'),
+        G.lazyValue(function() {
+          var o = ['a', , 'c'];
+          expectedUnfrozen.setByIdentity(o, true);
+          return o;
+        }),
+        G.lazyValue(function() {
+          var o = {length: 3, 0: 'a', 2: 'c'};
+          expectedUnfrozen.setByIdentity(o, true);
+          return o;
+        }));
+    var genObject = G.value(Object.freeze({'foo': 1}));
+    var genFreshObject = G.any(G.value(undefined, null, 'abc'),
+        G.lazyValue(function() {
+          var o = {'foo': 1};  // but not bar
+          expectedUnfrozen.setByIdentity(o, true);
+          return o;
+        }));
+    var genFreshFunction = G.apply(function() {
+      function freshFunction() {
+        return dummyFunction.apply(this, arguments);
+      }
+      argsByIdentity(freshFunction, genCall());
+      return freshFunction;
+    });
     var genJSONValue = G.any(genString, genSmallInteger,
-        G.value(function(){/*invalid*/}, {'foo:bar':'baz'}, null, undefined));
+        G.value(dummyFunction, {'foo:bar':'baz'}, null, undefined));
     var genJSON = G.value(undefined, '{', '{}', '{x:1}');
     var genProperty = G.any(
       G.record({
@@ -1009,21 +1150,22 @@
     function genMethod(var_args) {
       return G.tuple(G.value(THIS), G.tuple.apply(G.tuple, arguments));
     }
-    function genMethodAlt(args) {
-      return G.tuple(G.value(THIS), args);
+    function genAllCall(var_args) {
+      return genAllCallAlt(G.tuple.apply(G.tuple, arguments));
+    }
+    function genMethodAlt(argGens) {
+      return G.tuple(G.value(THIS), argGens);
+    }
+    function genAllCallAlt(argGens) {
+      return G.tuple(
+          G.value(CONSTRUCT, THIS, undefined),
+          argGens);
     }
     // Setters return nothing interesting so we just want to make them crash
     // which we hopefully can do by using an object of no particular type
     var genAccessorSet = genMethod(G.value(cajaVM.def({
       toString: function() { return '<setter garbage>'; }
     })));
-    function arrayLikeStubLength() { return 2; }
-    function arrayLikeStubGet(i) { return i; }
-    var genArrayLikeCall = genCallAlt(G.apply(function() {
-      // TODO(kpreid): test interesting abuses of the interface
-      return [Object.create(ArrayLike.prototype), arrayLikeStubLength,
-          arrayLikeStubGet];
-    }));
     /** Add third value-callback to an arguments generator */
     function annotate(calls, callback) {
       return G.apply(function (call) {
@@ -1050,6 +1192,10 @@
     }
 
     var elementSpecimen = document.createElement('an-element-for-tests');
+    var genFreshElement = G.apply(function() {
+      return document.createElement('fresh-element');
+    });
+    
     var ArrayLike = cajaVM.makeArrayLike(largestSmallInteger);
 
     function isArrayLikeCtor(o) {
@@ -1058,7 +1204,38 @@
       return o === ArrayLike || /proto instanceof BAL/.test(o.toString());
     }
 
-    var functionArgs = scanner.functionArgs;
+    var tamingEnv = directAccess.evalInTamingFrame('cajaVM.sharedImports');
+    function forEachFrame(code, callback) {
+      // actually, any _should-be-visible_ frame, i.e. guest and taming.
+
+      // Note: Can't use evalInTamingFrame to get from the taming frame, because
+      // we want the ES5/3-virtualized view.
+      try {
+        if (tamingEnv.Object !== window.Object) {
+          callback(simpleEval(tamingEnv, code));
+          callback(simpleEval(window, code));
+        } else {
+          callback(simpleEval(window, code));
+        }
+      } catch (e) {
+        // ignore ES5/3 restriction
+        if (e.message !== 'Property name may not end in double underscore.') {
+          throw e;
+        } else {
+          return Ref.all();
+        }
+      }
+    }
+    function RefAnyFrame(code) {
+      var refs = [];
+      forEachFrame(code, function(obj) {
+        refs.push(Ref.is(obj));
+      });
+      return Ref.all.apply(Ref, refs);
+    }
+
+    function arrayLikeStubLength() { return 2; }
+    function arrayLikeStubGet(i) { return i; }
     functionArgs.addSpecialCase(function(context) {
       var fun = context.get();
       var path = context.getPath();
@@ -1066,6 +1243,7 @@
       var name = getFunctionName(fun);
       if (/^\[domado inert constructor(?:.*)\]$/.test(str)) {
         // inert ctor -- should throw
+        expectedAlwaysThrow.setByIdentity(fun, true);  // just in time!
         return G.tuple(G.value(CONSTRUCT), G.tuple());
       } else if (/(\.|^)get \w+$/.test(path)) {
         // TODO(kpreid): Test invocation with an alternate this?
@@ -1090,61 +1268,80 @@
           return genAccessorSet;
         }
       } else if (isArrayLikeCtor(fun)) {
-        return genArrayLikeCall;
+        // TODO(kpreid): test more abuses of the interface
+        return freshResult(genCallAlt(G.apply(
+            function(arrayLikeProto) {
+              var ourProto = Object.freeze(Object.create(arrayLikeProto));
+              return [ourProto, arrayLikeStubLength, arrayLikeStubGet];
+            },
+            G.value(fun.prototype, Object.prototype))));
       } else {
         return null;
       }
     });
+    // TODO(kpreid): Replace all of these shorthands with direct use of ref objs
     function argsByIdentity(obj, g) {
-      functionArgs.setByIdentity(obj, g);
+      functionArgs.set(Ref.is(obj), g);
       return g;
     }
     function argsByProp(p, g) {
-      functionArgs.setByPropertyName(p, g);
-      functionArgs.setByPropertyName('get ' + p + '<THIS>()', g);
+      functionArgs.set(Ref.prop(p), g);
       return g;
     }
     function argsBySuffix(p, g) {
-      functionArgs.setByPathSuffix(p, g);
+      functionArgs.set(Ref.path(p), g);
       return g;
     }
-    var tamingEnv = directAccess.evalInTamingFrame('cajaVM.sharedImports');
     function argsByAnyFrame(code, g) {
-      // actually, any _should-be-visible_ frame, i.e. guest and taming.
-
-      // Note: Can't use evalInTamingFrame to get from the taming frame, because
-      // we want the ES5/3-virtualized view.
-      try {
-        functionArgs.setByIdentity(simpleEval(tamingEnv, code), g);
-        functionArgs.setByIdentity(simpleEval(window, code), g);
-      } catch (e) {
-        // ignore ES5/3 restriction
-        if (e.message !== 'Properties may not end in double underscore.') {
-          throw e;
-        }
-      }
+      functionArgs.set(RefAnyFrame(code), g);
+      return g;
     }
 
-    argsByAnyFrame('Object', genNew());
-    argsByAnyFrame('Object.create', freshResult(genMethod(
+    // can be made to not throw, but we don't want to do that and wipe output
+    expectedAlwaysThrow.setByPathSuffix('.set body', true);
+
+    argsByAnyFrame('Object', freshResult(G.any(
+        genAllCall(),
+        genAllCall(genJSONValue))));
+    argsByAnyFrame('Object.create', freshResult(genAllCall(
         G.value(null, Object.prototype))));
-    argsByAnyFrame('Object.defineProperties', G.none);  // TODO abuse
-    argsByAnyFrame('Object.defineProperty', G.none);  // TODO abuse
-    argsByAnyFrame('Object.freeze', G.none);  // TODO abuse
-    argsByAnyFrame('Object.getOwnPropertyDescriptor', G.none);  // TODO abuse
-    argsByAnyFrame('Object.getOwnPropertyNames', G.none);  // TODO abuse
-    argsByAnyFrame('Object.getPrototypeOf', G.none);  // TODO abuse
+    var oneOrNoObj = G.any(genMethod(), genMethod(genJSONValue));
+    argsByAnyFrame('Object.defineProperties',
+        genAllCall(genFreshObject, G.apply(
+            function(s, p) {
+              var o = {};
+              o[s] = p;
+              return Object.freeze(o);
+            },
+            genString,
+            genProperty)));
+    argsByAnyFrame('Object.defineProperty',
+        genAllCall(genFreshObject, genString, genProperty));
+    argsByAnyFrame('Object.getOwnPropertyDescriptor',
+        freshResult(genMethod(genObject, genString)));
+    argsByAnyFrame('Object.getOwnPropertyNames',
+        argsByAnyFrame('Object.keys', freshResult(oneOrNoObj)));
+    // to avoid a matching problem, don't invoke getPrototypeOf on a function
+    // and receive Function.prototype without identifying it as a .prototype
+    argsByAnyFrame('Object.getPrototypeOf', G.any(genMethod(), genMethod(
+      G.any(genObject, G.value(null)))));
     argsByAnyFrame('Object.is', G.none);  // TODO abuse
-    argsByAnyFrame('Object.isExtensible', G.none);  // TODO abuse
-    argsByAnyFrame('Object.isFrozen', G.none);  // TODO abuse
-    argsByAnyFrame('Object.isSealed', G.none);  // TODO abuse
-    argsByAnyFrame('Object.keys', G.none);  // TODO abuse
-    argsByAnyFrame('Object.preventExtensions', G.none);  // TODO abuse
-    argsByAnyFrame('Object.seal', G.none);  // TODO abuse
+    argsByAnyFrame('Object.isExtensible', oneOrNoObj);
+    argsByAnyFrame('Object.isFrozen', oneOrNoObj);
+    argsByAnyFrame('Object.isSealed', oneOrNoObj);
+    argsByAnyFrame('Object.freeze', genMethod(genFreshObject));
+    argsByAnyFrame('Object.preventExtensions', genMethod(genFreshObject));
+    argsByAnyFrame('Object.seal', genMethod(genFreshObject));
     argsByAnyFrame('Object.prototype.__defineGetter__', G.none);  // TODO abuse
     argsByAnyFrame('Object.prototype.__defineSetter__', G.none);  // TODO abuse
     argsByAnyFrame('Object.prototype.__lookupGetter__', G.none);  // TODO abuse
     argsByAnyFrame('Object.prototype.__lookupSetter__', G.none);  // TODO abuse
+
+    // Chrome has a "non-generic" setter here
+    if (inES5Mode) {
+      expectedAlwaysThrow.setByIdentity(
+          getSetter(Object.prototype, '__proto__'), true);
+    }
 
     argsByProp('toString', annotate(genNoArgMethod, function(context, thrown) {
       if (thrown) {
@@ -1153,47 +1350,111 @@
         scanner.noteProblem('toString returned non-string', context);
       }
     }));
-    argsByProp('toLocaleString', genNoArgMethod);
     argsByProp('valueOf', genNoArgMethod);
     argsByProp('hasOwnProperty', genMethod(genString));
-    argsByProp('isPrototypeOf', G.none);  // TODO abuse
+    argsByProp('isPrototypeOf', genMethod(genObject));  // TODO abuse more
     argsByProp('propertyIsEnumerable', genMethod(genString));  // TODO abuse
 
-    argsByAnyFrame('Function.prototype.apply', G.none);  // TODO abuse
-    argsByAnyFrame('Function.prototype.bind', G.none);  // TODO abuse
-    argsByAnyFrame('Function.prototype.call', G.none);  // TODO abuse
-    argsByAnyFrame('Function.prototype.toString', G.none); // known to throw
+    argsByProp('toLocaleString', genNoArgMethod);
+    // Workaround for
+    // <https://code.google.com/p/google-caja/issues/detail?id=1840>.
+    if (!inES5Mode) {
+      ['String.prototype.localeCompare',
+          'Number.prototype.toLocaleString',
+          'Date.prototype.toLocaleString',
+          'Date.prototype.toLocaleDateString',
+          'Date.prototype.toLocaleTimeString'].forEach(function(expr) {
+        expectedAlwaysThrow.mark(RefAnyFrame(expr));
+      });
+    }
 
-    argsByIdentity(Number, genCall(genSmallInteger));
-    argsByAnyFrame('Number.prototype.toExponential', G.none);  // TODO abuse
-    argsByAnyFrame('Number.prototype.toFixed', G.none);  // TODO abuse
-    argsByAnyFrame('Number.prototype.toPrecision', G.none);  // TODO abuse
+    argsByAnyFrame('Function', G.none);  // TODO deal with function return val
+    argsByAnyFrame('Function.prototype', genCall());
+    argsByIdentity(dummyFunction, genCall());
+    argsByAnyFrame('Function.prototype.apply', genMethod(genObject, genArray));
+    argsByAnyFrame('Function.prototype.bind',
+        annotate(genMethod(genObject), function(context, thrown) {
+          if (!thrown) {
+            expectedUnfrozen.setByIdentity(context.get(), true);
+            argsByIdentity(context.get(), G.value([refLeakCanary, []]));
+          }
+        }));
+    argsByAnyFrame('Function.prototype.call', genMethod(genObject, genObject));
+    argsByAnyFrame('Function.prototype.toString',
+        // TODO test invocation on Function.prototype itself
+        G.tuple(G.value(THIS), G.tuple()));
+    [function guestFn(){}, window.setTimeout].forEach(function(f) {
+      if (!inES5Mode) {
+        // Function.prototype() is necessarily broken in ES5/3
+        var proto = Object.getPrototypeOf(f);
+        expectedAlwaysThrow.setByIdentity(proto, true);
+      }
+      expectedAlwaysThrow.setByIdentity(getGetter(f, 'arguments'), true);
+      expectedAlwaysThrow.setByIdentity(getGetter(f, 'caller'), true);
+    });
 
-    argsByAnyFrame('Array', G.any(genNew(), genNew(genSmallInteger)));
-    argsByAnyFrame('Array.isArray', G.none);  // TODO abuse
-    argsByAnyFrame('Array.prototype.concat', G.none);  // TODO abuse
-    argsByAnyFrame('Array.prototype.every', G.none);  // TODO abuse
-    argsByAnyFrame('Array.prototype.filter', G.none);  // TODO abuse
-    argsByAnyFrame('Array.prototype.forEach', G.none);  // TODO abuse
-    argsByAnyFrame('Array.prototype.indexOf', G.none);  // TODO abuse
-    argsByAnyFrame('Array.prototype.join', G.none);  // TODO abuse
-    argsByAnyFrame('Array.prototype.lastIndexOf', G.none);  // TODO abuse
-    argsByAnyFrame('Array.prototype.map', G.none);  // TODO abuse
-    argsByAnyFrame('Array.prototype.pop', G.none);  // TODO abuse
-    argsByAnyFrame('Array.prototype.push', G.none);  // TODO abuse
-    argsByAnyFrame('Array.prototype.reduce', G.none);  // TODO abuse
-    argsByAnyFrame('Array.prototype.reduceRight', G.none);  // TODO abuse
-    argsByAnyFrame('Array.prototype.reverse', genNoArgMethod);
-    argsByAnyFrame('Array.prototype.shift', G.none);  // TODO abuse
-    argsByAnyFrame('Array.prototype.slice', G.none);  // TODO abuse
-    argsByAnyFrame('Array.prototype.some', G.none);  // TODO abuse
-    argsByAnyFrame('Array.prototype.sort', genNoArgMethod);
-    argsByAnyFrame('Array.prototype.splice', G.none);  // TODO abuse
-    argsByAnyFrame('Array.prototype.unshift', G.none);  // TODO abuse
 
-    argsByIdentity(Boolean, genCall(genBoolean));
+    argsByIdentity(Number, genAllCall(genSmallInteger));
+    argsByAnyFrame('Number.prototype.toExponential',
+        genMethod(genSmallInteger));
+    argsByAnyFrame('Number.prototype.toFixed', genMethod(genSmallInteger));
+    argsByAnyFrame('Number.prototype.toPrecision', genMethod(genSmallInteger));
 
-    argsByIdentity(String, genCall(genString));
+    function genArrayCall(argsGen) {
+      return G.tuple(
+          G.any(genFreshArray, genArray, G.value(undefined)),
+          argsGen);
+    }
+    argsByAnyFrame('Array', freshResult(G.any(
+        genAllCall(),
+        genAllCall(genSmallInteger))));
+    argsByAnyFrame('Array.isArray', genArrayCall(G.tuple(genArray)));
+    argsByAnyFrame('Array.prototype.concat',
+        freshResult(genArrayCall(G.tuple(genArray))));
+    argsByAnyFrame('Array.prototype.every',
+        argsByAnyFrame('Array.prototype.some',
+            genArrayCall(G.value([dummyFunction]))));
+    argsByAnyFrame('Array.prototype.filter',
+        freshResult(genArrayCall(G.value([dummyFunction]))));
+    argsByAnyFrame('Array.prototype.forEach',
+        genArrayCall(G.value([dummyFunction])));
+    argsByAnyFrame('Array.prototype.indexOf',
+        genArrayCall(G.value(['a', 'z'])));
+    argsByAnyFrame('Array.prototype.join', genArrayCall(G.tuple(genString)));
+    argsByAnyFrame('Array.prototype.lastIndexOf',
+        genArrayCall(G.tuple(genJSONValue)));
+    argsByAnyFrame('Array.prototype.map',
+        freshResult(genArrayCall(G.tuple(G.value(dummyFunction), genArray))));
+    argsByAnyFrame('Array.prototype.pop', genArrayCall(G.value([])));
+    argsByAnyFrame('Array.prototype.push', genArrayCall(G.value([])));
+    argsByAnyFrame('Array.prototype.reduce',
+        argsByAnyFrame('Array.prototype.reduceRight',
+            genArrayCall(G.tuple(G.value(dummyFunction), genJSONValue))));
+    argsByAnyFrame('Array.prototype.reverse',
+        genArrayCall(G.value([])));
+    argsByAnyFrame('Array.prototype.shift', genArrayCall(G.value([])));
+    argsByAnyFrame('Array.prototype.slice', freshResult(
+        genArrayCall(genNumbers(2))));
+    argsByAnyFrame('Array.prototype.sort', G.none);  // TODO wedges in Chrome
+    expectedAlwaysThrow.setByIdentity(Array.prototype.sort, true);
+    argsByAnyFrame('Array.prototype.splice', freshResult(
+        genArrayCall(genNumbers(2))));
+    argsByAnyFrame('Array.prototype.unshift',
+        genArrayCall(G.tuple(genJSONValue)));
+    if (!inES5Mode) {
+      // without this, call would be applied to frozen array
+      // in ES5 mode Array.prototype.length is a data property
+      // Note: Used to use genSmallInteger but that triggered a crash bug in
+      // Chrome. TODO(kpreid): Isolate and report bug.
+      forEachFrame('Array.prototype', function (proto) {
+        argsByIdentity(getSetter(proto, 'length'),
+            genArrayCall(G.tuple(G.value(0))));
+      });
+    }
+
+    argsByAnyFrame('Boolean', genAllCall(genBoolean));
+
+    argsByAnyFrame('String', genAllCall(genString));
     argsByAnyFrame('String.fromCharCode', genMethod(genSmallInteger));
     ['big', 'blink', 'bold', 'fixed', 'italics', 'small', 'strong', 'strike',
         'sub', 'sup'].forEach(function(name) {
@@ -1202,20 +1463,26 @@
     ['anchor', 'fontcolor', 'fontsize', 'link'].forEach(function(name) {
       argsByAnyFrame('String.prototype.' + name, genMethod(genString));
     });
-    argsByAnyFrame('String.prototype.charAt', G.none);  // TODO abuse
-    argsByAnyFrame('String.prototype.charCodeAt', G.none);  // TODO abuse
-    argsByAnyFrame('String.prototype.concat', G.none);  // TODO abuse
-    argsByAnyFrame('String.prototype.indexOf', G.none);  // TODO abuse
-    argsByAnyFrame('String.prototype.lastIndexOf', G.none);  // TODO abuse
-    argsByAnyFrame('String.prototype.localeCompare', genMethod());
-        // TODO abuse
-    argsByAnyFrame('String.prototype.match', G.none);  // TODO abuse
-    argsByAnyFrame('String.prototype.replace', G.none);  // TODO abuse
-    argsByAnyFrame('String.prototype.search', G.none);  // TODO abuse
-    argsByAnyFrame('String.prototype.slice', G.none);  // TODO abuse
-    argsByAnyFrame('String.prototype.split', G.none);  // TODO abuse
-    argsByAnyFrame('String.prototype.substr', G.none);  // TODO abuse
-    argsByAnyFrame('String.prototype.substring', G.none);  // TODO abuse
+    argsByAnyFrame('String.prototype.charAt', genMethod(genNumber));
+    argsByAnyFrame('String.prototype.charCodeAt', genMethod(genNumber));
+    argsByAnyFrame('String.prototype.concat', genMethod(genString));
+    argsByAnyFrame('String.prototype.indexOf', genMethod(genString));
+    argsByAnyFrame('String.prototype.lastIndexOf', genMethod(genString));
+    argsByAnyFrame('String.prototype.localeCompare', genMethod(genString));
+    argsByAnyFrame('String.prototype.match',
+        argsByAnyFrame('String.prototype.search',
+            freshResult(genMethod(genRegex))));
+    argsByAnyFrame('String.prototype.replace',
+        genMethod(genRegex, genString));
+    argsByAnyFrame('String.prototype.split',
+        freshResult(genMethod(genRegex)));
+    argsByAnyFrame('String.prototype.slice',
+        argsByAnyFrame('String.prototype.substr',
+            argsByAnyFrame('String.prototype.substring',
+                G.any(
+                  genMethod,
+                  genMethod(genSmallInteger),
+                  genMethod(genSmallInteger, genSmallInteger)))));
     argsByAnyFrame('String.prototype.toLocaleLowerCase', genNoArgMethod);
     argsByAnyFrame('String.prototype.toLocaleUpperCase', genNoArgMethod);
     argsByAnyFrame('String.prototype.toLowerCase', genNoArgMethod);
@@ -1224,10 +1491,7 @@
     argsByAnyFrame('String.prototype.trimLeft', genNoArgMethod);
     argsByAnyFrame('String.prototype.trimRight', genNoArgMethod);
 
-    argsByAnyFrame('Function', G.none);  // TODO deal with function return val
-    argsByAnyFrame('Function.prototype', genCall());
-
-    var genErrorConstruct = G.tuple(G.value(CONSTRUCT), G.tuple(genString));
+    var genErrorConstruct = genAllCall(genString);
     argsByAnyFrame('Error', genErrorConstruct);
     argsByAnyFrame('EvalError', genErrorConstruct);
     argsByAnyFrame('RangeError', genErrorConstruct);
@@ -1237,13 +1501,22 @@
     argsByAnyFrame('URIError', genErrorConstruct);
 
     argsByIdentity(cajaVM.allKeys, genMethod(genJSONValue));
-    argsByIdentity(cajaVM.callWithEjector, genMethod(/* bad */));
+    function cweF1(ejector) {
+      ejector('foo');
+      // TODO should be noteProblem but context isn't optional
+      scanner.noteGap("ejector didn't throw");
+    }
+    function cweF2(ejector) {
+      return 1;
+    }
+    argsByIdentity(cajaVM.callWithEjector, genMethod(G.value(cweF1, cweF2)));
     argsByIdentity(cajaVM.compileExpr, G.none);
     argsByIdentity(cajaVM.compileModule, G.none);
         // skip dealing with the function return values for now
     argsByIdentity(cajaVM.copyToImports,
           genMethod(genFancyRecord, genFancyRecord));
-    argsByIdentity(cajaVM.constFunc, genMethod(G.value(null)));
+    argsByIdentity(cajaVM.constFunc, genMethod(G.any(
+          G.value(null), genFreshFunction)));
     argsByIdentity(cajaVM.def, G.none);
 
     function ejectFn1(v) { return v; }
@@ -1254,6 +1527,7 @@
     argsByIdentity(cajaVM.eject, genMethod(
         G.value(undefined, ejectFn1, ejectFn2, 'not a function'),
         G.value(undefined, 10, ejectFn1)));
+    expectedAlwaysThrow.setByIdentity(cajaVM.eject, true);
 
     argsByIdentity(cajaVM.enforce, genMethod( // ES5/3 only
         G.value(function(){return false;},
@@ -1274,14 +1548,52 @@
     argsByIdentity(cajaVM.manifest, genMethod());
     argsByIdentity(cajaVM.makeArrayLike, genMethod(genSmallInteger));
     argsByIdentity(cajaVM.makeImports, freshResult(genMethod()));
-    argsByIdentity(cajaVM.makeSealerUnsealerPair, genMethod());
     argsByIdentity(cajaVM.makeTableGuard, G.none);
     argsByIdentity(cajaVM.passesGuard, G.none);
-    argsByIdentity(cajaVM.stamp, G.none);
+    argsByIdentity(cajaVM.stamp,
+        // TODO more cases
+        genMethod(G.tuple(G.apply(function() {
+          return cajaVM.Trademark('foo').stamp;
+        })), genFreshObject));
     argsByIdentity(cajaVM.tamperProof, G.none);
     argsByIdentity(cajaVM.Token, genMethod(genString));  // ES5/3 only
-    argsByIdentity(cajaVM.Trademark, genNew(genString));
     argsByIdentity(window.cajaHandleEmbed, G.none);  // TODO abuse
+
+    // sealers
+    var otherSealer = cajaVM.makeSealerUnsealerPair();
+    var otherBox = otherSealer.seal(refLeakCanary);
+    argsByIdentity(cajaVM.makeSealerUnsealerPair, annotate(genMethod(),
+        function(context, thrown) {
+          if (!thrown) {
+            var pair = context.get();
+            var box = pair.seal(1);
+            argsByIdentity(pair.seal, genMethod(genJSONValue));
+            var unsealMethod = genMethod(G.any(
+                genString, // bogus
+                G.value(otherBox),
+                G.value(box)));
+            argsByIdentity(pair.unseal, unsealMethod);
+            argsByIdentity(pair.optUnseal, freshResult(unsealMethod));
+          }
+        }));
+
+    // guards
+    function genCoerceCall(genValue) {
+      // includes failure
+      return genMethod(G.any(genJSONValue, genValue), genEjector);
+    }
+    argsByIdentity(cajaVM.GuardT.coerce, genCoerceCall(G.value(cajaVM.GuardT)));
+    //argsByProp('coerce', genMethod(genJSONValue, genEjector));
+    argsByIdentity(cajaVM.Trademark, annotate(genNew(genString),
+        function(context, thrown) {
+          if (!thrown) {
+            var trademark = context.get();
+            var instance = {};
+            cajaVM.stamp([trademark.stamp], instance);
+            argsByIdentity(trademark.guard.coerce,
+                genCoerceCall(G.value(instance)));
+          }
+        }));
 
     argsByIdentity(window.Proxy && Proxy.create, G.none);  // TODO abuse
     argsByIdentity(window.Proxy && Proxy.createFunction, G.none);  // TODO abuse
@@ -1308,23 +1620,70 @@
     argsByIdentity(window.getComputedStyle, freshResult(genMethod(
         G.value(elementSpecimen), genPseudoElement)));
     argsByIdentity(window.stop, G.none);  // global effect
+
+    var numInputSpecimen = document.createElement('input');
+    numInputSpecimen.type = 'number';
+    numInputSpecimen.value = 1;  // must have a value else stepUp throws
+    var plainInputSpecimen = document.createElement('input');
     argsByIdentity(HTMLInputElement.prototype.select, genNoArgMethod);
-    argsByIdentity(HTMLInputElement.prototype.stepDown, genNoArgMethod);
-    argsByIdentity(HTMLInputElement.prototype.stepUp, genNoArgMethod);
+    argsByIdentity(HTMLInputElement.prototype.stepDown,
+        argsByIdentity(HTMLInputElement.prototype.stepUp,
+            G.tuple(
+                G.value(numInputSpecimen, plainInputSpecimen, null),
+                G.value([]))));
+    argsByIdentity(getSetter(HTMLInputElement.prototype, 'valueAsNumber'),
+        G.tuple(
+            G.value(numInputSpecimen, plainInputSpecimen, null),
+            G.tuple(genNumber)));
+    argsByIdentity(getSetter(HTMLInputElement.prototype, 'size'),
+        genMethod(genSmallInteger));
+    // Temporary workaround:
+    // Firefox does not implement any case where stepUp and friends don't throw
+    if (/Gecko/.test(window.navigator.userAgent)) {
+      expectedAlwaysThrow.setByIdentity(
+          HTMLInputElement.prototype.stepUp, true);
+      expectedAlwaysThrow.setByIdentity(
+          HTMLInputElement.prototype.stepDown, true);
+      expectedAlwaysThrow.setByIdentity(
+          getSetter(HTMLInputElement.prototype, 'valueAsNumber'), true);
+    }
+
     argsByIdentity(HTMLMediaElement.prototype.canPlayType,
         genMethod(genMediaType));
     argsByIdentity(HTMLMediaElement.prototype.fastSeek, genMethod(genNumber));
     argsByIdentity(HTMLMediaElement.prototype.load, genNoArgMethod);
     argsByIdentity(HTMLMediaElement.prototype.pause, genNoArgMethod);
     argsByIdentity(HTMLMediaElement.prototype.play, genNoArgMethod);
+    // TODO(kpreid): Why do these throw; can we set up the initial state so they
+    // don't?
+    if (/Gecko/.test(window.navigator.userAgent)) {
+      expectedAlwaysThrow.setByIdentity(
+          getSetter(HTMLMediaElement.prototype, 'defaultPlaybackRate'), true);
+      expectedAlwaysThrow.setByIdentity(
+          getSetter(HTMLMediaElement.prototype, 'playbackRate'), true);
+    }
+
+    function genIndexMethod(parentName, childName, opt_grandchild) {
+      return G.tuple(
+        G.apply(function() {
+          var p = document.createElement(parentName);
+          var c = document.createElement(childName);
+          p.appendChild(c);
+          if (opt_grandchild) {
+            c.appendChild(document.createElement(opt_grandchild));
+          }
+          return p;
+        }),
+        G.tuple(genSmallInteger));
+    }
     argsByIdentity(HTMLTableRowElement.prototype.insertCell,
-        genMethod(genSmallInteger));
+        genIndexMethod('tr', 'td'));
     argsByIdentity(HTMLTableRowElement.prototype.deleteCell,
-        genMethod(genSmallInteger));
+        genIndexMethod('tr', 'td'));
     argsByIdentity(HTMLTableSectionElement.prototype.insertRow,
-        genMethod(genSmallInteger));
+        genIndexMethod('tbody', 'tr'));
     argsByIdentity(HTMLTableSectionElement.prototype.deleteRow,
-        genMethod(genSmallInteger));
+        genIndexMethod('tbody', 'tr'));
     argsByIdentity(HTMLTableElement.prototype.createCaption, genMethod());
     argsByIdentity(HTMLTableElement.prototype.deleteCaption, genMethod());
     argsByIdentity(HTMLTableElement.prototype.createTHead, genMethod());
@@ -1332,13 +1691,15 @@
     argsByIdentity(HTMLTableElement.prototype.createTFoot, genMethod());
     argsByIdentity(HTMLTableElement.prototype.deleteTFoot, genMethod());
     argsByIdentity(HTMLTableElement.prototype.insertRow,
-        genMethod(genSmallInteger));
+        genIndexMethod('table', 'tbody', 'tr'));
     argsByIdentity(HTMLTableElement.prototype.deleteRow,
-        genMethod(genSmallInteger));
+        genIndexMethod('table', 'tbody', 'tr'));
+
     argsByIdentity(Image, genNew());  // TODO args
     argsByIdentity(Option, genNew());  // TODO args
     argsByIdentity(Audio, genNew());  // TODO args
-    argsByIdentity(XMLHttpRequest, genNew());
+
+    argsByIdentity(XMLHttpRequest, genAllCall());
     argsByIdentity(XMLHttpRequest.prototype.open, G.none);  // TODO stateful
     argsByIdentity(XMLHttpRequest.prototype.setRequestHeader, G.none);
         // TODO stateful
@@ -1362,30 +1723,46 @@
     argsByIdentity(parseFloat, genCall(genString));
     argsByIdentity(isFinite, genCall(genSmallInteger));
 
-    argsByIdentity(window.StringMap /* SES only */, genNew());
-    argsBySuffix('StringMap<CONSTRUCT>().get', genMethod(genString));
-    argsBySuffix('StringMap<CONSTRUCT>().has', genMethod(genString));
-    argsBySuffix('StringMap<CONSTRUCT>().delete', genMethod(genString));
-    argsBySuffix('StringMap<CONSTRUCT>().set',
-        genMethod(genString, genJSONValue));
+    argsByIdentity(window.StringMap /* SES only */, annotate(
+        freshResult(genAllCall()), function(context, thrown) {
+      if (!thrown) {
+        argsByIdentity(context.get().get, genMethod(genString));
+        argsByIdentity(context.get().has, genMethod(genString));
+        argsByIdentity(context.get()['delete'], genMethod(genString));
+        argsByIdentity(context.get().set,
+            genMethod(genString, genJSONValue));
+      }
+    }));
 
-    argsByIdentity(WeakMap, genNew());
-    argsByIdentity(WeakMap.prototype['delete'],
-        argsBySuffix('WeakMap<CONSTRUCT>().delete', G.none)); // TODO abuse
-    argsByIdentity(WeakMap.prototype.get,
-        argsBySuffix('WeakMap<CONSTRUCT>().get', G.none)); // TODO abuse
-    argsByIdentity(WeakMap.prototype.set,
-        argsBySuffix('WeakMap<CONSTRUCT>().set', G.none)); // TODO abuse
-    argsByIdentity(WeakMap.prototype.has,
-        argsBySuffix('WeakMap<CONSTRUCT>().has', G.none)); // TODO abuse
-    argsBySuffix('WeakMap<CONSTRUCT>().delete___',
-        argsBySuffix('WeakMap<CONSTRUCT>().get___',
-        argsBySuffix('WeakMap<CONSTRUCT>().has___',
-        argsBySuffix('WeakMap<CONSTRUCT>().set___',
-        argsBySuffix('WeakMap<CONSTRUCT>().permitHostObjects___',
-        G.none)))));  // known implementation details leak. TODO abuse
+    argsByIdentity(WeakMap, annotate(
+        freshResult(genAllCall()), function(context, thrown) {
+      if (!thrown) {
+        if (inES5Mode) {  // would fail on es53
+          // known harmless implementation details leak. TODO abuse anyway
+          argsByIdentity(context.get()['delete___'],
+              argsByIdentity(context.get()['get___'],
+              argsByIdentity(context.get()['has___'],
+              argsByIdentity(context.get()['set___'],
+              argsByIdentity(context.get()['permitHostObjects___'],
+              G.none)))));
+        }
 
-    argsByIdentity(RegExp, genNew(genRegex));
+        argsByIdentity(context.get()['delete'], G.none); // TODO abuse
+        argsByIdentity(context.get().get, G.none); // TODO abuse
+        argsByIdentity(context.get().set, G.none); // TODO abuse
+        argsByIdentity(context.get().has, G.none); // TODO abuse
+      }
+    }));
+    // some WeakMap impls are prototype based, some are closure based
+    argsByIdentity(WeakMap.prototype['delete'], G.none); // TODO abuse
+    argsByIdentity(WeakMap.prototype.get, G.none); // TODO abuse
+    argsByIdentity(WeakMap.prototype.set, G.none); // TODO abuse
+    argsByIdentity(WeakMap.prototype.has, G.none); // TODO abuse
+
+    expectedAlwaysThrow.setByIdentity(
+        getSetter(window, 'location'), true);
+
+    argsByIdentity(RegExp, freshResult(genAllCall(genRegex)));
     argsByIdentity(RegExp.prototype.exec, freshResult(genMethod(genString)));
     argsByIdentity(RegExp.prototype.test, genMethod(genString));
     argsByIdentity(Math.random, genMethod());
@@ -1394,20 +1771,24 @@
         ].forEach(function(name) {
       argsByIdentity(Math[name], genMethod(genSmallInteger));
     });
-    argsByIdentity(Date, G.tuple(G.value(CONSTRUCT, undefined),
-                                    G.any(G.tuple(),
-                                          G.tuple(genSmallInteger))));
+    argsByIdentity(Date, freshResult(genAllCallAlt(G.any(
+        G.tuple(),
+        G.tuple(genSmallInteger)))));
     argsByIdentity(Date.now, genMethod());
     argsByIdentity(Date.parse, genMethod(genString));
     argsByIdentity(Date.UTC, G.any(
         genMethod(),  // "implementation defined" per ES5 so interesting
         genMethod(genSmallInteger),
         genMethod(genSmallInteger, genSmallInteger)));
+    // TODO instead of genFreshDate, generalize obtainInstance so it can take
+    // care of this.
+    var genFreshDate = G.apply(function() { return new Date(); });
     Object.getOwnPropertyNames(Date.prototype).forEach(function(name) {
       if (/^get|^to/.test(name)) {
-        argsByIdentity(Date.prototype[name], genMethod());
+        argsByIdentity(Date.prototype[name], G.tuple(genFreshDate, G.tuple()));
       } else if (/^set/.test(name)) {
-        argsByIdentity(Date.prototype[name], genMethod(genSmallInteger));
+        argsByIdentity(Date.prototype[name],
+            G.tuple(genFreshDate, G.tuple(genSmallInteger)));
       }
     });
     argsByIdentity(JSON.stringify, genMethod(genJSONValue));
@@ -1415,8 +1796,6 @@
 
     argsByProp('focus', genNoArgMethod);
     argsByProp('blur', genNoArgMethod);
-    argsByProp('submit', G.none);
-    argsByProp('reset', genNoArgMethod);
     argsByProp('createElement', genMethod(genElementName));
     argsByProp('createComment', genMethod(genString));
     argsByProp('createTextNode', genMethod(genString));
@@ -1429,8 +1808,11 @@
     argsByProp('initKeyEvent', G.none);  // implemented like initEvent
     argsByProp('initKeyboardEvent', G.none);  // implemented like initEvent
     argsByProp('initMouseEvent', G.none);  // implemented like initEvent
-    argsByProp('dispatchEvent', genMethod(G.lazyValue(function() {
-        return obtainInstance(Event, undefined); })));
+    argsByProp('dispatchEvent', genMethod(G.apply(function() {
+      var e = document.createEvent('CustomEvent');
+      e.initCustomEvent('foo', true, true, 1);
+      return e;
+    })));
     argsByProp('getAttribute',
         argsByProp('getAttributeNode',
         argsByProp('hasAttribute', genMethod(genString))));
@@ -1438,16 +1820,6 @@
         genMethod(G.value(null, 'baz'), genString));
     argsByProp('removeAttribute',
         genMethod(G.value(null, 'baz', 'definitely-absent')));
-    argsByProp('removeChild', genMethod(G.value(null, elementSpecimen)));
-        // TODO successful case
-    argsByProp('appendChild', G.value([elementSpecimen, [elementSpecimen]]));
-        // TODO successful case, handle impls wanting other 'this's
-    argsByProp('insertBefore',
-        G.value([elementSpecimen, [elementSpecimen, elementSpecimen]]));
-        // TODO successful case, handle impls wanting other 'this's
-    argsByProp('replaceChild',
-        G.value([elementSpecimen, [elementSpecimen, elementSpecimen]]));
-        // TODO successful case, handle impls wanting other 'this's
     argsByProp('contains',
         genMethod(G.value(elementSpecimen, document.body, null)));
     argsByProp('compareDocumentPosition',
@@ -1470,6 +1842,55 @@
     argsByProp('addEventListener', argsByProp('removeEventListener',
         genMethod(genEventName, G.value(function stubL() {}), genBoolean)));
 
+    // Node manipulation
+    argsByIdentity(Element.prototype.removeChild, G.any(
+        G.value([undefined, [elementSpecimen]]),
+        G.value([elementSpecimen, [elementSpecimen]]),
+        G.value([elementSpecimen, [null]]),
+        G.apply(function() {
+          var e1 = document.createElement('removeChild1');
+          var e2 = document.createElement('removeChild2');
+          e1.appendChild(e2);
+          return [e1, [e2]];
+        })));
+    argsByIdentity(Element.prototype.appendChild, G.any(
+        G.value([elementSpecimen, [elementSpecimen]]),  // fails
+        G.tuple(genFreshElement, G.tuple(genFreshElement))));
+    argsByIdentity(Element.prototype.insertBefore,
+        argsByIdentity(Element.prototype.replaceChild, G.any(
+            G.value([elementSpecimen, [elementSpecimen]]),
+            G.value([elementSpecimen, [null]]),
+            G.apply(function() {
+              var e1 = document.createElement('insertBefore1');
+              var e2 = document.createElement('insertBefore2');
+              var e3 = document.createElement('insertBefore3');
+              e1.appendChild(e2);
+              return [e1, [e3, e2]];
+            }))));
+    // global side effect
+    [
+      Document.prototype.appendChild,
+      Document.prototype.removeChild,
+      Document.prototype.insertBefore,
+      Document.prototype.replaceChild
+    ].forEach(function(o) {
+      argsByIdentity(o, G.none);
+      expectedAlwaysThrow.setByIdentity(o, true);  // don't complain no coverage
+    });
+
+    // Attr stubs
+    [
+      Attr.prototype.cloneNode,
+      Attr.prototype.appendChild,
+      Attr.prototype.removeChild,
+      Attr.prototype.insertBefore,
+      Attr.prototype.replaceChild,
+      getGetter(Attr.prototype, 'attributes')
+    ].forEach(function(o) {
+      argsByIdentity(o, genMethod());
+      expectedAlwaysThrow.setByIdentity(o, true);
+    });
+
     // NodeList and friends (currently have no exported type)
     argsByProp('item', genMethod(genSmallInteger));
     argsByProp('namedItem', genMethod(genString));
@@ -1477,9 +1898,33 @@
     argsByProp('remove', genMethod(genString));
     argsByProp('toggle', genMethod(genString));
 
+    // Forms
+    argsByProp('submit', G.none);
+    argsByProp('reset', genNoArgMethod);
+    functionArgs.set(
+        Ref.all(
+            Ref.is(getSetter(HTMLInputElement.prototype, 'type')),
+            Ref.is(getSetter(HTMLButtonElement.prototype, 'type'))),
+        genMethod(G.value('text', 'submit', 'range')));
+    expectedAlwaysThrow.mark(
+        Ref.is(getSetter(HTMLTextAreaElement.prototype, 'type')));
+
+    // Misc elements
+    var roDims = Ref.all(
+        Ref.is(getSetter(HTMLImageElement.prototype, 'naturalHeight')),
+        Ref.is(getSetter(HTMLImageElement.prototype, 'naturalWidth')),
+        Ref.is(getSetter(HTMLVideoElement.prototype, 'videoHeight')),
+        Ref.is(getSetter(HTMLVideoElement.prototype, 'videoWidth')));
+    functionArgs.set(roDims, genMethod(genSmallInteger));
+    expectedAlwaysThrow.mark(roDims);
+    expectedAlwaysThrow.mark(
+        Ref.is(getSetter(HTMLImageElement.prototype, 'complete')));
+
+
     // 2D context (and friends) methods
     var canvas2DProto = CanvasRenderingContext2D.prototype;
-    argsByIdentity(canvas2DProto.arc, genMethodAlt(genNumbers(5)));
+    argsByIdentity(canvas2DProto.arc, genMethodAlt(
+        genConcat(genNumbers(5), genBoolean)));
     argsByIdentity(canvas2DProto.arcTo, genMethodAlt(genNumbers(5)));
     argsByIdentity(canvas2DProto.beginPath, genNoArgMethod);
     argsByIdentity(canvas2DProto.bezierCurveTo, genMethodAlt(genNumbers(6)));
@@ -1500,6 +1945,7 @@
     argsByIdentity(canvas2DProto.createPattern,
         genMethodAlt(G.value([null, null])));
         // TODO(kpreid): args for createPattern (not implemented yet though)
+    expectedAlwaysThrow.setByIdentity(canvas2DProto.createPattern, true);
     argsByIdentity(canvas2DProto.drawImage, genMethodAlt(G.none));
         // TODO(kpreid): unstub
     argsByIdentity(canvas2DProto.ellipse, genMethodAlt(genNumbers(7)));
@@ -1520,7 +1966,7 @@
     argsByIdentity(canvas2DProto.stroke, genNoArgMethod);
         // TODO(kpreid): Path obj
     argsByIdentity(canvas2DProto.restore, genNoArgMethod);
-    argsByIdentity(canvas2DProto.rotate, genMethodAlt(genNumbers(2)));
+    argsByIdentity(canvas2DProto.rotate, genMethodAlt(genNumbers(1)));
     argsByIdentity(canvas2DProto.isPointInPath, genMethodAlt(genNumbers(2)));
         // TODO(kpreid): Path obj
     argsByIdentity(canvas2DProto.putImageData, genMethodAlt(G.none));
@@ -1541,16 +1987,6 @@
     // Event methods
     argsByProp('stopPropagation', G.none);
     argsByProp('preventDefault', G.none);
-
-    // cajaVM methods etc.
-    // TODO(kpreid): better variety of things to coerce
-    argsByProp('coerce', genMethod(genJSONValue, genEjector));
-    argsBySuffix('makeSealerUnsealerPair<THIS>().seal',
-        genMethod(genJSONValue));
-    // TODO(kpreid): provide actual boxes / wrong boxes
-    argsBySuffix('makeSealerUnsealerPair<THIS>().unseal',
-        argsBySuffix('makeSealerUnsealerPair<THIS>().optUnseal',
-        genMethod(genString)));
 
     var tamingFrameError = tamingEnv.Error;
     expectedUnfrozen.addSpecialCase(function(context) {
@@ -1577,6 +2013,17 @@
         return true;
       }
     });
+
+    // TODO(kpreid): Primitive wrappers are likely indicative of a mistake and
+    // should be complained about (except when we do things like messing with
+    // Array.prototype.concat, which is why that isn't done already.)
+    expectedUnfrozen.setByConstructor(String, true);
+    expectedUnfrozen.setByConstructor(Number, true);
+    expectedUnfrozen.setByConstructor(Boolean, true);
+    expectedUnfrozen.setByConstructor(tamingEnv.String, true);
+    expectedUnfrozen.setByConstructor(tamingEnv.Number, true);
+    expectedUnfrozen.setByConstructor(tamingEnv.Boolean, true);
+
     expectedUnfrozen.setByConstructor(Window, true);
     expectedUnfrozen.setByConstructor(Document, true);
     expectedUnfrozen.setByConstructor(Node, true);
@@ -1588,8 +2035,6 @@
     //expectedUnfrozen.setByConstructor(NodeList, true);
     //expectedUnfrozen.setByConstructor(NamedNodeMap, true);
     //expectedUnfrozen.setByConstructor(HTMLOptionsCollection, true);
-
-    var obtainInstance = scanner.obtainInstance;
 
     // Preload instance table with nonconstructible objects
     [
@@ -1623,12 +2068,19 @@
         }
       }
     });
-    obtainInstance.define(Function, function() {});
+    obtainInstance.define(Function, dummyFunction);
+    if (!inES5Mode) {
+      obtainInstance.define(tamingEnv.Function, tamingEnv.cajaVM.identity);
+    }
     obtainInstance.define(Text, document.createTextNode('foo'));
     obtainInstance.define(Document, document); // TODO(kpreid): createDocument
     obtainInstance.define(Window, window);
     obtainInstance.define(Location, window.location);
-    obtainInstance.define(Event, document.createEvent('HTMLEvents'));
+    obtainInstance.define(Event, (function() {
+      var e = document.createEvent('HTMLEvents');
+      e.initEvent('foo', true, true);
+      return e;
+    }()));
     obtainInstance.define(Attr, (function() {
           var el = document.createElement('span');
           el.className = 'foo';
@@ -1636,6 +2088,7 @@
         }()));
     obtainInstance.define(CSSStyleDeclaration,
         document.createElement('div').style);
+    obtainInstance.define(Array, Object.freeze(['a', , 'c']));
     obtainInstance.define(ArrayLike, ArrayLike(
       Object.create(ArrayLike.prototype),
       function() { return 100; }, function(i) { return i; }));
@@ -1662,6 +2115,9 @@
           /function Tame(?!XMLHttpRequest)/
               .test(object.toString())) {
         scanner.noteProblem('Object is a taming ctor', context);
+      }
+      if (object === refLeakCanary) {
+        scanner.noteProblem('Reference leak canary leaked', context);
       }
       return false;
     }
@@ -1714,10 +2170,16 @@
       // makes sure that its Object.prototype isn't found indirectly via the
       // .prototype.[[Prototype]] of some unfortunate function which doesn't
       // work very well as a ctor.
-      ['Object', 'Function', 'Array'].forEach(function(type) {
-        scanner.queue(Context.root(tamingEnv[type].prototype,
-            '<taming env>.' + type + '.prototype',
-            '<taming env>.' + type + '.prototype'));
+      // String (wrapper) is included because it can be found in ES5/3 as
+      // Array.prototype.concat.call('foo', ...).
+      ['Object', 'Function', 'Array', 'String'].forEach(function(type) {
+        var ctorC = Context.root(tamingEnv[type],
+            '<taming env>.' + type,
+            '<taming env>.' + type);
+        var proto = ctorC.get().prototype;
+        var protoC = ctorC.property('prototype', proto,
+            obtainInstance);
+        scanner.queue(protoC);
       });
     }
 
