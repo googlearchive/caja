@@ -197,6 +197,14 @@ public class CssRewriterTest extends CajaTestCase {
         pre + "background-image: linear-gradient(45deg, blue, red)\n}");
     assertNoErrors();
 
+    // TODO(felix8a): -vendor-func() doesn't work yet
+    /*
+    runTest(
+        "p {   background-image: -webkit-linear-gradient(1deg, blue, red) }",
+        pre + "background-image: -webkit-linear-gradient(1deg, blue, red)\n}");
+    assertNoErrors();
+    */
+
     // A gradient going from the bottom right to the top left starting blue and
     // finishing red
     runTest(

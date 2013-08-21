@@ -327,6 +327,9 @@ jsunitRegister('testGradients',
   var source = 'linear-gradient(to bottom right, red, rgb(255,0,0))';
   var expect = 'linear-gradient(to bottom right , red , rgb(255 , 0 , 0))';
   assertProperty('background-image', source, expect);
+  source = '-webkit-' + source;
+  expect = '-webkit-' + expect;
+  assertProperty('background-image', source, expect);
   jsunit.pass();
 });
 

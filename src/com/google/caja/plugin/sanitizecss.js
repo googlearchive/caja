@@ -189,12 +189,13 @@ var sanitizeMediaQuery = undefined;
         // so allowing resumption at the next ';'.
         if (!parenDepth) {
           var fnToken = tokens[start].toLowerCase();
+          var bareFnToken = withoutVendorPrefix(fnToken);
           // Cut out the originals, so the caller can step by one token.
           var fnTokens = tokens.splice(start, end - start, '');
           var fns = propertySchema.cssFns;
           // Look for a function that matches the name.
           for (var i = 0, nFns = fns.length; i < nFns; ++i) {
-            if (fns[i].substring(0, fnToken.length) == fnToken) {
+            if (fns[i].substring(0, bareFnToken.length) == bareFnToken) {
               fnTokens[0] = fnTokens[fnTokens.length - 1] = '';
               // Recurse and sanitize the function parameters.
               sanitize(
