@@ -315,6 +315,10 @@ public class BuildServiceImplementation implements BuildService {
         translatedCode = jsOut.toString();
       }
 
+      report("output (" + language + "," + rendererType + ") " +
+          translatedCode.length() + " chars to " +
+          output.getName());
+
       passed = FileIO.write(translatedCode, output, logger);
     }
     return passed;
@@ -351,9 +355,15 @@ public class BuildServiceImplementation implements BuildService {
       ok = false;
     }
     if (ok) {
+      report("output (concat) " + result.length() + " chars to "
+          + output.getName());
       ok = FileIO.write(result.toString(), output, logger);
     }
     return ok;
+  }
+
+  private static void report(String s) {
+    System.out.println(s);
   }
 
   // Loosely matches top-level strict declarations.

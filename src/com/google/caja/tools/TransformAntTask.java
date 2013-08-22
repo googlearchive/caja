@@ -74,11 +74,22 @@ import org.apache.tools.ant.BuildException;
  * @author mikesamuel@gmail.com
  */
 public class TransformAntTask extends AbstractCajaAntTask {
+
+  private boolean reportedInputSizes = false;
+
   @Override
   protected boolean run(BuildService buildService, PrintWriter logger,
                         List<File> depends, List<File> inputs, File output,
                         Map<String, Object> options)
        throws BuildException {
+
+    if (!reportedInputSizes) {
+      for (File input : inputs) {
+        report("input " + input.length() + " bytes from " +
+            input.getName());
+      }
+      reportedInputSizes = true;
+    }
 
     if ("jslint".equals(options.get("language"))) {
       try {
@@ -109,8 +120,14 @@ public class TransformAntTask extends AbstractCajaAntTask {
     if (closureOutput == null) {
       return false;
     }
+    report("output (closure) " + closureOutput.length() +
+        " chars to " + output.getName());
     FileIO.write(closureOutput, output, logger);
     return true;
+  }
+
+  private static void report(String s) {
+    System.out.println(s);
   }
 
   @Override
