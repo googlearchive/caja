@@ -639,6 +639,9 @@ function createExtraImportsForTesting(frameGroup, frame) {
     evalInTamingFrame: function(code) {
       return frameGroup.iframe.contentWindow.eval(code);
     },
+    evalInGuestFrame: function(code) {
+      return frame.iframe.contentWindow.eval(code);
+    },
     scrollToEnd: function() {
       window.scrollTo(0, document.body.offsetHeight);
     }

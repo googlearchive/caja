@@ -46,6 +46,31 @@
     return a === undefined ? b : a;
   }
 
+  function isNativeFunction(f) {
+    try {
+      return (/^[^{}]*\{\s*\[native code\]\s*}\s*$/
+          .test(Function.prototype.toString.call(f)));
+    } catch (e) {
+      // ES5/3 Function.prototype is semi-toxic and throws in this case.
+      //
+      // Also, Function.prototype is not a native function in the sense we care
+      // about (it is exercised separately), and since it doesn't match the
+      // above pattern (its body is empty), returning false is consistent with
+      // the SES case.
+      return false;
+    }
+  }
+  // self-test
+  if (isNativeFunction(Function.prototype)) {
+    throw new Error('isNativeFunction: failed on Function.prototype');
+  }
+  if (!isNativeFunction(Math.sin)) {  // arbitrary boring native function
+    throw new Error('isNativeFunction: failed on Math.sin');
+  }
+  if (isNativeFunction(function() {})) {
+    throw new Error('isNativeFunction: failed on non-native');
+  }
+
   /** Fake evaluator for ES5/3 compatibility */
   function simpleEval(env, expr) {
     var match;
@@ -70,6 +95,30 @@
   function getSetter(object, prop) {
     return (getPropertyDescriptor(object, prop) || {}).set;
   }
+
+  var trueApply = (function() {
+    function makeApplier(length) {
+      var args = '';
+      for (var i = 0; i < length; i++) {
+        var name = 'as[' + i + ']';
+        args += args !== '' ? ',' + name : name;
+      }
+      if (inES5Mode) {
+        return Function('f,as', 'return f(' + args + ');');
+      } else {
+        return directAccess.evalInTamingFrame(
+            '___.f(function (f,as){return f.i___(' + args + ');})');
+      }
+    }
+    var appliers = [];
+    /** Apply fn to args without using Function.prototype.apply. */
+    return function trueApply(fn, args) {
+      var length = args.length;
+      return (
+          appliers[length] || (appliers[length] = makeApplier(length))
+        )(fn, args);
+    };
+  }());
 
   /**
    * Tools for generating combinations.
@@ -253,6 +302,7 @@
   // thisArg special markers:
   var CONSTRUCT = {};  // invoke as a constructor
   var THIS = {};  // invoke as a method
+  var PLAIN_CALL = {};  // invoke without using Function.prototype.apply
 
   /**
    * A map from (various ways to recognize objects) to values. The values must
@@ -760,7 +810,10 @@
           var didSomeCall = false;
           var didNonThrowingCall = false;
 
-          argGenerator(function(tuple) {
+          var shouldPlainCall = isNativeFunction(object);
+          var didPlainCall = false;
+
+          var doInvocation = function(tuple) {
             var thisArg = tuple[0];
             var args = tuple[1];
             var hook = tuple[2];
@@ -794,6 +847,17 @@
                 result = e;
                 thrown = true;
               }
+            } else if (thisArg === PLAIN_CALL) {
+              thisArgStr = '<PLAIN>';
+              didPlainCall = true;
+              // Do a plain function call, literally, with no call/apply
+              try {
+                result = trueApply(object, args);
+                thrown = false;
+              } catch (e) {
+                result = e;
+                thrown = true;
+              }
             } else {
               if (thisArg === THIS) {
                 thisArg = context.getThisArg();
@@ -818,7 +882,19 @@
               hook(subcontext, thrown);
             }
             traverse(subcontext);
-          });
+
+            // Special plain call hook
+            // We want to do the plain call _and_ a normal reflective one, and
+            // preserve the hook
+            if (shouldPlainCall && thisArg === undefined) {
+              doInvocation([PLAIN_CALL, args, hook]);
+            }
+          };
+          argGenerator(doInvocation);
+
+          if (shouldPlainCall && !didPlainCall) {
+            doInvocation([PLAIN_CALL, []]);
+          }
 
           if (didSomeCall && !didNonThrowingCall &&
               !expectedAlwaysThrow.get(context)) {
@@ -1158,7 +1234,7 @@
     }
     function genAllCallAlt(argGens) {
       return G.tuple(
-          G.value(CONSTRUCT, THIS, undefined),
+          G.value(CONSTRUCT, THIS, PLAIN_CALL, undefined),
           argGens);
     }
     // Setters return nothing interesting so we just want to make them crash
@@ -1368,8 +1444,12 @@
       });
     }
 
-    argsByAnyFrame('Function', G.none);  // TODO deal with function return val
-    argsByAnyFrame('Function.prototype', genCall());
+    functionArgs.set(RefAnyFrame('Function'), G.none);
+        // TODO deal with function return val
+    if (!inES5Mode) {
+      expectedAlwaysThrow.mark(RefAnyFrame('Function'));  // no eval
+    }
+    argsByAnyFrame('Function.prototype', genAllCall());
     argsByIdentity(dummyFunction, genCall());
     argsByAnyFrame('Function.prototype.apply', genMethod(genObject, genArray));
     argsByAnyFrame('Function.prototype.bind',
@@ -1402,7 +1482,7 @@
 
     function genArrayCall(argsGen) {
       return G.tuple(
-          G.any(genFreshArray, genArray, G.value(undefined)),
+          G.any(genFreshArray, genArray, G.value(undefined, PLAIN_CALL)),
           argsGen);
     }
     argsByAnyFrame('Array', freshResult(G.any(
@@ -1844,7 +1924,7 @@
 
     // Node manipulation
     argsByIdentity(Element.prototype.removeChild, G.any(
-        G.value([undefined, [elementSpecimen]]),
+        G.value([PLAIN_CALL, [elementSpecimen]]),
         G.value([elementSpecimen, [elementSpecimen]]),
         G.value([elementSpecimen, [null]]),
         G.apply(function() {
@@ -2101,6 +2181,8 @@
         document.createElement('canvas').getContext('2d').createImageData(
             2, 2));
 
+    var tamingFeralWin = directAccess.evalInTamingFrame('window');
+    var guestFeralWin = directAccess.evalInGuestFrame('window');
     function checkObject(context) {
       var object = context.get();
       var frameOfObject = whichFrame(object);
@@ -2110,6 +2192,13 @@
         scanner.noteProblem('Object from a ' + frameOfObject + ' frame',
             context);
         return true; // no point in further analyzing, is doomed
+      }
+      if (object === tamingFeralWin || object === guestFeralWin) {
+        // Special case because frameOfObject wouldn't catch it.
+        // TODO(kpreid): Figure out how to more robustly check for unfortunate
+        // objects like this one, part of the right frame but untamed.
+        scanner.noteProblem('Object is a feral window', context);
+        return true;
       }
       if (typeof object === 'function' &&
           /function Tame(?!XMLHttpRequest)/
@@ -2229,6 +2318,15 @@
     scanner.queue(Context.root(Object.freeze({a: {}, 1: {}, '!': {}}),
         'foo', 'bar'));
     scanner.scan();
+
+    // test trueApply which has proven to be tricky.
+    function argsIdentity() {
+      return arguments.length + ' ' + Array.prototype.slice.call(arguments);
+    }
+    assertEquals('0 ', trueApply(argsIdentity, []));
+    assertEquals('1 a', trueApply(argsIdentity, ['a']));
+    assertEquals('2 a,b', trueApply(argsIdentity, ['a', 'b']));
+    assertEquals('3 a,b,c', trueApply(argsIdentity, ['a', 'b', 'c']));
 
     // TODO(kpreid): more meta-tests
   };
