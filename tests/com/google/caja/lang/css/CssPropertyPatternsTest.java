@@ -35,7 +35,6 @@ import com.google.caja.parser.js.ValueProperty;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Function;
 import com.google.caja.util.Lists;
-import com.google.caja.util.Name;
 import com.google.caja.util.Sets;
 import com.google.caja.util.Strings;
 
@@ -193,19 +192,6 @@ public class CssPropertyPatternsTest extends CajaTestCase {
     assertMatches(
         leftSignature, "0", "10px", "-10.5px", "0.125em", "+10px", "110%");
     assertDoesNotMatch(leftSignature, ".in", "-px", "em");
-  }
-
-  public final void testPropertyNameToDom2Property() {
-    assertEquals(
-        "color",
-        CssPropertyPatterns.propertyNameToDom2Property(Name.css("color")));
-    assertEquals(
-        "float",
-        CssPropertyPatterns.propertyNameToDom2Property(Name.css("float")));
-    assertEquals(
-        "listStyleImage",
-        CssPropertyPatterns.propertyNameToDom2Property(
-            Name.css("list-style-image")));
   }
 
   private void assertDigest(String sig, String golden, String... ignoreKeys) {

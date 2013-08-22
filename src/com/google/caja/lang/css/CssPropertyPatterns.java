@@ -86,8 +86,6 @@ import javax.annotation.Nullable;
  *       // Describe the kinds of tokens that can appear in the named
  *       // property's value and any additional restrictions.
  *       cssPropBits: CSS_PROP_BIT_x | CSS_PROP_BIT_y | ...,
- *       // Aliases for the named property.
- *       cssAlternates: ["cssFloat", "styleFloat"],
  *       // Groups of literal values allowed including keywords and specific
  *       // numeric values like font-weight:300
  *       cssLitGroup: [CSS_LIT_GROUP[1],CSS_LIT_GROUP[3],CSS_LIT_GROUP[16]],
@@ -400,7 +398,6 @@ public class CssPropertyPatterns {
     }
 
     List<ValueProperty> cssSchemaProps = Lists.newArrayList();
-    StringLiteral alternatesObjKey = new StringLiteral(unk, "cssAlternates");
     StringLiteral propbitsObjKey = new StringLiteral(unk, "cssPropBits");
     StringLiteral litgroupObjKey = new StringLiteral(unk, "cssLitGroup");
     StringLiteral fnsObjKey = new StringLiteral(unk, "cssFns");
@@ -423,17 +420,7 @@ public class CssPropertyPatterns {
         propBits |= b.jsValue;
       }
 
-      ArrayConstructor altNames = null;
       if (prop != null) {
-        String dom2Property = propertyNameToDom2Property(prop.name);
-        for (String altDom2Property : prop.dom2properties) {
-          if (altDom2Property.equals(dom2Property)) { continue; }
-          if (altNames == null) {
-            altNames = new ArrayConstructor(
-                unk, Collections.<Expression>emptyList());
-          }
-          altNames.appendChild(StringLiteral.valueOf(unk, altDom2Property));
-        }
         if (LinkStyleWhitelist.HISTORY_INSENSITIVE_STYLE_WHITELIST
             .contains(prop.name)) {
           propBits |= CssPropBit.HISTORY_INSENSITIVE.jsValue;
@@ -441,10 +428,6 @@ public class CssPropertyPatterns {
                    .contains(prop.name)) {
           propBits |= CssPropBit.ALLOWED_IN_LINK.jsValue;
         }
-      }
-
-      if (altNames != null) {
-        dataObj.appendChild(new ValueProperty(alternatesObjKey, altNames));
       }
 
       dataObj.appendChild(
@@ -614,30 +597,6 @@ public class CssPropertyPatterns {
       }
       return true;
     }
-  }
-
-  /**
-   * Converts a css property name to a javascript identifier, e.g.
-   * {@code background-color} => {@code backgroundColor}.
-   */
-  static String propertyNameToDom2Property(Name cssPropertyName) {
-    String lcaseDashed = cssPropertyName.getCanonicalForm();
-    int dash = lcaseDashed.indexOf('-');
-    if (dash < 0) { return lcaseDashed; }
-    StringBuilder sb = new StringBuilder(lcaseDashed.length());
-    int written = 0;
-    do {
-      sb.append(lcaseDashed, written, dash);
-      written = dash + 1;
-      if (written < lcaseDashed.length()) {
-        sb.append(Strings.upper(
-            lcaseDashed.substring(written, written + 1)));
-        ++written;
-      }
-      dash = lcaseDashed.indexOf('-', written);
-    } while (dash >= 0);
-    sb.append(lcaseDashed, written, lcaseDashed.length());
-    return sb.toString();
   }
 
   /**

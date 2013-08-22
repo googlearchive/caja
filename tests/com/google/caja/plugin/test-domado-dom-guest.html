@@ -1010,8 +1010,7 @@ document.write(
                  function testSpecialStyleNames() {
     function getFloatySpanFloat() {
       return directAccess.getComputedStyle(floatySpan, 'float')
-          || directAccess.getComputedStyle(floatySpan, 'cssFloat')
-          || directAccess.getComputedStyle(floatySpan, 'styleFloat');
+          || directAccess.getComputedStyle(floatySpan, 'cssFloat');
     }
 
     // Some style names conflict with reserved keywords in many languages,
@@ -1023,16 +1022,6 @@ document.write(
     assertEquals('left', floatySpan.style.cssFloat);
     assertEquals('left', getFloatySpanFloat());
     assertEquals('left', floatySpan.style.getPropertyValue('float'));
-    try {
-      floatySpan.style.styleFloat = 'right';
-      console.log('styleFloat supported');
-    } catch (styleFloatWorksOnIE) {
-      floatySpan.style.cssFloat = 'right';
-    }
-    assertEquals('right', getFloatySpanFloat());
-    assertEquals('right', floatySpan.style.cssFloat);
-    assertEquals('right', floatySpan.style.getPropertyValue('float'));
-
     pass('testSpecialStyleNames');
   });
 </script>

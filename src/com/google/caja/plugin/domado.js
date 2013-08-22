@@ -1080,55 +1080,37 @@ var Domado = (function() {
     return cajaVM.def(TameXMLHttpRequest);
   }
 
-  // TODO(kpreid): Review whether this has unnecessary features (as we're
-  // statically generating Style accessors rather than proxy/handler-ing
-  // Domita did).
-  function CssPropertiesCollection(aStyleObject) {
-    var canonicalStylePropertyNames = {};
-    // Maps style property names, e.g. cssFloat, to property names, e.g. float.
-    var cssPropertyNames = {};
-
-    for (var cssPropertyName in cssSchema) {
-      if (cssPropertyName.indexOf('(') >= 0) {
-        // Don't create properties for CSS functions like "rgb()".
-        continue;
-      }
-      var baseStylePropertyName = cssPropertyName.replace(
-          /-([a-z])/g, function (_, letter) { return letter.toUpperCase(); });
-      var canonStylePropertyName = baseStylePropertyName;
-      cssPropertyNames[baseStylePropertyName]
-          = cssPropertyNames[canonStylePropertyName]
-          = cssPropertyName;
-      var alts = cssSchema[cssPropertyName].cssAlternates;
-      if (alts) {
-        for (var i = alts.length; --i >= 0;) {
-          cssPropertyNames[alts[+i]] = cssPropertyName;
-          // Handle oddities like cssFloat/styleFloat.
-          if (alts[+i] in aStyleObject
-              && !(canonStylePropertyName in aStyleObject)) {
-            canonStylePropertyName = alts[+i];
-          }
-        }
-      }
-      canonicalStylePropertyNames[cssPropertyName] = canonStylePropertyName;
+  function CssPropertiesCollection() {
+    var cssToDom = {};
+    var domToCss = {};
+    for (var cssName in cssSchema) {
+      // Don't create properties for CSS functions like "rgb()".
+      if (cssName.indexOf('(') >= 0) { continue; }
+      var domName =
+          cssName === 'float'
+            ? 'cssFloat'
+            : cssName.replace(
+                /-([a-z])/g, function (_, c) { return c.toUpperCase(); });
+      cssToDom[cssName] = domName;
+      domToCss[domName] = cssName;
     }
 
     return {
-      isCanonicalProp: function (p) {
-        return cssPropertyNames.hasOwnProperty(p);
+      isDomName: function (p) {
+        return domToCss.hasOwnProperty(p);
       },
-      isCssProp: function (p) {
-        return canonicalStylePropertyNames.hasOwnProperty(p);
+      isCssName: function (p) {
+        return cssToDom.hasOwnProperty(p);
       },
-      getCanonicalPropFromCss: function (p) {
-        return canonicalStylePropertyNames[p];
+      domToCss: function (p) {
+        return domToCss[p];
       },
-      getCssPropFromCanonical: function(p) {
-        return cssPropertyNames[p];
+      cssToDom: function(p) {
+        return cssToDom[p];
       },
-      forEachCanonical: function (f) {
-        for (var p in cssPropertyNames) {
-          if (cssPropertyNames.hasOwnProperty(p)) {
+      forEachDomName: function (f) {
+        for (var p in domToCss) {
+          if (domToCss.hasOwnProperty(p)) {
             f(p);
           }
         }
@@ -6691,15 +6673,13 @@ var Domado = (function() {
       // Taming of Styles:
 
       tamingClassTable.registerLazy('CSSStyleDeclaration', function() {
-        var aStyleForCPC = elementForFeatureTests.style;
-        aStyleForCPC = makeDOMAccessible(aStyleForCPC);
-        var allCssProperties = CssPropertiesCollection(aStyleForCPC);
+        var allCssProperties = CssPropertiesCollection();
 
         // Sealed internals for TameStyle objects, not to be exposed.
         var TameStyleConf = new Confidence('Style');
 
         function allowProperty(cssPropertyName) {
-          return allCssProperties.isCssProp(cssPropertyName);
+          return allCssProperties.isCssName(cssPropertyName);
         };
 
         /**
@@ -6733,8 +6713,7 @@ var Domado = (function() {
             TameStyleConf.amplifying(function(privates, cssPropertyName) {
           cssPropertyName = String(cssPropertyName || '').toLowerCase();
           if (!allowProperty(cssPropertyName)) { return ''; }
-          var canonName = allCssProperties.getCanonicalPropFromCss(
-              cssPropertyName);
+          var canonName = allCssProperties.cssToDom(cssPropertyName);
           return privates.readByCanonicalName(canonName);
         });
         Props.define(TameStyle.prototype, TameStyleConf, {
@@ -6757,13 +6736,11 @@ var Domado = (function() {
             })
           }
         });
-        allCssProperties.forEachCanonical(function(stylePropertyName) {
+        allCssProperties.forEachDomName(function(stylePropertyName) {
           // TODO(kpreid): Refactor this to be clearer about what is going on;
           // particularly what role each "name" plays.
-          var cssPropertyName =
-              allCssProperties.getCssPropFromCanonical(stylePropertyName);
-          var canonName =
-              allCssProperties.getCanonicalPropFromCss(cssPropertyName);
+          var cssPropertyName = allCssProperties.domToCss(stylePropertyName);
+          var canonName = allCssProperties.cssToDom(cssPropertyName);
           var allowed = allowProperty(cssPropertyName);
           Object.defineProperty(TameStyle.prototype, stylePropertyName, {
             enumerable: canHaveEnumerableAccessors,
@@ -6830,8 +6807,7 @@ var Domado = (function() {
             var superReadByCanonicalName =
                 privates.readByCanonicalName;
             privates.readByCanonicalName = function(canonName) {
-              var propName =
-                  allCssProperties.getCssPropFromCanonical(canonName);
+              var propName = allCssProperties.domToCss(canonName);
               var schemaElement = cssSchema[propName];
               var canReturnDirectValue =
                   (schemaElement

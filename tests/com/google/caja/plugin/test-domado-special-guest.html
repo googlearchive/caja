@@ -167,15 +167,16 @@
           + ' { ' + styleName + ': ' + styleValue + ' }';
       var winStyle = window.getComputedStyle(element, pseudoElt),
           viewStyle = document.defaultView.getComputedStyle(element, pseudoElt);
-      var propertyName = styleName.replace(
+      var domName = styleName === 'float' ? 'cssFloat' : styleName;
+      var cssName = styleName.replace(
            new RegExp('([a-z])([A-Z])', 'g'),
            function (_, lc, uc) { return lc + '-' + uc.toLowerCase(); });
-      assertEquals(msg, styleValue, strip(winStyle[styleName]));
+      assertEquals(msg, styleValue, strip(winStyle[domName]));
       assertEquals(msg, styleValue || '',
-                   strip(winStyle.getPropertyValue(propertyName)));
-      assertEquals(msg, styleValue, strip(viewStyle[styleName]));
+                   strip(winStyle.getPropertyValue(cssName)));
+      assertEquals(msg, styleValue, strip(viewStyle[domName]));
       assertEquals(msg, styleValue || '',
-                   strip(viewStyle.getPropertyValue(propertyName)));
+                   strip(viewStyle.getPropertyValue(cssName)));
     }
 
     var block = document.getElementById('testComputedStyle-block');

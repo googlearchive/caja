@@ -151,24 +151,16 @@ public final class CssSchema {
     public final Criterion<String> appliesTo;
     /** May be null. */
     public final String defaultValue;
-    /**
-     * The name of the property in {@code htmlElement.style}.
-     * See <a href="http://developer.mozilla.org/en/docs/DOM:CSS">mozilla's
-     *     list</a>.
-     */
-    public final List<String> dom2properties;
 
     private CssPropertyInfo(
         Name name, CssPropertySignature sig, Criterion<String> mediaGroups,
-        boolean inherited, Criterion<String> appliesTo, String defaultValue,
-        List<String> dom2properties) {
+        boolean inherited, Criterion<String> appliesTo, String defaultValue) {
       super(name, sig);
       this.mediaGroups = mediaGroups;
       this.inherited = inherited;
       // Not defensively copied.  This is usually an immutable AllSet.
       this.appliesTo = appliesTo;
       this.defaultValue = defaultValue;
-      this.dom2properties = dom2properties;
     }
   }
 
@@ -192,8 +184,6 @@ public final class CssSchema {
   private static final Pattern HTML_IDENTIFIER = Pattern.compile("^[\\w\\-]+$");
   private static final Pattern CSS_IDENTIFIER =
     Pattern.compile("^[a-zA-Z\\-][\\w\\-]*$");
-  private static final Pattern JS_IDENTIFIER =
-    Pattern.compile("^[a-zA-Z_][\\w_]*$");
   private static final Criterion<String> ALL_ELEMENTS
       = new RegexpCriterion(HTML_IDENTIFIER);
   // See http://www.w3.org/TR/REC-CSS2/media.html section 7.3
@@ -256,8 +246,7 @@ public final class CssSchema {
       String defaultValue,
       Criterion<String> appliesTo,
       boolean inherited,
-      Criterion<String> mediaGroups,
-      List<String> dom2properties) {
+      Criterion<String> mediaGroups) {
     if ("".equals(defaultValue)) {
       throw new IllegalArgumentException(
           "Bad default value for symbol " + name + ", use null instead");
@@ -265,16 +254,10 @@ public final class CssSchema {
     if (!CSS_IDENTIFIER.matcher(name.getCanonicalForm()).matches()) {
       throw new IllegalArgumentException("Bad property name: " + name);
     }
-    for (String dom2property : dom2properties) {
-      if (!JS_IDENTIFIER.matcher(dom2property).matches()) {
-        throw new IllegalArgumentException("Bad DOM2 name: " + dom2property);
-      }
-    }
 
     CssPropertySignature csssig = parseSignature(name, sig);
     properties.put(name, new CssPropertyInfo(
-        name, csssig, mediaGroups, inherited, appliesTo, defaultValue,
-        dom2properties));
+        name, csssig, mediaGroups, inherited, appliesTo, defaultValue));
   }
 
   private void defineSymbol(Name name, String sig) {
@@ -306,26 +289,13 @@ public final class CssSchema {
             def.get("appliesTo", "*"), ALL_ELEMENTS);
         Criterion<String> mediaGroups = criterionFromConfig(
             def.get("mediaGroups", "*"), ALL_MEDIA);
-        Object dom2property = def.get("dom2property", null);
-        List<String> dom2properties;
-        if (dom2property instanceof String) {
-          dom2properties = Collections.singletonList((String) dom2property);
-        } else if (dom2property == null) {
-          dom2properties = Collections.<String>emptyList();
-        } else {
-          dom2properties = new ArrayList<String>();
-          for (Object item : (Iterable<?>) dom2property) {
-            dom2properties.add((String) item);
-          }
-        }
         defineProperty(
             Name.css(key),
             (String) def.get("signature", null),
             (String) def.get("default", null),
             appliesTo,
             Boolean.TRUE.equals(def.get("inherited", null)),
-            mediaGroups,
-            dom2properties);
+            mediaGroups);
       }
     }
 
