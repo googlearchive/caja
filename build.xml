@@ -1074,6 +1074,7 @@ For help on building and testing Caja, see:
       <input file="${testlib}/com/google/caja/plugin/default-test-driver.js"/>
 
       <!-- an interestingly complicated test program -->
+      <input file="${testlib}/com/google/caja/plugin/test-scan-core.js"/>
       <input file="${testlib}/com/google/caja/plugin/test-scan-guest.js"/>
     </transform>
 
