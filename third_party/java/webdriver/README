@@ -1,8 +1,2 @@
 origin
-  https://code.google.com/p/selenium/source/detail?r=bb3450e3ab26336b7e16613c7d9063957f9cb1c3
-
-rebuild steps:
-  git clone https://code.google.com/p/selenium/
-  cd selenium
-  git checkout bb3450e3ab26
-  ./go selenium-server-standalone
+  https://code.google.com/p/selenium/downloads/detail?name=selenium-server-standalone-2.35.0.jar
