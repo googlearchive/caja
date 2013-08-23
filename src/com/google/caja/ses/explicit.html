@@ -36,6 +36,9 @@
 <div id="scriptTest">scriptTest...</div>
 <div id="amdLoaderTest">AMD loader test...</div>
 
+<!-- for communication with automated test driver -->
+<div id="testSignals" class="testcontainer"></div>
+
 <script src="useHTMLLogger.js"></script>
 <script>
   function gebi(id) {
@@ -66,9 +69,24 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
 <script src="hookupSESPlus.js"></script>
 
 <script>
-  var amdLoaderTest = gebi('amdLoaderTest');
-  function appendText(node, text) {
+  var testSignals = gebi('testSignals');
+  var testExpected = 4;
+  var testPasses = 0;
+  testSignals.className += ' readytotest';
+  function testDone() {
     "use strict";
+    if (testPasses === testExpected) {
+      document.title += ' - all tests passed';
+    }
+    testSignals.className += ' done';
+  }
+</script>
+
+<script>
+  var amdLoaderTest = gebi('amdLoaderTest');
+  function appendResult(node, text) {
+    "use strict";
+    if (/^succeeded/.test(text)) { testPasses += 1; }
     node.appendChild(document.createTextNode(text));
   }
   (function() {
@@ -77,10 +95,11 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
     var moduleTest = gebi('moduleTest');
     var scriptTest = gebi('scriptTest');
     if (!ses.ok()) {
-      appendText(exprTest, 'cancelled');
-      appendText(moduleTest, 'cancelled');
-      appendText(scriptTest, 'cancelled');
-      appendText(amdLoaderTest, 'cancelled');
+      appendResult(exprTest, 'cancelled');
+      appendResult(moduleTest, 'cancelled');
+      appendResult(scriptTest, 'cancelled');
+      appendResult(amdLoaderTest, 'cancelled');
+      testDone();
       return;
     }
 
@@ -92,7 +111,7 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
 
     var output = cajaVM.eval('3+4') * cajaVM.compileExpr('window')(imports);
     var text1 = output === 42 ? 'succeeded' : 'failed: ' + output;
-    appendText(exprTest, text1);
+    appendResult(exprTest, text1);
 
     // Test ability to bootstrap support for a limited form of
     // CommonJS modules.
@@ -119,7 +138,7 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
       "returned": 77
     }, void 0, ' ');
     var text2 = did === should ? 'succeeded' : 'failed: ' + did;
-    appendText(moduleTest, text2);
+    appendResult(moduleTest, text2);
 
     // Tests the ability to do inter-module linkage as scripts
     // traditionally did, by modification of (virtual) shared
@@ -128,7 +147,7 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
     cajaVM.compileModule('this.x = 88;')(imports);
     var text3 = cajaVM.compileExpr('x')(imports) === 88 ?
       'succeeded' : 'failed';
-    appendText(scriptTest, text3);
+    appendResult(scriptTest, text3);
 
   })();
 </script>
@@ -210,9 +229,11 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
     Q(amdTestP).then(function(amdTest) {
       var amdTestStatus = amdTest === 'this is a test' ?
         'succeeded' : 'failed, unexpected: ' + amdTest;
-      appendText(amdLoaderTest, amdTestStatus);
+      appendResult(amdLoaderTest, amdTestStatus);
+      testDone();
     }, function(reason) {
-      appendText(amdLoaderTest, 'failed: ' + reason);
+      appendResult(amdLoaderTest, 'failed: ' + reason);
+      testDone();
     }).end();
   })();
 </script>

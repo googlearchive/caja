@@ -199,16 +199,13 @@ class WebDriverHandle {
     }
   }
 
-  public void captureResults(String name, boolean passed) {
+  public void captureResults(String name) {
     if (driver == null) { return; }
-
-    if (passed && !TestFlag.CAPTURE_PASSES.truthy()) { return; }
 
     String dir = TestFlag.CAPTURE_TO.getString("");
     if ("".equals(dir)) { return; }
 
     if (!dir.endsWith("/")) { dir = dir + "/"; }
-    dir += passed ? "pass/" : "fail/";
     mkdirs(dir);
 
     // Try to capture the final html

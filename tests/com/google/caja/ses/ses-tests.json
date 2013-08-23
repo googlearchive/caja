@@ -1,5 +1,13 @@
 [
   {
+    "label": "ses-explicit",
+    "bare": "../../../../../src/com/google/caja/ses/explicit.html",
+    "mode": "none",
+    "comment": [
+      "Detailed SES initialization report"
+    ]
+  },
+  {
     "label": "ses-loading",
     "bare": "../ses/test-ses-loading.html",
     "mode": "none",

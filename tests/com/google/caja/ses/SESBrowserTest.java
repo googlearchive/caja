@@ -27,4 +27,9 @@ import com.google.caja.plugin.CatalogTestCase;
 @RunWith(CatalogRunner.class)
 @CatalogRunner.CatalogName("ses-tests.json")
 public class SESBrowserTest extends CatalogTestCase {
+
+  @Override
+  protected boolean alwaysCapture(String label) {
+    return label.equals("ses-explicit");
+  }
 }

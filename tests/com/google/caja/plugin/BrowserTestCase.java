@@ -152,7 +152,7 @@ public abstract class BrowserTestCase {
         result = driveBrowser(driver);
         passed = true;
       } finally {
-        wdh.captureResults(label, passed);
+        captureResults(label, passed);
         wdh.end(passed || isKnownFailure);
       }
     } catch (Exception e) {
@@ -161,6 +161,21 @@ public abstract class BrowserTestCase {
       localServer.stop();
     }
     return result;
+  }
+
+  private void captureResults(String label, boolean passed) {
+    if (alwaysCapture(label)) {
+      wdh.captureResults("keep." + label);
+    } else if (!passed) {
+      wdh.captureResults("fail." + label);
+    } else if (TestFlag.CAPTURE_PASSES.truthy()) {
+      wdh.captureResults("pass." + label);
+    }
+  }
+
+  protected boolean alwaysCapture(String label) {
+    // TODO(felix8a): maybe this should be a flag in browser-tests.json
+    return false;
   }
 
   protected static String escapeUri(String s) {

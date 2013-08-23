@@ -41,4 +41,9 @@ public class MainBrowserTest extends CatalogTestCase {
       return super.waitForCompletionTimeout();
     }
   }
+
+  @Override
+  protected boolean alwaysCapture(String label) {
+    return label.startsWith("guest-scan-");
+  }
 }
