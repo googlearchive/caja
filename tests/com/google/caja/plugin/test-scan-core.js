@@ -421,6 +421,7 @@ var scanning;  // exports
      *
      * @param object The object of interest.
      * @param path A textual short description of how we got the object.
+     * @param depth Count of sequential operations performed to get the object.
      * @param getSelfC Returns the context of something to use instead of the
      *     object on methods (i.e. an instance if the object is a prototype).
      * @param getThisArgC Ditto but for the thisArg for invoking the object
@@ -430,7 +431,8 @@ var scanning;  // exports
      *     attempting to obtain an instance of a not-actually-a-constructor.
      * @param getProgram A thunk for program source which returns the object.
      */
-    function makeContext(object, path, getSelfC, getThisArgC, getProgram) {
+    function makeContext(object, path, depth, getSelfC, getThisArgC,
+        getProgram) {
       var context;
       var prefix = path === '' ? '' : path + '.';
       if (getSelfC === 'self') {
@@ -449,6 +451,7 @@ var scanning;  // exports
         },
         get: function() { return object; },
         getPath: function() { return path; },
+        getDepth: function() { return depth; },
         getter: function(name, getter) {
           function getterProgram() {
             return 'Object.getOwnPropertyDescriptor(' +
@@ -460,6 +463,7 @@ var scanning;  // exports
           return makeContext(
               getter,
               prefix + 'get ' + name,
+              depth + 1,
               'self',
               getSelfC,
               getterProgram);
@@ -468,6 +472,7 @@ var scanning;  // exports
           return makeContext(
               setter,
               prefix + 'set ' + name,
+              depth + 1,
               'self',
               getSelfC,
               function() {
@@ -481,12 +486,13 @@ var scanning;  // exports
           if (p === 'prototype') {
             // When invoking methods on a prototype, use an instance of this
             // ctor instead as 'this'.
-            var protoctx = makeContext(pval, subpath,
+            var protoctx = makeContext(pval, subpath, depth + 1,
                 function() {
                   var selfC = getSelfC();
                   return makeContext(
                       obtainInstance(selfC.get(), selfC),
                       path + '<instance>',
+                      depth + 1,
                       'self',
                       function() { return noThisContext; },
                       protoctx,
@@ -503,6 +509,7 @@ var scanning;  // exports
             return makeContext(
                 pval,
                 subpath,
+                depth + 1,
                 getSelfC,
                 function() { return noThisContext; },
                 function() {
@@ -512,6 +519,7 @@ var scanning;  // exports
             return makeContext(
                 pval,
                 subpath,
+                depth + 1,
                 'self',
                 getSelfC,
                 function() {
@@ -528,6 +536,7 @@ var scanning;  // exports
           return makeContext(
               ival,
               path + argstr + (thrown ? ' thrown ' : ''),
+              depth + 1,
               'self',
               getSelfC,
               function() {
@@ -552,6 +561,7 @@ var scanning;  // exports
         undefined,
         '<noThis>',
         'self',
+        0,
         function() { return noThisContext; },
         function() { return 'undefined'; });
 
@@ -560,6 +570,7 @@ var scanning;  // exports
         return makeContext(
             o,
             path,
+            0,
             'self',
             function() { return noThisContext; },
             function() { return code; });
@@ -664,6 +675,11 @@ var scanning;  // exports
           return;
         }
 
+        if (context.getDepth() > 16) {
+          noteGap('Depth limit reached', context);
+          return;
+        }
+
         // deduplication and logging
         var seenName = seenTable.get(object);
         if (seenName) {
@@ -706,7 +722,12 @@ var scanning;  // exports
           var didSomeCall = false;
           var didNonThrowingCall = false;
 
-          var shouldPlainCall = isNativeFunction(object);
+          // TODO(kpreid): the '.get stack' rule is a misplaced kludge which
+          // should at least live in the caller. It is needed to avoid infinite
+          // descent. See
+          // <https://code.google.com/p/google-caja/issues/detail?id=1848>.
+          var shouldPlainCall = isNativeFunction(object) &&
+              !(/\.get stack/.test(path));
           var didPlainCall = false;
 
           var doInvocation = function(tuple) {

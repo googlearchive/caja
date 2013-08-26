@@ -705,14 +705,25 @@
     argsByAnyFrame('String.prototype.trimLeft', genNoArgMethod);
     argsByAnyFrame('String.prototype.trimRight', genNoArgMethod);
 
-    var genErrorConstruct = genAllCall(genString);
-    argsByAnyFrame('Error', genErrorConstruct);
-    argsByAnyFrame('EvalError', genErrorConstruct);
-    argsByAnyFrame('RangeError', genErrorConstruct);
-    argsByAnyFrame('ReferenceError', genErrorConstruct);
-    argsByAnyFrame('SyntaxError', genErrorConstruct);
-    argsByAnyFrame('TypeError', genErrorConstruct);
-    argsByAnyFrame('URIError', genErrorConstruct);
+    // Error objects
+    functionArgs.set(Ref.all(
+            RefAnyFrame('Error'),
+            RefAnyFrame('EvalError'),
+            RefAnyFrame('RangeError'),
+            RefAnyFrame('ReferenceError'),
+            RefAnyFrame('SyntaxError'),
+            RefAnyFrame('TypeError'),
+            RefAnyFrame('URIError')),
+        genAllCall(genString));
+    expectedUnfrozen.mark(Ref.all(
+        Ref.ctor(Error),
+        Ref.ctor(tamingEnv.Error)));
+    // fresh-on-every-instance getter, on at least Chrome 31.0.1609.0
+    expectedUnfrozen.mark(Ref.all(
+        Ref.path('.get stack'),
+        Ref.path('.set stack'),
+        Ref.path('.get stack.prototype'),
+        Ref.path('.set stack.prototype')));
 
     argsByIdentity(cajaVM.allKeys, genMethod(genJSONValue));
     function cweF1(ejector) {
@@ -1043,7 +1054,6 @@
     argsByProp('getBoundingClientRect', freshResult(genNoArgMethod));
     argsByProp('updateStyle', genNoArgMethod);
     argsByProp('getPropertyValue', genMethod(genCSSPropertyName));
-    argsByProp('set stack', G.none);
     argsByProp('getContext', genMethod(G.value(undefined, null, 'bogus', '2d',
         'webgl', 'experimental-webgl')));
     argsByProp('querySelector', genMethod(genCSSSelector));
@@ -1202,7 +1212,6 @@
     argsByProp('stopPropagation', G.none);
     argsByProp('preventDefault', G.none);
 
-    var tamingFrameError = tamingEnv.Error;
     expectedUnfrozen.addSpecialCase(function(context) {
       var object = context.get();
       var path = context.getPath();
@@ -1243,8 +1252,6 @@
     expectedUnfrozen.setByConstructor(Node, true);
     assertTrue(location.constructor !== Object);
     expectedUnfrozen.setByConstructor(location.constructor, true);
-    expectedUnfrozen.setByConstructor(Error, true);
-    expectedUnfrozen.setByConstructor(tamingEnv.Error, true);
     // these types can't be coherently exported due to ArrayLike gimmick
     //expectedUnfrozen.setByConstructor(NodeList, true);
     //expectedUnfrozen.setByConstructor(NamedNodeMap, true);
