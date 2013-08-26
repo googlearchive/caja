@@ -60,11 +60,16 @@ function HtmlEmitter(makeDOMAccessible, base,
         'Host page error: Virtual document element was not provided');
   }
   base = makeDOMAccessible(base);
+
+  var targetDocument = base.nodeType === 9  // Document node
+      ? base
+      : base.ownerDocument;
+
   // TODO(kpreid): Fix our terminology: HTML5 spec contains something called the
   // 'insertion point', which is not this; this is the 'current node' and
   // implicitly the 'stack of open elements' via parents.
   var insertionPoint = base;
-  var bridal = bridalMaker(makeDOMAccessible, base);
+  var bridal = bridalMaker(makeDOMAccessible, targetDocument);
 
   // TODO: Take into account <base> elements.
 
@@ -104,7 +109,7 @@ function HtmlEmitter(makeDOMAccessible, base,
     if (!idMap) { buildIdMap(); }
     var node = idMap[id + " map entry"];
     if (node) { return node; }
-    for (; (node = base.ownerDocument.getElementById(id));) {
+    for (; (node = targetDocument.getElementById(id));) {
       if (base.contains
           ? base.contains(node)
           : (base.compareDocumentPosition(node) & 0x10)) {
@@ -126,7 +131,21 @@ function HtmlEmitter(makeDOMAccessible, base,
       throw new Error('Host page error: HtmlEmitter.emitStatic called after' +
           ' document finish()ed');
     }
-    base.innerHTML += htmlString;
+    if (base.nodeType === 1 /* Element */) {
+      base.innerHTML += htmlString;
+    } else {
+      // We need to handle Document nodes, which don't provide .innerHTML.
+
+      // Additionally, we currently don't use real <html> and <head> elements
+      // and so just doing base.write(htmlString), which would otherwise be
+      // sufficient, would insert unwanted structure around our HTML.
+      // TODO(kpreid): Fix that.
+      var dummy = makeDOMAccessible(targetDocument.createElement('div'));
+      dummy.innerHTML = htmlString;
+      while (dummy.firstChild) {
+        base.appendChild(dummy.firstChild);
+      }
+    }
     updateInsertionMode();
   }
 
@@ -723,7 +742,7 @@ function HtmlEmitter(makeDOMAccessible, base,
         throw new Error('HtmlEmitter internal: attempted to add text to ' +
             'unsafe element ' + realTagName + '!');
       }
-      insertionPoint.appendChild(insertionPoint.ownerDocument.createTextNode(
+      insertionPoint.appendChild(targetDocument.createTextNode(
           html.unescapeEntities(text)));
     }
 

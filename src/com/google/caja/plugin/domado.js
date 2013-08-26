@@ -6858,17 +6858,34 @@ var Domado = (function() {
       });
 
 
+      var cssIdClassPrefixRE =
+          new RegExp('(^|[},]\)\s*\\.' + idClass + ' ', 'g');
       /**
        * Create a CSS stylesheet with the given text and append it to the DOM.
        * @param {string} cssText a well-formed stylesheet production.
        */
       domicile.emitCss = cajaVM.constFunc(function(cssText) {
+        if (outerContainerNode === document) {
+          // Kludge to strip out container class markers from the cajoler if
+          // we're using a frame. TODO(kpreid): Modify the cajoler so that its
+          // generated emitCss invocations are parameterized to handle this
+          // difference. TODO(kpreid): Validate this regexp strategy.
+          cssText = cssText.replace(cssIdClassPrefixRE, '');
+        }
         this.getCssContainer().appendChild(
             bridal.createStylesheet(document, cssText));
       });
       /** The node to which gadget stylesheets should be added. */
       domicile.getCssContainer = cajaVM.constFunc(function() {
-        var e = document.getElementsByTagName('head')[0];
+        var e = document.getElementsByTagName('head')[0] ||
+            // iframe doc
+            outerContainerNode.getElementsByTagName('caja-v-head')[0];
+        if (!e) {
+          if (typeof console !== 'undefined') {
+            console.warn('Domado: Unable to find location to stash stylesheet');
+          }
+          e = document.createElement('head');
+        }
         e = makeDOMAccessible(e);
         return e;
       });

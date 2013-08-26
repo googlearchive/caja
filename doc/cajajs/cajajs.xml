@@ -115,7 +115,15 @@
         the guest code's virtual HTML <code>document</code></p> <p>The
         caller may pass <code>undefined</code>, which causes the guest
         code to run with no virtual document (e.g., for running plain
-        JavaScript without a UI).</p></doc>
+        JavaScript without a UI).</p>
+
+        <p><em>Experimental:</em> It is also possible to provide a
+        HTML document node, such as an <code>&lt;iframe&gt;</code>'s
+        <code>contentDocument</code>, instead of an element. This mode of
+        operation has not been fully tested and may have missing
+        functionality. Note that the provided document <em>cannot</em> be
+        the same as the one in which <code>caja.js</code> was loaded, as
+        this would overwrite Caja's internal iframes.</p></doc>
       </arg>
       <arg>
         <name>uriPolicy</name>

@@ -589,16 +589,23 @@ var caja = (function () {
     }
   }
 
-  function prepareContainerDiv(opt_div, feralWin, domOpts) {
-    if (opt_div && feralWin['document'] !== opt_div.ownerDocument) {
-      throw '<div> provided for ES5 frame must be in main document';
-    }
+  /**
+   * opt_container may be absent, an element, or a Document. If absent
+   * then no DOM or related APIs are given to the guest.
+   */
+  function prepareContainerDiv(opt_container, feralWin, domOpts) {
     domOpts = domOpts || {};
     var opt_idClass = domOpts ? domOpts['idClass'] : void 0;
     var idClass = opt_idClass || ('caja-guest-' + nextId++ + '___');
+    if (opt_container && opt_container.nodeType === 9 /* Document */) {
+      caja['console']['warn']('Warning: Using a document, rather than an ' +
+          'element, as a Caja virtual document container is an experimental ' +
+          'feature and may not operate correctly or support all features.');
+      initFeralFrame(opt_container.defaultView);
+    }
     return {
       'idClass': idClass,
-      'opt_div': opt_div
+      'opt_div': opt_container
     };
   }
 

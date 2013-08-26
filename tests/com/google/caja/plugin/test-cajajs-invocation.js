@@ -42,7 +42,8 @@
    * Assert that a cajoled and loaded fixture-guest.html has the right
    * results.
    */
-  function assertGuestHtmlCorrect(frame, div) {
+  function assertGuestHtmlCorrect(frame, div, opt_containerDoc) {
+    var containerDoc = opt_containerDoc || document;
     assertStringContains('static html', div.innerHTML);
     assertStringContains('edited html', div.innerHTML);
     assertStringContains('dynamic html', div.innerHTML);
@@ -50,13 +51,13 @@
       assertStringContains('external script', div.innerHTML);
     }
     assertEquals('small-caps',
-        document.defaultView.getComputedStyle(
-            document.getElementById('foo-' + frame.idSuffix),
+        containerDoc.defaultView.getComputedStyle(
+            containerDoc.getElementById('foo-' + frame.idSuffix),
             null).fontVariant);
     if (inES5Mode) {
       assertEquals('inline',
-        document.defaultView.getComputedStyle(
-            document.getElementById('hello-' + frame.idSuffix),
+        containerDoc.defaultView.getComputedStyle(
+            containerDoc.getElementById('hello-' + frame.idSuffix),
             null).display);
     }
   }
@@ -583,7 +584,8 @@
       });
     });
 
-    jsunitRegister('testUrlHtmlWithMimeType', function testUrlHtml() {
+    jsunitRegister('testUrlHtmlWithMimeType',
+        function testUrlHtmlWithMimeType() {
       var div = createDiv();
       frameGroup.makeES5Frame(div, uriPolicy, function (frame) {
         frame.url('fixture-guest.html', 'text/html').run({},
@@ -593,8 +595,26 @@
         });
       });
     });
+
+    jsunitRegister('testContainerIsIframe', function testContainerIsIframe() {
+      var container = document.createElement('iframe');
+      document.body.appendChild(container);
+      setTimeout(function() {  // delay required on Firefox
+        var frameDoc = container.contentDocument;
+        frameDoc.removeChild(frameDoc.documentElement);
+        frameGroup.makeES5Frame(frameDoc, uriPolicy,
+            function(frame) {
+          frame.url('fixture-guest.html', 'text/html').run({},
+              function (result) {
+            // TODO(kpreid): Ensure no container
+            assertGuestHtmlCorrect(frame, frameDoc.documentElement, frameDoc);
+            jsunitPass('testContainerIsIframe');
+          });
+        });
+      }, 0);
+    });
+
     readyToTest();
     jsunitRun();
   });
-
 })();

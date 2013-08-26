@@ -65,6 +65,7 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
     return lazyDomado || (lazyDomado = Domado(null));
   }
 
+  // TODO(kpreid): Only used for XHR; dependency on feralWin is bogus
   var bridal = bridalMaker(identity, feralWin.document);
 
   var unsafe = false;
@@ -294,15 +295,13 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
       identity, domicile.htmlEmitterTarget, uriPolicy.mitigate, domicile,
       window);
 
-    if (!feralWin.___.tamingWindows) {
-      feralWin.___.tamingWindows = {};
-    }
-    feralWin.___.tamingWindows[imports.id___] = tamingWin;
-
     // Invoked by textual event handlers emitted by Domado.
     // TODO(kpreid): Use a name other than ___ for this purpose; perhaps some
     // property of the 'caja' object.
-    feralWin.___.plugin_dispatchEvent___ = getDomado().plugin_dispatchEvent;
+    var containerFeralWin =
+        (divInfo.opt_div.ownerDocument || divInfo.opt_div).defaultView;
+    containerFeralWin.___.plugin_dispatchEvent___ =
+        getDomado().plugin_dispatchEvent;
 
     return [domicile, htmlEmitter];
   }
