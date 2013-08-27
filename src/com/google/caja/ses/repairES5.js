@@ -3500,7 +3500,7 @@ var ses;
       test: test_GLOBAL_LEAKS_FROM_GLOBAL_FUNCTION_CALLS,
       repair: void 0,
       preSeverity: severities.NOT_ISOLATED,
-      canRepair: false,
+      canRepair: false,  // Not repairable without rewriting
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=64250'],
       sections: ['10.2.1.2', '10.2.1.2.6'],
       tests: ['10.4.3-1-8gs']
@@ -3509,7 +3509,7 @@ var ses;
       id: 'GLOBAL_LEAKS_FROM_ANON_FUNCTION_CALLS',
       description: 'Global object leaks from anonymous function calls',
       test: test_GLOBAL_LEAKS_FROM_ANON_FUNCTION_CALLS,
-      repair: void 0,
+      repair: void 0,  // Not repairable without rewriting
       preSeverity: severities.NOT_ISOLATED,
       canRepair: false,
       urls: [],
@@ -3522,7 +3522,7 @@ var ses;
       test: test_GLOBAL_LEAKS_FROM_STRICT_THIS,
       repair: void 0,
       preSeverity: severities.NOT_ISOLATED,
-      canRepair: false,
+      canRepair: false,  // Not repairable without rewriting
       urls: [],
       sections: ['10.4.3'],
       tests: ['10.4.3-1-8gs', '10.4.3-1-8-s']
@@ -3533,7 +3533,8 @@ var ses;
       test: test_GLOBAL_LEAKS_FROM_BUILTINS,
       repair: void 0,
       preSeverity: severities.NOT_ISOLATED,
-      canRepair: false,
+      canRepair: false,  // No platform with this bug is fully repairable,
+          // so it's not worth creating a repair for this bug.
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=51097',
              'https://bugs.webkit.org/show_bug.cgi?id=58338',
              'https://code.google.com/p/v8/issues/detail?id=1437',
@@ -3548,7 +3549,8 @@ var ses;
       test: test_GLOBAL_LEAKS_FROM_GLOBALLY_CALLED_BUILTINS,
       repair: void 0,
       preSeverity: severities.NOT_ISOLATED,
-      canRepair: false,
+      canRepair: false,  // No platform with this bug is fully repairable,
+          // so it's not worth creating a repair for this bug.
       urls: [],
       sections: ['10.2.1.2', '10.2.1.2.6', '15.2.4.4'],
       tests: ['S15.2.4.4_A15']
@@ -3559,7 +3561,7 @@ var ses;
       test: test_MISSING_FREEZE_ETC,
       repair: void 0,
       preSeverity: severities.NOT_OCAP_SAFE,
-      canRepair: false,
+      canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=55736'],
       sections: ['15.2.3.9'],
       tests: ['15.2.3.9-0-1']
@@ -3570,7 +3572,7 @@ var ses;
       test: test_FUNCTION_PROTOTYPE_DESCRIPTOR_LIES,
       repair: void 0,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: false,
+      canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://code.google.com/p/v8/issues/detail?id=1530',
              'https://code.google.com/p/v8/issues/detail?id=1570'],
       sections: ['15.2.3.3', '15.2.3.6', '15.3.5.2'],
@@ -3582,7 +3584,7 @@ var ses;
       test: test_MISSING_CALLEE_DESCRIPTOR,
       repair: void 0,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: false,
+      canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=55537'],
       sections: ['15.2.3.4'],
       tests: ['S15.2.3.4_A1_T1']
@@ -3593,7 +3595,7 @@ var ses;
       test: test_STRICT_DELETE_RETURNS_FALSE,
       repair: void 0,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
-      canRepair: false,
+      canRepair: false,  // Not repairable without rewriting
       urls: ['https://connect.microsoft.com/IE/feedback/details/' +
                '685432/strict-delete-sometimes-returns-false-' +
                'rather-than-throwing'],
@@ -3623,7 +3625,7 @@ var ses;
       test: test_REGEXP_TEST_EXEC_UNSAFE,
       repair: void 0,
       preSeverity: severities.NOT_OCAP_SAFE,
-      canRepair: false,
+      canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://code.google.com/p/v8/issues/detail?id=1393',
              'https://code.google.com/p/chromium/issues/detail?id=75740',
              'https://bugzilla.mozilla.org/show_bug.cgi?id=635017',
@@ -3637,7 +3639,7 @@ var ses;
       test: test_MISSING_BIND,
       repair: void 0,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: false,
+      canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=26382',
              'https://bugs.webkit.org/show_bug.cgi?id=42371'],
       sections: ['15.3.4.5'],
@@ -3649,7 +3651,7 @@ var ses;
       test: test_BIND_CALLS_APPLY,
       repair: void 0,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: false,
+      canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://code.google.com/p/v8/issues/detail?id=892',
              'https://code.google.com/p/v8/issues/detail?id=828'],
       sections: ['15.3.4.5.1'],
@@ -3659,9 +3661,9 @@ var ses;
       id: 'BIND_CANT_CURRY_NEW',
       description: 'Function.prototype.bind does not curry construction',
       test: test_BIND_CANT_CURRY_NEW,
-      repair: void 0, // JS-based repair essentially impossible
+      repair: void 0,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
-      canRepair: false,
+      canRepair: false,  // JS-based repair essentially impossible
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=26382#c29'],
       sections: ['15.3.4.5.2'],
       tests: ['S15.3.4.5_A5']
@@ -3694,7 +3696,7 @@ var ses;
       test: test_NEED_TO_WRAP_FOREACH,
       repair: void 0,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: false,
+      canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://code.google.com/p/v8/issues/detail?id=1447'],
       sections: ['15.4.4.18'],
       tests: ['S15.4.4.18_A1', 'S15.4.4.18_A2']
@@ -3729,7 +3731,7 @@ var ses;
       test: test_FORM_GETTERS_DISAPPEAR,
       repair: void 0,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: false,
+      canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://code.google.com/p/chromium/issues/detail?id=94666',
              'https://code.google.com/p/v8/issues/detail?id=1651',
              'https://code.google.com/p/google-caja/issues/detail?id=1401'],
@@ -3742,7 +3744,7 @@ var ses;
       test: test_ACCESSORS_INHERIT_AS_OWN,
       repair: void 0,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: false,
+      canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=637994'],
       sections: ['8.6.1', '15.2.3.6'],
       tests: ['S15.2.3.6_A2']
@@ -3753,7 +3755,7 @@ var ses;
       test: test_SORT_LEAKS_GLOBAL,
       repair: void 0,
       preSeverity: severities.NOT_ISOLATED,
-      canRepair: false,
+      canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://code.google.com/p/v8/issues/detail?id=1360'],
       sections: ['15.4.4.11'],
       tests: ['S15.4.4.11_A8']
@@ -3764,7 +3766,7 @@ var ses;
       test: test_REPLACE_LEAKS_GLOBAL,
       repair: void 0,
       preSeverity: severities.NOT_ISOLATED,
-      canRepair: false,
+      canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://code.google.com/p/v8/issues/detail?id=1360',
              'https://connect.microsoft.com/IE/feedback/details/' +
                '685928/bad-this-binding-for-callback-in-string-' +
@@ -3778,7 +3780,7 @@ var ses;
       test: test_CANT_GOPD_CALLER,
       repair: void 0,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
-      canRepair: false,
+      canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://connect.microsoft.com/IE/feedback/details/' +
                '685436/getownpropertydescriptor-on-strict-caller-throws'],
       sections: ['15.2.3.3', '13.2', '13.2.3'],
@@ -3790,7 +3792,7 @@ var ses;
       test: test_CANT_HASOWNPROPERTY_CALLER,
       repair: void 0,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
-      canRepair: false,
+      canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=63398#c3'],
       sections: ['15.2.4.5', '13.2', '13.2.3'],
       tests: ['S13.2_A7_T1']
@@ -3860,7 +3862,7 @@ var ses;
       test: test_BUILTIN_LEAKS_ARGUMENTS,
       repair: void 0,
       preSeverity: severities.NOT_OCAP_SAFE,
-      canRepair: false,
+      canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://code.google.com/p/v8/issues/detail?id=1643',
              'https://code.google.com/p/v8/issues/detail?id=1548',
              'https://bugzilla.mozilla.org/show_bug.cgi?id=591846',
@@ -3875,7 +3877,7 @@ var ses;
       test: test_BOUND_FUNCTION_LEAKS_CALLER,
       repair: void 0,
       preSeverity: severities.NOT_OCAP_SAFE,
-      canRepair: false,
+      canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://code.google.com/p/v8/issues/detail?id=893',
              'https://bugs.webkit.org/show_bug.cgi?id=63398'],
       sections: ['15.3.4.5'],
@@ -3887,7 +3889,7 @@ var ses;
       test: test_BOUND_FUNCTION_LEAKS_ARGUMENTS,
       repair: void 0,
       preSeverity: severities.NOT_OCAP_SAFE,
-      canRepair: false,
+      canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://code.google.com/p/v8/issues/detail?id=893',
              'https://bugs.webkit.org/show_bug.cgi?id=63398'],
       sections: ['15.3.4.5'],
@@ -3899,7 +3901,7 @@ var ses;
       test: test_DELETED_BUILTINS_IN_OWN_NAMES,
       repair: void 0,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
-      canRepair: false,
+      canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=70207'],
       sections: ['15.2.3.4'],
       tests: []
@@ -3910,7 +3912,7 @@ var ses;
       test: test_GETOWNPROPDESC_OF_ITS_OWN_CALLER_FAILS,
       repair: void 0,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
-      canRepair: false,
+      canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://code.google.com/p/v8/issues/detail?id=1769'],
       sections: ['13.2', '15.2.3.3'],
       tests: []
@@ -3933,7 +3935,8 @@ var ses;
       test: test_PROTO_NOT_FROZEN,
       repair: void 0,
       preSeverity: severities.NOT_OCAP_SAFE,
-      canRepair: false,
+      canRepair: false,  // No platform with this bug is fully repairable,
+          // so it's not worth creating a repair for this bug.
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=65832',
              'https://bugs.webkit.org/show_bug.cgi?id=78438'],
       sections: ['8.6.2'],
@@ -3945,7 +3948,8 @@ var ses;
       test: test_PROTO_REDEFINABLE,
       repair: void 0,
       preSeverity: severities.NOT_OCAP_SAFE,
-      canRepair: false,
+      canRepair: false,  // No platform with this bug is fully repairable,
+          // so it's not worth creating a repair for this bug.
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=65832'],
       sections: ['8.6.2'],
       tests: ['S8.6.2_A8']
@@ -3967,7 +3971,8 @@ var ses;
       test: test_STRICT_EVAL_LEAKS_GLOBAL_VARS,
       repair: void 0,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: false,
+      canRepair: false,  // No platform with this bug is fully repairable,
+          // so it's not worth creating a repair for this bug.
       urls: ['https://code.google.com/p/v8/issues/detail?id=1624'],
       sections: ['10.4.2.1'],
       tests: ['S10.4.2.1_A1']
@@ -3978,7 +3983,8 @@ var ses;
       test: test_STRICT_EVAL_LEAKS_GLOBAL_FUNCS,
       repair: void 0,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: false,
+      canRepair: false,  // No platform with this bug is fully repairable,
+          // so it's not worth creating a repair for this bug.
       urls: ['https://code.google.com/p/v8/issues/detail?id=1624'],
       sections: ['10.4.2.1'],
       tests: ['S10.4.2.1_A1']
@@ -3989,7 +3995,8 @@ var ses;
       test: test_EVAL_BREAKS_MASKING,
       repair: void 0,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
-      canRepair: false,
+      canRepair: false,  // No platform with this bug is fully repairable,
+          // so it's not worth creating a repair for this bug.
       urls: ['https://code.google.com/p/v8/issues/detail?id=2396'],
       sections: ['10.2'],
       tests: [] // TODO(jasvir): Add to test262
@@ -4011,7 +4018,7 @@ var ses;
       test: test_STRICT_E4X_LITERALS_ALLOWED,
       repair: void 0,
       preSeverity: severities.NOT_ISOLATED,
-      canRepair: false,
+      canRepair: false,  // Not repairable without parsing
       urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=695577',
              'https://bugzilla.mozilla.org/show_bug.cgi?id=695579'],
       sections: [],
@@ -4023,7 +4030,8 @@ var ses;
       test: test_ASSIGN_CAN_OVERRIDE_FROZEN,
       repair: repair_ASSIGN_CAN_OVERRIDE_FROZEN,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
-      canRepair: false,
+      canRepair: false,  // We actually prefer the override behavior, and the
+          // 'repair' sets a flag to take advantage of it.
       urls: ['https://code.google.com/p/v8/issues/detail?id=1169',
              'https://code.google.com/p/v8/issues/detail?id=1475',
              'https://mail.mozilla.org/pipermail/es-discuss/' +
@@ -4049,7 +4057,7 @@ var ses;
       // mitigateSrcGotchas.
       preSeverity: canMitigateSrcGotchas ?
         severities.SAFE_SPEC_VIOLATION : severities.NOT_OCAP_SAFE,
-      canRepair: false,
+      canRepair: false,  // Protection is based on rewriting, not repair
       urls: ['https://code.google.com/p/v8/issues/detail?id=2779'],
       sections: ['11.4.4', '8.12.4'],
       tests: [] // TODO(jasvir): Add to test262
@@ -4113,7 +4121,7 @@ var ses;
       id: 'ARRAYS_DELETE_NONCONFIGURABLE',
       description: 'Setting [].length can delete non-configurable elements',
       test: test_ARRAYS_DELETE_NONCONFIGURABLE,
-      repair: void 0,
+      repair: void 0,  // Not repairable
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
       canRepair: false,
       urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=590690'],
@@ -4137,7 +4145,7 @@ var ses;
       test: test_ARRAYS_MODIFY_READONLY,
       repair: void 0,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: false,
+      canRepair: false,  // Not repairable
       urls: ['https://code.google.com/p/v8/issues/detail?id=2379'],
       sections: ['15.4.5.1.3.f'],
       tests: [] // TODO(jasvir): Add to test262
@@ -4159,7 +4167,7 @@ var ses;
       test: test_FREEZE_IS_FRAME_DEPENDENT,
       repair: repair_FREEZE_IS_FRAME_DEPENDENT,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: false,  // repair is useful but inadequate
+      canRepair: false,  // Repair is useful but inadequate
       urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=784892',
              'https://bugzilla.mozilla.org/show_bug.cgi?id=674195',
              'https://bugzilla.mozilla.org/show_bug.cgi?id=789897'],
@@ -4172,7 +4180,7 @@ var ses;
       test: test_UNEXPECTED_ERROR_PROPERTIES,
       repair: void 0,
       preSeverity: severities.NEW_SYMPTOM,
-      canRepair: false,
+      canRepair: false,  // Behavior of instances is not repairable
       urls: [],
       sections: [],
       tests: []
@@ -4195,7 +4203,7 @@ var ses;
       test: test_STRICT_GETTER_BOXES,
       repair: void 0,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
-      canRepair: false,
+      canRepair: false,  // Not repairable without rewriting
       urls: ['https://bugs.ecmascript.org/show_bug.cgi?id=284',
              'https://bugs.webkit.org/show_bug.cgi?id=79843',
              'https://connect.microsoft.com/ie/feedback/details/727027',
@@ -4211,7 +4219,7 @@ var ses;
       test: test_NON_STRICT_GETTER_DOESNT_BOX,
       repair: void 0,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
-      canRepair: false,
+      canRepair: false,  // Not repairable without rewriting
       urls: ['https://bugs.ecmascript.org/show_bug.cgi?id=284',
              'https://code.google.com/p/v8/issues/detail?id=1977',
              'https://bugzilla.mozilla.org/show_bug.cgi?id=732669'],
@@ -4224,7 +4232,7 @@ var ses;
       test: test_NONCONFIGURABLE_OWN_PROTO,
       repair: void 0,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
-      canRepair: false,
+      canRepair: false,  // Behavior of instances is not repairable
       urls: ['https://code.google.com/p/v8/issues/detail?id=1310',
         'https://mail.mozilla.org/pipermail/es-discuss/2013-March/029177.html'],
       sections: [],  // Not spelled out in spec, according to Brendan Eich (see
@@ -4288,7 +4296,7 @@ var ses;
       test: test_SYNTAX_ERRORS_ARENT_ALWAYS_EARLY,
       repair: void 0,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: false,
+      canRepair: false,  // Not repairable without parsing
       urls: ['https://code.google.com/p/v8/issues/detail?id=2728',
              'https://code.google.com/p/google-caja/issues/detail?id=1616'],
       sections: [],
