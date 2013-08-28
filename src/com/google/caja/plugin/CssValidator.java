@@ -225,6 +225,10 @@ public final class CssValidator {
       d.getAttributes().set(INVALID, Boolean.TRUE);
       return false;
     }
+    // inherit is always allowed
+    if (isInherit(d.getExpr())) {
+      return true;
+    }
     // Apply the signature
     if (!applySignature(pinfo.name, d.getExpr(), pinfo.sig)) {
       // Apply takes care of adding the error message
@@ -233,6 +237,19 @@ public final class CssValidator {
     }
 
     return true;
+  }
+
+  private boolean isInherit(CssTree.Expr expr) {
+    if (expr.getNTerms() == 1) {
+      CssTree.Term term = expr.getNthTerm(0);
+      if (term.getOperator() == null) {
+        CssTree.CssExprAtom atom = term.getExprAtom();
+        if (atom instanceof CssTree.IdentLiteral) {
+          return atom.getValue().equals("inherit");
+        }
+      }
+    }
+    return false;
   }
 
   // See the similar function withoutVendorPrefix in sanitizecss.js

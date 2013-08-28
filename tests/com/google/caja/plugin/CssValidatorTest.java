@@ -39,6 +39,24 @@ import java.util.List;
  */
 public final class CssValidatorTest extends CajaTestCase {
 
+  public final void testInherit() throws Exception {
+    runTest("a { color: inherit; display: inherit inherit; }",
+        "StyleSheet\n"
+        + "  RuleSet\n"
+        + "    Selector\n"
+        + "      SimpleSelector\n"
+        + "        IdentLiteral : a\n"
+        + "    PropertyDeclaration\n"
+        + "      Property : color\n"
+        + "      Expr\n"
+        + "        Term\n"
+        + "          IdentLiteral : inherit\n"
+        + "    EmptyDeclaration\n",
+        // TODO(felix8a): error message is confusing
+        "WARNING: css property display has bad value:"
+        + " ==>inherit<==  inherit");
+  }
+
   public final void testGlobalName() throws Exception {
     runTest("a { animation-name: foo; }",
         "StyleSheet\n"
@@ -498,39 +516,6 @@ public final class CssValidatorTest extends CajaTestCase {
             "WARNING: css property font has bad value:"
             + " ==>italix<==  bolder 150% Arial");
 
-    // font-size also matches by previous terms
-    runTest("p, dl { font: inherit \"Arial\"; }",  // special
-            "StyleSheet\n"
-            + "  RuleSet\n"
-            + "    Selector\n"
-            + "      SimpleSelector\n"
-            + "        IdentLiteral : p\n"
-            + "    Selector\n"
-            + "      SimpleSelector\n"
-            + "        IdentLiteral : dl\n"
-            + "    PropertyDeclaration\n"
-            + "      Property : font\n"
-            + "      Expr\n"
-            + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=font-size\n"
-            + "          IdentLiteral : inherit\n"
-            + "        Operation : NONE\n"
-            + "        Term ; cssPropertyPartType=STRING"
-                        + " ; cssPropertyPart=font-family::family-name\n"
-            + "          StringLiteral : Arial\n"
-            + "    EmptyDeclaration");
-    runTest("p, dl { font: inherit; }",
-            "StyleSheet\n"
-            + "  RuleSet\n"
-            + "    Selector\n"
-            + "      SimpleSelector\n"
-            + "        IdentLiteral : p\n"
-            + "    Selector\n"
-            + "      SimpleSelector\n"
-            + "        IdentLiteral : dl\n"
-            + "    EmptyDeclaration",
-            "WARNING: css property font has bad value: inherit");
-
     // weight size family
     runTest("p, dl { font: 800 150% Arial; }",
             "StyleSheet\n"
@@ -711,34 +696,6 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    EmptyDeclaration");
     warns("p, dl { font: normal 800 150%/-175% Arial; }");
     warns("p, dl { font: normal 800 150%/-17.5 Arial; }");
-
-    // make sure the first three inherits match different parts
-    runTest("p { font: inherit inherit inherit Arial; }",
-            "StyleSheet\n" +
-            "  RuleSet\n" +
-            "    Selector\n" +
-            "      SimpleSelector\n" +
-            "        IdentLiteral : p\n" +
-            "    PropertyDeclaration\n" +
-            "      Property : font\n" +
-            "      Expr\n" +
-            "        Term ; cssPropertyPartType=IDENT"
-                      + " ; cssPropertyPart=font-style\n" +
-            "          IdentLiteral : inherit\n" +
-            "        Operation : NONE\n" +
-            "        Term ; cssPropertyPartType=IDENT"
-                      + " ; cssPropertyPart=font-variant\n" +
-            "          IdentLiteral : inherit\n" +
-            "        Operation : NONE\n" +
-            "        Term ; cssPropertyPartType=IDENT"
-                      + " ; cssPropertyPart=font-size\n" +
-            "          IdentLiteral : inherit\n" +
-            "        Operation : NONE\n" +
-            "        Term ; cssPropertyPartType=LOOSE_WORD"
-                      + " ; cssPropertyPart=font-family::family-name"
-                                         + "::loose-quotable-words\n" +
-            "          IdentLiteral : Arial\n" +
-            "    EmptyDeclaration");
   }
 
   public final void testValidateUnquotedFamilyNames() throws Exception {
@@ -776,8 +733,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    PropertyDeclaration\n"
             + "      Property : border\n"
             + "      Expr\n"
-            + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=border\n"
+            + "        Term\n"
             + "          IdentLiteral : inherit\n"
             + "    EmptyDeclaration");
     runTest("p { border: 2px }",

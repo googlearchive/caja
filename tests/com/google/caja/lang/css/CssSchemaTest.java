@@ -69,6 +69,7 @@ public class CssSchemaTest extends TestCase {
     assertTrue(cssSchema.isKeyword(Name.css("auto")));
     assertTrue(cssSchema.isKeyword(Name.css("sans-serif")));
     assertTrue(cssSchema.isKeyword(Name.css("monospace")));
+    assertTrue(cssSchema.isKeyword(Name.css("DEFAULT")));
     assertTrue(cssSchema.isKeyword(Name.css("INHERIT")));
     assertFalse(cssSchema.isKeyword(Name.css("not-a-keyword")));
     assertFalse(cssSchema.isKeyword(Name.css("notakeyword")));

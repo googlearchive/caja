@@ -334,6 +334,7 @@ public final class CssSchema {
       }, null);
     }
     keywords.add(Name.css("initial"));
+    keywords.add(Name.css("inherit"));
   }
 
   private static class RegexpCriterion implements Criterion<String> {

@@ -258,6 +258,10 @@ var sanitizeMediaQuery = undefined;
             : ''
           )
 
+          // inherit is always allowed.
+          : token === 'inherit'
+          ? token
+
           : (
             litGroup = propertySchema['cssLitGroup'],
             litMap = (litGroup

@@ -45,6 +45,14 @@ function assertSanitizedStylesheet(golden, input) {
   assertArrayEquals(input, golden, stylesheet);
 }
 
+jsunitRegister('testInherit', function testInherit() {
+  assertProperty('border', 'inherit', 'inherit');
+  // Note this is not a valid value, but it's harmless to allow it.
+  assertProperty('border', 'inherit inherit', 'inherit inherit');
+  jsunit.pass();
+});
+
+
 jsunitRegister('testFontFamily',
                function testFontFamily() {
   var tokens = ['Arial', ' ', 'Black', ',', 'monospace', ',',
