@@ -503,6 +503,44 @@
   });
 </script>
 
+<p class="testcontainer" id="testStringTimeout">testStringTimeout</p>
+<script type="text/javascript">
+  (function() {
+    // Register global functions to be called via string callbacks
+    var successes = {};
+    ['testStringTimeout_str', 'testStringTimeout_toString']
+        .forEach(function(funcName) {
+      successes[funcName + ' '] = false;
+      window[funcName] = jsunitCallback(function() {
+        console.log('testStringTimeout: called', funcName);
+        successes[funcName + ' '] = true;
+
+        if (Object.keys(successes).every(
+            function(k) { return successes[k]; })) {
+          testStringTimeout_finish();
+        }
+      }, 'testStringTimeout');
+    });
+  }());
+  jsunitRegister('testStringTimeout',
+                 function testStringTimeout() {
+    try {
+      setTimeout('testStringTimeout_str();', 0);
+      setTimeout(
+          {toString: function() {return 'testStringTimeout_toString();';}}, 0);
+    } catch (e) {
+      if (!inES5Mode) {  // no eval support
+        pass('testStringTimeout');
+      } else {
+        throw e;
+      }
+    }
+  });
+  function testStringTimeout_finish() {
+    pass('testStringTimeout');
+  }
+</script>
+
 <p class="clickme testcontainer" id="testInnerhtmlOnclick">
   do not click yet
 </p>

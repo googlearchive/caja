@@ -1428,7 +1428,8 @@ var Domado = (function() {
      * a timeout it didn't set, and prevents the callback from being a string
      * value which would be evaluated outside the sandbox.
      */
-    function tameSetAndClear(target, set, clear, setName, clearName, passArg) {
+    function tameSetAndClear(target, set, clear, setName, clearName, passArg,
+        evalStrings, environment) {
       var ids = new WeakMap();
       makeFunctionAccessible(set);
       makeFunctionAccessible(clear);
@@ -1437,10 +1438,19 @@ var Domado = (function() {
         // noop.
         var id;
         if (action) {
-          if (typeof action !== 'function') {
+          if (typeof action === 'function') {
+            // OK
+          } else if (evalStrings && cajaVM.compileModule) {
+            // Note specific ordering: coercion to string occurs at time of
+            // call, syntax errors occur async.
+            var code = '' + action;
+            action = function callbackStringWrapper() {
+              cajaVM.compileModule(code)(environment);
+            };
+          } else {
             // Early error for usability -- we also defend below.
             // This check is not *necessary* for security.
-            throw new Error(
+            throw new TypeError(
                 setName + ' called with a ' + typeof action + '.'
                 + '  Please pass a function instead of a string of JavaScript');
           }
@@ -6957,6 +6967,41 @@ var Domado = (function() {
 
         // window.frames.length (must be a data prop for ES5/3)
         this.length = 0;
+
+        // Timed callbacks
+        //
+        // Defined on instance rather than prototype because setTimeout closes
+        // over the environment (i.e. this) for string eval. Note that this is
+        // a deviation from browser behavior (Chrome and Firefox have it on
+        // prototype). requestAnimationFrame does not need the same treatment
+        // but we might as well be regular.
+        //
+        // Under ES5/3, the set/clear pairs get invoked with 'this' bound
+        // to USELESS, which causes problems on Chrome unless they're wrapped
+        // this way.
+        tameSetAndClear(
+            this,
+            function(code, millis) {
+                return window.setTimeout(code, millis); },
+            function(id) { return window.clearTimeout(id); },
+            'setTimeout', 'clearTimeout',
+            false, true, this);
+        tameSetAndClear(
+            this,
+            function(code, millis) {
+                return window.setInterval(code, millis); },
+            function(id) { return window.clearInterval(id); },
+            'setInterval', 'clearInterval',
+            false, true, this);
+        if (window.requestAnimationFrame) {
+          tameSetAndClear(
+              this,
+              function(code, ignored) {  // no time arg like setTimeout has
+                  return window.requestAnimationFrame(code); },
+              function(id) { return window.cancelAnimationFrame(id); },
+              'requestAnimationFrame', 'cancelAnimationFrame',
+              true, false, undefined);
+        }
       }
       inertCtor(TameWindow, Object, 'Window');
       Props.define(TameWindow.prototype, TameWindowConf, {
@@ -7061,27 +7106,6 @@ var Domado = (function() {
         'first-line': true
       };
 
-      // Under ES53, the set/clear pairs get invoked with 'this' bound
-      // to USELESS, which causes problems on Chrome unless they're wrapped
-      // this way.
-      tameSetAndClear(
-          TameWindow.prototype,
-          function(code, millis) { return window.setTimeout(code, millis); },
-          function(id) { return window.clearTimeout(id); },
-          'setTimeout', 'clearTimeout', false);
-      tameSetAndClear(
-          TameWindow.prototype,
-          function(code, millis) { return window.setInterval(code, millis); },
-          function(id) { return window.clearInterval(id); },
-          'setInterval', 'clearInterval', false);
-      if (window.requestAnimationFrame) {
-        tameSetAndClear(
-            TameWindow.prototype,
-            function(code, ignored) {  // no time arg like setTimeout has
-                return window.requestAnimationFrame(code); },
-            function(id) { return window.cancelAnimationFrame(id); },
-            'requestAnimationFrame', 'cancelAnimationFrame', true);
-      }
       var noopWindowFunctionProp = Props.markPropMaker(function(env) {
         var prop = env.prop;
         var notify = true;
