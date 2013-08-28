@@ -555,10 +555,19 @@ ses.startSES = function(global,
      * no exprSrc text which can close the left paren(s), do
      * something, and then provide open paren(s) to balance the final
      * close paren(s). No one such attack will survive both tests.
+     *
+     * <p>Note that all verify*(allegedString) functions now always
+     * start by coercing the alleged string to a guaranteed primitive
+     * string, do their verification checks on that, and if it passes,
+     * returns that. Otherwise they throw. If you don't know whether
+     * something is a string before verifying, use only the output of
+     * the verifier, not the input. Or coerce it early yourself.
      */
     function verifyStrictExpression(exprSrc) {
+      exprSrc = ''+exprSrc;
       ses.verifyStrictFunctionBody('( ' + exprSrc + '\n);');
       ses.verifyStrictFunctionBody('(( ' + exprSrc + '\n));');
+      return exprSrc;
     }
 
     /**
@@ -726,7 +735,7 @@ ses.startSES = function(global,
      * </ul>
      */
     function securableWrapperSrc(exprSrc) {
-      verifyStrictExpression(exprSrc);
+      exprSrc = verifyStrictExpression(exprSrc);
 
       return '(function() { ' +
         // non-strict code, where this === scopeObject
@@ -823,9 +832,10 @@ ses.startSES = function(global,
      * {@code with} together with RegExp matching to intercept free
      * variable access without parsing.
      */
-    function compileExpr(src, opt_mitigateOpts) {
-      // Force src to be parsed as an expr
-      var exprSrc = '(' + src + '\n)';
+    function compileExpr(exprSrc, opt_mitigateOpts) {
+      // Force exprSrc to be a string that can only parse (if at all) as
+      // an expression.
+      exprSrc = '(' + exprSrc + '\n)';
 
       var options = resolveOptions(opt_mitigateOpts);
       exprSrc = mitigateSrcGotchas(exprSrc, options);
@@ -854,6 +864,11 @@ ses.startSES = function(global,
      * expr to cause effects.
      */
     function confine(exprSrc, opt_endowments, opt_mitigateOpts) {
+      // not necessary, since we only use it once below with a callee
+      // which is itself safe. But we coerce to a string anyway to be
+      // more robust against future refactorings.
+      exprSrc = ''+exprSrc;
+
       var imports = makeImports();
       if (opt_endowments) {
         copyToImports(imports, opt_endowments);
@@ -925,12 +940,15 @@ ses.startSES = function(global,
      * from the text to be compiled.
      */
     function compileModule(modSrc, opt_mitigateOpts) {
-      // Note the EOL after modSrc to prevent trailing line comment in modSrc
-      // eliding the rest of the wrapper.
+      // See https://code.google.com/p/google-caja/issues/detail?id=1849
+      modSrc = ''+modSrc;
+
       var options = resolveOptions(opt_mitigateOpts);
       if (!('programSrc' in limitSrcCharset(modSrc))) {
         options.forceParseAndRender = true;
       }
+      // Note the EOL after modSrc to prevent a trailing line comment in
+      // modSrc from eliding the rest of the wrapper.
       var exprSrc =
           '(function() {' +
           mitigateSrcGotchas(modSrc, options) +
@@ -955,12 +973,16 @@ ses.startSES = function(global,
      */
     function FakeFunction(var_args) {
       var params = [].slice.call(arguments, 0);
-      var body = params.pop();
-      body = String(body || '');
+      var body = ses.verifyStrictFunctionBody(params.pop() || '');
+
+      // Although the individual params may not be strings, the params
+      // array is reliably a fresh array, so under the SES (not CES)
+      // assumptions of unmodified primordials, this calls the reliable
+      // Array.prototype.join which guarantees that its result is a string.
       params = params.join(',');
-      // Note the EOL after modSrc to prevent trailing line comment in body
-      // eliding the rest of the wrapper.
-      ses.verifyStrictFunctionBody(body);
+
+      // Note the EOL after body to prevent a trailing line comment in
+      // body from eliding the rest of the wrapper.
       var exprSrc = '(function(' + params + '\n){' + body + '\n})';
       return compileExpr(exprSrc)(sharedImports);
     }
@@ -996,7 +1018,7 @@ ses.startSES = function(global,
      */
     function fakeEval(src) {
       try {
-        verifyStrictExpression(src);
+        src = verifyStrictExpression(src);
       } catch (x) {
         src = '(function() {' + src + '\n}).call(this)';
       }

@@ -669,6 +669,13 @@ var ses;
    *
    * <p>See verifyStrictFunctionBodyByEvalThrowing and
    * verifyStrictFunctionBodyByParsing.
+   *
+   * <p>Note that all verify*(allegedString) functions now always
+   * start by coercing the alleged string to a guaranteed primitive
+   * string, do their verification checks on that, and if it passes,
+   * returns that. Otherwise they throw. If you don't know whether
+   * something is a string before verifying, use only the output of
+   * the verifier, not the input. Or coerce it early yourself.
    */
   ses.verifyStrictFunctionBody = simpleVerifyStrictFunctionBody;
 
@@ -687,7 +694,9 @@ var ses;
    * SyntaxError if it does not parse as a FunctionBody.
    */
   function simpleVerifyStrictFunctionBody(funcBodySrc) {
+    funcBodySrc = ''+funcBodySrc;
     UnsafeFunction('"use strict";' + funcBodySrc);
+    return funcBodySrc;
   }
 
   /**
@@ -707,6 +716,7 @@ var ses;
    * (simpleVerifyStrictFunctionBody) executed over 100x faster on V8.
    */
   function verifyStrictFunctionBodyByEvalThrowing(funcBodySrc) {
+    funcBodySrc = ''+funcBodySrc;
     try {
       unsafeEval('"use strict"; throw "not a SyntaxError 1";' +
                  '(function(){' + funcBodySrc +'\n});');
@@ -724,7 +734,7 @@ var ses;
             // function declarations will not get rejected. Accepting
             // them is beyond the ES5 spec, but is known to happen in
             // all implementations.
-            return;
+            return funcBodySrc;
           }
           if (innerErr instanceof SyntaxError) {
             // This case is likely symptomatic of an attack. But the
@@ -765,6 +775,7 @@ var ses;
    * should overwrite ses.mitigateSrcGotchas with the real one.
    */
   function verifyStrictFunctionBodyByParsing(funcBodySrc) {
+    funcBodySrc = ''+funcBodySrc;
     var safeError;
     var newSrc;
     try {
@@ -800,6 +811,7 @@ var ses;
     if (newSrc !== funcBodySrc) {
       throw new SyntaxError('Failed to parse program');
     }
+    return funcBodySrc;
   }
 
   /**
