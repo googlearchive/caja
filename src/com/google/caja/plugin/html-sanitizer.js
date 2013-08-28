@@ -900,7 +900,7 @@ var html = (function(html4) {
             parseCssDeclarations(
                 value,
                 {
-                  declaration: function (property, tokens) {
+                  'declaration': function (property, tokens) {
                     var normProp = property.toLowerCase();
                     sanitizeCssProperty(
                         normProp, tokens,

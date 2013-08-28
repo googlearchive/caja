@@ -84,12 +84,12 @@ var parseCssDeclarations;
   // stylesheet  : [ CDO | CDC | S | statement ]*;
   parseCssStylesheet = function(cssText, handler) {
     var toks = lexCss(cssText);
-    if (handler.startStylesheet) { handler.startStylesheet(); }
+    if (handler['startStylesheet']) { handler['startStylesheet'](); }
     for (var i = 0, n = toks.length; i < n;) {
       // CDO and CDC ("<!--" and "-->") are converted to space by the lexer.
       i = toks[i] === ' ' ? i+1 : statement(toks, i, n, handler);
     }
-    if (handler.endStylesheet) { handler.endStylesheet(); }
+    if (handler['endStylesheet']) { handler['endStylesheet'](); }
   };
 
   // statement   : ruleset | at-rule;
@@ -116,14 +116,14 @@ var parseCssDeclarations;
       var s = start+1, e = i;
       if (s < n && toks[s] === ' ') { ++s; }
       if (e > s && toks[e-1] === ' ') { --e; }
-      if (handler.startAtrule) {
-        handler.startAtrule(toks[start].toLowerCase(), toks.slice(s, e));
+      if (handler['startAtrule']) {
+        handler['startAtrule'](toks[start].toLowerCase(), toks.slice(s, e));
       }
       i = (toks[i] === '{')
           ? block(toks, i, n, handler)
           : i+1;  // Skip over ';'
-      if (handler.endAtrule) {
-        handler.endAtrule();
+      if (handler['endAtrule']) {
+        handler['endAtrule']();
       }
     }
     // Else we reached end of input or are missing a semicolon.
@@ -135,7 +135,7 @@ var parseCssDeclarations;
    // Assumes the leading '{' has been verified by callers.
   function block(toks, i, n, handler) {
     ++i; //  skip over '{'
-    if (handler.startBlock) { handler.startBlock(); }
+    if (handler['startBlock']) { handler['startBlock'](); }
     while (i < n) {
       var ch = toks[i].charAt(0);
       if (ch == '}') {
@@ -159,7 +159,7 @@ var parseCssDeclarations;
         i = ruleset(toks, i, n, handler);
       }
     }
-    if (handler.endBlock) { handler.endBlock(); }
+    if (handler['endBlock']) { handler['endBlock'](); }
     return i;
   }
 
@@ -181,8 +181,8 @@ var parseCssDeclarations;
     i = e+1;  // Skip over '{'
     // Don't include any trailing space in the selector slice.
     if (e > s && toks[e-1] === ' ') { --e; }
-    if (handler.startRuleset) {
-      handler.startRuleset(toks.slice(s, e));
+    if (handler['startRuleset']) {
+      handler['startRuleset'](toks.slice(s, e));
     }
     while (i < n) {
       tok = toks[i];
@@ -196,8 +196,8 @@ var parseCssDeclarations;
         i = declaration(toks, i, n, handler);
       }
     }
-    if (handler.endRuleset) {
-      handler.endRuleset();
+    if (handler['endRuleset']) {
+      handler['endRuleset']();
     }
     return i;
   }
@@ -298,9 +298,9 @@ var parseCssDeclarations;
           ++e;
         }
       }
-      if (valuelen && handler.declaration) {
+      if (valuelen && handler['declaration']) {
         // TODO: coerce non-keyword ident tokens to quoted strings.
-        handler.declaration(property.toLowerCase(), value);
+        handler['declaration'](property.toLowerCase(), value);
       }
     }
     return e;

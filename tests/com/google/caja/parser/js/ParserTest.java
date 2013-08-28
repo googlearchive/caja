@@ -519,6 +519,7 @@ public class ParserTest extends CajaTestCase {
   // requires a nontrivial rewrite of the js lexer stack.
   @FailureIsAnOption
   public final void testRegexpContext() throws Exception {
+    assertParseSucceeds("if(true)/bar/;");
     assertParseSucceeds("{} /foo/;");
   }
 

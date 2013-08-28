@@ -162,7 +162,7 @@ var sanitizeMediaQuery = undefined;
         return;
       }
 
-      var propBits = propertySchema.cssPropBits;
+      var propBits = propertySchema['cssPropBits'];
 
       /**
        * Recurse to apply the appropriate function schema to the function call
@@ -192,7 +192,7 @@ var sanitizeMediaQuery = undefined;
           var bareFnToken = withoutVendorPrefix(fnToken);
           // Cut out the originals, so the caller can step by one token.
           var fnTokens = tokens.splice(start, end - start, '');
-          var fns = propertySchema.cssFns;
+          var fns = propertySchema['cssFns'];
           // Look for a function that matches the name.
           for (var i = 0, nFns = fns.length; i < nFns; ++i) {
             if (fns[i].substring(0, bareFnToken.length) == bareFnToken) {
@@ -259,11 +259,12 @@ var sanitizeMediaQuery = undefined;
           )
 
           : (
-            litGroup = propertySchema.cssLitGroup,
+            litGroup = propertySchema['cssLitGroup'],
             litMap = (litGroup
-                      ? (propertySchema.cssLitMap
+                      ? (propertySchema['cssLitMap']
                          // Lazily compute the union from litGroup.
-                         || (propertySchema.cssLitMap = unionArrays(litGroup)))
+                         || (propertySchema['cssLitMap'] =
+                             unionArrays(litGroup)))
                       : ALLOWED_LITERAL),  // A convenient empty object.
             (litMap[withoutVendorPrefix(token)] === ALLOWED_LITERAL)
           )
@@ -871,12 +872,12 @@ var sanitizeMediaQuery = undefined;
       parseCssStylesheet(
           cssText,
           {
-            startStylesheet: function () {
+            'startStylesheet': function () {
               safeCss = [];
             },
-            endStylesheet: function () {
+            'endStylesheet': function () {
             },
-            startAtrule: function (atIdent, headerArray) {
+            'startAtrule': function (atIdent, headerArray) {
               if (elide) {
                 atIdent = null;
               } else if (atIdent === '@media') {
@@ -936,14 +937,14 @@ var sanitizeMediaQuery = undefined;
               elide = !atIdent;
               blockStack.push(atIdent);
             },
-            endAtrule: function () {
+            'endAtrule': function () {
               blockStack.pop();
               if (!elide) {
                 safeCss.push(';');
               }
               checkElide();
             },
-            startBlock: function () {
+            'startBlock': function () {
               // There are no bare blocks in CSS, so we do not change the
               // block stack here, but instead in the events that bracket
               // blocks.
@@ -951,13 +952,13 @@ var sanitizeMediaQuery = undefined;
                 safeCss.push('{');
               }
             },
-            endBlock: function () {
+            'endBlock': function () {
               if (!elide) {
                 safeCss.push('}');
                 elide = true;  // skip any semicolon from endAtRule.
               }
             },
-            startRuleset: function (selectorArray) {
+            'startRuleset': function (selectorArray) {
               var historySensitiveSelectors = void 0;
               var removeHistoryInsensitiveSelectors = false;
               if (!elide) {
@@ -1012,7 +1013,7 @@ var sanitizeMediaQuery = undefined;
                          removeHistoryInsensitiveSelectors
                     });
             },
-            endRuleset: function () {
+            'endRuleset': function () {
               var rules = blockStack.pop();
               var propertiesEnd = safeCss.length;
               if (!elide) {
@@ -1034,7 +1035,7 @@ var sanitizeMediaQuery = undefined;
               }
               checkElide();
             },
-            declaration: function (property, valueArray) {
+            'declaration': function (property, valueArray) {
               if (!elide) {
                 var isImportant = false;
                 var nValues = valueArray.length;

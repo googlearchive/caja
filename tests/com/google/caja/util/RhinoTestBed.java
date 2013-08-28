@@ -147,14 +147,14 @@ public class RhinoTestBed {
         scriptBody = textContentOf(script);
       }
       String scriptText;
-      Block js = parseJavascript(scriptBody, mq);
+      InputSource isrc = scriptBody.getSourceBreaks(0).source();
       // Add blank lines at the front so that Rhino stack traces have correct
       // line numbers.
       scriptText = prefixWithBlankLines(
         scriptBody.toString(0, scriptBody.getLimit()),
         Nodes.getFilePositionFor(script).startLineNo() - 1);
-      scriptContent.add(Pair.pair(scriptText, js.getFilePosition().source()));
-      mc.addInputSource(js.getFilePosition().source());
+      scriptContent.add(Pair.pair(scriptText, isrc));
+      mc.addInputSource(isrc);
       script.getParentNode().removeChild(script);
     }
     for (Pair<String, InputSource> script : scriptContent) {
