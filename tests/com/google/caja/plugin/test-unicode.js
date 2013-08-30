@@ -90,7 +90,9 @@
   });
 
   // Encoded spaces are not allowed in identifiers
-  jsunitRegister('testUnicode7',
+  // Disabled in es53 because of
+  // https://code.google.com/p/google-caja/issues/detail?id=1621
+  jsunitRegisterIf(inES5Mode, 'testUnicode7',
     function testUnicode7() {
       basicFailingTest('testUnicode7',
         'var a\\u2009z = 48; ipc.result = a\\u2009z;');
@@ -98,7 +100,9 @@
   });
 
   // Unencoded spaces are not allowed in identifiers
-  jsunitRegister('testUnicode8',
+  // Disabled in es53 because of
+  // https://code.google.com/p/google-caja/issues/detail?id=1621
+  jsunitRegisterIf(inES5Mode, 'testUnicode8',
     function testUnicode8() {
       basicFailingTest('testUnicode8',
         'var a\u2009z = 49; ipc.result = a\u2009z;');

@@ -110,11 +110,7 @@
     { "driver": "test-defensible-objects.js" },
     { "driver": "test-container-overflow.js" },
     { "driver": "test-target-attribute-presets.js" },
-    { "driver": "test-unicode.js", "tests": [
-      { "mode": "es53", "failureIsAnOption":
-          "http://code.google.com/p/google-caja/issues/detail?id=1621" },
-      { "mode": "es5" }
-    ]},
+    { "driver": "test-unicode.js" },
     { "driver": "test-mitigating-url-rewriter.js", "mode": "es5" },
     { "guest": "test-css-imports-guest.html", "tests": [
       { "mode": "es53", "failureIsAnOption":

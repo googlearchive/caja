@@ -474,7 +474,6 @@
   });
 
   caja.makeFrameGroup(basicCajaConfig, function (frameGroup) {
-
     // TODO(ihab.awad): Test 'base url' functionality, esp. for "content" cases
     if (!inES5Mode)
     jsunitRegister('testContentCajoledHtml', function testContentCajoledHtml() {
@@ -599,18 +598,23 @@
     jsunitRegister('testContainerIsIframe', function testContainerIsIframe() {
       var container = document.createElement('iframe');
       document.body.appendChild(container);
-      setTimeout(function() {  // delay required on Firefox
-        var frameDoc = container.contentDocument;
-        frameDoc.removeChild(frameDoc.documentElement);
-        frameGroup.makeES5Frame(frameDoc, uriPolicy,
+      // TODO(felix8a): this feels unnecessarily fragile
+      // firefox needs at least two setTimeouts before the iframe is ready
+      setTimeout(function() {
+        setTimeout(function() {
+          var frameDoc = container.contentDocument;
+          frameDoc.removeChild(frameDoc.documentElement);
+          frameGroup.makeES5Frame(frameDoc, uriPolicy,
             function(frame) {
-          frame.url('fixture-guest.html', 'text/html').run({},
-              function (result) {
-            // TODO(kpreid): Ensure no container
-            assertGuestHtmlCorrect(frame, frameDoc.documentElement, frameDoc);
-            jsunitPass('testContainerIsIframe');
-          });
-        });
+              frame.url('fixture-guest.html', 'text/html').run({},
+                function (result) {
+                  // TODO(kpreid): Ensure no container
+                  assertGuestHtmlCorrect(
+                    frame, frameDoc.documentElement, frameDoc);
+                  jsunitPass('testContainerIsIframe');
+                });
+            });
+        }, 0);
       }, 0);
     });
 

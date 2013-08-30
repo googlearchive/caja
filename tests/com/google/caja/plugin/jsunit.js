@@ -20,13 +20,13 @@
  * @author mikesamuel@gmail.com
  *
  * TODO(kpreid): Clean up stuff not intended to be exported.
- * @requires navigator, setTimeout, ___, console,
+ * @requires navigator, ___, console,
  *     assertContains, fail
  * @provides jsunit, jsunitRegisterIf, jsunitRegister,
  *     jsunitRegisterAuxiliaryStatus, jsunitRun, jsunitPass, jsunitFail,
  *     jsunitFinished, jsunitFilter, jsunitCallback
  *     isGroupLogMessages, startLogMessagesGroup, endLogMessagesGroup,
- *     inDocument, obtainResultDiv, jsunitWait, jsunitRunNext, arrayContains,
+ *     inDocument, obtainResultDiv, arrayContains,
  *     jsunitValidStatuses
  *     expectFailure, assertFailsSafe, assertThrowsMsg
  * @overrides _junit_, setUp, tearDown, document
@@ -40,13 +40,7 @@ jsunit.failCount = 0;
 jsunit.skippedCount = 0;
 jsunit.testIdStack = [];
 jsunit.baseTitle = undefined;
-jsunit.asyncPoll = 50;
-jsunit.asyncWait = 1000;
 jsunit.alreadyRan = false;
-// TODO(kpreid): Kludge. The JUnit tests which run JavaScript want it to
-// complete synchronously, so this flag disables all setTimeouts in this
-// module.
-jsunit.beSynchronous = typeof _junit_ !== 'undefined';
 
 jsunit.getCurrentTestId = function() {
   return jsunit.testIdStack.length
@@ -265,67 +259,24 @@ function jsunitRun(opt_testNames, opt_asyncEval) {
   }
 
   testNames.sort();
-  // jsunitRunNext pops off testNames
   testNames.reverse();
-  jsunitRunNext(testNames, opt_asyncEval);
-}
-
-function jsunitRunNext(testNames, opt_asyncEval) {
-  if (testNames.length === 0) {
-    if (opt_asyncEval) {
-      opt_asyncEval();
-    }
-    return;
-  }
-
-  var testName = testNames.pop();
-  var testRecord = jsunit.tests[testName];
-  startLogMessagesGroup(testName);
-
-  var progress = jsunit.passCount + jsunit.failCount;
-  try {
-    (typeof setUp === 'function') && setUp();
-    testRecord.test.call();
-    (typeof tearDown === 'function') && tearDown();
-  } catch (e) {
-    jsunit.fail(testName, e);
-    throw e;
-  } finally {
-    endLogMessagesGroup(testName);
-    if (jsunit.beSynchronous) {
-      jsunitRunNext(testNames, opt_asyncEval);
-    } else {
-      jsunitWait(progress, new Date().getTime(), testNames, opt_asyncEval);
+  while (testNames.length) {
+    var testName = testNames.pop();
+    var testRecord = jsunit.tests[testName];
+    startLogMessagesGroup(testName);
+    try {
+      (typeof setUp === 'function') && setUp();
+      testRecord.test.call();
+      (typeof tearDown === 'function') && tearDown();
+    } catch (e) {
+      jsunit.fail(testName, e);
+    } finally {
+      endLogMessagesGroup(testName);
     }
   }
-}
-
-// Most of our async tests are basically waiting for a caja.load
-// to finish. Launching them in parallel doesn't really finish
-// much faster, and has the bad effect of making it look like the
-// browser is stalled for a long time (the browser processing
-// queue ends up setting up multiple guest frames before any
-// guest code gets run).  To avoid that, we wait up to
-// jsunit.asyncWait msec to see if a test passed or failed,
-// before starting the next test.
-
-function jsunitWait(progress, start, testNames, opt_asyncEval) {
-  // have we made progress yet?
-  if (jsunit.passCount + jsunit.failCount === progress) {
-    var now = new Date().getTime();
-    // should we keep waiting?
-    if (now < start + jsunit.asyncWait) {
-      setTimeout(function() {
-        jsunitWait(progress, start, testNames, opt_asyncEval);
-      }, jsunit.asyncPoll);
-      return;
-    }
+  if (opt_asyncEval) {
+    opt_asyncEval();
   }
-  // we made progress, or we timed out, so start the next test
-  setTimeout(function() {
-    jsunitRunNext(testNames, opt_asyncEval);
-  }, 1);
-  // setTimeout 1 because RhinoExecutor doesn't support 0
 }
 
 /** Register a callback within a running test. */

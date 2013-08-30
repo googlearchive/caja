@@ -61,7 +61,7 @@ function pollStatus(w, callback) {
   callback = jsunitCallback(callback);
 
   var title = undefined;
-  var i = setInterval(function() {
+  var timer = setInterval(function() {
     if (w.document) {
       var newTitle = w.document.title;
       if (newTitle !== title) {
@@ -69,7 +69,7 @@ function pollStatus(w, callback) {
         var i = interpretTitle(title);
         callback(i.state, i.pass, i.fail, i.total);
         if (jsunit.isTestComplete(id)) {
-          clearInterval(i);
+          clearInterval(timer);
         }
       }
     }
