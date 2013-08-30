@@ -2458,6 +2458,12 @@ var ses;
     'sourceId',
     'sourceURL',
 
+    // at least Safari 6.0.5 webkit nightly (8536.30.1, 538+)
+    'message',
+    'stack',
+    'line',
+    'column',
+
     // at least IE 10 preview 2
     'description',
     'message',
