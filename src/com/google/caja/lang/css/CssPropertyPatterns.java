@@ -156,6 +156,38 @@ public class CssPropertyPatterns {
     return data;
   }
 
+  private static final Set<String> KNOWN_VENDOR_PREFIXES = Sets.immutableSet(
+      "apple",
+      "css",
+      "epub",
+      "khtml",
+      "moz",
+      "ms",
+      "mso",
+      "o",
+      "rim",
+      "wap",
+      "webkit",
+      "xv"
+  );
+
+  public static String withoutVendorPrefix(String cssIdentifier) {
+    if (cssIdentifier.startsWith("-")) {
+      int dash = cssIdentifier.indexOf('-', 1);
+      if (dash >= 0) {
+        String possiblePrefix = cssIdentifier.substring(1, dash);
+        if (KNOWN_VENDOR_PREFIXES.contains(possiblePrefix)) {
+          return cssIdentifier.substring(dash + 1);
+        }
+      }
+    }
+    return cssIdentifier;
+  }
+
+  public static boolean hasVendorPrefix(String cssIdentifier) {
+    return !cssIdentifier.equals(withoutVendorPrefix(cssIdentifier));
+  }
+
   /**
    * Walks a property signature to figure out what tokens can comprise its
    * value and how non-symbolic tokens like quoted strings, and non-keyword
@@ -213,7 +245,7 @@ public class CssPropertyPatterns {
       // all positive matches are followed by token-breaking space.
       // The pattern as a whole can then be matched against the value with one
       // space added at the end.
-      data.literals.add(litValue);
+      data.literals.add(withoutVendorPrefix(litValue));
     }
 
     private void inspectRep(CssPropertySignature.RepeatedSignature sig) {
@@ -325,6 +357,7 @@ public class CssPropertyPatterns {
     for (CssSchema.CssPropertyInfo prop : props) {
       if (!schema.isPropertyAllowed(prop.name)) { continue; }
       String key = prop.name.getCanonicalForm();
+      if (hasVendorPrefix(key)) { continue; }
       CssPropertyData data = new CssPropertyData(key, prop.sig);
       pp.new Inspector(data).inspect();
       propData.add(Pair.pair(prop, data));

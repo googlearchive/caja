@@ -54,7 +54,7 @@ public final class CssValidatorTest extends CajaTestCase {
         + "    EmptyDeclaration\n",
         // TODO(felix8a): error message is confusing
         "WARNING: css property display has bad value:"
-        + " ==>inherit<==  inherit");
+        + " inherit  ==><==  inherit");
   }
 
   public final void testGlobalName() throws Exception {

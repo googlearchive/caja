@@ -326,6 +326,14 @@
       "inherited": false,
       "mediaGroups": ["visual"] },
 
+    { "key": "box",
+      "signature": "normal | none | contents",
+      "default": "normal",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": "*",
+      "source": "http://dev.w3.org/csswg/css-display-3/#box" },
+
     { "key": "box-shadow",
       "signature": "none | [ <shadow>, ]* <shadow>",
       "default": "none",
@@ -439,11 +447,46 @@
       "mediaGroups": ["visual"] },
 
     { "key": "display",
-      "signature": "inline | block | list-item | run-in | inline-block | table | inline-table | table-row-group | table-header-group | table-footer-group | table-row | table-column-group | table-column | table-cell | table-caption | none | -moz-inline-box | -moz-inline-stack",
+      "signature": "inline | block | list-item | run-in | inline-list-item | inline-block | table | inline-table | table-cell | table-caption | flex | inline-flex | grid | inline-grid | [ <display-inside> || <display-outside> || <display-extras> ] | inherit | inline-box | inline-stack",
       "default": "inline",
       "appliesTo": "*",
       "inherited": false,
-      "mediaGroups": "*" },
+      "mediaGroups": "*",
+      "source": "http://dev.w3.org/csswg/css-display-3/#the-display",
+      "comment": "inline-box and inline-stack are not in the spec but are recognized.  The <display-box> in the spec is cruft according to email from Tab Atkins" },
+
+    { "key": "display-inside",
+      "signature": "<display-inside>",
+      "default": "auto",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": "*",
+      "source": "http://dev.w3.org/csswg/css-display-3/#display-inside" },
+
+    { "key": "<display-inside>",
+      "signature": "auto | block | table | flex | grid" },
+
+    { "key": "display-outside",
+      "signature": "<display-outside>",
+      "default": "inline-level",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": "*",
+      "source": "http://dev.w3.org/csswg/css-display-3/#display-outside" },
+
+    { "key": "<display-outside>",
+      "signature": "block-level | inline-level | none | table-row-group | table-header-group | table-footer-group | table-row | table-cell | table-column-group | table-column | table-caption" },
+
+    { "key": "display-extras",
+      "signature": "<display-extras>",
+      "default": "inline-level",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": "*",
+      "source": "http://dev.w3.org/csswg/css-display-3/#display-extras" },
+
+    { "key": "<display-extras>",
+      "signature": "none | [ list-item ]" },
 
     { "key": "elevation",
       "signature": "<angle> | below | level | above | higher | lower",
