@@ -97,6 +97,12 @@ var ses;
      * at which point the ejector is disabled. Calling a disabled
      * ejector throws.
      *
+     * <p>Note that the ejector relies on {@code try..catch}, so
+     * it's not entirely bulletproof. The {@code attemptFunc} can
+     * block an {@code eject} with a {@code try..catch} or a
+     * {@code try..finally} that throws, so you should be careful
+     * about what code is run in the attemptFunc.
+     *
      * <p>Historic note: This was first invented by John C. Reynolds in
      * <a href="http://doi.acm.org/10.1145/800194.805852"
      * >Definitional interpreters for higher-order programming
@@ -361,8 +367,6 @@ var ses;
     ////////////////////////////////////////////////////////////////////////
 
     return freeze({
-      callWithEjector: constFunc(callWithEjector),
-      eject: constFunc(eject),
       makeSealerUnsealerPair: constFunc(makeSealerUnsealerPair),
       GuardT: GuardT,
       makeTableGuard: constFunc(makeTableGuard),

@@ -126,8 +126,6 @@ var ses;
       makeImports: t,
       copyToImports: t,
 
-      callWithEjector: t,
-      eject: t,
       GuardT: {
         coerce: t
       },
