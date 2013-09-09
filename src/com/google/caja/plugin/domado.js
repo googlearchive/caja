@@ -1774,13 +1774,15 @@ var Domado = (function() {
      * @param {Object} optTargetAttributePresets a record containing the presets
      *     (default and whitelist) for the HTML "target" attribute.
      * @param {Object} taming. An interface to a taming membrane.
+     * @param {function} addImports. A function which adds any additional
+     *     imports/global variables which should exist on Window instances.
      * @return {Object} A collection of privileged access tools, plus the tamed
      *     {@code document} and {@code window} objects under those names. This
      *     object is known as a "domicile".
      */
     function attachDocument(
       idSuffix, naiveUriPolicy, outerContainerNode, optTargetAttributePresets,
-        taming) {
+        taming, addImports) {
 
       if (arguments.length < 3) {
         throw new Error(
@@ -5531,7 +5533,7 @@ var Domado = (function() {
 
             var subDomicile = privates.contentDomicile = attachDocument(
                 '-caja-iframe___', naiveUriPolicy, frameFeralDoc,
-                optTargetAttributePresets, taming);
+                optTargetAttributePresets, taming, addImports);
             privates.seenContentDocument = frameFeralDoc;
 
             // Replace document structure with virtualized forms
@@ -6944,6 +6946,9 @@ var Domado = (function() {
 
           Object.preventExtensions(privates);
         });
+
+        // JS globals
+        addImports(this);
 
         // These descriptors were chosen to resemble actual ES5-supporting browser
         // behavior.

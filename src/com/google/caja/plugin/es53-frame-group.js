@@ -296,11 +296,12 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
         'hasTameTwin', frameTamingMembrane.hasTameTwin,
         'hasFeralTwin', frameTamingMembrane.hasFeralTwin,
         'tameException', frameTamingMembrane.tameException,
-        'untameException', frameTamingMembrane.untameException));
+        'untameException', frameTamingMembrane.untameException),
+      ___.markConstFunc(function(imports) {
+        // Add JavaScript globals to the DOM window object.
+        ___.copyToImports(imports, guestWin.___.sharedImports);
+      }));
     var imports = domicile.window;
-
-    // Add JavaScript globals to the DOM window object.
-    ___.copyToImports(imports, guestWin.___.sharedImports);
 
     var htmlEmitter = new HtmlEmitter(makeDOMAccessible,
         domicile.htmlEmitterTarget, 
@@ -368,6 +369,11 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
       }
     }
 
+    // Note that if the guest creates inner iframes, then moreImports will not
+    // be added to them. There is no especially strong reason for this behavior,
+    // but it was simpler and fits with (in browsers in general) iframes being a
+    // way to create a "fresh" environment with no application-specific
+    // global state.
     if (!moreImports.onerror) {
       moreImports.onerror = ___.markFunc(onerror);
     }

@@ -286,10 +286,10 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
         hasFeralTwin: frameTamingMembrane.hasFeralTwin,
         tameException: frameTamingMembrane.tameException,
         untameException: frameTamingMembrane.untameException
+      }),
+      cajaVM.constFunc(function(imports) {
+        cajaVM.copyToImports(imports, cajaVM.sharedImports);
       }));
-    var imports = domicile.window;
-
-    cajaVM.copyToImports(imports, cajaVM.sharedImports);
 
     var htmlEmitter = new tamingWin.HtmlEmitter(
       identity, domicile.htmlEmitterTarget, uriPolicy.mitigate, domicile,
@@ -315,6 +315,12 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
       moreImports.onerror = onerror;
     }
 
+    // Note that if the guest creates inner iframes, then moreImports will not
+    // be added to them. There is no especially strong reason for this behavior,
+    // but it was simpler and fits with (in browsers in general) iframes being a
+    // way to create a "fresh" environment with no application-specific
+    // global state.
+    //
     // TODO(kpreid): right enumerable/own behavior?
     var imports = gman.imports;
     Object.getOwnPropertyNames(moreImports).forEach(

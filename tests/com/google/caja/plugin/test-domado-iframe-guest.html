@@ -14,6 +14,10 @@
  - limitations under the License.
 -->
 
+<style type="text/css">
+  iframe { height: 4em; vertical-align: top; } /* smaller than usual */
+</style>
+
 <div id="testShim" class="testcontainer">Test Iframe Shim</div>
 <script type="text/javascript">
   jsunitRegister('testShim',
@@ -76,6 +80,20 @@
 </script>
 
 <!-- Tests for detailed functionality *in* iframes -->
+
+<div id="testGlobals" class="testcontainer">testGlobals</div>
+<script type="text/javascript">
+  jsunitRegisterIf(inES5Mode, 'testGlobals', function() {
+    var i = document.getElementById('testGlobals').appendChild(
+        document.createElement('iframe')).contentWindow;
+
+    assertTrue('Object exists', !!i.Object);
+    assertTrue('Object is frozen', Object.isFrozen(i.Object.prototype));
+    assertTrue('cajaVM exists', !!i.cajaVM);
+
+    pass();
+  });
+</script>
 
 <div id="testMutation" class="testcontainer">testMutation</div>
 <script type="text/javascript">
