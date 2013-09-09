@@ -43,31 +43,6 @@
   var PLAIN_CALL = scanning.PLAIN_CALL;
   var getFunctionName = scanning.getFunctionName;
 
-  function isNativeFunction(f) {
-    try {
-      return (/^[^{}]*\{\s*\[native code\]\s*}\s*$/
-          .test(Function.prototype.toString.call(f)));
-    } catch (e) {
-      // ES5/3 Function.prototype is semi-toxic and throws in this case.
-      //
-      // Also, Function.prototype is not a native function in the sense we care
-      // about (it is exercised separately), and since it doesn't match the
-      // above pattern (its body is empty), returning false is consistent with
-      // the SES case.
-      return false;
-    }
-  }
-  // self-test
-  if (isNativeFunction(Function.prototype)) {
-    throw new Error('isNativeFunction: failed on Function.prototype');
-  }
-  if (!isNativeFunction(Math.sin)) {  // arbitrary boring native function
-    throw new Error('isNativeFunction: failed on Math.sin');
-  }
-  if (isNativeFunction(function() {})) {
-    throw new Error('isNativeFunction: failed on non-native');
-  }
-
   /** Fake evaluator for ES5/3 compatibility */
   function simpleEval(env, expr) {
     var match;

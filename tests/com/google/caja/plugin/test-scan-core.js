@@ -52,16 +52,13 @@ var scanning;  // exports
       // ES5/3 Function.prototype is semi-toxic and throws in this case.
       //
       // Also, Function.prototype is not a native function in the sense we care
-      // about (it is exercised separately), and since it doesn't match the
-      // above pattern (its body is empty), returning false is consistent with
-      // the SES case.
+      // about (it is exercised separately), and also does not throw, so we
+      // don't care about the return value.
       return false;
     }
   }
   // self-test
-  if (isNativeFunction(Function.prototype)) {
-    throw new Error('isNativeFunction: failed on Function.prototype');
-  }
+  isNativeFunction(Function.prototype);  // don't care, must not throw
   if (!isNativeFunction(Math.sin)) {  // arbitrary boring native function
     throw new Error('isNativeFunction: failed on Math.sin');
   }
