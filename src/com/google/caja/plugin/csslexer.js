@@ -207,13 +207,13 @@ var decodeCss;
       BOM, UNICODE_RANGE, URI, FUNCTION, WORD_TERM, STRING, NUMERIC_VALUE,
       CDO, CDC, S, COMMENT, CMP_OPS, CHAR].join("|"), 'gi');
 
+  var CSS_DECODER = new RegExp('\\\\(?:' + ESCAPE_TAIL + '|' + NL + ')', 'g');
+  var URL_RE = new RegExp('^url\\(' + W + '["\']?|["\']?' + W + '\\)$', 'gi');
   /**
    * Decodes CSS escape sequences in a CSS string body.
    */
    decodeCss = function (css) {
-     return css.replace(
-         new RegExp('\\\\(?:' + ESCAPE_TAIL + '|' + NL + ')', 'g'),
-         decodeCssEscape);
+     return css.replace(CSS_DECODER, decodeCssEscape);
    };
 
   /**
@@ -254,9 +254,7 @@ var decodeCss;
           // Make sure that all url(...)s are double quoted.
           : /url\(/i.test(tok)
           ? 'url(' + escapeCssString(
-            tok.replace(
-                new RegExp('^url\\(' + W + '["\']?|["\']?' + W + '\\)$', 'gi'),
-                ''),
+            tok.replace(URL_RE, ''),
             escapeCssUrlChar)
             + ')'
           // Escapes in identifier like tokens will have been normalized above.
