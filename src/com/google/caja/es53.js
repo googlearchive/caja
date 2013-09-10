@@ -1518,7 +1518,19 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     }
   } else {
     // No platform WeakMap; build our own.
-    WeakMap = markFunc(function () { return newTable(true); });
+    var calledAsFunctionWarningDone = false;
+    WeakMap = markFunc(function () {
+      // Future ES6 WeakMap is currently (2013-09-10) expected to reject
+      // WeakMap() but we used to permit it and do it ourselves, so warn only.
+      // The instanceof is an approximate test for use of new ...() vs. ...().
+      if (!(this instanceof WeakMap) && !calledAsFunctionWarningDone) {
+        calledAsFunctionWarningDone = true;
+        log('WeakMap should be invoked as new WeakMap(), not ' +
+            'WeakMap(). This will be an error in the future.');
+      }
+
+      return newTable(true);
+    });
   }
 
   var registeredImports = [];

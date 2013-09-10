@@ -13,22 +13,27 @@
 // limitations under the License.
 // .............................................................................
 
-// If this module is loaded after es53.js is loaded, and in an
-// environment (such as produced by turning on Firebug) where
-// <tt>console.log</tt> is a function, then it will register
-// a wrapper around <tt>console.log</tt> (or <tt>console.info</tt>
-// and <tt>console.error</tt> if available) using
-// <tt>___.setLogFunc()</tt>, so es53.js will log its diagnostics
-// to the Firebug console.
+/**
+ * @fileoverview
+ * If this module is loaded after es53.js is loaded, and in an
+ * environment (such as produced by turning on Firebug) where
+ * <tt>console.log</tt> is a function, then it will register
+ * a wrapper around <tt>console.log</tt> (or <tt>console.info</tt>
+ * and <tt>console.error</tt> if available) using
+ * <tt>___.setLogFunc()</tt>, so es53.js will log its diagnostics
+ * to the Firebug console.
+ *
+ * If you load triv-logger.js and log-to-console.js into the same
+ * system, the last one loaded wins.
+ *
+ * This module is written in Javascript, not Caja, and would be
+ * rejected by the Caja translator.
+ *
+ * @requires ___
+ */
 
-// If you load triv-logger.js and log-to-console.js into the same
-// system, the last one loaded wins.
-
-// This module is written in Javascript, not Caja, and would be
-// rejected by the Caja translator.
-
-
-(function(global) {
+(function() {
+  var global = this;
 
   var console;
 
@@ -54,4 +59,4 @@
     ___.setLogFunc(logToConsole);
   }
 
-})(this);
+})();

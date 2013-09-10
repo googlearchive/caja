@@ -26,7 +26,7 @@
  * is, which is why it is in the overrides list below.
  *
  * @author Mark S. Miller
- * @requires crypto, ArrayBuffer, Uint8Array, navigator
+ * @requires crypto, ArrayBuffer, Uint8Array, navigator, console
  * @overrides WeakMap, ses, Proxy
  * @overrides WeakMapModule
  */
@@ -354,12 +354,27 @@ var WeakMap;
     return Object.freeze(func);
   }
 
+  var calledAsFunctionWarningDone = false;
+  function calledAsFunctionWarning() {
+    // Future ES6 WeakMap is currently (2013-09-10) expected to reject WeakMap()
+    // but we used to permit it and do it ourselves, so warn only.
+    if (!calledAsFunctionWarningDone && typeof console !== 'undefined') {
+      calledAsFunctionWarningDone = true;
+      console.warn('WeakMap should be invoked as new WeakMap(), not ' +
+          'WeakMap(). This will be an error in the future.');
+    }
+  }
+
   // Right now (12/25/2012) the histogram supports the current
   // representation. We should check this occasionally, as a true
   // constant time representation is easy.
   // var histogram = [];
 
   var OurWeakMap = function() {
+    if (!(this instanceof OurWeakMap)) {  // approximate test for new ...()
+      calledAsFunctionWarning();
+    }
+
     // We are currently (12/25/2012) never encountering any prematurely
     // non-extensible keys.
     var keys = []; // brute force for prematurely non-extensible keys.
@@ -503,6 +518,10 @@ var WeakMap;
       // implementation which makes use of both as possible.
 
       function DoubleWeakMap() {
+        if (!(this instanceof OurWeakMap)) {  // approximate test for new ...()
+          calledAsFunctionWarning();
+        }
+
         // Preferable, truly weak map.
         var hmap = new HostWeakMap();
 
