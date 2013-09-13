@@ -263,8 +263,8 @@ public abstract class BrowserTestCase {
   /** Override point */
   @SuppressWarnings("static-method")
   protected int waitForCompletionTimeout() {
-    // 10s because the es53 cajoler is slow the first time it runs.
-    return 10000;
+    // 20s because the es53 cajoler is slow the first time it runs.
+    return 20000;
   }
 
   /**
