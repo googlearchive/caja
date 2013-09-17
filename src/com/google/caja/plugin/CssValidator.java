@@ -15,6 +15,7 @@
 package com.google.caja.plugin;
 
 import com.google.caja.SomethingWidgyHappenedError;
+import com.google.caja.lang.css.CssPropertyPatterns;
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HTML;
 import com.google.caja.lang.html.HtmlSchema;
@@ -206,7 +207,8 @@ public final class CssValidator {
           Name.css(prop.getString().substring(1)));
     }
     if (null == pinfo && prop.getString().startsWith("-")) {
-      String baseProp = removeVendorPrefix(prop.getString());
+      String baseProp = CssPropertyPatterns.withoutVendorPrefix(
+          prop.getString());
       if (baseProp != null) {
         pinfo = cssSchema.getCssProperty(Name.css(baseProp));
       }
@@ -250,31 +252,6 @@ public final class CssValidator {
       }
     }
     return false;
-  }
-
-  // See the similar function withoutVendorPrefix in sanitizecss.js
-  private static String[] vendorPrefixes = {
-    "-apple-",
-    "-css-",
-    "-epub-",
-    "-khtml-",
-    "-moz-",
-    "-ms-",
-    "-mso-",
-    "-o-",
-    "-rim-",
-    "-wap-",
-    "-webkit-",
-    "-xv-",
-  };
-
-  private static String removeVendorPrefix(String name) {
-    for (String prefix : vendorPrefixes) {
-      if (name.startsWith(prefix)) {
-        return name.substring(prefix.length());
-      }
-    }
-    return null;
   }
 
   /** User agent hacks' declarations must be valid. */
