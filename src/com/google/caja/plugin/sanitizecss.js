@@ -363,11 +363,24 @@ var sanitizeMediaQuery = undefined;
     };
   })();
 
+  // Note, duplicated in CssRewriter.java
+  // Constructed from
+  //    https://developer.mozilla.org/en-US/docs/Web/CSS/Reference
+  //    https://developer.mozilla.org/en-US/docs/Web/CSS/Pseudo-classes
+  //    http://dev.w3.org/csswg/selectors4/
   var HISTORY_NON_SENSITIVE_PSEUDO_SELECTOR_WHITELIST =
-    /^(active|after|before|first-child|first-letter|focus|hover)$/;
+    new RegExp(
+        '^(active|after|before|blank|checked|default|disabled'
+        + '|drop|empty|enabled|first|first-child|first-letter'
+        + '|first-line|first-of-type|fullscreen|focus|hover'
+        + '|in-range|indeterminate|invalid|last-child|last-of-type'
+        + '|left|link|only-child|only-of-type|optional|out-of-range'
+        + '|placeholder-shown|read-only|read-write|required|right'
+        + '|root|scope|user-error|valid'
+        + ')$');
 
-  // TODO: This should be removed now as modern browsers no longer require
-  // this special handling
+  // TODO(felix8a): This might be removable since modern browsers
+  // already prevent history sniffing
   var HISTORY_SENSITIVE_PSEUDO_SELECTOR_WHITELIST = /^(link|visited)$/;
 
   // Set of punctuation tokens that are child/sibling selectors.

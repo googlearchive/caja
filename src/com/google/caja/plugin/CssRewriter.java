@@ -599,10 +599,65 @@ public final class CssRewriter {
     });
   }
 
-  private static final TypesafeSet<Name> ALLOWED_PSEUDO_CLASSES =TypesafeSet.of(
-      Name.css("active"), Name.css("after"), Name.css("before"),
-      Name.css("first-child"), Name.css("first-letter"), Name.css("focus"),
-      Name.css("link"), Name.css("hover"));
+  // Note, duplicated in sanitizecss.js
+  // This list is constructed from
+  //    https://developer.mozilla.org/en-US/docs/Web/CSS/Reference
+  //    https://developer.mozilla.org/en-US/docs/Web/CSS/Pseudo-classes
+  //    http://dev.w3.org/csswg/selectors4/
+  private static final TypesafeSet<Name> ALLOWED_PSEUDO_CLASSES =
+      TypesafeSet.of(
+        Name.css("active"),
+        Name.css("after"),
+        Name.css("before"),
+        Name.css("blank"),
+        Name.css("checked"),
+        Name.css("default"),
+        // Name.css("dir()"),   // TODO(felix8a)
+        Name.css("disabled"),
+        Name.css("drop"),
+        // Name.css("drop()"),  // TODO(felix8a)
+        Name.css("empty"),
+        Name.css("enabled"),
+        Name.css("first"),
+        Name.css("first-child"),
+        Name.css("first-letter"),
+        Name.css("first-line"),
+        Name.css("first-of-type"),
+        Name.css("fullscreen"),
+        Name.css("focus"),
+        Name.css("hover"),
+        Name.css("in-range"),
+        Name.css("indeterminate"),
+        Name.css("invalid"),
+        Name.css("last-child"),
+        Name.css("last-of-type"),
+        Name.css("left"),
+        // Name.css("lang()"),  // TODO(felix8a)
+        Name.css("link"),
+        // Name.css("nth-child()"),         // TODO(felix8a)
+        // Name.css("nth-column()"),        // TODO(felix8a)
+        // Name.css("nth-last-child()"),    // TODO(felix8a)
+        // Name.css("nth-last-column()"),   // TODO(felix8a)
+        // Name.css("nth-last-match()"),    // TODO(felix8a)
+        // Name.css("nth-last-of-type()"),  // TODO(felix8a)
+        // Name.css("nth-match()"),         // TODO(felix8a)
+        // Name.css("nth-of-type()"),       // TODO(felix8a)
+        Name.css("only-child"),
+        Name.css("only-of-type"),
+        Name.css("optional"),
+        Name.css("out-of-range"),
+        Name.css("placeholder-shown"),
+        Name.css("read-only"),
+        Name.css("read-write"),
+        Name.css("required"),
+        Name.css("right"),
+        Name.css("root"),
+        Name.css("scope"),
+        // Name.css("target"),      // disallowed
+        Name.css("user-error"),
+        Name.css("valid")
+        // Name.css("visited"),     // disallowed
+      );
   private void removeUnsafeConstructs(AncestorChain<? extends CssTree> t) {
 
     // 1) Check that all classes, ids, property names, etc. are valid
