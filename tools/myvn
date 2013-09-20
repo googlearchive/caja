@@ -112,7 +112,16 @@ function myvn() {
       "$tools_dir/appspot.py" edit "$@"
       ;;
     submit )
-      runAntTests && "$svn" commit -F <("$tools_dir/appspot.py" show "$@") && tidyup
+      if "$tools_dir/appspot.py" fail-if-private "$@"; then
+        runAntTests && \
+            "$svn" commit -F <("$tools_dir/appspot.py" show "$@") && \
+            tidyup
+      else
+        echo Change is flagged as Private. Remove the Private flag before \
+            committing
+        echo to the public repository.
+        exit 1
+      fi
       ;;
     tidyup )
       tidyup

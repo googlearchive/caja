@@ -341,6 +341,14 @@ def do_show(given_cl, current_cl):
   print readable_change(current_cl)
 
 
+def do_fail_if_private(given_cl, current_cl):
+  given_cl.merge_into(current_cl)
+  if current_cl.private:
+    sys.exit(1)
+  else:
+    sys.exit(0)
+
+
 def do_snapshot(given_cl, current_cl, cl_file_path, send_mail):
   if not given_cl.is_unspecified():
     given_cl.merge_into(current_cl)
@@ -500,6 +508,10 @@ def main():
     do_snapshot(
         given_cl=given_cl, current_cl=current_cl, cl_file_path=cl_file_path,
         send_mail=(bool(params.get('--send_mail', False))))
+  elif verb == 'fail-if-private':
+    # internal use for pre-submit check
+    do_fail_if_private(given_cl=given_cl, current_cl=current_cl)
+    
   else:
     show_help_and_exit()
 
