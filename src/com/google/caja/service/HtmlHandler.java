@@ -33,6 +33,7 @@ import com.google.caja.util.Pair;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.net.URI;
 import java.util.List;
 
@@ -98,7 +99,7 @@ public class HtmlHandler extends AbstractCajolingHandler {
 
   private void cajoleHtml(URI inputUri, CharProducer cp, PluginMeta meta,
                           String jsonpCallback,
-                          boolean htmlInline, Appendable output,
+                          boolean htmlInline, Writer output,
                           boolean pretty, MessageQueue mq) {
     PluginCompiler compiler = null;
     boolean okToContinue = true;

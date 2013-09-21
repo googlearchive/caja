@@ -76,6 +76,8 @@ public class CajolingService {
                   ref.getUri().toURL().openConnection();
               // appengine has a caching http proxy; this limits it
               conn.setRequestProperty("Cache-Control", "max-age=10");
+              conn.setConnectTimeout(15000);
+              conn.setReadTimeout(15000);              
               return FetchedData.fromConnection(conn);
             } catch (IOException ex) {
               throw new UriFetchException(ref, mimeType, ex);
@@ -304,6 +306,7 @@ public class CajolingService {
     handlers.add(new JsHandler(buildInfo));
     handlers.add(new HtmlHandler(buildInfo, host, uriFetcher));
     handlers.add(new ProxyHandler(buildInfo, uriFetcher));
+    handlers.add(new com.google.caja.tracing.TracingHandler(buildInfo, uriFetcher));
   }
 
   private Pair<String, String> applyHandler(
@@ -327,7 +330,8 @@ public class CajolingService {
 
   public static enum Transform {
     PROXY,
-    CAJOLE;
+    CAJOLE,
+    TRACING;
   }
 
   public static final String RENDER_PRETTY = "pretty";

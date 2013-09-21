@@ -68,6 +68,10 @@ public abstract class CajaTestCase extends TestCase {
   protected MessageContext mc;
   protected MessageQueue mq;
 
+  protected CajaTestCase(String name) { super(name); }
+
+  protected CajaTestCase() { super(); }
+
   /**
    * For random tests we choose a seed by using a system property so that
    * failing random tests can be repeated.

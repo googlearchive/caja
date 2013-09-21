@@ -168,7 +168,7 @@ public abstract class ServiceTestCase extends CajaTestCase {
       String emitted,
       String jsonProperty,
       String... expectedSubstrings) throws Exception {
-    Pattern p = Pattern.compile("(?s)^[a-zA-Z_]+\\((\\{.*\\})\\)$");
+    Pattern p = Pattern.compile("(?s)^[a-zA-Z_]+\\((\\{.*\\})\\);$");
     Matcher m = p.matcher(emitted);
     assertTrue(m.matches());
     assertSubstringsInJson(m.group(1), jsonProperty, expectedSubstrings);
@@ -177,7 +177,7 @@ public abstract class ServiceTestCase extends CajaTestCase {
   protected static void assertCallbackInJsonp(
       String emitted,
       String jsonpCallback) throws Exception {
-    Pattern p = Pattern.compile("(?s)^" + jsonpCallback + "\\((\\{.*\\})\\)$");
+    Pattern p = Pattern.compile("(?s)^" + jsonpCallback + "\\((\\{.*\\})\\);$");
     Matcher m = p.matcher(emitted);
     assertTrue(m.matches());
   }

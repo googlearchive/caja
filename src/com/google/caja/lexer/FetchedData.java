@@ -15,9 +15,6 @@
 package com.google.caja.lexer;
 
 import com.google.caja.SomethingWidgyHappenedError;
-import com.google.caja.lexer.CharProducer;
-import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.InputSource;
 import com.google.caja.util.Charsets;
 
 import java.io.ByteArrayInputStream;
@@ -171,7 +168,7 @@ public abstract class FetchedData {
    */
   public String getCharSet() { return charSet; }
 
-  private static int MAX_RESPONSE_SIZE_BYTES = 1 << 20;  // 1MB
+  private static int MAX_RESPONSE_SIZE_BYTES = 1 << 24;  // 16MB
   protected static byte[] readStream(@WillClose InputStream is)
       throws IOException {
     try {

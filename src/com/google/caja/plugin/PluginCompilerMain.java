@@ -331,7 +331,7 @@ public final class PluginCompilerMain {
    * Dumps messages to the given output stream, returning the highest message
    * level seen.
    */
-  static MessageLevel dumpMessages(
+  public static MessageLevel dumpMessages(
       MessageQueue mq, MessageContext mc, Appendable out) {
     MessageLevel maxLevel = MessageLevel.values()[0];
     for (Message m : mq.getMessages()) {

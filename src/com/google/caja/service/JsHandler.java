@@ -16,6 +16,7 @@ package com.google.caja.service;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.net.URI;
 import java.util.List;
 
@@ -89,7 +90,7 @@ public class JsHandler extends AbstractCajolingHandler {
   private void cajoleJs(URI inputUri,
                         CharProducer cp,
                         String jsonpCallback,
-                        Appendable output,
+                        Writer output,
                         boolean pretty,
                         MessageQueue mq) {
     CajoledModule cajoledModule = null;

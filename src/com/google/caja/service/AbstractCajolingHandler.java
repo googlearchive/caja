@@ -15,8 +15,8 @@ package com.google.caja.service;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.Writer;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -29,13 +29,14 @@ import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Parser;
-import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Maps;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.w3c.dom.Node;
 
 import com.google.caja.lexer.FetchedData;
@@ -54,7 +55,6 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
-import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
 
 /**
@@ -153,7 +153,7 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
       ParseTreeNode javascript,
       String jsonpCallback,
       MessageQueue mq,
-      Appendable output,
+      Writer output,
       boolean pretty)
       throws IOException {
     String html = staticHtml == null ? null : Nodes.render(staticHtml);
@@ -163,49 +163,39 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
   }
 
   protected static void renderAsJSON(
-    String staticHtml,
-    String javascript,
-    String jsonpCallback,
-    MessageQueue mq,
-    Appendable output,
-    boolean pretty) throws IOException {
-
-    List<ValueProperty> props = Lists.newArrayList();
-
-    if (staticHtml != null) {
-      props.add(prop("html", lit(staticHtml)));
-    }
-    if (javascript != null) {
-      props.add(prop("js", lit(javascript)));
-    }
-    List<Expression> messages = Lists.newArrayList();
-    for (Message m : mq.getMessages()) {
-      messages.add(obj(Arrays.asList(
-          prop("level", lit(m.getMessageLevel().ordinal())),
-          prop("name", lit(m.getMessageLevel().name())),
-          prop("type", lit(m.getMessageType().name())),
-          prop("message", lit(m.toString())))));
-    }
-    props.add(prop("messages", arr(messages)));
-
+      String staticHtml,
+      String javascript,
+      String jsonpCallback,
+      MessageQueue mq,
+      Writer output,
+      boolean pretty) throws IOException {
     if (jsonpCallback != null && !checkIdentifier(jsonpCallback)) {
       throw new RuntimeException("Detected XSS attempt; aborting request");
     }
 
-    ParseTreeNode result = (jsonpCallback == null)
-        ? obj(props)
-        : QuasiBuilder.substV("@c(@o);",
-            "c", new Reference(
-                     new Identifier(
-                         FilePosition.UNKNOWN,
-                         jsonpCallback)),
-            "o", obj(props));
+    JSONObject o = new JSONObject();
+    JSONArray messages = new JSONArray();
 
-    IOCallback callback = new IOCallback();
-    RenderContext rc = makeRenderContext(output, callback, pretty, true);
-    result.render(rc);
-    rc.getOut().noMoreTokens();
-    if (callback.ex != null) { throw callback.ex; }
+    if (staticHtml != null) { o.put("html", staticHtml); }
+    if (javascript != null) { o.put("js", javascript); }
+    o.put("messages", messages);
+
+    for (Message m : mq.getMessages()) {
+      JSONObject msg = new JSONObject();
+      msg.put("level", m.getMessageLevel().ordinal());
+      msg.put("name", m.getMessageLevel().name());
+      msg.put("type", m.getMessageType().name());
+      msg.put("message", m.toString());
+      messages.add(msg);
+    }
+
+    String rendered = o.toJSONString();
+
+    output.append(
+        (jsonpCallback != null)
+            ? jsonpCallback + "(" + rendered + ");"
+            : rendered);
+    output.flush();
   }
 
   private static String renderJavascript(

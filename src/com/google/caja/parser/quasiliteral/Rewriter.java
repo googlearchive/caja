@@ -45,7 +45,7 @@ public class Rewriter {
   private final Set<String> ruleNames = new HashSet<String>();
   private final Set<ParseTreeNode> tainted = new HashSet<ParseTreeNode>();
   private final Set<ParseTreeNode> forSideEffect = new HashSet<ParseTreeNode>();
-  final MessageQueue mq;
+  protected final MessageQueue mq;
   private final boolean taintChecking;
   private final boolean logging;
 

@@ -1205,6 +1205,7 @@ For help on building and testing Caja, see:
       <fileset dir="${src}">
         <include name="**/caja/cajita-promise.js"/>
         <include name="**/caja/es53.js"/>
+        <include name="**/caja/tracing.js"/>
         <include name="**/caja/console.js"/>
         <include name="**/caja/flash/caja-flash.js"/>
         <include name="**/caja/log-to-console.js"/>
@@ -1310,6 +1311,7 @@ For help on building and testing Caja, see:
       </fileset>
       <fileset dir="${src.caja}">
         <include name="es53.js" />
+        <include name="tracing.js"/>
       </fileset>
       <fileset dir="${src.caja}/plugin">
         <include name="bridal.js" />

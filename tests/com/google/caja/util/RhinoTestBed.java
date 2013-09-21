@@ -256,6 +256,23 @@ public class RhinoTestBed {
     public boolean isAssertionFailedError(Object o) {
       return o instanceof AssertionFailedError;
     }
+    public void assertJsonEquals(String message, String x, String y) {
+      Assert.assertEquals(message, renderPrettyJson(x), renderPrettyJson(y));
+    }
+
+    private String renderPrettyJson(String s) {
+      try {
+        CajaTestCase t = new CajaTestCase() { { this.setUp(); } };
+        return
+            t.render(
+                t.js(
+                    t.fromString(
+                        "(" + s + ");",
+                        FilePosition.UNKNOWN)));
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
   }
 
   private RhinoTestBed() { /* uninstantiable */ }

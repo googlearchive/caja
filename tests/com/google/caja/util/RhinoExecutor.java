@@ -44,6 +44,7 @@ import java.util.concurrent.TimeUnit;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.google.caja.tracing.TracingRewriterTest;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
@@ -104,7 +105,8 @@ public final class RhinoExecutor implements Executor {
       WeakHashMap.class.getName(),
       WrappedException.class.getName(),
       "org.apache.xerces.*",
-      "com.google.caja.parser.quasiliteral.ES53ConformanceTest$Caja");
+      "com.google.caja.parser.quasiliteral.ES53ConformanceTest$Caja",
+      TracingRewriterTest.TestCollector.class.getName());
 
   private static final ContextFactory SANDBOXINGFACTORY = new ContextFactory() {
     @Override
@@ -137,15 +139,6 @@ public final class RhinoExecutor implements Executor {
             Context cx, Scriptable scope, Object javaObject,
             @SuppressWarnings("rawtypes")  // Overridden method is not generic
             Class staticType) {
-          // Deny reflective access up front.  This should not be triggered due
-          // to getter filtering, but let's be paranoid.
-          if (javaObject != null
-              && (javaObject instanceof Class<?>
-                  || javaObject instanceof ClassLoader
-                  || "java.lang.reflect".equals(
-                      javaObject.getClass().getPackage().getName()))) {
-            return Context.getUndefinedValue();
-          }
           // Make java arrays behave like native JS arrays.
           // This breaks EQ, but is better than the alternative.
           if (javaObject instanceof Object[]) {
@@ -162,6 +155,17 @@ public final class RhinoExecutor implements Executor {
             jsArray.setParentScope(scope);
             return jsArray;
           }
+
+          // Deny reflective access up front.  This should not be triggered due
+          // to getter filtering, but let's be paranoid.
+          if (javaObject != null
+              && (javaObject instanceof Class<?>
+              || javaObject instanceof ClassLoader
+              || "java.lang.reflect".equals(
+              javaObject.getClass().getPackage().getName()))) {
+            return Context.getUndefinedValue();
+          }
+
           return super.wrap(cx, scope, javaObject, staticType);
         }
 

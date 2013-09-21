@@ -75,9 +75,9 @@ public class ProxyHandler extends AbstractCajolingHandler {
       if (checker.check("text/css", result.getContentType()) ||
           checker.check("text/javascript", result.getContentType())) {
         renderAsJSON(
-          result.getTextualContent().toString(),
-          null,
-          contentParams.b, mq, writer, true);
+            result.getTextualContent().toString(),
+            null,
+            contentParams.b, mq, writer, true);
         writer.flush();
         return Pair.pair(contentParams.a.mimeType, Charsets.UTF_8.name());
       }
