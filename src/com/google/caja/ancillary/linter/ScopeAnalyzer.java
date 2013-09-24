@@ -26,8 +26,8 @@ import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.WithStmt;
 import com.google.caja.util.Lists;
-import com.google.caja.util.Sets;
 import com.google.caja.util.SyntheticAttributeKey;
+import com.google.common.collect.ImmutableSet;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -48,7 +48,7 @@ class ScopeAnalyzer {
         LexicalScope.class, "definingScope");
 
   static final Collection<String> ECMASCRIPT_BUILTINS
-      = Collections.unmodifiableCollection(Sets.newLinkedHashSet(
+      = Collections.unmodifiableCollection(ImmutableSet.of(
           "Array",
           "Boolean",
           "Date",

@@ -16,8 +16,8 @@ package com.google.caja.tools;
 
 import com.google.caja.plugin.BuildServiceImplementation;
 import com.google.caja.util.Lists;
-import com.google.caja.util.Sets;
 import com.google.caja.util.Strings;
+import com.google.common.collect.Sets;
 
 import java.io.File;
 import java.io.PrintWriter;

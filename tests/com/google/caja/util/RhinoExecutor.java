@@ -17,6 +17,7 @@ package com.google.caja.util;
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.plugin.BrowserTestCatalog;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;

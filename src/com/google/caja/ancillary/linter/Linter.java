@@ -64,9 +64,10 @@ import com.google.caja.tools.BuildCommand;
 import com.google.caja.util.Charsets;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
-import com.google.caja.util.Sets;
 import com.google.caja.util.Strings;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -590,12 +591,12 @@ public class Linter implements BuildCommand {
     final Set<String> outers;
 
     public Environment(Set<String> outers) {
-      this.outers = Sets.immutableSet(outers);
+      this.outers = ImmutableSet.copyOf(outers);
     }
   }
 
   public static final Environment BROWSER_ENVIRONMENT = new Environment(
-      Sets.newLinkedHashSet(
+      ImmutableSet.of(
           "window", "document", "setTimeout", "setInterval", "location",
           "XMLHttpRequest", "clearInterval", "clearTimeout", "navigator",
           "event", "alert", "confirm", "prompt", "this", "JSON"));
@@ -775,7 +776,8 @@ public class Linter implements BuildCommand {
       LexicalScope globalScope, LexicalScope scope,
       Set<String> documentedGlobals, MessageQueue mq) {
     for (String symbolName : Sets.difference(
-            scope.symbols.symbolNames(), documentedGlobals)) {
+            Sets.newLinkedHashSet(scope.symbols.symbolNames()),
+            documentedGlobals)) {
       for (AncestorChain<?> decl
            : scope.symbols.getSymbol(symbolName).getDeclarations()) {
         if (decl == globalScope.root) { continue; }  // a built-in

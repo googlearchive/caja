@@ -32,8 +32,8 @@ import com.google.caja.parser.quasiliteral.Scope;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Iterators;
 import com.google.caja.util.SafeIdentifierMaker;
-import com.google.caja.util.Sets;
 import com.google.caja.util.SyntheticAttributeKey;
+import com.google.common.collect.Sets;
 
 import java.util.Iterator;
 import java.util.Set;

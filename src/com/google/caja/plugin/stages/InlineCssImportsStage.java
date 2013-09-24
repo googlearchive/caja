@@ -36,7 +36,7 @@ import com.google.caja.util.ContentType;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Name;
 import com.google.caja.util.Pipeline;
-import com.google.caja.util.Sets;
+import com.google.common.collect.Sets;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;

@@ -41,8 +41,8 @@ import com.google.caja.plugin.stages.JobCache;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
-import com.google.caja.util.Sets;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import java.util.List;
 import java.util.Map;

@@ -30,9 +30,9 @@ import com.google.caja.util.Lists;
 import com.google.caja.util.Multimap;
 import com.google.caja.util.Multimaps;
 import com.google.caja.util.Pair;
-import com.google.caja.util.Sets;
 import com.google.caja.util.Strings;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import java.io.IOException;
 import java.net.URI;

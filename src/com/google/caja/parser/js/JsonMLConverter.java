@@ -21,10 +21,10 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodes;
 import com.google.caja.parser.ParserBase;
 import com.google.caja.util.Lists;
-import com.google.common.collect.Maps;
 import com.google.javascript.jscomp.jsonml.JsonML;
 import com.google.javascript.jscomp.jsonml.TagAttr;
 import com.google.javascript.jscomp.jsonml.TagType;
+import com.google.common.collect.Maps;
 
 import java.util.Collections;
 import java.util.List;

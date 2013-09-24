@@ -15,8 +15,8 @@
 package com.google.caja.parser.html;
 
 import com.google.caja.util.Function;
-import com.google.common.collect.ImmutableMap;
 import com.google.caja.util.Strings;
+import com.google.common.collect.ImmutableMap;
 
 import java.util.Map;
 import java.util.regex.Matcher;

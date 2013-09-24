@@ -41,8 +41,9 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
-import com.google.caja.util.Sets;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -623,7 +624,7 @@ public class Scope {
    * JavaScript identifiers where masking may change the behavior of synthetic
    * code or cause lots of confusion.
    */
-  public static final Set<String> UNMASKABLE_IDENTIFIERS = Sets.immutableSet(
+  public static final Set<String> UNMASKABLE_IDENTIFIERS = ImmutableSet.of(
       "Array",      // Masking Array can change the behavior of [0, 1, ...]
       "Infinity",
       "NaN",

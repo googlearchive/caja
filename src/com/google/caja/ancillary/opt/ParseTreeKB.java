@@ -40,8 +40,8 @@ import com.google.caja.parser.quasiliteral.Scope;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
-import com.google.caja.util.Sets;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import java.util.Arrays;
 import java.util.Collections;

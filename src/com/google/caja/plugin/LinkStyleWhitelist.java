@@ -3,8 +3,8 @@ package com.google.caja.plugin;
 import java.util.Set;
 
 import com.google.caja.util.Name;
-import com.google.caja.util.Sets;
 import com.google.caja.util.TypesafeSet;
+import com.google.common.collect.Sets;
 
 public class LinkStyleWhitelist {
   /**

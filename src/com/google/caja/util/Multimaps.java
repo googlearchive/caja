@@ -15,6 +15,7 @@
 package com.google.caja.util;
 
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import java.util.Collection;
 import java.util.Collections;

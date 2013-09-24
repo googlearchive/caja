@@ -26,8 +26,8 @@ import com.google.caja.reporting.MessageType;
 import com.google.caja.util.Join;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
-import com.google.caja.util.Sets;
 import com.google.caja.util.Strings;
+import com.google.common.collect.ImmutableSet;
 
 import java.io.File;
 import java.io.IOException;
@@ -364,10 +364,10 @@ public final class Config {
         return false;
       }
 
-      fUris = Sets.immutableSet(getOptionValues(cl, F_URI));
+      fUris = ImmutableSet.copyOf(getOptionValues(cl, F_URI));
       fUriAll = cl.hasOption(F_URI_ALL.getOpt());
 
-      lUris = Sets.immutableSet(getOptionValues(cl, L_URI));
+      lUris = ImmutableSet.copyOf(getOptionValues(cl, L_URI));
       lUriAll = cl.hasOption(L_URI_ALL.getOpt());
       lUriRuntime = cl.hasOption(L_URI_RUNTIME.getOpt());
 

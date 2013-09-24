@@ -49,10 +49,11 @@ import com.google.caja.util.Charsets;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Name;
 import com.google.caja.util.Pair;
-import com.google.caja.util.Sets;
 import com.google.caja.util.Strings;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -157,7 +158,7 @@ public class CssPropertyPatterns {
     return data;
   }
 
-  private static final Set<String> KNOWN_VENDOR_PREFIXES = Sets.immutableSet(
+  private static final Set<String> KNOWN_VENDOR_PREFIXES = ImmutableSet.of(
       "apple",
       "css",
       "epub",

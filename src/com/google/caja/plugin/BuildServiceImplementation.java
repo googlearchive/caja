@@ -52,8 +52,8 @@ import com.google.caja.util.Charsets;
 import com.google.caja.util.FileIO;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
-import com.google.caja.util.Sets;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import java.io.File;
 import java.io.FileInputStream;

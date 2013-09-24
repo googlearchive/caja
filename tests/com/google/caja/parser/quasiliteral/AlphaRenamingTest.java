@@ -27,7 +27,7 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.SafeIdentifierMaker;
-import com.google.caja.util.Sets;
+import com.google.common.collect.Sets;
 
 import java.util.Arrays;
 import java.util.Set;

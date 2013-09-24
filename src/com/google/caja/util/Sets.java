@@ -25,10 +25,9 @@ import java.util.TreeSet;
 
 /**
  * Shortcuts for creating sets.
- * Inspired by
- * <a href="http://code.google.com/p/google-collections/">Google Collections</a>
- * but does not use any type suppressions.
+ * Use com.google.common.collect.Sets instead
  */
+@Deprecated
 public final class Sets {
   public static <E>
   Set<E> newHashSet() {

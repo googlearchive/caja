@@ -14,6 +14,8 @@
 
 package com.google.caja.util;
 
+import com.google.common.collect.ImmutableSet;
+
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Set;
@@ -31,7 +33,7 @@ public final class TypesafeSet<T> implements Iterable<T> {
   private final Set<T> contents;
 
   private TypesafeSet(Iterable<? extends T> els) {
-    this.contents = Sets.<T>immutableSet(els);
+    this.contents = ImmutableSet.copyOf(els);
   }
 
   public static final <T> TypesafeSet<T> of(T... els) {

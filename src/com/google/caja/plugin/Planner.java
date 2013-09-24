@@ -15,7 +15,7 @@
 package com.google.caja.plugin;
 
 import com.google.caja.util.Lists;
-import com.google.caja.util.Sets;
+import com.google.common.collect.Sets;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -136,7 +136,7 @@ public final class Planner {
       } else if (prior == null) {
         used = Collections.singleton(tool);
       } else {
-        used = Sets.newIdentityHashSet(prior.used);
+        used = Sets.newLinkedHashSet(prior.used);
         used.add(tool);
       }
     }

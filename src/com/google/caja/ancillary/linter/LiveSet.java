@@ -19,7 +19,7 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.util.Pair;
-import com.google.caja.util.Sets;
+import com.google.common.collect.Sets;
 
 import java.util.Collections;
 import java.util.Iterator;

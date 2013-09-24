@@ -34,7 +34,7 @@ import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
-import com.google.caja.util.Sets;
+import com.google.common.collect.Sets;
 import com.google.javascript.jscomp.jsonml.JsonML;
 
 import java.math.BigDecimal;

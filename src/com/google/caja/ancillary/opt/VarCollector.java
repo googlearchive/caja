@@ -38,7 +38,7 @@ import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
-import com.google.caja.util.Sets;
+import com.google.common.collect.Sets;
 
 import java.util.Collections;
 import java.util.Comparator;

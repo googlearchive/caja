@@ -42,8 +42,8 @@ import com.google.caja.parser.js.scope.ES5ScopeAnalyzer;
 import com.google.caja.parser.js.scope.ScopeListener;
 import com.google.caja.parser.js.scope.ScopeType;
 import com.google.caja.util.Lists;
-import com.google.caja.util.Sets;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import java.util.List;
 import java.util.Map;

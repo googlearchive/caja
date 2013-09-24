@@ -22,7 +22,7 @@ import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Lists;
 import com.google.caja.util.MoreAsserts;
-import com.google.caja.util.Sets;
+import com.google.common.collect.Sets;
 
 import java.net.URI;
 import java.util.Arrays;

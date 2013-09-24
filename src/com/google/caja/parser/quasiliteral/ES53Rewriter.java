@@ -69,7 +69,7 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Lists;
-import com.google.caja.util.Sets;
+import com.google.common.collect.Sets;
 
 import java.net.URI;
 import java.util.Arrays;

@@ -21,7 +21,7 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.util.Multimap;
 import com.google.caja.util.Multimaps;
-import com.google.caja.util.Sets;
+import com.google.common.collect.Sets;
 
 /**
  * Groups nodes in a parse tree by type.

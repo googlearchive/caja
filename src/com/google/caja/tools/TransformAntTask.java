@@ -16,7 +16,7 @@ package com.google.caja.tools;
 
 import com.google.caja.ancillary.linter.Linter;
 import com.google.caja.util.FileIO;
-import com.google.caja.util.Sets;
+import com.google.common.collect.Sets;
 
 import java.io.File;
 import java.io.IOException;

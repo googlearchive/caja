@@ -24,9 +24,9 @@ import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.render.Concatenator;
 import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.RenderContext;
-import com.google.caja.util.Sets;
 import com.google.caja.util.SparseBitSet;
 import com.google.caja.util.Strings;
+import com.google.common.collect.ImmutableSet;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -988,7 +988,7 @@ final class BooleanAttrs {
    * @see <a href="http://www.w3.org/TR/html401/index/attributes.html">
    *    the HTML4.01 attributes index</a>
    */
-  private static final Set<String> BOOLEAN_ATTR_NAMES = Sets.immutableSet(
+  private static final Set<String> BOOLEAN_ATTR_NAMES = ImmutableSet.of(
       "checked", "compact", "declare", "defer", "disabled", "ismap", "multiple",
       "nohref", "noresize", "noshade", "nowrap", "readonly", "selected");
 

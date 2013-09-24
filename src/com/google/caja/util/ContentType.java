@@ -14,8 +14,8 @@
 
 package com.google.caja.util;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.caja.util.Strings;
+import com.google.common.collect.ImmutableMap;
 
 import java.util.Map;
 
