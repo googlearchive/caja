@@ -16,8 +16,8 @@ package com.google.caja.precajole;
 
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.parser.js.CajoledModule;
-import com.google.caja.util.Lists;
 import com.google.caja.util.Strings;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;

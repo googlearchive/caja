@@ -50,8 +50,8 @@ import com.google.caja.reporting.SnippetProducer;
 import com.google.caja.tools.BuildService;
 import com.google.caja.util.Charsets;
 import com.google.caja.util.FileIO;
-import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 

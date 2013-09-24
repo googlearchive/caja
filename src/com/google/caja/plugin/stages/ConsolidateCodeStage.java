@@ -21,8 +21,8 @@ import com.google.caja.plugin.Job;
 import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.util.ContentType;
-import com.google.caja.util.Lists;
 import com.google.caja.util.Pipeline;
+import com.google.common.collect.Lists;
 
 import java.util.List;
 

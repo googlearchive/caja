@@ -46,12 +46,12 @@ import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.tools.BuildCommand;
 import com.google.caja.util.Bag;
 import com.google.caja.util.Charsets;
-import com.google.caja.util.Lists;
 import com.google.caja.util.Name;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 

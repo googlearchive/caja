@@ -32,7 +32,7 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Join;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 import com.google.caja.util.Pipeline;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;

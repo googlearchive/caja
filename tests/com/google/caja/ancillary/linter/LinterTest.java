@@ -20,8 +20,8 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.CajaTestCase;
-import com.google.caja.util.Lists;
 import com.google.caja.util.MoreAsserts;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import java.net.URI;

@@ -22,9 +22,9 @@ import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Join;
-import com.google.caja.util.Lists;
 import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.Pair;
+import com.google.common.collect.Lists;
 
 import java.util.Arrays;
 import java.util.Collections;

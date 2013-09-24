@@ -31,7 +31,7 @@ import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 import com.google.javascript.jscomp.jsonml.JsonML;
 
 import java.util.ArrayList;

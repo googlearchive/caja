@@ -30,9 +30,9 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.MessageTypeInt;
 import com.google.caja.util.Criterion;
-import com.google.caja.util.Lists;
 import com.google.caja.util.Name;
 import com.google.caja.util.Strings;
+import com.google.common.collect.Lists;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -670,7 +670,7 @@ public final class CssParser {
       SKIP_TO_CHUNK_END_FROM_WITHIN_BLOCK.recover(this, m);
       return null;
     }
-    List<CssTree> children = Lists.newArrayList(3);
+    List<CssTree> children = Lists.newArrayListWithCapacity(3);
     children.add(property);
     if (expect(":", SKIP_TO_CHUNK_END_FROM_WITHIN_BLOCK, m)) {
       return null;

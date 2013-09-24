@@ -32,8 +32,8 @@ import com.google.caja.reporting.MessageType;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Function;
 import com.google.caja.util.Join;
-import com.google.caja.util.Lists;
 import com.google.caja.util.MoreAsserts;
+import com.google.common.collect.Lists;
 
 import java.io.IOException;
 import java.io.StringReader;

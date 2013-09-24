@@ -26,7 +26,7 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Criterion;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 
 import java.util.List;
 

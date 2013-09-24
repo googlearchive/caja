@@ -20,7 +20,7 @@ import com.google.caja.parser.quasiliteral.RewriterMessageType;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Executor;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 import com.google.caja.util.RhinoTestBed;
 import junit.framework.Test;
 import junit.framework.TestSuite;

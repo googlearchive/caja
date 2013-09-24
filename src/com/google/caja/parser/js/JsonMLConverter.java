@@ -20,10 +20,10 @@ import com.google.caja.lexer.SourceBreaks;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodes;
 import com.google.caja.parser.ParserBase;
-import com.google.caja.util.Lists;
 import com.google.javascript.jscomp.jsonml.JsonML;
 import com.google.javascript.jscomp.jsonml.TagAttr;
 import com.google.javascript.jscomp.jsonml.TagType;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import java.util.Collections;
@@ -61,7 +61,8 @@ public final class JsonMLConverter {
     List<? extends JsonML> children = jsonML.getChildren();
     switch (jsonML.getType()) {
       case ArrayExpr: {
-        List<Expression> elements = Lists.newArrayList(children.size());
+        List<Expression> elements = Lists.newArrayListWithCapacity(
+            children.size());
         for (JsonML child : children) {
           if (child.getType() == TagType.Empty) {
             elements.add(new Elision(pos));
@@ -139,7 +140,8 @@ public final class JsonMLConverter {
             op = Operator.MEMBER_ACCESS;
           }
         }
-        List<Expression> operands = Lists.newArrayList(children.size() - 1);
+        List<Expression> operands = Lists.newArrayListWithCapacity(
+            children.size() - 1);
         operands.add(Operation.create(
             FilePosition.span(obj.getFilePosition(), key.getFilePosition()),
             op, obj, key));
@@ -413,7 +415,7 @@ public final class JsonMLConverter {
       List<? extends JsonML> jsonMLs, Class<T> clazz) {
     int n = jsonMLs.size();
     if (n == 0) { return Collections.emptyList(); }
-    List<T> out = Lists.newArrayList(n);
+    List<T> out = Lists.newArrayListWithCapacity(n);
     int i = 0;
     if (jsonMLs.get(0).getType() == TagType.PrologueDecl) {
       FilePosition start = null;

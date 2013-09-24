@@ -34,7 +34,7 @@ import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.ContentType;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.Pair;
 import com.google.caja.util.RhinoTestBed;

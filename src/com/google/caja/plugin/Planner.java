@@ -14,7 +14,7 @@
 
 package com.google.caja.plugin;
 
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import java.util.Arrays;

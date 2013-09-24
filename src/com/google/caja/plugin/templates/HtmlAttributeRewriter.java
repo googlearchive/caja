@@ -56,8 +56,8 @@ import com.google.caja.plugin.stages.EmbeddedContent;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.util.Lists;
 import com.google.caja.util.SyntheticAttributeKey;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.w3c.dom.Attr;
 

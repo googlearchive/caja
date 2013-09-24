@@ -51,8 +51,8 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
-import com.google.caja.util.Lists;
 import com.google.caja.util.SafeIdentifierMaker;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import java.util.Arrays;
@@ -201,7 +201,7 @@ public class StatementSimplifier {
         ParseTreeNode newChild = optimize(child, childNeedsBlock);
         if (child != newChild) {
           if (newChildren == null) {
-            newChildren = Lists.newArrayList(nChildren);
+            newChildren = Lists.newArrayListWithCapacity(nChildren);
           }
           newChildren.addAll(children.subList(newChildren.size(), i));
           newChildren.add(newChild);
@@ -279,7 +279,9 @@ public class StatementSimplifier {
       ParseTreeNode s = stmts.get(i);
       ParseTreeNode optS = optimize(s, false);
       if (s != optS || optS instanceof Noop || optS instanceof Block) {
-        if (newStmts == null) { newStmts = Lists.newArrayList(nStmts); }
+        if (newStmts == null) {
+          newStmts = Lists.newArrayListWithCapacity(nStmts);
+        }
         newStmts.addAll(stmts.subList(pos, i));
         if (optS instanceof Block) {
           newStmts.addAll(((Block) optS).children());

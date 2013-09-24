@@ -19,12 +19,12 @@ import com.google.caja.render.Concatenator;
 import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
-import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
 import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.TokenQueue;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.util.MoreAsserts;
+import com.google.common.collect.Lists;
 
 import java.util.Arrays;
 import java.util.List;

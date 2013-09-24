@@ -39,8 +39,8 @@ import com.google.caja.plugin.Placeholder;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.plugin.stages.JobCache;
 import com.google.caja.reporting.MessageContext;
-import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
@@ -167,7 +167,7 @@ final class SafeHtmlMaker {
     js.clear();
     currentBlock = null;
 
-    List<SafeHtmlChunk> safe = Lists.newArrayList(
+    List<SafeHtmlChunk> safe = Lists.newArrayListWithCapacity(
         roots.size() + css.size() + 1);
     for (SafeStylesheet ss : css) {
       if (ss.jsVersion != null) {
@@ -200,7 +200,7 @@ final class SafeHtmlMaker {
     fleshOutSkeleton(domSkeleton);
     finishBlock();
 
-    return Pair.pair(safe, Lists.newArrayList(js));
+    return Pair.pair(safe, (List<SafeJsChunk>) Lists.newArrayList(js));
   }
 
   /** Part of a DOM skeleton. */

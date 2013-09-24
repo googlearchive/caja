@@ -32,7 +32,7 @@ import com.google.caja.parser.js.RegexpLiteral;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.reporting.RenderContext;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import java.util.Collections;

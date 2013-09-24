@@ -26,11 +26,11 @@ import com.google.caja.plugin.UriEffect;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
-import com.google.caja.util.Lists;
 import com.google.caja.util.Multimap;
 import com.google.caja.util.Multimaps;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Strings;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 

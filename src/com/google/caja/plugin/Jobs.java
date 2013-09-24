@@ -19,7 +19,7 @@ import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.ContentType;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 
 import java.util.EnumSet;
 import java.util.List;

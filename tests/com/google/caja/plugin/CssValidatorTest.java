@@ -26,7 +26,7 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.CajaTestCase;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.SyntheticAttributeKey;
 

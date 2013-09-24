@@ -43,7 +43,7 @@ import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import java.io.IOException;

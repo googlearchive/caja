@@ -30,8 +30,8 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Charsets;
 import com.google.caja.util.ContentType;
-import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
+import com.google.common.collect.Lists;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -77,7 +77,7 @@ public class CajolingService {
               // appengine has a caching http proxy; this limits it
               conn.setRequestProperty("Cache-Control", "max-age=10");
               conn.setConnectTimeout(15000);
-              conn.setReadTimeout(15000);              
+              conn.setReadTimeout(15000);
               return FetchedData.fromConnection(conn);
             } catch (IOException ex) {
               throw new UriFetchException(ref, mimeType, ex);

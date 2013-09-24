@@ -22,7 +22,7 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.CajaTestCase;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentType;

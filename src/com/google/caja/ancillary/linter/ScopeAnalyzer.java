@@ -25,9 +25,9 @@ import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.WithStmt;
-import com.google.caja.util.Lists;
 import com.google.caja.util.SyntheticAttributeKey;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 
 import java.util.Collection;
 import java.util.Collections;

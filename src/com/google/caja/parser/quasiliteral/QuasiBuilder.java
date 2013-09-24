@@ -43,7 +43,7 @@ import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.ValueProperty;
 import com.google.caja.reporting.DevNullMessageQueue;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;

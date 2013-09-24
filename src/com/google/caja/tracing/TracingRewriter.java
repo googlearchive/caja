@@ -39,7 +39,7 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 
 import java.io.IOException;
 import java.util.List;

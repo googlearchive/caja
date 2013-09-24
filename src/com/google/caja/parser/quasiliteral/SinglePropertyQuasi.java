@@ -18,7 +18,7 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.ValueProperty;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 
 import java.util.Iterator;
 import java.util.List;

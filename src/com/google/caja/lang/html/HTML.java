@@ -18,7 +18,7 @@ import com.google.caja.parser.html.AttribKey;
 import com.google.caja.parser.html.ElKey;
 import com.google.caja.plugin.LoaderType;
 import com.google.caja.plugin.UriEffect;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 
 import java.util.Collections;
 import java.util.List;

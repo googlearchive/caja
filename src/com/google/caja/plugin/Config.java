@@ -24,10 +24,10 @@ import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.util.Join;
-import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Strings;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.io.IOException;

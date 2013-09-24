@@ -19,9 +19,9 @@ import java.util.BitSet;
 import java.util.List;
 
 import com.google.caja.util.CajaTestCase;
-import com.google.caja.util.Lists;
 import com.google.caja.util.MoreAsserts;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 @SuppressWarnings("static-method")

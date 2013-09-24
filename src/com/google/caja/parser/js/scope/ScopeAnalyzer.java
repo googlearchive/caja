@@ -28,7 +28,7 @@ import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.OperatorCategory;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.WithStmt;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import java.util.List;

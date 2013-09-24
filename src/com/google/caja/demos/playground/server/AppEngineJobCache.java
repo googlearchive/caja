@@ -18,7 +18,7 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.stages.JobCache;
 import com.google.caja.util.ContentType;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;

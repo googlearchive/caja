@@ -25,7 +25,7 @@ import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.parser.quasiliteral.ReservedNames;
 import com.google.caja.plugin.CssDynamicExpressionRewriter;
 import com.google.caja.plugin.JobEnvelope;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 
 import java.net.URI;
 import java.util.Collections;

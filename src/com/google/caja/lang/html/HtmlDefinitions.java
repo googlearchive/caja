@@ -61,7 +61,7 @@ import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.tools.BuildCommand;
 import com.google.caja.util.Charsets;
 import com.google.caja.util.Function;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 /**

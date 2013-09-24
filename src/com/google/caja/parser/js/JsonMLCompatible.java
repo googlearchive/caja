@@ -15,7 +15,7 @@
 package com.google.caja.parser.js;
 
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 import com.google.javascript.jscomp.jsonml.JsonML;
 import com.google.javascript.jscomp.jsonml.TagAttr;
 import com.google.javascript.jscomp.jsonml.TagType;

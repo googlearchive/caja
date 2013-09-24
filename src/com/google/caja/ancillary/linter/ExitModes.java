@@ -26,7 +26,7 @@ import com.google.caja.parser.js.ContinueStmt;
 import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.ThrowStmt;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 

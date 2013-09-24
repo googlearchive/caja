@@ -37,7 +37,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.PropertyNameQuotingMode;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.io.IOException;

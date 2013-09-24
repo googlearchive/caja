@@ -34,8 +34,8 @@ import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.ValueProperty;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Function;
-import com.google.caja.util.Lists;
 import com.google.caja.util.Strings;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import java.util.Arrays;

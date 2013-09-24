@@ -18,7 +18,7 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.js.CatchStmt;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.WithStmt;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 
 import java.util.List;
 

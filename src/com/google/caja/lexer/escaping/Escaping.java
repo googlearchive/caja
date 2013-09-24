@@ -15,8 +15,8 @@
 package com.google.caja.lexer.escaping;
 
 import com.google.caja.SomethingWidgyHappenedError;
-import com.google.caja.util.Lists;
 import com.google.caja.util.SparseBitSet;
+import com.google.common.collect.Lists;
 
 import java.io.IOException;
 import java.util.List;

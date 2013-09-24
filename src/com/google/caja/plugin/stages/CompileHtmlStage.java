@@ -32,9 +32,9 @@ import com.google.caja.plugin.templates.TemplateCompiler;
 import com.google.caja.plugin.templates.TemplateSanitizer;
 import com.google.caja.plugin.templates.ValidatedStylesheet;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Pipeline;
+import com.google.common.collect.Lists;
 
 import java.net.URI;
 import java.util.Iterator;

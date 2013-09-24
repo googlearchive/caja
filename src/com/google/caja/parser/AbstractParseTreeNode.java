@@ -20,9 +20,9 @@ import com.google.caja.lexer.Token;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.util.Join;
-import com.google.caja.util.Lists;
 import com.google.caja.util.SyntheticAttributeKey;
 import com.google.caja.util.SyntheticAttributes;
+import com.google.common.collect.Lists;
 
 import java.io.IOException;
 import java.io.Serializable;

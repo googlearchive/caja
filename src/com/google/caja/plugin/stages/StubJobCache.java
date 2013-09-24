@@ -17,7 +17,7 @@ package com.google.caja.plugin.stages;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.plugin.Job;
 import com.google.caja.util.ContentType;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 
 import java.util.Collections;
 import java.util.Iterator;

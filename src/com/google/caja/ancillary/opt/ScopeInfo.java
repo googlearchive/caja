@@ -22,7 +22,7 @@ import com.google.caja.parser.js.scope.ScopeType;
 import com.google.caja.parser.quasiliteral.Rewriter;
 import com.google.caja.parser.quasiliteral.Scope;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 

@@ -30,7 +30,7 @@ import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.RenderContext;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 import java.util.List;
 
 import javax.annotation.Nullable;

@@ -20,7 +20,7 @@ import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FetchedData;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessagePart;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 
 /**
  * Specifies how the cajoler resolves external resources such as scripts and

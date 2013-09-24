@@ -37,8 +37,8 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.Executor;
-import com.google.caja.util.Lists;
 import com.google.caja.util.RhinoTestBed;
+import com.google.common.collect.Lists;
 
 import java.io.IOException;
 import java.net.URI;

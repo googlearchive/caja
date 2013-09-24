@@ -37,9 +37,9 @@ import com.google.caja.plugin.stages.SanitizeHtmlStage;
 import com.google.caja.plugin.stages.ValidateCssStage;
 import com.google.caja.plugin.stages.ValidateJavascriptStage;
 import com.google.caja.util.Join;
-import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Pipeline;
+import com.google.common.collect.Lists;
 
 import java.util.Arrays;
 import java.util.Collections;

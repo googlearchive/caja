@@ -16,7 +16,7 @@ package com.google.caja.ancillary.linter;
 
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.js.Declaration;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import java.util.Collection;

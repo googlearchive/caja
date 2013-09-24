@@ -33,10 +33,10 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
-import com.google.caja.util.Lists;
 import com.google.caja.util.Name;
 import com.google.caja.util.Pair;
 import com.google.caja.util.TypesafeSet;
+import com.google.common.collect.Lists;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -55,7 +55,7 @@ import java.util.regex.Pattern;
  */
 public final class CssRewriter {
   private final UriPolicy uriPolicy;
-  private HtmlSchema htmlSchema;
+  private final HtmlSchema htmlSchema;
   private final MessageQueue mq;
   private MessageLevel invalidNodeMessageLevel = MessageLevel.ERROR;
 

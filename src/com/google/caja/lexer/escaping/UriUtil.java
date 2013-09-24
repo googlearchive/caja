@@ -16,8 +16,8 @@ package com.google.caja.lexer.escaping;
 
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.util.Join;
-import com.google.caja.util.Lists;
 import com.google.caja.util.Strings;
+import com.google.common.collect.Lists;
 
 import java.io.IOException;
 import java.net.URI;

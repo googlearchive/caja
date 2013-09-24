@@ -20,7 +20,7 @@ import com.google.caja.parser.quasiliteral.ModuleManager;
 import com.google.caja.plugin.stages.StubJobCache;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.CajaTestCase;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.Pipeline;
 

@@ -38,8 +38,8 @@ import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.quasiliteral.Rewriter;
 import com.google.caja.parser.quasiliteral.Scope;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.util.Lists;
 import com.google.caja.util.Pair;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
@@ -509,7 +509,7 @@ public class ParseTreeKB {
     int nEmitted = i;
     List<ParseTreeNode> newChildren = null;
     if (i != 0) {
-      newChildren = Lists.newArrayList(n);
+      newChildren = Lists.newArrayListWithCapacity(n);
     }
     while (i < n) {
       ParseTreeNode child = children.get(i);
@@ -519,7 +519,9 @@ public class ParseTreeKB {
       Boolean optCond = (i & 1) == 0 && i + 1 < n
           ? ((Expression) newChild).conditionResult() : null;
       if (optCond != null || child != newChild) {
-        if (newChildren == null) { newChildren = Lists.newArrayList(n); }
+        if (newChildren == null) {
+          newChildren = Lists.newArrayListWithCapacity(n);
+        }
         newChildren.addAll(children.subList(nEmitted, i));
         if (optCond != null) {  // The condition is known, so we can remove it.
           Expression sideEffect = ((Expression) newChild)

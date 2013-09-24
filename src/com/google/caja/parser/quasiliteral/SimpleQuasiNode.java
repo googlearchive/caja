@@ -20,7 +20,7 @@ import com.google.caja.parser.ParseTreeNodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Directive;
 import com.google.caja.parser.js.DirectivePrologue;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 
 import java.util.List;
 import java.util.Map;

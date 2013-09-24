@@ -16,7 +16,7 @@ package com.google.caja.render;
 
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
-import com.google.caja.util.Lists;
+import com.google.common.collect.Lists;
 
 import java.util.List;
 

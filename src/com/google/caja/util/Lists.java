@@ -21,10 +21,9 @@ import java.util.List;
 
 /**
  * Shortcuts for creating lists.
- * Inspired by
- * <a href="http://code.google.com/p/google-collections/">Google Collections</a>
- * but does not use any type suppressions.
+ * Use com.google.common.collect.Lists instead
  */
+@Deprecated
 public final class Lists {
   public static <E>
   List<E> newArrayList() {
