@@ -181,7 +181,7 @@ if (getUrlParam('es5') === 'true') {
 } else if (getUrlParam('es5') === 'false') {
   inES5Mode = false;
 } else {
-  throw new Error('es5 parameter is not "true" or "false"');
+  inES5Mode = undefined;
 }
 
 var minifiedMode;
@@ -193,7 +193,7 @@ if (getUrlParam('minified', 'true') === 'true') {
   throw new Error('minified parameter is not "true" or "false"');
 }
 
-var basicCajaConfig = {
+var basicCajaConfig = inES5Mode === undefined ? null : {
   cajaServer: '/caja',
   debug: !minifiedMode,
   forceES5Mode: inES5Mode
@@ -226,9 +226,11 @@ window.addEventListener('load', function() {
     return el;
   }
 
-  put(widget(
-      link('ES5/3', !inES5Mode, withUrlParam('es5', 'false')),
-      link('SES', inES5Mode, withUrlParam('es5', 'true'))));
+  if (inES5Mode !== undefined) {
+    put(widget(
+        link('ES5/3', !inES5Mode, withUrlParam('es5', 'false')),
+        link('SES', inES5Mode, withUrlParam('es5', 'true'))));
+  }
 
   var max = getUrlParam('minified') === 'false';
   put(widget(
@@ -478,6 +480,10 @@ function splitHtmlAndScript(combinedHtml) {
 }
 
 function createExtraImportsForTesting(frameGroup, frame) {
+  if (inES5Mode === undefined) {
+    throw new Error('es5 flag not specified, cannot use guests');
+  }
+
   var standardImports = {};
 
   standardImports.readyToTest =

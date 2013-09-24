@@ -214,19 +214,20 @@ var ses;
    * severity of specific known problems.
    */
   ses.maxAcceptableSeverityName =
-    validateSeverityName(ses.maxAcceptableSeverityName);
+    validateSeverityName(ses.maxAcceptableSeverityName, false);
   ses.maxAcceptableSeverity = ses.severities[ses.maxAcceptableSeverityName];
 
-  function validateSeverityName(severityName) {
+  function validateSeverityName(severityName, failIfInvalid) {
     if (severityName) {
       var sev = ses.severities[severityName];
       if (sev && typeof sev.level === 'number' &&
         sev.level >= ses.severities.MAGICAL_UNICORN.level &&
         sev.level < ses.severities.NOT_SUPPORTED.level) {
         // do nothing
+      } else if (failIfInvalid) {
+        throw new RangeError('Bad SES severityName: ' + severityName);
       } else {
-        logger.error('Ignoring bad severityName: ' +
-                   severityName + '.');
+        logger.error('Ignoring bad severityName: ' + severityName + '.');
         severityName = 'SAFE_SPEC_VIOLATION';
       }
     } else {
@@ -234,8 +235,8 @@ var ses;
     }
     return severityName;
   }
-  function severityNameToLevel(severityName) {
-    return ses.severities[validateSeverityName(severityName)];
+  function lookupSeverityName(severityName, failIfInvalid) {
+    return ses.severities[validateSeverityName(severityName, failIfInvalid)];
   }
 
   /**
@@ -300,7 +301,7 @@ var ses;
    */
   ses.ok = function ok(maxSeverity) {
     if ('string' === typeof maxSeverity) {
-      maxSeverity = ses.severities[maxSeverity];
+      maxSeverity = lookupSeverityName(maxSeverity, true);
     }
     if (!maxSeverity) {
       maxSeverity = ses.maxAcceptableSeverity;
