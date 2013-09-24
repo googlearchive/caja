@@ -85,14 +85,13 @@ public abstract class AbstractCajaAntTask extends Task {
       }
 
       BuildService buildService = getBuildService();
-      @SuppressWarnings("resource")  // Not closed since not newly opened.
       PrintWriter logger = getLogger();
       try {
         for (Output output : outputs) {
           output.build(inputFiles, dependees, youngest, buildService, logger);
         }
       } finally {
-        logger.flush();
+        logger.close();
       }
     } catch (RuntimeException ex) {
       ex.printStackTrace();
@@ -114,7 +113,7 @@ public abstract class AbstractCajaAntTask extends Task {
    * Wrap {@link Task#log(String)} in a PrintWriter so BuildService doesn't have
    * to know about ANT.
    */
-  PrintWriter getLogger() {
+  private PrintWriter getLogger() {
     return new PrintWriter(
         new Writer() {
           StringBuilder sb = new StringBuilder();
@@ -130,7 +129,7 @@ public abstract class AbstractCajaAntTask extends Task {
             }
           }
           @Override
-          public void close() { /* noop */ }
+          public void close() { flush(); }
         }, true);
   }
 

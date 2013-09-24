@@ -34,20 +34,14 @@ import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.ContentType;
+import com.google.caja.util.Json;
 import com.google.caja.util.Maps;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.w3c.dom.Node;
 
 import com.google.caja.lexer.FetchedData;
-import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.html.Nodes;
-import com.google.caja.parser.js.ArrayConstructor;
-import com.google.caja.parser.js.Expression;
-import com.google.caja.parser.js.IntegerLiteral;
-import com.google.caja.parser.js.ObjectConstructor;
-import com.google.caja.parser.js.StringLiteral;
-import com.google.caja.parser.js.ValueProperty;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.render.Concatenator;
 import com.google.caja.reporting.BuildInfo;
@@ -91,26 +85,6 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
       OutputStream response,
       MessageQueue mq)
       throws UnsupportedContentTypeException;
-
-  private static StringLiteral lit(String s) {
-    return StringLiteral.valueOf(FilePosition.UNKNOWN, s);
-  }
-
-  private static IntegerLiteral lit(int i) {
-    return new IntegerLiteral(FilePosition.UNKNOWN, i);
-  }
-
-  private static ArrayConstructor arr(List<? extends Expression> items) {
-    return new ArrayConstructor(FilePosition.UNKNOWN, items);
-  }
-
-  private static ObjectConstructor obj(List<? extends ValueProperty> props) {
-    return new ObjectConstructor(FilePosition.UNKNOWN, props);
-  }
-
-  private static ValueProperty prop(String key, Expression e) {
-    return new ValueProperty(FilePosition.UNKNOWN, lit(key), e);
-  }
 
   /**
    * Checks whether a string is a JavaScript Identifier.
@@ -176,17 +150,17 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
     JSONObject o = new JSONObject();
     JSONArray messages = new JSONArray();
 
-    if (staticHtml != null) { o.put("html", staticHtml); }
-    if (javascript != null) { o.put("js", javascript); }
-    o.put("messages", messages);
+    if (staticHtml != null) { Json.put(o, "html", staticHtml); }
+    if (javascript != null) { Json.put(o, "js", javascript); }
+    Json.put(o, "messages", messages);
 
     for (Message m : mq.getMessages()) {
       JSONObject msg = new JSONObject();
-      msg.put("level", m.getMessageLevel().ordinal());
-      msg.put("name", m.getMessageLevel().name());
-      msg.put("type", m.getMessageType().name());
-      msg.put("message", m.toString());
-      messages.add(msg);
+      Json.put(msg, "level", m.getMessageLevel().ordinal());
+      Json.put(msg, "name", m.getMessageLevel().name());
+      Json.put(msg, "type", m.getMessageType().name());
+      Json.put(msg, "message", m.toString());
+      Json.push(messages, msg);
     }
 
     String rendered = o.toJSONString();

@@ -18,22 +18,15 @@ import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
-import com.google.caja.lexer.JsLexer;
-import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.html.Namespaces;
 import com.google.caja.parser.html.Nodes;
-import com.google.caja.parser.js.Block;
-import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.StringLiteral;
-import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
-import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Executor.AbnormalExitException;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.StringReader;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -112,7 +105,6 @@ public class RhinoTestBed {
     List<Pair<String, InputSource>> scriptContent
         = new ArrayList<Pair<String, InputSource>>();
     MessageContext mc = new MessageContext();
-    MessageQueue mq = new EchoingMessageQueue(new PrintWriter(System.err), mc);
 
     List<Element> scripts = new ArrayList<Element>();
     for (Node root : Nodes.childrenOf(html)) {
@@ -190,14 +182,6 @@ public class RhinoTestBed {
     }
   }
 
-  private static Block parseJavascript(CharProducer cp, MessageQueue mq)
-      throws ParseException {
-    JsLexer lexer = new JsLexer(cp, false);
-    Parser p = new Parser(
-        new JsTokenQueue(lexer, cp.getSourceBreaks(0).source()), mq, false);
-    return p.parse();
-  }
-
   private static CharProducer loadResource(InputSource resource)
       throws IOException {
     File f = new File(resource.getUri());
@@ -264,7 +248,7 @@ public class RhinoTestBed {
       try {
         CajaTestCase t = new CajaTestCase() { { this.setUp(); } };
         return
-            t.render(
+            CajaTestCase.render(
                 t.js(
                     t.fromString(
                         "(" + s + ");",
