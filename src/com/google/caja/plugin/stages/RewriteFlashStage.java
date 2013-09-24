@@ -42,9 +42,9 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.MessageTypeInt;
 import com.google.caja.util.ContentType;
-import com.google.caja.util.Maps;
 import com.google.caja.util.Pipeline;
 import com.google.caja.util.Strings;
+import com.google.common.collect.Maps;
 
 /**
  * This searches for Flash embeds in unsanitized html and rewrites them.

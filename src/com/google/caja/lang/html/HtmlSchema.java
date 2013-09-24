@@ -27,12 +27,12 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Lists;
-import com.google.caja.util.Maps;
 import com.google.caja.util.Multimap;
 import com.google.caja.util.Multimaps;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Sets;
 import com.google.caja.util.Strings;
+import com.google.common.collect.Maps;
 
 import java.io.IOException;
 import java.net.URI;
@@ -61,7 +61,7 @@ public final class HtmlSchema {
   private static final ElKey STYLE = ElKey.forHtmlElement("style");
   private static final String DEFAULT_SCHEMA_INTERFACE = "HTMLElement";
   private static final String UNKNOWN_INTERFACE = "HTMLUnknownElement";
-  
+
   private final Set<ElKey> allowedElements;
   private final Map<ElKey, HTML.Element> elementDetails;
   private final Set<AttribKey> allowedAttributes;

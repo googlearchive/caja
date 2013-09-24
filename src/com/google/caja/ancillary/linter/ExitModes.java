@@ -27,8 +27,8 @@ import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.ThrowStmt;
 import com.google.caja.util.Lists;
-import com.google.caja.util.Maps;
 import com.google.caja.util.Sets;
+import com.google.common.collect.Maps;
 
 /**
  * Describes the ways in which execution of a JavaScript parse tree completes.

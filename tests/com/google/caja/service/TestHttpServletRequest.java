@@ -15,8 +15,9 @@
 package com.google.caja.service;
 
 import com.google.caja.SomethingWidgyHappenedError;
-import com.google.caja.util.Maps;
 import com.google.caja.util.Strings;
+import com.google.common.collect.Maps;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;

@@ -15,7 +15,7 @@
 package com.google.caja.parser.html;
 
 import com.google.caja.util.Function;
-import com.google.caja.util.Maps;
+import com.google.common.collect.ImmutableMap;
 import com.google.caja.util.Strings;
 
 import java.util.Map;
@@ -103,7 +103,7 @@ class DoctypeMaker {
   }
 
   private static final Map<String, String> BY_SYSTEM_ID
-      = Maps.<String, String>immutableMap()
+      = new ImmutableMap.Builder<String, String>()
       .put("http://www.w3.org/TR/html4/*.dtd", Namespaces.HTML_NAMESPACE_URI)
       .put("http://www.w3.org/TR/xhtml1/DTD/*.dtd",
            Namespaces.HTML_NAMESPACE_URI)
@@ -111,7 +111,7 @@ class DoctypeMaker {
           Namespaces.SVG_NAMESPACE_URI)
       .put("http://www.w3.org/Graphics/SVG/1.1/DTD/*.dtd",
            Namespaces.SVG_NAMESPACE_URI)
-      .create();
+      .build();
 
   public static String systemIdToNsUri(String systemId) {
     String nsUri = BY_SYSTEM_ID.get(systemId);

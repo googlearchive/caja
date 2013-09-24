@@ -24,7 +24,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageTypeInt;
 import com.google.caja.reporting.SnippetProducer;
 import com.google.caja.util.Lists;
-import com.google.caja.util.Maps;
+import com.google.common.collect.Maps;
 
 import java.io.IOException;
 import java.util.Collections;

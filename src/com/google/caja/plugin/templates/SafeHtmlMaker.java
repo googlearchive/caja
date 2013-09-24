@@ -40,9 +40,9 @@ import com.google.caja.plugin.PluginMeta;
 import com.google.caja.plugin.stages.JobCache;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.util.Lists;
-import com.google.caja.util.Maps;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Sets;
+import com.google.common.collect.Maps;
 
 import java.util.List;
 import java.util.Map;

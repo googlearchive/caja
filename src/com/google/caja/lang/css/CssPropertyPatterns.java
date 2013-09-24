@@ -47,11 +47,12 @@ import com.google.caja.tools.BuildCommand;
 import com.google.caja.util.Bag;
 import com.google.caja.util.Charsets;
 import com.google.caja.util.Lists;
-import com.google.caja.util.Maps;
 import com.google.caja.util.Name;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Sets;
 import com.google.caja.util.Strings;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -314,7 +315,7 @@ public class CssPropertyPatterns {
   }
 
   private static final Map<String, CssPropBit> BUILTIN_PROP_BITS
-      = Maps.<String, CssPropBit>immutableMap()
+      = new ImmutableMap.Builder<String, CssPropBit>()
         .put("angle", CssPropBit.QUANTITY)
         .put("frequency", CssPropBit.QUANTITY)
         .put("global-name", CssPropBit.GLOBAL_NAME)
@@ -332,7 +333,7 @@ public class CssPropertyPatterns {
         .put("unreserved-word", CssPropBit.UNRESERVED_WORD)
         .put("uri", CssPropBit.URL)
         .put("z-index", CssPropBit.QUANTITY)
-        .create();
+        .build();
 
   public static void generatePatterns(CssSchema schema, Appendable out)
       throws IOException {

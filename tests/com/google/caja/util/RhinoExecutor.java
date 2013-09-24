@@ -16,6 +16,7 @@ package com.google.caja.util;
 
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.plugin.BrowserTestCatalog;
+import com.google.common.collect.Maps;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -452,7 +453,7 @@ public final class RhinoExecutor implements Executor {
 class SetupUrlHandlers {
   static {
     URL.setURLStreamHandlerFactory(new URLStreamHandlerFactory() {
-        private Map<String, URLStreamHandler> handlers = Maps.newHashMap();
+        private final Map<String, URLStreamHandler> handlers = Maps.newHashMap();
 
         // The below scheme for extending URL handlers is written according to
         // examples at:

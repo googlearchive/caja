@@ -15,8 +15,8 @@
 package com.google.caja.service;
 
 import com.google.caja.SomethingWidgyHappenedError;
-import com.google.caja.util.Maps;
 import com.google.caja.util.Strings;
+import com.google.common.collect.Maps;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -40,7 +40,7 @@ import javax.servlet.http.HttpServletResponse;
  */
 public final class TestHttpServletResponse implements HttpServletResponse {
   private int status = 200;
-  private Map<String, String> headers = Maps.newLinkedHashMap();
+  private final Map<String, String> headers = Maps.newLinkedHashMap();
   private Object output;
   public void addCookie(Cookie a) { throw new UnsupportedOperationException(); }
   public boolean containsHeader(String n) { return headers.containsKey(n); }

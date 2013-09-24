@@ -20,8 +20,8 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
-import com.google.caja.util.Maps;
 import com.google.caja.util.TestUtil;
+import com.google.common.collect.Maps;
 
 import java.io.IOException;
 import java.net.URI;

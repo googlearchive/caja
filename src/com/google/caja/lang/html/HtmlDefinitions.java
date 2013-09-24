@@ -62,7 +62,7 @@ import com.google.caja.tools.BuildCommand;
 import com.google.caja.util.Charsets;
 import com.google.caja.util.Function;
 import com.google.caja.util.Lists;
-import com.google.caja.util.Maps;
+import com.google.common.collect.Maps;
 
 /**
  * Generates a JavaScript tree with tables mapping HTML element and attribute

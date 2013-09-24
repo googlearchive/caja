@@ -24,9 +24,9 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.util.Lists;
-import com.google.caja.util.Maps;
 import com.google.caja.util.Strings;
 import com.google.common.collect.MapMaker;
+import com.google.common.collect.Maps;
 
 import java.util.Collections;
 import java.util.List;

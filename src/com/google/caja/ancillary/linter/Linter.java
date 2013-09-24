@@ -63,10 +63,10 @@ import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.tools.BuildCommand;
 import com.google.caja.util.Charsets;
 import com.google.caja.util.Lists;
-import com.google.caja.util.Maps;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Sets;
 import com.google.caja.util.Strings;
+import com.google.common.collect.Maps;
 
 import java.io.File;
 import java.io.FileOutputStream;

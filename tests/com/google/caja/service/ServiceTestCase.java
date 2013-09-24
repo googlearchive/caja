@@ -17,13 +17,13 @@ package com.google.caja.service;
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Charsets;
-import com.google.caja.util.Maps;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.TestBuildInfo;
+import com.google.common.collect.Maps;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

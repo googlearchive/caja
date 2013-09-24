@@ -32,7 +32,7 @@ import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Callback;
-import com.google.caja.util.Maps;
+import com.google.common.collect.Maps;
 
 import java.io.IOException;
 

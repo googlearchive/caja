@@ -15,9 +15,9 @@
 package com.google.caja.ancillary.opt;
 
 import com.google.caja.util.CajaTestCase;
-import com.google.caja.util.Maps;
 import com.google.caja.util.RhinoExecutor;
 import com.google.caja.util.RhinoTestBed;
+import com.google.common.collect.Maps;
 
 import java.util.Map;
 

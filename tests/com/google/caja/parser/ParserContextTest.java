@@ -28,8 +28,8 @@ import com.google.caja.parser.js.ParserTest;
 import com.google.caja.reporting.DevNullMessageQueue;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.ContentType;
-import com.google.caja.util.Maps;
 import com.google.caja.util.TestUtil;
+import com.google.common.collect.Maps;
 
 /**
  * @author jasvir@gmail.com (Jasvir Nagra)

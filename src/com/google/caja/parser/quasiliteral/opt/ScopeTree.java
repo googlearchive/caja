@@ -26,8 +26,8 @@ import com.google.caja.parser.js.scope.ScopeType;
 import com.google.caja.parser.js.scope.WorstCaseScopeAnalyzer;
 import com.google.caja.parser.quasiliteral.Scope;
 import com.google.caja.util.Lists;
-import com.google.caja.util.Maps;
 import com.google.caja.util.Sets;
+import com.google.common.collect.Maps;
 
 import java.util.Collections;
 import java.util.List;

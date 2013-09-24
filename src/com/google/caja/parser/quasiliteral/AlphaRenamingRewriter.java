@@ -34,7 +34,7 @@ import com.google.caja.parser.js.Statement;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Lists;
-import com.google.caja.util.Maps;
+import com.google.common.collect.Maps;
 
 import java.util.Collections;
 import java.util.List;

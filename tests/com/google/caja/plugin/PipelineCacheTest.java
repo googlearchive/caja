@@ -33,9 +33,9 @@ import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Join;
 import com.google.caja.util.Lists;
-import com.google.caja.util.Maps;
 import com.google.caja.util.Pipeline;
 import com.google.caja.util.Sets;
+import com.google.common.collect.Maps;
 
 import java.net.URI;
 import java.util.Collections;

@@ -14,7 +14,7 @@
 
 package com.google.caja.util;
 
-import com.google.caja.util.Maps;
+import com.google.common.collect.ImmutableMap;
 import com.google.caja.util.Strings;
 
 import java.util.Map;
@@ -44,7 +44,7 @@ public enum ContentType {
   }
 
   private static final Map<String, ContentType> MIME_TYPES
-      = Maps.<String, ContentType>immutableMap()
+      = new ImmutableMap.Builder<String, ContentType>()
       // From http://krijnhoetmer.nl/stuff/javascript/mime-types/ and others.
       .put("text/javascript", ContentType.JS)
       .put("application/x-javascript", ContentType.JS)
@@ -60,7 +60,7 @@ public enum ContentType {
       .put("application/x-winzip", ContentType.ZIP)
       .put("application/zip", ContentType.ZIP)
       .put("application/x-java-archive", ContentType.ZIP)
-      .create();
+      .build();
 
   public static ContentType fromMimeType(String mimeType) {
     int end = mimeType.indexOf(';');

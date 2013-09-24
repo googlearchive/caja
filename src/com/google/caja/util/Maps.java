@@ -26,10 +26,9 @@ import java.util.TreeMap;
 
 /**
  * Shortcuts for creating maps.
- * Inspired by
- * <a href="http://code.google.com/p/google-collections/">Google Collections</a>
- * but does not use any type suppressions.
+ * Use com.google.common.collect.Maps from Guava instead
  */
+@Deprecated
 public final class Maps {
   public static <K, V>
   Map<K, V> newHashMap() {

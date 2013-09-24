@@ -15,7 +15,7 @@
 package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.util.Maps;
+import com.google.common.collect.Maps;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -35,7 +35,7 @@ import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Json;
-import com.google.caja.util.Maps;
+import com.google.common.collect.Maps;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.w3c.dom.Node;

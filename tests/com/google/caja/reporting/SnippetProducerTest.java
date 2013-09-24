@@ -17,7 +17,7 @@ package com.google.caja.reporting;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
-import com.google.caja.util.Maps;
+import com.google.common.collect.Maps;
 
 import java.io.IOException;
 import java.io.StringReader;

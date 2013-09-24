@@ -38,7 +38,7 @@ import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Callback;
 import com.google.caja.util.Charsets;
-import com.google.caja.util.Maps;
+import com.google.common.collect.Maps;
 
 import java.io.BufferedReader;
 import java.io.File;

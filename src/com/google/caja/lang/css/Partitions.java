@@ -16,7 +16,7 @@ package com.google.caja.lang.css;
 
 import com.google.caja.util.Bag;
 import com.google.caja.util.Lists;
-import com.google.caja.util.Maps;
+import com.google.common.collect.Maps;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;

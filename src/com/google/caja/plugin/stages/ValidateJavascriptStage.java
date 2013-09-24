@@ -27,8 +27,8 @@ import com.google.caja.plugin.Job;
 import com.google.caja.plugin.JobEnvelope;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.util.ContentType;
-import com.google.caja.util.Maps;
 import com.google.caja.util.Pipeline;
+import com.google.common.collect.Maps;
 
 import java.util.ListIterator;
 import java.util.Map;

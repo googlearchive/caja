@@ -14,7 +14,7 @@
 
 package com.google.caja.parser.html;
 
-import com.google.caja.util.Maps;
+import com.google.common.collect.Maps;
 
 import java.util.Map;
 

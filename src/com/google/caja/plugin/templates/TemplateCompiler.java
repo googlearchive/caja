@@ -32,8 +32,8 @@ import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Lists;
-import com.google.caja.util.Maps;
 import com.google.caja.util.Pair;
+import com.google.common.collect.Maps;
 
 import java.util.List;
 import java.util.Map;

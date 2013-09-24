@@ -28,7 +28,7 @@ import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
-import com.google.caja.util.Maps;
+import com.google.common.collect.Maps;
 
 import java.io.PrintWriter;
 import java.util.Map;

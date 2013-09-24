@@ -18,7 +18,7 @@ import com.google.caja.CajaException;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessagePart;
-import com.google.caja.util.Maps;
+import com.google.common.collect.Maps;
 
 import java.util.Collections;
 import java.util.Iterator;

@@ -14,7 +14,8 @@
 
 package com.google.caja.util;
 
-import java.util.Comparator;
+import com.google.common.collect.Maps;
+
 import java.util.Map;
 import java.util.Set;
 
@@ -28,9 +29,6 @@ public class Bag<T> {
   }
   public static <T extends Comparable<T>> Bag<T> newTreeBag() {
     return new Bag<T>(Maps.<T, Integer>newTreeMap());
-  }
-  public static <T> Bag<T> newTreeBag(Comparator<T> cmp) {
-    return new Bag<T>(Maps.<T, Integer>newTreeMap(cmp));
   }
   public static <T> Bag<T> newIdentityHashBag() {
     return new Bag<T>(Maps.<T, Integer>newIdentityHashMap());
