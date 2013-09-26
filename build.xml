@@ -571,6 +571,10 @@ For help on building and testing Caja, see:
       <include name="com/google/caja/plugin/*Main.java"/>
       <!-- used by Closure Compiler JsonMLConversionTest -->
       <include name="com/google/caja/parser/js/JsonMLParser.java"/>
+      <!-- deprecated classes. TODO(felix8a): delete sometime -->
+      <include name="com/google/caja/util/Lists.java"/>
+      <include name="com/google/caja/util/Maps.java"/>
+      <include name="com/google/caja/util/Sets.java"/>
     </javac>
     <copy todir="${lib}">
       <fileset dir="${src}">
