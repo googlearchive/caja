@@ -525,13 +525,17 @@ var bridalMaker = function (makeDOMAccessible, targetDocNode) {
         }
         break;
     }
-    try {
-      var attr = makeDOMAccessible(
+    if (featureExtendedCreateElement /* old IE, need workarounds */) {
+      try {
+        var attr = makeDOMAccessible(
           makeDOMAccessible(element.ownerDocument).createAttribute(name));
-      attr.value = value;
-      element.setAttributeNode(attr);
-    } catch (e) {
-      // It's a real failure only if setAttribute also fails.
+        attr.value = value;
+        element.setAttributeNode(attr);
+      } catch (e) {
+        // It's a real failure only if setAttribute also fails.
+        return element.setAttribute(name, value, 0);
+      }
+    } else {
       return element.setAttribute(name, value, 0);
     }
     return value;
