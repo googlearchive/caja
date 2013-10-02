@@ -83,29 +83,21 @@ var Domado = (function() {
     return (uri.hasScheme() && ALLOWED_URI_SCHEMES.test(uri.getScheme()));
   }
 
-  function ifThrowsThenNull(uri, func) {
-    try {
-      return func();
-    } catch (e) {
-      console.log('Rejecting url ' + uri + ' because ' + e);
-      return null;
-    }
-  }
-
   function uriFetch(naiveUriPolicy, uri, mime, callback) {
-    if (!naiveUriPolicy || !callback
-      || 'function' !== typeof naiveUriPolicy.fetch) {
-      return;
-    }
     uri = '' + uri;
     var parsed = URI.parse(uri);
-    ifThrowsThenNull(uri, function() {
-      if (allowedUriScheme(parsed)) {
+    try {
+      if (!naiveUriPolicy || 'function' !== typeof naiveUriPolicy.fetch) {
+        window.setTimeout(function() { callback({}); }, 0);
+      } else if (allowedUriScheme(parsed)) {
         naiveUriPolicy.fetch(parsed, mime, callback);
       } else {
         naiveUriPolicy.fetch(undefined, mime, callback);
       }
-    });
+    } catch (e) {
+      console.log('Rejecting url ' + uri + ' because ' + e);
+      window.setTimeout(function() { callback({}); }, 0);
+    }
   }
 
   function uriRewrite(naiveUriPolicy, uri, effects, ltype, hints) {
@@ -114,14 +106,17 @@ var Domado = (function() {
     }
     uri = '' + uri;
     var parsed = URI.parse(uri);
-    return ifThrowsThenNull(uri, function() {
+    try {
       if (allowedUriScheme(parsed)) {
         var safeUri = naiveUriPolicy.rewrite(parsed, effects, ltype, hints);
         return safeUri ? safeUri.toString() : null;
       } else {
         return null;
       }
-    });
+    } catch (e) {
+      console.log('Rejecting url ' + uri + ' because ' + e);
+      return null;
+    }
   }
 
   var proxiesAvailable = typeof Proxy !== 'undefined';

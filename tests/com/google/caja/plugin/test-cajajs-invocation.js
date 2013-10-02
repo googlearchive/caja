@@ -312,6 +312,25 @@
     });
   });
 
+  var urlSrcAndXHRTestCase =
+      '<a href="http://fake1.url/foo">fake1</a>' +
+      '<a href="http://fake2.url/foo">fake2</a>' +
+      // script should not stall execution, just not load.
+      '<script src="http://bogus.invalid/foo.js"></script>' +
+      // xhr should indicate error response
+      '<script>' +
+      'r("init");' +
+      'var xhr = new XMLHttpRequest();' +
+      'try {' +
+      '  xhr.open("GET", "' + location.protocol + '//' + location.host +
+          '/nonexistent");' +
+      '} catch (e) { r("" + e); }' +
+      'xhr.onreadystatechange = function() {' +
+      '  r(xhr.readyState + xhr.responseText);' +
+      '};' +
+      'xhr.send();' +
+      '</script>';
+  
   jsunitRegister('testBuilderApiNetNone', function testBuilderApiNetNone() {
     var div = createDiv();
     caja.load(div, caja.policy.net.NO_NETWORK, jsunitCallback(function(frame) {
@@ -319,21 +338,7 @@
       frame.code(
           location.protocol + '//' + location.host + '/',
           'text/html',
-          '<a href="http://fake1.url/foo">fake1</a>' + 
-          '<a href="http://fake2.url/foo">fake2</a>' +
-          // script should not stall execution, just not load.
-          '<script src="http://bogus.invalid/foo.js"></script>' +
-          // xhr should indicate error response
-          '<script>' +
-          'r("init");' +
-          'var xhr = new XMLHttpRequest();' +
-          'try { xhr.open("http://localhost/"); } catch (e) { r("" + e); }' +
-          'xhr.onreadystatechange = function() {' +
-          '  r(xhr.readyState + xhr.responseText);' +
-          '};' +
-          'xhr.send();' +
-          '</script>'
-          )
+          urlSrcAndXHRTestCase)
         .api({r: frame.tame(frame.markFunction(
             function(val) { xhrRes.push(val); }))})
         .run(jsunitCallback(function(result) {
@@ -344,6 +349,30 @@
           // signal
           assertEquals('init,URI violates security policy', String(xhrRes));
           jsunitPass('testBuilderApiNetNone');
+        }));
+    }));
+  });
+
+  jsunitRegister('testBuilderApiNetNoFetch', function testBuilderApiNetNone() {
+    var div = createDiv();
+    caja.load(
+        div,
+        { rewrite: caja.policy.net.ALL.rewrite /* but no 'fetch' */ },
+        jsunitCallback(function(frame) {
+      var xhrRes = [];
+      frame.code(
+          location.protocol + '//' + location.host + '/',
+          'text/html',
+          urlSrcAndXHRTestCase)
+        .api({r: frame.tame(frame.markFunction(
+            function(val) { xhrRes.push(val); }))})
+        .run(jsunitCallback(function(result) {
+          assertStringContains('http://fake1.url/foo', div.innerHTML);
+          assertStringContains('http://fake2.url/foo', div.innerHTML);
+          // TODO(kpreid): verify script did not load, as expected
+          // XHR is independent of fetcher
+          assertEquals('init,4<html>\n', String(xhrRes).substr(0, 13));
+          jsunitPass('testBuilderApiNetNoFetch');
         }));
     }));
   });
