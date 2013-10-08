@@ -425,8 +425,7 @@
   testFunctionPrototype
 </div>
 <script type="text/javascript">
-  jsunitRegisterIf(inES5Mode, 'testFunctionPrototype',
-      function testFunctionPrototype() {
+  jsunitRegister('testFunctionPrototype', function testFunctionPrototype() {
     function f() {}
     // Test that Function.prototype is made tamper-proof, not frozen.
     // If frozen, toString would be a non-writable data property and thus we'd
@@ -448,14 +447,13 @@
   function issue1622_myTopFunc() { return issue1622_xxx.foo; }
 </script>
 <script type="text/javascript">
-  jsunitRegister('testIssue1622',
-    function testIssue1622() {
-      try {
-        assertEquals(1, issue1622_myTopFunc());
-        pass('testIssue1622');
-      } catch (e) {
-        fail();
-      }
+  jsunitRegister('testIssue1622', function testIssue1622() {
+    try {
+      assertEquals(1, issue1622_myTopFunc());
+      pass('testIssue1622');
+    } catch (e) {
+      fail();
+    }
   });
 </script>
 
@@ -463,15 +461,13 @@
   testMalformedScript
 </div>
 <script type="text/javascript">
-  // Function is only supported in ES5 mode.
-  jsunitRegisterIf(inES5Mode, 'testMalformedScript',
-    function testMalformedScript() {
-      try {
-        Function("})");
-        fail();
-      } catch (e) {
-        pass('testMalformedScript');
-      }
+  jsunitRegister('testMalformedScript', function testMalformedScript() {
+    try {
+      Function("})");
+      fail();
+    } catch (e) {
+      pass('testMalformedScript');
+    }
   });
 </script>
 
@@ -518,11 +514,10 @@ testTopLevelVarsInCatch
   testTypeOf1
 </div>
 <script type="text/javascript">
-  jsunitRegisterIf(inES5Mode, 'testTypeOf1',
-    function testTypeOf1() {
-      var result = (function() { return typeof this; })();
-      assertEquals('undefined', result);
-      pass('testTypeOf1');
+  jsunitRegister('testTypeOf1', function testTypeOf1() {
+    var result = (function() { return typeof this; })();
+    assertEquals('undefined', result);
+    pass('testTypeOf1');
   });
 </script>
 
@@ -533,11 +528,10 @@ testTopLevelVarsInCatch
   var isWindow = typeof this;
 </script>
 <script type="text/javascript">
-  jsunitRegisterIf(inES5Mode, 'testTypeOf2',
-    function testTypeOf2() {
-      assertEquals('object', isWindow);
-      assertEquals('undefined', typeof this);
-      pass('testTypeOf2');
+  jsunitRegister('testTypeOf2', function testTypeOf2() {
+    assertEquals('object', isWindow);
+    assertEquals('undefined', typeof this);
+    pass('testTypeOf2');
   });
 </script>
 
@@ -691,16 +685,16 @@ testTopLevelVarsInCatch
 <script>
   jsunitRegister('testReferenceError',
                  function testReferenceError() {
-    if (inES5Mode) {
-      assertEquals(void 0, testReferenceError_thisIsUndefined);
-    } else {
-      expectFailure(function() {
-        testReferenceError_thisIsUndefined;
-      }, null, function(e) {
-        return e instanceof ReferenceError && e.message ===
-          '"testReferenceError_thisIsUndefined" is not defined in this scope.';
-      });
-    }
+    // ReferenceErrors are currently disabled due to efficiency
+    // problems (avoiding need to rewrite jQuery)
+    // See <https://code.google.com/p/google-caja/issues/detail?id=1863>.
+    assertEquals(void 0, testReferenceError_thisIsUndefined);
+    //expectFailure(function() {
+    //  testReferenceError_thisIsUndefined;
+    //}, null, function(e) {
+    //  return e instanceof ReferenceError && e.message ===
+    //    '"testReferenceError_thisIsUndefined" is not defined in this scope.';
+    //});
     pass('testReferenceError');
   });
 </script>
@@ -729,9 +723,7 @@ testTopLevelVarsInCatch
   testParseErrorSafety
 </div>
 <script>
-  jsunitRegisterIf(inES5Mode,
-                   'testParseErrorSafety',
-                   function testParseErrorSafety() {
+  jsunitRegister('testParseErrorSafety', function testParseErrorSafety() {
 
     // Cannot use expectFailure because that lives on the other side of the
     // membrane, which would muffle the problem we're looking for.
@@ -783,9 +775,7 @@ testTopLevelVarsInCatch
   Test mentioning __proto__
 </p>
 <script type="text/javascript">
-  jsunitRegisterIf(inES5Mode,
-                   'testProtoMention',
-                   function testProtoMention() {
+  jsunitRegister('testProtoMention', function testProtoMention() {
     function doProtoTest(global) {
       // Buried in an eval to avoid causing static failures in ES5/3
       // Split identifier to avoid causing the same failure in this block

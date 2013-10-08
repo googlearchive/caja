@@ -22,7 +22,7 @@
  * @requires scanning, JSON, WeakMap, Proxy, document, console, location,
  *     setTimeout, clearTimeout, setInterval, clearInterval,
  *     requestAnimationFrame, cancelAnimationFrame,
- *     cajaVM, directAccess, inES5Mode, getUrlParam,
+ *     cajaVM, directAccess, getUrlParam,
  *     assertTrue, assertEquals, pass, jsunitFail,
  *     Event, HTMLInputElement, HTMLMediaElement, HTMLTableRowElement,
  *     HTMLTableSectionElement, HTMLTableElement, HTMLImageElement,
@@ -523,10 +523,8 @@
     argsByAnyFrame('Object.prototype.__lookupSetter__', G.none);  // TODO abuse
 
     // Chrome has a "non-generic" setter here
-    if (inES5Mode) {
-      expectedAlwaysThrow.setByIdentity(
-          getSetter(Object.prototype, '__proto__'), true);
-    }
+    expectedAlwaysThrow.setByIdentity(
+        getSetter(Object.prototype, '__proto__'), true);
 
     argsByProp('toString', annotate(genNoArgMethod, function(context, thrown) {
       if (thrown) {
@@ -541,23 +539,9 @@
     argsByProp('propertyIsEnumerable', genMethod(genString));  // TODO abuse
 
     argsByProp('toLocaleString', genNoArgMethod);
-    // Workaround for
-    // <https://code.google.com/p/google-caja/issues/detail?id=1840>.
-    if (!inES5Mode) {
-      ['String.prototype.localeCompare',
-          'Number.prototype.toLocaleString',
-          'Date.prototype.toLocaleString',
-          'Date.prototype.toLocaleDateString',
-          'Date.prototype.toLocaleTimeString'].forEach(function(expr) {
-        expectedAlwaysThrow.mark(RefAnyFrame(expr));
-      });
-    }
 
     functionArgs.set(RefAnyFrame('Function'), G.none);
         // TODO deal with function return val
-    if (!inES5Mode) {
-      expectedAlwaysThrow.mark(RefAnyFrame('Function'));  // no eval
-    }
     argsByAnyFrame('Function.prototype', genAllCall());
     argsByIdentity(dummyFunction, genCall());
     argsByAnyFrame('Function.prototype.apply', genMethod(genObject, genArray));
@@ -573,11 +557,6 @@
         // TODO test invocation on Function.prototype itself
         G.tuple(G.value(THIS), G.tuple()));
     [function guestFn(){}, window.setTimeout].forEach(function(f) {
-      if (!inES5Mode) {
-        // Function.prototype() is necessarily broken in ES5/3
-        var proto = Object.getPrototypeOf(f);
-        expectedAlwaysThrow.setByIdentity(proto, true);
-      }
       expectedAlwaysThrow.setByIdentity(getGetter(f, 'arguments'), true);
       expectedAlwaysThrow.setByIdentity(getGetter(f, 'caller'), true);
     });
@@ -630,16 +609,6 @@
         genArrayCall(genNumbers(2))));
     argsByAnyFrame('Array.prototype.unshift',
         genArrayCall(G.tuple(genJSONValue)));
-    if (!inES5Mode) {
-      // without this, call would be applied to frozen array
-      // in ES5 mode Array.prototype.length is a data property
-      // Note: Used to use genSmallInteger but that triggered a crash bug in
-      // Chrome. TODO(kpreid): Isolate and report bug.
-      forEachFrame('Array.prototype', function (proto) {
-        argsByIdentity(getSetter(proto, 'length'),
-            genArrayCall(G.tuple(G.value(0))));
-      });
-    }
 
     argsByAnyFrame('Boolean', genAllCall(genBoolean));
 
@@ -937,15 +906,13 @@
     argsByIdentity(WeakMap, annotate(
         freshResult(genAllCall()), function(context, thrown) {
       if (!thrown) {
-        if (inES5Mode) {  // would fail on es53
-          // known harmless implementation details leak. TODO abuse anyway
-          argsByIdentity(context.get()['delete___'],
-              argsByIdentity(context.get()['get___'],
-              argsByIdentity(context.get()['has___'],
-              argsByIdentity(context.get()['set___'],
-              argsByIdentity(context.get()['permitHostObjects___'],
-              G.none)))));
-        }
+        // known harmless implementation details leak. TODO abuse anyway
+        argsByIdentity(context.get()['delete___'],
+            argsByIdentity(context.get()['get___'],
+            argsByIdentity(context.get()['has___'],
+            argsByIdentity(context.get()['set___'],
+            argsByIdentity(context.get()['permitHostObjects___'],
+            G.none)))));
 
         argsByIdentity(context.get()['delete'], G.none); // TODO abuse
         argsByIdentity(context.get().get, G.none); // TODO abuse
@@ -1206,10 +1173,6 @@
         // numeric properties).
         return true;
       }
-      if (!inES5Mode && whichFrame(object) === 'guest') {
-        // ES5/3 guest not frozen
-        return true;
-      }
     });
 
     // TODO(kpreid): Primitive wrappers are likely indicative of a mistake and
@@ -1265,9 +1228,6 @@
       }
     });
     obtainInstance.define(Function, dummyFunction);
-    if (!inES5Mode) {
-      obtainInstance.define(tamingEnv.Function, tamingEnv.cajaVM.identity);
-    }
     obtainInstance.define(Text, document.createTextNode('foo'));
     obtainInstance.define(Document, document); // TODO(kpreid): createDocument
     obtainInstance.define(Window, window);

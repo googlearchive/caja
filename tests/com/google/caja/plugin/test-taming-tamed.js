@@ -357,24 +357,22 @@
 
     api.objWithThrowingAccessors = {};
 
-    if (inES5Mode) {
-      // Define a custom exception type that does not have a taming
-      function CustomException(msg) { this.msg = msg; }
-      CustomException.prototype.constructor = CustomException;
-      CustomException.prototype.toString = function() {
-        return 'CustomException: ' + this.msg;
-      };
+    // Define a custom exception type that does not have a taming
+    function CustomException(msg) { this.msg = msg; }
+    CustomException.prototype.constructor = CustomException;
+    CustomException.prototype.toString = function() {
+      return 'CustomException: ' + this.msg;
+    };
 
-      Object.defineProperty(api.objWithThrowingAccessors, 'throwingProp', {
-        get: function() {
-          throw new CustomException('getter threw');
-        },
-        set: function(v) {
-          throw new CustomException('setter threw');
-        },
-        enumerable: true
-      });
-    }
+    Object.defineProperty(api.objWithThrowingAccessors, 'throwingProp', {
+      get: function() {
+        throw new CustomException('getter threw');
+      },
+      set: function(v) {
+        throw new CustomException('setter threw');
+      },
+      enumerable: true
+    });
 
     ////////////////////////////////////////////////////////////////////////
 

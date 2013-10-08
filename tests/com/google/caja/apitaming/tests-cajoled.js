@@ -88,7 +88,7 @@
 
     caja.initialize({
       cajaServer: getUrlParam('cajaServer'),
-      forceES5Mode: (getUrlParam('forceES5Mode') === 'true'),
+      maxAcceptableSeverity: 'NEW_SYMPTOM',
       debug: (getUrlParam('debug') === 'true')
     });
 

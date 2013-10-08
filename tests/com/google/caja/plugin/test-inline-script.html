@@ -21,10 +21,8 @@
 <br>
 
 <script type="text/javascript">
-  // This test uses dynamic scripts, and so cannot work in ES5/3 mode.
-  jsunitRegisterIf(inES5Mode,
-                   'testDocumentWriteRecursive',
-                   function testDocumentWriteRecursive() {
+  jsunitRegister('testDocumentWriteRecursive',
+                 function testDocumentWriteRecursive() {
     var testContainer = document.getElementById("testDocumentWriteRecursive");
   
     assertEquals('Full text', 'Hello, World!', testContainer.innerText);

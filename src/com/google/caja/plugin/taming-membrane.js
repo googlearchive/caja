@@ -19,6 +19,9 @@
  * @overrides window
  * @provides TamingMembrane
  */
+// TODO(kpreid): Review privilegedAccess for pieces which are no longer
+// necessary in the post-ES5/3 world. Beware of browser bugs where it matters
+// which frame the caller belongs to.
 function TamingMembrane(privilegedAccess, schema) {
 
   'use strict';
@@ -303,7 +306,6 @@ function TamingMembrane(privilegedAccess, schema) {
       }
     }
     if (t) {
-      privilegedAccess.banNumerics(t);
       tamesTo(f, t);
     }
 
@@ -402,7 +404,6 @@ function TamingMembrane(privilegedAccess, schema) {
         applyFeralFunction(f, o, untameArray(arguments));
         tameObjectWithMethods(o, this);
         tamesTo(o, this);
-        privilegedAccess.banNumerics(this);
       }
     };
 
@@ -433,7 +434,6 @@ function TamingMembrane(privilegedAccess, schema) {
       value: t
     });
 
-    privilegedAccess.banNumerics(tPrototype);
     Object.freeze(tPrototype);
 
     tamesTo(fPrototype, tPrototype);
@@ -601,19 +601,6 @@ function TamingMembrane(privilegedAccess, schema) {
   }
 
   function untameCajaRecord(t) {
-    return privilegedAccess.isES5Browser
-        ? untameCajaRecordByPropertyHandlers(t)
-        : untameCajaRecordByEvisceration(t);
-  }
-
-  function untameCajaRecordByEvisceration(t) {
-    var f = {};
-    privilegedAccess.eviscerate(t, f, untame);
-    tameRecord(f, t);
-    return f;
-  }
-
-  function untameCajaRecordByPropertyHandlers(t) {
     var f = {};
     Object.getOwnPropertyNames(t).forEach(function(p) {
       var d = Object.getOwnPropertyDescriptor(t, p);

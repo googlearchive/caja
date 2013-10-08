@@ -730,82 +730,7 @@ For help on building and testing Caja, see:
     <jar destfile="${jars}/pluginc-src.jar" basedir="${src}"/>
   </target>
 
-  <!-- Cajoles test resources that contain es53 to javascript. -->
-  <target name="CajoledTests" depends="CajoledDomado">
-    <property name="libplugin" location="${lib.caja}/plugin"/>
-
-    <!-- Statically cajole some tests for caja.js testing -->
-    <transform>
-     <input file="${tests.caja}/plugin/fixture-guest.js"/>
-     <output file="${testlib}/com/google/caja/plugin/fixture-guest.out.js"
-             language="caja"/>
-    </transform>
-    <transform>
-     <input file="${tests.caja}/plugin/fixture-guest.html"/>
-     <output file="${testlib}/com/google/caja/plugin/fixture-guest.out.html"
-             language="caja"/>
-    </transform>
-    <transform>
-     <input file="${tests.caja}/plugin/test-cajoled.js"/>
-     <output file="${testlib}/com/google/caja/plugin/test-cajoled.out.js"
-             language="caja"/>
-    </transform>
-
-    <!-- These and other HTML and JS files are copied verbatim -->
-    <copy todir="${testlib}">
-      <fileset dir="${src}" includes="**/*.html,**/*.js,**/*.css,**/*.jpg,**/*.png"/>
-      <fileset dir="${tests}" includes="**/*.html,**/*.js,**/*.css,**/*.jpg,**/*.png"/>
-      <fileset dir="${src}" includes="**/apitaming/*"/>
-      <fileset dir="${tests}" includes="**/apitaming/*"/>
-    </copy>
-
-    <replace dir="${testlib}/com/google/caja/plugin"
-        propertyFile="${lib.caja}/reporting/buildInfo.properties" >
-      <replacefilter token="%VERSION%" property="svnVersion" />
-      <include name="browser-test-case.js" />
-      <include name="modules-test.html" />
-    </replace>
-  </target>
-
-  <target name="CajoledDomado" depends="pluginc">
-    <transform>
-      <output file="${lib}/domado.jslint.stamp"
-       language="jslint" ignore="UNCAUGHT_THROW_DURING_INIT"/>
-      <output file="${lib.caja}/plugin/domado.out.js"
-       language="caja" renderer="pretty"/>
-      <input file="${src.caja}/plugin/uri.js"/>
-      <input file="${src.caja}/ses-promise.js"/>
-      <input file="${src.caja}/plugin/unicode.js"/>
-      <input file="${lib.caja}/plugin/css-defs.js"/>
-      <input file="${lib.caja}/plugin/html4-defs.js"/>
-      <input file="${src.caja}/plugin/html-sanitizer.js"/>
-      <input file="${src.caja}/plugin/html-schema.js"/>
-      <input file="${src.caja}/plugin/html-emitter.js"/>
-      <input file="${src.caja}/plugin/csslexer.js"/>
-      <input file="${src.caja}/plugin/sanitizecss.js"/>
-      <input file="${src.caja}/plugin/cssparser.js"/>
-      <input file="${src.caja}/plugin/bridal.js"/>
-      <input file="${src.caja}/plugin/domado.js"/>
-    </transform>
-  </target>
-
-  <target name="CajoledTamingMembrane" depends="pluginc">
-    <transform>
-      <output file="${lib.caja}/plugin/taming-membrane.out.js"
-              language="caja" renderer="pretty"/>
-        <input file="${src.caja}/plugin/taming-membrane.js"/>
-    </transform>
-  </target>
-
-  <target name="CajoledTamingSchema" depends="pluginc">
-    <transform>
-        <output file="${lib.caja}/plugin/taming-schema.out.js"
-                language="caja" renderer="pretty"/>
-        <input file="${src.caja}/plugin/taming-schema.js"/>
-    </transform>
-  </target>
-
-  <target name="MinifiedJs" depends="CajoledDomado,CajoledTamingMembrane,CajoledTamingSchema">
+  <target name="MinifiedJs">
     <transform>
       <output file="${lib}/caja.jslint.stamp"
         language="jslint"/>
@@ -838,60 +763,6 @@ For help on building and testing Caja, see:
       <input file="${src.caja}/plugin/cssparser.js"/>
       <input file="${lib.caja}/plugin/html4-defs.js"/>
       <input file="${src.caja}/plugin/html-sanitizer.js"/>
-    </transform>
-    <transform>
-      <output file="${lib}/es53-taming-frame.jslint.stamp"
-       language="jslint"/>
-      <!-- TODO(felix8a): closure cleanup
-      <output file="${lib.caja}/plugin/es53-taming-frame.clo.js"
-       language="closure"/>
-      -->
-      <output file="${lib.caja}/plugin/es53-taming-frame.opt.js"
-       language="javascript" renderer="minify" ignore="MAYBE_MISSING_SEMI"/>
-       <!-- warning ignored from including minified files -->
-      <output file="${lib.caja}/plugin/es53-taming-frame.js"
-       language="javascript" renderer="concat"/>
-      <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
-      <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
-      <input file="${src.caja}/es53.js"/>
-      <input file="${src.caja}/log-to-console.js"/>
-      <input file="${src.caja}/plugin/capture-cajoled-module.js"/>
-      <input file="${src.caja}/plugin/capture-domado.js"/>
-      <input file="${lib.caja}/plugin/domado.out.js" jslint="false"/>
-      <input file="${src.caja}/plugin/capture-taming-schema.js"/>
-      <input file="${lib.caja}/plugin/taming-schema.out.js" jslint="false"/>
-      <input file="${src.caja}/plugin/capture-taming-membrane.js"/>
-      <input file="${lib.caja}/plugin/taming-membrane.out.js" jslint="false"/>
-      <input file="${src.caja}/plugin/uri.js"/>
-      <input file="${src.caja}/cajita-promise.js"/>
-      <input file="${src.caja}/plugin/json-rest-transport.js"/>
-      <input file="${src.caja}/plugin/cajoling-service-client.js"/>
-      <input file="${src.caja}/plugin/taming-frame.js"/>
-      <input file="${src.caja}/flash/caja-flash.js"/>
-      <input file="${src.caja}/plugin/guest-manager.js"/>
-      <input file="${src.caja}/plugin/caja-frame-tracker.js"/>
-      <input file="${src.caja}/plugin/es53-frame-group.js"/>
-      <input file="${src.caja}/plugin/caja-iframe-done.js"/>
-    </transform>
-    <transform>
-      <output file="${lib}/es53-guest-frame.jslint.stamp"
-       language="jslint"/>
-      <!-- TODO(felix8a): closure cleanup
-      <output file="${lib.caja}/plugin/es53-guest-frame.clo.js"
-       language="closure"/>
-      -->
-      <output file="${lib.caja}/plugin/es53-guest-frame.opt.js"
-       language="javascript" renderer="minify"/>
-      <output file="${lib.caja}/plugin/es53-guest-frame.js"
-       language="javascript" renderer="concat"/>
-      <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
-      <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
-      <input file="${src.caja}/es53.js"/>
-      <input file="${src.caja}/log-to-console.js"/>
-      <input file="${src.caja}/cajita-promise.js"/>
-      <input file="${src.caja}/plugin/prepare-modules.js"/>
-      <input file="${src.caja}/plugin/load-module.js"/>
-      <input file="${src.caja}/plugin/caja-iframe-done.js"/>
     </transform>
     <transform>
       <output file="${lib}/initSES.jslint.stamp"
@@ -988,7 +859,6 @@ For help on building and testing Caja, see:
       <input file="${src.caja}/plugin/taming-membrane.js"/>
 
       <input file="${src.caja}/ses-promise.js"/>
-      <input file="${src.caja}/plugin/cajoling-service-client.js"/>
       <input file="${src.caja}/plugin/guest-manager.js"/>
       <input file="${src.caja}/plugin/caja-frame-tracker.js"/>
       <input file="${src.caja}/plugin/ses-frame-group.js"/>
@@ -1031,10 +901,6 @@ For help on building and testing Caja, see:
     </transform>
     <replace dir="${lib.caja}/plugin" propertyFile="${lib.caja}/reporting/buildInfo.properties" >
       <replacefilter token="%VERSION%" property="svnVersion" />
-      <include name="es53-taming-frame.opt.js" />
-      <include name="es53-taming-frame.js" />
-      <include name="es53-guest-frame.opt.js" />
-      <include name="es53-guest-frame.js" />
       <include name="ses-single-frame.opt.js" />
       <include name="ses-single-frame.js" />
       <include name="utility-frame.opt.js" />
@@ -1042,7 +908,21 @@ For help on building and testing Caja, see:
     </replace>
   </target>
 
-  <target name="AllTests" depends="CajoledTests,CajolingServlet,PlaygroundBE,PlaygroundSupportingFiles,precajole-light">
+  <target name="AllTests" depends="CajolingServlet,PlaygroundBE,PlaygroundSupportingFiles,precajole-light">
+    <copy todir="${testlib}">
+      <fileset dir="${src}" includes="**/*.html,**/*.js,**/*.css,**/*.jpg,**/*.png"/>
+      <fileset dir="${tests}" includes="**/*.html,**/*.js,**/*.css,**/*.jpg,**/*.png"/>
+      <fileset dir="${src}" includes="**/apitaming/*"/>
+      <fileset dir="${tests}" includes="**/apitaming/*"/>
+    </copy>
+
+    <replace dir="${testlib}/com/google/caja/plugin"
+        propertyFile="${lib.caja}/reporting/buildInfo.properties" >
+      <replacefilter token="%VERSION%" property="svnVersion" />
+      <include name="browser-test-case.js" />
+      <include name="modules-test.html" />
+    </replace>
+
     <depend closure="yes" destdir="${testlib}" srcdir="${tests}" />
     <javac destdir="${testlib}" debug="true" target="1.5" source="1.5">
       <src path="${tests}"/>
@@ -1106,9 +986,6 @@ For help on building and testing Caja, see:
     </copy>
     <copy todir="${testlib}/com/google/caja/plugin"
           file="${third_party}/js/jsunit/2.2/jsUnitCore.js"/>
-    <copy todir="${testlib}/com/google/caja/plugin/proxies">
-      <fileset dir="${third_party}/js/proxies" />
-    </copy>
     <copy todir="${testlib}">
       <!-- For RhinoTestBed tests; arrange files so that they can use the same
            relative URLs in browser. TODO(kpreid): Clean up the whole mess. -->
@@ -1207,12 +1084,10 @@ For help on building and testing Caja, see:
     </javac>
     <copy todir="${lib}">
       <fileset dir="${src}">
-        <include name="**/caja/cajita-promise.js"/>
-        <include name="**/caja/es53.js"/>
-        <include name="**/caja/tracing.js"/>
+        <include name="**/caja/es53.js"/><!-- es53 legacy -->
         <include name="**/caja/console.js"/>
         <include name="**/caja/flash/caja-flash.js"/>
-        <include name="**/caja/log-to-console.js"/>
+        <include name="**/caja/log-to-console.js"/><!-- es53 legacy -->
         <include name="**/caja/plugin/bridal.js"/>
         <include name="**/caja/plugin/csslexer.js"/>
         <include name="**/caja/plugin/uri.js"/>
@@ -1220,15 +1095,10 @@ For help on building and testing Caja, see:
         <include name="**/caja/plugin/cssparser.js"/>
         <include name="**/caja/plugin/domado.js"/>
         <include name="**/caja/plugin/caja.js"/>
-        <include name="**/caja/plugin/cajoling-service-client.js"/>
-        <include name="**/caja/plugin/host-tools.js"/>
         <include name="**/caja/plugin/html-emitter.js"/>
         <include name="**/caja/plugin/html-sanitizer.js"/>
         <include name="**/caja/plugin/html-sanitizer-legacy.js"/>
         <include name="**/caja/plugin/html-schema.js"/>
-        <include name="**/caja/plugin/json-rest-transport.js"/>
-        <include name="**/caja/plugin/load-module.js"/>
-        <include name="**/caja/plugin/plugin-base.js"/>
         <include name="**/caja/plugin/templates/*.json"/>
         <include name="**/caja/plugin/unicode.js"/>
         <include name="**/caja/apitaming/*.js"/>
@@ -1299,7 +1169,7 @@ For help on building and testing Caja, see:
 
   <!-- Copies playground front end supporting files -->
   <target name="PSF" depends="PlaygroundSupportingFiles" />
-  <target name="PlaygroundSupportingFiles" depends="CajoledTests,MinifiedJs">
+  <target name="PlaygroundSupportingFiles" depends="MinifiedJs">
     <copy todir="${war}/apitaming">
       <fileset dir="${src.caja}/apitaming">
         <include name="*.*" />
@@ -1409,10 +1279,6 @@ For help on building and testing Caja, see:
       <!-- For iframe-based Caja loading - TODO(kpreid): this should become
            part of a "Caja server" package separate from the playground. -->
       <fileset dir="${lib.caja}/plugin">
-        <include name="es53-guest-frame.js"/>
-        <include name="es53-guest-frame.opt.js"/>
-        <include name="es53-taming-frame.js"/>
-        <include name="es53-taming-frame.opt.js"/>
         <include name="ses-single-frame.js"/>
         <include name="ses-single-frame.opt.js"/>
         <include name="utility-frame.js"/>

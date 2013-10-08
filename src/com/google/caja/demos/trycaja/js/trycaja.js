@@ -22,12 +22,11 @@
   var controller; // Console controller
   var lastLine;
   var debug = false;
-  var es5 = window.location.search.indexOf("es5") >= 0;
 
   $(document).ready(caja.configure({
       server: "..",
       debug : true,
-      forceES5Mode: es5
+      maxAcceptableSeverity: 'NEW_SYMPTOM'
     }, function (frameGroup) {
     frameGroup.makeES5Frame(document.getElementById("cajaDisplay"),
         {
@@ -86,18 +85,6 @@
             } catch (e) {
               return false;
             }
-          }
-
-          function cajole(line, callback) {
-            jsonp("../cajole?"
-                  + "input-mime-type=text/javascript&"
-                  + "callback=handleJSON&"
-                  + "alt=json-in-script&"
-                  + "directive=ES53&"
-                  // work around for "use " directives
-                  + "content=0;" + encodeURIComponent(line) + "&"
-                  // Bust cache
-                  + "random=" + Math.random(), callback);
           }
 
           function updateConsole(report,
@@ -200,44 +187,20 @@
               controller.inner.append(controller.ajaxloader);
               controller.scrollToBottom();
               if (commandRef.ignore) { return; }
-              if (es5) {
-                var hasReturnValue = isExpr(line);
-                try {
-                  line = hasReturnValue ? 'return (' + line + ')' : line;
-                  frame.content(top.location, line, 'text/javascript')
-                          .run({}, function(runtimeResult) {
-                      controller.finishCommand();
-                      updateConsole(report,
-                          hasReturnValue ? runtimeResult : NO_RESULT,
-                          true, undefined, line, line, ["SES"])
-                  });
-                } catch (e) {
-                  controller.finishCommand();
-                  updateConsole(report, "", false, e,
-                      line, line, [String(e)]);
-                }
-              } else {
-                // Send to the cajoling service
-                cajole(line, function (resp) {
-                  if (resp.js) {
-                    try {
-                      frame.contentCajoled(top.location, resp.js, "")
-                      .run({}, function(runtimeResult) {
-                        controller.finishCommand();
-                        updateConsole(report, runtimeResult, true, undefined,
-                            line, resp.js, resp.messages)
-                      });
-                    } catch (e) {
-                      controller.finishCommand();
-                      updateConsole(report, undefined, false, e,
-                          line, resp.js, resp.messages)
-                    }
-                  } else {
+              var hasReturnValue = isExpr(line);
+              try {
+                line = hasReturnValue ? 'return (' + line + ')' : line;
+                frame.content(top.location, line, 'text/javascript')
+                        .run({}, function(runtimeResult) {
                     controller.finishCommand();
-                    updateConsole(report, undefined, false, undefined,
-                        line, resp.js, resp.messages)
-                  }
+                    updateConsole(report,
+                        hasReturnValue ? runtimeResult : NO_RESULT,
+                        true, undefined, line, line, ["SES"])
                 });
+              } catch (e) {
+                controller.finishCommand();
+                updateConsole(report, "", false, e,
+                    line, line, [String(e)]);
               }
             },
             charInsertTrigger: function() {
@@ -347,11 +310,6 @@
              msg: "Toggled " + (debug ? "on" : "off") + " debugging",
         className:"jquery-console-message-alert"
       }]);
-      return true;
-    }
-    // TODO(jasvir): Temp switch - replace with a UI button or autodetect
-    case 'es5': {
-      window.location.search = !es5 ? "es5" : "";
       return true;
     }
     case 'lessons': {

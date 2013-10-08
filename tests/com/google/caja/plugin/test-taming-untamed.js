@@ -36,10 +36,6 @@
 
     extraImports.tamingFrameUSELESS = frame.USELESS;
 
-    if (!inES5Mode) {
-      extraImports.guestFrameUSELESS = frame.iframe.contentWindow.___.USELESS;
-    }
-
     // An object that can be used by cajoled guest code to store some state
     // between invocations of the "eval" functions (defined below).
     var state = {};
@@ -103,19 +99,17 @@
         frame.tame(frame.markFunction(assertRegexp));
 
     function assertUntamedPropertyAccessorExceptions(o) {
-      if (inES5Mode) {
-        try {
-          var x = o.throwingProp;
-          fail();
-        } catch (e) {
-          assertEquals('Error: CustomException: getter threw', e.toString());
-        }
-        try {
-          o.throwingProp = 7;
-          fail();
-        } catch (e) {
-          assertEquals('Error: CustomException: setter threw', e.toString());
-        }
+      try {
+        var x = o.throwingProp;
+        fail();
+      } catch (e) {
+        assertEquals('Error: CustomException: getter threw', e.toString());
+      }
+      try {
+        o.throwingProp = 7;
+        fail();
+      } catch (e) {
+        assertEquals('Error: CustomException: setter threw', e.toString());
       }
     }
 

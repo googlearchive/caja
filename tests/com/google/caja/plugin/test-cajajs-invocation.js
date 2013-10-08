@@ -17,7 +17,7 @@
  * create an ES53 frame.
  *
  * @author ihab.awad@gmail.com
- * @requires caja, jsunitRun, readyToTest, inES5Mode, minifiedMode,
+ * @requires caja, jsunitRun, readyToTest, minifiedMode,
  *     basicCajaConfig
  */
 
@@ -30,12 +30,9 @@
    */
   function assertGuestJsCorrect(frame, div, result) {
     // TODO(kpreid): reenable or declare completion value unsupported
-    if (!inES5Mode) {
-      assertEquals(12, result);
-    } else {
-      console.warn('JS completion value not yet supported by ES5 mode; '
-          + 'not testing.');
-    }
+    //assertEquals(12, result);
+    console.warn('JS completion value not yet supported by ES5 mode; '
+        + 'not testing.');
   }
 
   /**
@@ -47,19 +44,15 @@
     assertStringContains('static html', div.innerHTML);
     assertStringContains('edited html', div.innerHTML);
     assertStringContains('dynamic html', div.innerHTML);
-    if (inES5Mode) {
-      assertStringContains('external script', div.innerHTML);
-    }
+    assertStringContains('external script', div.innerHTML);
     assertEquals('small-caps',
         containerDoc.defaultView.getComputedStyle(
             containerDoc.getElementById('foo-' + frame.idSuffix),
             null).fontVariant);
-    if (inES5Mode) {
-      assertEquals('inline',
-        containerDoc.defaultView.getComputedStyle(
-            containerDoc.getElementById('hello-' + frame.idSuffix),
-            null).display);
-    }
+    assertEquals('inline',
+      containerDoc.defaultView.getComputedStyle(
+          containerDoc.getElementById('hello-' + frame.idSuffix),
+          null).display);
   }
 
   /**
@@ -220,10 +213,7 @@
     });
   });
 
-  jsunitRegisterIf(
-      inES5Mode,
-      'testBuilderApiXhr',
-      function testBuilderApiXhr() {
+  jsunitRegister('testBuilderApiXhr', function testBuilderApiXhr() {
     var div = createDiv();
     caja.load(div, xhrUriPolicy, function (frame) {
       frame.code('fixture-guest.html', 'text/html')
@@ -234,10 +224,7 @@
     });
   });
 
-  jsunitRegisterIf(
-      inES5Mode,
-      'testUnicodeInCodeFails',
-      function testUnicodeInCodeFails() {
+  jsunitRegister('testUnicodeInCodeFails', function testUnicodeInCodeFails() {
     var code =
       '<script> var x = 42; </script>' +
       '<script> x++; var te\ufeffst = 1; </script>' + // should not run
@@ -258,10 +245,7 @@
     }));
   });
 
-  jsunitRegisterIf(
-      inES5Mode,
-      'testUnicodeInStringOk',
-      function testUnicodeInStringOk() {
+  jsunitRegister('testUnicodeInStringOk', function testUnicodeInStringOk() {
     var code =
       '<script> var x = 42; </script>' +
       '<script> x = \'te\ufeffst\'; </script>' + // should run
@@ -444,113 +428,7 @@
     });
   });
 
-  if (!inES5Mode)
-  jsunitRegister('testBuilderApiContentCajoledHtml',
-      function testBuilderApiContentCajoledHtml() {
-    var div = createDiv();
-    caja.load(div, uriPolicy, function (frame) {
-      fetch('fixture-guest.out.html', function(resp) {
-        var htmlAndJs = splitHtmlAndScript(resp);
-
-        frame.cajoled('/', htmlAndJs[1], htmlAndJs[0])
-          .run(function (result) {
-            assertGuestHtmlCorrect(frame, div);
-            jsunitPass('testBuilderApiContentCajoledHtml');
-          });
-      });
-    });
-  });
-
-  if (!inES5Mode)
-  jsunitRegister('testBuilderApiContentCajoledJs',
-      function testBuilderApiContentCajoledJs() {
-    caja.load(undefined, uriPolicy, function (frame) {
-      var extraImports = { x: 4, y: 3 };
-      fetch('fixture-guest.out.js', function(script) {
-        frame.cajoled(undefined, script, undefined)
-             .api(extraImports)
-             .run(function (result) {
-               assertGuestJsCorrect(frame, undefined, result);
-               jsunitPass('testBuilderApiContentCajoledJs');
-             });
-      });
-    });
-  });
-
-  // When given both cajoled and uncajoled code, use the right one.
-  jsunitRegister('testCajoledAndUncajoled', function testCajoledAndUncajoled() {
-    caja.load(undefined, uriPolicy, function (frame) {
-      var status = "unknown";
-      var imports = {
-        setStatus: frame.tame(frame.markFunction(function(s) { status = s; }))
-      };
-      fetch('test-cajoled.out.js', function (cajoled) {
-        fetch('test-uncajoled.js', function (uncajoled) {
-          frame.cajoled(undefined, cajoled, undefined)
-            .code(undefined, 'application/javascript', uncajoled)
-            .api(imports)
-            .run(function (result) {
-              if (inES5Mode) {
-                assertEquals('not cajoled', status);
-              } else {
-                assertEquals('is cajoled', status);
-              }
-              jsunitPass('testCajoledAndUncajoled');
-            });
-        });
-      });
-    });
-  });
-
   caja.makeFrameGroup(basicCajaConfig, function (frameGroup) {
-    // TODO(ihab.awad): Test 'base url' functionality, esp. for "content" cases
-    if (!inES5Mode)
-    jsunitRegister('testContentCajoledHtml', function testContentCajoledHtml() {
-      fetch('fixture-guest.out.html', function(resp) {
-        var htmlAndScript = splitHtmlAndScript(resp);
-        var div = createDiv();
-        frameGroup.makeES5Frame(div, uriPolicy, function (frame) {
-          frame.contentCajoled('/', htmlAndScript[1], htmlAndScript[0])
-               .run({}, function (result) {
-            assertGuestHtmlCorrect(frame, div);
-            jsunitPass('testContentCajoledHtml');
-          });
-        });
-      });
-    });
-
-    if (!inES5Mode)
-    jsunitRegister('testContentCajoledJs', function testContentCajoledJs() {
-      fetch('fixture-guest.out.js', function(script) {
-        frameGroup.makeES5Frame(undefined, uriPolicy, function (frame) {
-          var extraImports = { x: 4, y: 3 };
-          frame.contentCajoled(undefined, script, undefined)
-               .run(extraImports, function (result) {
-            assertGuestJsCorrect(frame, undefined, result);
-            jsunitPass('testContentCajoledJs');
-          });
-        });
-      });
-    });
-
-    if (!inES5Mode)
-    jsunitRegister('testNoImports', function testNoImports() {
-      fetch('fixture-guest.out.html', function(resp) {
-        var htmlAndScript = splitHtmlAndScript(resp);
-        var div = createDiv();
-        frameGroup.makeES5Frame(div, uriPolicy, function (frame) {
-          frame.contentCajoled('/', htmlAndScript[1], htmlAndScript[0])
-               .run(undefined, function (result) {
-            assertGuestHtmlCorrect(frame, div);
-            jsunitPass('testNoImports');
-          });
-        });
-      });
-    });
-
-    // TODO(ihab.awad): Implement 'urlCajoled' case and enable the below.
-    // jsunitRegister('testUrlCajoledHtml', function testUrlCajoledHtml() { });
-    // jsunitRegister('testUrlCajoledJs', function testUrlCajoledJs() { });
 
     jsunitRegister('testContentHtml', function testContentHtml() {
       fetch('fixture-guest.html', function(resp) {

@@ -83,7 +83,8 @@
 
 <p class="testcontainer" id="testRejectedHandlerString">
   testRejectedHandlerString -- Rejected complex handlers should still be
-  attributes (expected by jQuery)
+  attributes (expected by jQuery).
+  TODO(kpreid): This test is no longer relevant. Check if anything to salvage.
 </p>
 <script type="text/javascript">
   jsunitRegister('testRejectedHandlerString',
@@ -92,14 +93,6 @@
 
     elem.setAttribute('onclick', 'foo');
     
-    if (!inES5Mode) {
-      // This assert is not testing for desired behavior, but if it fails due to
-      // the handler being real code, this test is no longer testing what it was
-      // written to test (the behavior of adding unsupported handler values).
-      assertEquals('/*not supported*/',
-                   directAccess.getAttribute(elem, 'onclick'));
-    }
-
     assertEquals('virtual atribute string', 'string',
         typeof elem.getAttribute('onclick'));
     assertEquals('host attribute string', 'string',
@@ -525,17 +518,9 @@
   }());
   jsunitRegister('testStringTimeout',
                  function testStringTimeout() {
-    try {
-      setTimeout('testStringTimeout_str();', 0);
-      setTimeout(
-          {toString: function() {return 'testStringTimeout_toString();';}}, 0);
-    } catch (e) {
-      if (!inES5Mode) {  // no eval support
-        pass('testStringTimeout');
-      } else {
-        throw e;
-      }
-    }
+    setTimeout('testStringTimeout_str();', 0);
+    setTimeout(
+        {toString: function() {return 'testStringTimeout_toString();';}}, 0);
   });
   function testStringTimeout_finish() {
     pass('testStringTimeout');

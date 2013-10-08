@@ -22,7 +22,7 @@
  *
  * @author kpreid@switchb.org
  *
- * @requires inES5Mode, directAccess, cajaVM
+ * @requires cajaVM
  * @requires window
  * @requires WeakMap, JSON, setTimeout
  * @provides scanning
@@ -73,12 +73,7 @@ var scanning;  // exports
         var name = 'as[' + i + ']';
         args += args !== '' ? ',' + name : name;
       }
-      if (inES5Mode) {
-        return Function('f,as', 'return f(' + args + ');');
-      } else {
-        return directAccess.evalInTamingFrame(
-            '___.f(function (f,as){return f.i___(' + args + ');})');
-      }
+      return Function('f,as', 'return f(' + args + ');');
     }
     var appliers = [];
     /** Apply fn to args without using Function.prototype.apply. */
@@ -165,18 +160,6 @@ var scanning;  // exports
     }
   });
 
-  var isToxicFunction;
-  if (inES5Mode) {
-    isToxicFunction = function isToxicFunctionSES(object) { return false; };
-  } else {
-    var tamingFrameFunctionPrototype =
-        directAccess.evalInTamingFrame('Function.prototype');
-    isToxicFunction = function isToxicFunctionES53(object) {
-      return object === Function.prototype ||
-          object === tamingFrameFunctionPrototype;
-    };
-  }
-
   function shouldTreatAccessorAsValue(object, name, desc) {
     return (
         // work around SES patching frozen value properties into accessors
@@ -188,7 +171,7 @@ var scanning;  // exports
 
   function getFunctionName(fun) {
     var m;
-    if (typeof fun !== 'function' || isToxicFunction(fun)) {
+    if (typeof fun !== 'function') {
       return '';
     } else if (typeof fun.name === 'string') {
       return fun.name;
@@ -894,9 +877,7 @@ var scanning;  // exports
           if (desc) { recurse(name, desc); }
         });
         var prototype = Object.getPrototypeOf(object);
-        if (!isToxicFunction(prototype)) {
-          recurse('[[Prototype]]', {value: prototype});
-        }
+        recurse('[[Prototype]]', {value: prototype});
         if (problematicProps.length) {
           problematicProps.sort();
           noteProblem('Properties are ' +

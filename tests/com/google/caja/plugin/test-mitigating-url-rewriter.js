@@ -27,23 +27,23 @@
     fetch: caja.policy.net.fetcher.USE_XHR,
     rewrite: caja.policy.net.rewriter.ALL,
     mitigate: function (uri) {
-      var before = '/test-precajole.js';
+      var before = '/test-mitigating-url-rewriter-input.js';
       var prefix = '/ant-testlib/com/google/caja/plugin/';
-      var after = prefix + 'test-precajole-precajoled.js';
-      return (uri.getPath() == before) ? after : null;
+      var after = prefix + 'test-mitigating-url-rewriter-replacement.js';
+      return (uri.getPath() === before) ? after : null;
     }
   };
 
   caja.initialize(basicCajaConfig);
 
-  jsunitRegister('testPrecajole', function testPrecajole() {
+  jsunitRegister('testRewriteOccurs', function testPrecajole() {
     caja.load(createDiv(), cachingUriPolicy, function (frame) {
       var extraImports = createExtraImportsForTesting(caja, frame);
       frame.code(
           location.protocol + '//' + location.host + '/',
           'text/html',
           '<div>' +
-          '<script src="/test-precajole.js">' +
+          '<script src="/test-mitigating-url-rewriter-input.js">' +
           '</script>' +
           '</div>')
           .api(extraImports)

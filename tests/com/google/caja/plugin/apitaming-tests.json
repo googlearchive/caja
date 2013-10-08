@@ -1,7 +1,6 @@
 [
   {
     "label": "apitaming",
-    "mode": "none",
     "manual": true,
     "tests": [
       {

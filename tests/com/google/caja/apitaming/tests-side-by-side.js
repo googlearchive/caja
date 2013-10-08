@@ -32,8 +32,7 @@
       ('cajaServer=' + cajaServer);
 
   addIfr('unc',  './tests-uncajoled.html?' + commonSnippet);
-  addIfr('es53', './tests-cajoled.html?'   + commonSnippet + '&forceES5Mode=false');
-  addIfr('es5',  './tests-cajoled.html?'   + commonSnippet + '&forceES5Mode=true');
+  addIfr('caja', './tests-cajoled.html?'   + commonSnippet);
 })();
 
 

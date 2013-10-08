@@ -59,12 +59,6 @@
  * field is inherited parameter-by-parameter; a parameter can be suppressed by
  * giving its value as undefined.
  *
- * <dt>mode
- * <dd>Selects ES5 or ES5/3 mode; corresponds to URL parameter 'es5' but with
- * different values. Valid values are 'none' (for tests not specific to a mode),
- * 'es5', 'es53', or 'both'. Any test record whose (possibly inherited) value is
- * 'both' is implicitly turned into a group of two subtests, one for each mode.
- *
  * <dt>minified
  * <dd>Selects whether Caja is loaded minified; corresponds to URL parameter
  * 'minified'. Valid values are true or false. Any test record not specifying
@@ -155,14 +149,6 @@ var parseTestCatalog;
     }
   }
 
-  function onlyVariesMode(record) {
-    if ('params' in record || 'guest' in record || 'driver' in record ||
-        'bare' in record || 'tests' in record) {
-      return false;
-    }
-    return true;
-  }
-
   function deriveURL(record, name) {
     var url = record[name];
     if ((name + '-template') in record) {
@@ -207,8 +193,8 @@ var parseTestCatalog;
     disabled: false
   };
 
-  var SPLIT_MODE = 1;
-  var SPLIT_MIN = 2;
+  // bit flags (currently only one)
+  var SPLIT_MIN = 1;
 
   function parseTestCatalog_(json, output, onlyAutomatedTests) {
     var seenLabels = {};
@@ -224,7 +210,6 @@ var parseTestCatalog;
           'guest' in record ? labelFromFilename(prefix, record.guest) :
           'driver' in record ? labelFromFilename(prefix, record.driver) :
           'bare' in record ? labelFromFilename(prefix, record.bare) :
-          onlyVariesMode(record) ? record.mode :
           '[' + index + ']';
       var longLabel = label === null ? prefix.substr(0, prefix.length - 1)
         : prefix + label;
@@ -236,7 +221,7 @@ var parseTestCatalog;
           'driver', 'driver-template',
           'guest', 'guest-template',
           'params',
-          'mode', 'minified', 'expected-pass',
+          'minified', 'expected-pass',
           'manual', 'disabled', 'failureIsAnOption',
           '_mini']);
 
@@ -244,20 +229,6 @@ var parseTestCatalog;
       var merged = basicMerge(
           inherit, record, ['label', 'comment', 'tests'], ['params']);
       merged.label = label;
-
-      // validate mode
-      var mode;
-      if ('mode' in merged) {
-        mode = merged.mode;
-      } else if ('bare' in merged) {
-        throw new Error(longLabel + ' is bare and must specify a mode');
-      } else {
-        mode = 'both';
-      }
-      if (['none', 'es5', 'es53', 'both'].indexOf(mode) === -1) {
-        throw new Error(
-            longLabel + ' has invalid "mode": ' + JSON.stringify(mode));
-      }
 
       // format comment
       var comment = (merged.comment || {}) instanceof Array
@@ -267,26 +238,7 @@ var parseTestCatalog;
       // Split leaves into virtual children
       var newSplits = splits;
       if (!('tests' in merged)) {
-        if (mode === 'both') {
-          // Split 'both' tests into two subtests.
-          merged._mini = true;
-          merged.tests = [
-            {'mode': 'es53', 'label': 'es53'},
-            {'mode': 'es5', 'label': 'es5'}
-          ];
-          addPossibleUncajoled(merged);
-          newSplits |= SPLIT_MODE;
-        } else if ((mode === 'es5' || mode === 'es53') &&
-            !(splits & SPLIT_MODE)) {
-          // Virtually split single-mode tests for consistency.
-          merged._mini = true;
-          merged.tests = [
-            {'mode': 'es53', 'label': 'es53', 'disabled': mode !== 'es53'},
-            {'mode': 'es5', 'label': 'es5', 'disabled': mode !== 'es5'}
-          ];
-          addPossibleUncajoled(merged);
-          newSplits |= SPLIT_MODE;
-        } else if (!('minified' in merged.params) && !('bare' in merged) &&
+        if (!('minified' in merged.params) && !('bare' in merged) &&
           !(splits & SPLIT_MIN)) {
           // Split browser-test-case.html tests into minified and not.
           // TODO(kpreid): condition is sloppy: we actually mean "is this a
@@ -302,15 +254,7 @@ var parseTestCatalog;
 
       if ('tests' in merged) {
         var tests = merged.tests;
-        var isOnlyMode = true;
-        forEach(tests, function(sub, i) {
-          isOnlyMode = isOnlyMode && onlyVariesMode(sub);
-        });
-        if (isOnlyMode) {
-          // don't re-split
-          newSplits |= SPLIT_MODE;
-        }
-        var group = merged._mini || isOnlyMode
+        var group = merged._mini
             ? output.addMiniGroup(label, comment)
             : output.addGroup(label, comment);
         forEach(tests, function(sub, i) {
@@ -327,9 +271,6 @@ var parseTestCatalog;
         }
         if ('bare' in merged) {
           outPath = deriveURL(merged, 'bare');
-        }
-        if (mode !== 'none') {
-          outParams['es5'] = String(mode === 'es5');
         }
         if ('expected-pass' in merged) {
           outParams['expected-pass'] =

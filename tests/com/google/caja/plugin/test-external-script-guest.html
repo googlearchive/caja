@@ -64,9 +64,7 @@
 
 <br>
 <script type="text/javascript">
-  jsunitRegisterIf(inES5Mode,
-                   'testExternalScripts',
-                   function testExternalScripts () {
+  jsunitRegister('testExternalScripts', function testExternalScripts() {
     assertEquals("Execution order", "12345678", executionOrder);
     assertEquals("Style loading", "block then inline", styleOrder);
     assertAsynchronousRequirement(
@@ -135,16 +133,12 @@
     });
   }
 
-  jsunitRegisterIf(inES5Mode,
-                   'testScriptOnload',
-                   function testScriptOnload() {
+  jsunitRegister('testScriptOnload', function testScriptOnload() {
     scriptEventTest('load', 'error', 'test-external-script-onload.js',
         true);
     pass('testScriptOnload');
   });
-  jsunitRegisterIf(inES5Mode,
-                   'testScriptOnerror',
-                   function testScriptOnerror() {
+  jsunitRegister('testScriptOnerror', function testScriptOnerror() {
     scriptEventTest('error', 'load', 'non-existent-script.js', false);
     pass('testScriptOnerror');
   });

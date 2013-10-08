@@ -110,15 +110,10 @@
       var capture = patchEmitCss(frame);
       frame.code('test-client-uri-rewriting-guest.html')
           .run(jsunitCallback(function runCb(_) {
-        // TODO(kpreid): kludge, should accept both or we should change our
-        // rewriters to consistently use one quote form. I don't understand how
-        // the no-quotes path occurs; CssTree.java seems to use single quotes.
-        var q = inES5Mode ? '"' : '';  
-        
         assertStringContains(
-          'url(' + q + 'URICALLBACK[['
+          'url("URICALLBACK[['
           + origin + '/ant-testlib/com/google/caja/plugin/foo.png'
-          + ']]' + q + ')',
+          + ']]")',
           capture.get());
         checkForEvilUrls();
         jsunitPass('testUriInCss');

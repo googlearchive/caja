@@ -49,8 +49,7 @@
         td(code(tests[i])),
         td(a('[sbs]',  './tests-side-by-side.html?cajaServer=' + cajaServer + '&test=' + tests[i])),
         td(a('[unc]',  './tests-uncajoled.html?test=' + tests[i])),
-        td(a('[es53]', './tests-cajoled.html?test=' + tests[i] + '&cajaServer=' + cajaServer + '&forceES5Mode=false')),
-        td(a('[es5]',  './tests-cajoled.html?test=' + tests[i] + '&cajaServer=' + cajaServer + '&forceES5Mode=true'))
+        td(a('[caja]',  './tests-cajoled.html?test=' + tests[i] + '&cajaServer=' + cajaServer))
       ));
     }
   });

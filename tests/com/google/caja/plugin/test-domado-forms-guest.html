@@ -231,9 +231,7 @@
   <input type="number" id="testFancyInputs-num" value="7">
 </form>
 <script type="text/javascript">
-  // TODO(kpreid): Marked ES5 only because the cajoler is not allowing
-  // type=number through despite it being in the schema; I don't know why yet.
-  jsunitRegisterIf(inES5Mode, 'testFancyInputs', function testFancyInputs() {
+  jsunitRegister('testFancyInputs', function testFancyInputs() {
     // TODO(kpreid): test other HTML5 input types.
 
     // basics/comparison

@@ -161,10 +161,6 @@ var caja = (function () {
       'warn': makeLogMethod('warn')
     },
 
-    // For use by the Caja test suite only. Should not be used for any other
-    // purpose and is hard to use correctly.
-    'testing_makeDomadoRuleBreaker': premature,
-
     // unused, removed by Closure
     closureCanary: 1
   };
@@ -225,7 +221,7 @@ var caja = (function () {
     var onSuccess = arguments[1];
     var onFailure = arguments[2];
     state = PENDING;
-    makeFrameGroup(config, function (frameGroup, es5Mode) {
+    makeFrameGroup(config, function (frameGroup) {
       defaultFrameGroup = frameGroup;
       caja['iframe'] = frameGroup['iframe'];
       caja['USELESS'] = frameGroup['USELESS'];
@@ -237,7 +233,7 @@ var caja = (function () {
       frameGroup['disableSecurityForDebugger'](unsafe);
       state = READY;
       var detail = {};
-      detail['es5Mode'] = es5Mode;
+      detail['es5Mode'] = true;  // legacy API -- non-ES5 mode is dead
       if ("function" === typeof onSuccess) {
         onSuccess(detail);
       }
@@ -294,19 +290,12 @@ var caja = (function () {
    *         means that the files loaded by Caja are un-minified to help with
    *         tracking down problems.
    *
-   *     es5Mode - If set to true or false, forces or prohibits ES5
-   *         mode, rather than autodetecting browser capabilities
-   *         capable of supporting at least maxAcceptableSeverity.
+   *     es5Mode - Legacy option; must be true if specified.
    *
    *     maxAcceptableSeverity - Severity of browser bugs greater than
-   *         this level cause failover from ES5 to ES5/3 if es5Mode
-   *         is undefined
+   *         this level cause failure.
    *
-   *     forceES5Mode - If set to true or false, forces or prohibits ES5
-   *         mode, rather than autodetecting browser capabilities.
-   *         Equivalent to setting es5Mode and maxAcceptableSeverity
-   *         to the most insecure value. This should be used strictly
-   *         for testing/debugging purposes.
+   *     forceES5Mode - Legacy option; must be true if specified.
    *
    *     console - Optional user-supplied alternative to the browser's native
    *         'console' object.
@@ -328,12 +317,7 @@ var caja = (function () {
     initFeralFrame(window);
     globalConfig = config = resolveConfig(config);
     caja['server'] = config['server'];
-    if (config['es5Mode'] === false ||
-        (config['es5Mode'] !== true && unableToSES())) {
-      initES53(config, frameGroupReady, onFailure);
-    } else {
-      trySES(config, frameGroupReady, onFailure);
-    }
+    trySES(config, frameGroupReady, onFailure);
   }
 
   /**
@@ -346,29 +330,25 @@ var caja = (function () {
       partial['server'] || partial['cajaServer'] || defaultServer);
     full['resources'] = String(partial['resources'] || full['server']);
     full['debug'] = !!partial['debug'];
-    // Full config no longer has forceES5Mode
-    // forceES5Mode passes it's value on to es5Mode and maxAcceptableSeverity
-    if ('forceES5Mode' in partial && 'es5Mode' in partial) {
-      throw new Error(
-        'Cannot use both forceES5Mode and es5Mode in the same config');
+    // es5Mode and forceES5Mode are legacy
+    if ('forceES5Mode' in partial && partial['forceES5Mode'] !== true
+        && partial['forceES5Mode'] !== undefined) {
+      throw new Error('forceES5Mode: false is no longer supported');
     }
-    if (partial['forceES5Mode'] !== undefined) {
-      full['es5Mode'] = !!partial['forceES5Mode'];
-      full['maxAcceptableSeverity'] = 'NOT_ISOLATED';
-    } else {
-      full['es5Mode'] =
-        partial['es5Mode'] === undefined ? GUESS : !!partial['es5Mode'];
-      var severity = String(partial['maxAcceptableSeverity'] ||
-          'SAFE_SPEC_VIOLATION');
-      if (severity === 'NO_KNOWN_EXPLOIT_SPEC_VIOLATION') {
-        // Special severity level which SES itself no longer implements
-        // TODO(kpreid): Should acceptNoKnownExploitProblems be part of our
-        // public interface?
-        severity = 'SAFE_SPEC_VIOLATION';
-        full['acceptNoKnownExploitProblems'] = true;
-      }
-      full['maxAcceptableSeverity'] = severity;
+    if ('es5Mode' in partial && partial['es5Mode'] !== true
+        && partial['es5Mode'] !== undefined) {
+      throw new Error('es5Mode: false is no longer supported');
     }
+    var severity = String(partial['maxAcceptableSeverity'] ||
+        'SAFE_SPEC_VIOLATION');
+    if (severity === 'NO_KNOWN_EXPLOIT_SPEC_VIOLATION') {
+      // Special severity level which SES itself no longer implements
+      // TODO(kpreid): Should acceptNoKnownExploitProblems be part of our
+      // public interface?
+      severity = 'SAFE_SPEC_VIOLATION';
+      full['acceptNoKnownExploitProblems'] = true;
+    }
+    full['maxAcceptableSeverity'] = severity;
 
     if (partial['console']) {
       // Client supplies full 'console' object, which we use
@@ -424,16 +404,6 @@ var caja = (function () {
 
   //----------------
 
-  function initES53(config, frameGroupReady, onFailure) {
-    // TODO(felix8a): with api change, can start cajoler early too
-    var guestMaker = makeFrameMaker(config, 'es53-guest-frame');
-    loadCajaFrame(config, 'es53-taming-frame', function (tamingWin) {
-      var fg = tamingWin['ES53FrameGroup'](
-          cajaInt, config, tamingWin, window, guestMaker);
-      frameGroupReady(fg, false /* es5Mode */);
-    });
-  }
-
   function trySES(config, frameGroupReady, onFailure) {
     function frameInit(frameWin) {
       var ses = frameWin['ses'] || (frameWin['ses'] = {});
@@ -470,18 +440,13 @@ var caja = (function () {
     loadCajaFrame(config, 'utility-frame', function (mitigateWin) {
       var mitigateSrcGotchas = mitigateWin['ses']['mitigateSrcGotchas'];
       sesMaker['make'](function (tamingWin) {
-        var mustSES = config['es5Mode'] === true;
         if (tamingWin['ses']['ok']()) {
           var fg = tamingWin['SESFrameGroup'](
               cajaInt, config, tamingWin, window,
               { 'mitigateSrcGotchas': mitigateSrcGotchas });
-          frameGroupReady(fg, true /* es5Mode */);
-        } else if (!mustSES) {
-          config['console']['log']('Unable to use SES.  Switching to ES53.');
-          // TODO(felix8a): set a cookie to remember this?
-          initES53(config, frameGroupReady, onFailure);
+          frameGroupReady(fg);
         } else {
-          var err = new Error('ES5 mode requested but browser is unsupported');
+          var err = new Error('Caja: Browser is unsupported');
           if ("function" === typeof onFailure) {
             onFailure(err);
           } else {
@@ -492,12 +457,6 @@ var caja = (function () {
     });
   }
 
-  // Fast rejection of SES.  If this works, repairES5 might still fail, and
-  // we'll fall back to ES53 then.
-  function unableToSES() {
-    return !Object.getOwnPropertyNames;
-  }
-
   //----------------
 
   /**
@@ -505,6 +464,9 @@ var caja = (function () {
    * Calling frameMaker.preload() will start creation of a new frame now,
    * and make it available to a later call to frameMaker.make().
    */
+  // TODO(kpreid): With the death of ES5/3 we no longer ever create multiple
+  // frames of a kind. However, this is still used to effectively load
+  // ses-frame and utility-frame in parallel. Simplify.
   function makeFrameMaker(config, filename, opt_frameCreated) {
     var IDLE = 'IDLE', LOADING = 'LOADING', WAITING = 'WAITING';
     var preState = IDLE, preWin, preReady;
@@ -662,6 +624,7 @@ var caja = (function () {
   }
 
   function documentBaseUrl() {
+    // TODO(kpreid): Why aren't we using document.baseURI?
     var bases = document.getElementsByTagName('base');
     if (bases.length == 0) {
       return document.location.toString();
@@ -731,6 +694,7 @@ var caja = (function () {
    * registered, or that has been <tt>unregister</tt>ed since the last
    * time it was registered, will still be garbage collectable.
    */
+  // TODO(kpreid): I think this is dead after ES5/3
   function getId(imports) {
     enforceType(imports, 'object', 'imports');
     var id;
@@ -749,6 +713,7 @@ var caja = (function () {
    * If it has been <tt>unregistered</tt> since the last
    * <tt>getId</tt> on it, then <tt>getImports</tt> will fail.
    */
+  // TODO(kpreid): I think this is dead after ES5/3
   function getImports(id) {
     var result = registeredImports[enforceType(id, 'number', 'id')];
     if (result === void 0) {
@@ -766,6 +731,7 @@ var caja = (function () {
    * remembers its id. If asked for another <tt>getId</tt>, it
    * reregisters itself at its old id.
    */
+  // TODO(kpreid): I think this is dead after ES5/3
   function unregister(imports) {
     enforceType(imports, 'object', 'imports');
     if ('id___' in imports) {

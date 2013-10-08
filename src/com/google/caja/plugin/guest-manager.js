@@ -43,7 +43,7 @@ function GuestManager(frameTamingSchema, frameTamingMembrane, divInfo,
   // TODO(felix8a): this api needs to be simplified; it's difficult to
   // explain what all the parameters mean in different situations.
   var args = {
-    // url to fetch, or imputed origin of cajoled or uncajoled content
+    // url to fetch, or imputed origin of content
     url: undefined,
 
     // Content type for the url or the uncajoledContent.
@@ -52,9 +52,6 @@ function GuestManager(frameTamingSchema, frameTamingMembrane, divInfo,
     mimeType: undefined,
 
     uncajoledContent: undefined,
-
-    cajoledJs: undefined,
-    cajoledHtml: undefined,
 
     moreImports: undefined,
 
@@ -118,9 +115,7 @@ function GuestManager(frameTamingSchema, frameTamingMembrane, divInfo,
 
     imports: (domicile
               ? domicile.window
-              : (guestWin.___
-                 ? guestWin.___.copy(guestWin.___.sharedImports) // for es53
-                 : guestWin.cajaVM.makeImports())),              // for ses
+              : guestWin.cajaVM.makeImports()),
     innerContainer: domicile && domicile.getPseudoDocument(),
     outerContainer: divInfo.opt_div,
 
@@ -166,27 +161,12 @@ function GuestManager(frameTamingSchema, frameTamingMembrane, divInfo,
       return self;
     },
 
-    cajoled: function (url, js, opt_html) {
-      args.url = url;
-      args.cajoledJs = js;
-      args.cajoledHtml = opt_html;
-      return self;
-    },
-
     content: function (url, content, opt_mimeType) {
       return self.code(url, opt_mimeType, content);
     },
 
-    contentCajoled: function (url, js, opt_html) {
-      return self.cajoled(url, js, opt_html);
-    },
-
     url: function (url, opt_mimeType) {
       return self.code(url, opt_mimeType, undefined);
-    },
-
-    urlCajoled: function (baseUrl, jsUrl, opt_htmlUrl) {
-      throw new Error("Not yet implemented");  // TODO(felix8a)
     },
 
     run: run

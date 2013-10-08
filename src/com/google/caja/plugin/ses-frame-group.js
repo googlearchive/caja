@@ -35,9 +35,13 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
 
   tamingWin.ses.mitigateSrcGotchas = additionalParams.mitigateSrcGotchas;
 
+  // TODO(kpreid): With the death of ES5/3, can we now reliably just use
+  // undefined instead of USELESS always?
   var USELESS = Object.freeze({ USELESS: 'USELESS' });
   var BASE_OBJECT_CONSTRUCTOR = Object.freeze({});
 
+  // TODO(kpreid): Review this for pieces which are no longer necessary in the
+  // post-ES5/3 world.
   var tamingHelper = Object.freeze({
       applyFunction: applyFunction,
       getProperty: getProperty,
@@ -46,9 +50,6 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
       directConstructor: directConstructor,
       getObjectCtorFor: getObjectCtorFor,
       isDefinedInCajaFrame: cajaFrameTracker.isDefinedInCajaFrame,
-      isES5Browser: true,
-      eviscerate: undefined,
-      banNumerics: function() {},
       USELESS: USELESS,
       BASE_OBJECT_CONSTRUCTOR: BASE_OBJECT_CONSTRUCTOR,
       getValueOf: function(o) { return o.valueOf(); },
@@ -338,10 +339,6 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
         contentType: args.mimeType || 'text/html',
         responseText: args.uncajoledContent
       }));
-
-    } else if (args.cajoledJs !== undefined) {
-      throw new Error(
-        'Operating in SES mode; pre-cajoled content cannot be loaded');
 
     } else {
       promise = loadContent(gman, fetch(args.url), args.mimeType);

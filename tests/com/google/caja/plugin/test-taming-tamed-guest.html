@@ -19,10 +19,6 @@
     expectedKeys = expectedKeys.slice(0).sort();
     var actualKeys = [];
     for (var k in o) {
-      // Skip deliberate negative index poisoning on functions in ES5/3
-      if (!inES5Mode && (typeof o === 'function') && (Number(k) < 0)) {
-        continue;
-      }
       actualKeys.push(k);
     }
     actualKeys.sort();
@@ -197,10 +193,8 @@
     });
 
     assertTrue('Did not find and check a primordial value', foundValue);
-    if (inES5Mode) {  // ES5/3 does not visibly use any accessors
-      assertTrue('Did not find and check a primordial getter', foundGet);
-      assertTrue('Did not find and check a primordial setter', foundSet);
-    }
+    assertTrue('Did not find and check a primordial getter', foundGet);
+    assertTrue('Did not find and check a primordial setter', foundSet);
 
     pass('testTamingFramePrimordialsAreFrozen');
   });
@@ -1186,22 +1180,20 @@
 <script type="text/javascript">
   jsunitRegister('testTamedPropertyAccessorExceptions',
                  function testTamedPropertyAccessorExceptions() {
-    if (inES5Mode) {
-      var o = tamedApi.objWithThrowingAccessors;
-      try {
-        var x = o.throwingProp;
-        fail();
-      } catch (e) {
-        assertEquals('Error: CustomException: getter threw', e.toString());
-        assertTrue(e instanceof getTamingFrameObject('Error'));
-      }
-      try {
-        o.throwingProp = 7;
-        fail();
-      } catch (e) {
-        assertEquals('Error: CustomException: setter threw', e.toString());
-        assertTrue(e instanceof getTamingFrameObject('Error'));
-      }
+    var o = tamedApi.objWithThrowingAccessors;
+    try {
+      var x = o.throwingProp;
+      fail();
+    } catch (e) {
+      assertEquals('Error: CustomException: getter threw', e.toString());
+      assertTrue(e instanceof getTamingFrameObject('Error'));
+    }
+    try {
+      o.throwingProp = 7;
+      fail();
+    } catch (e) {
+      assertEquals('Error: CustomException: setter threw', e.toString());
+      assertTrue(e instanceof getTamingFrameObject('Error'));
     }
     pass('testTamedPropertyAccessorExceptions');
   });

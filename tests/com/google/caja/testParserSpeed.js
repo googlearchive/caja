@@ -66,7 +66,7 @@ var ses;
 
   caja.initialize({
     server: 'http://localhost:8080',
-    forceES5Mode: true,
+    maxAcceptableSeverity: 'NEW_SYMPTOM',
     debug: true
   });
   caja.load(undefined, caja.policy.net.ALL, function(frame) {

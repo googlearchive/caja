@@ -69,10 +69,6 @@
  *       be provided to cajoled code, tamed for use by the cajoled code. The
  *       standard imports are described below.
  *
- *   inES5Mode
- *
- *       Boolean whether we are running in pure ES5 or ES5/3 translation mode.
- *
  *   minifiedMode
  *
  *       Boolean whether we want to load minified files.
@@ -85,7 +81,7 @@
  *   basicCajaConfig
  *
  *       An appropriate set of parameters to caja.initialize or
- *       caja.makeFrameGroup.
+ *       caja.makeFrameGroup for testing.
  *
  *   setUp(), tearDown()
  *
@@ -115,7 +111,7 @@
  *     JsUnitException, assertFailsSafe, fail,
  *     bridalMaker
  * @provides cajaBuildVersion, getUrlParam, withUrlParam, readyToTest,
- *     createDiv, createExtraImportsForTesting, inES5Mode, minifiedMode,
+ *     createDiv, createExtraImportsForTesting, minifiedMode,
 *      basicCajaConfig
  *     setUp, tearDown,
  *     asyncRequirements,
@@ -175,13 +171,8 @@ function readyToTest() {
       .className = 'readytotest';
 }
 
-var inES5Mode;
-if (getUrlParam('es5') === 'true') {
-  inES5Mode = true;
-} else if (getUrlParam('es5') === 'false') {
-  inES5Mode = false;
-} else {
-  inES5Mode = undefined;
+if (getUrlParam('es5')) {
+  throw new Error('es5 parameter is obsolete');
 }
 
 var minifiedMode;
@@ -193,10 +184,10 @@ if (getUrlParam('minified', 'true') === 'true') {
   throw new Error('minified parameter is not "true" or "false"');
 }
 
-var basicCajaConfig = inES5Mode === undefined ? null : {
+var basicCajaConfig = {
   cajaServer: '/caja',
   debug: !minifiedMode,
-  forceES5Mode: inES5Mode
+  maxAcceptableSeverity: 'NEW_SYMPTOM'  // run tests despite security bugs
 };
 
 // Construct test case navigation toolbar
@@ -224,12 +215,6 @@ window.addEventListener('load', function() {
       el.appendChild(arguments[i]);
     }
     return el;
-  }
-
-  if (inES5Mode !== undefined) {
-    put(widget(
-        link('ES5/3', !inES5Mode, withUrlParam('es5', 'false')),
-        link('SES', inES5Mode, withUrlParam('es5', 'true'))));
   }
 
   var max = getUrlParam('minified') === 'false';
@@ -480,10 +465,6 @@ function splitHtmlAndScript(combinedHtml) {
 }
 
 function createExtraImportsForTesting(frameGroup, frame) {
-  if (inES5Mode === undefined) {
-    throw new Error('es5 flag not specified, cannot use guests');
-  }
-
   var standardImports = {};
 
   standardImports.readyToTest =
@@ -560,20 +541,15 @@ function createExtraImportsForTesting(frameGroup, frame) {
 
   standardImports.console = frame.tame(fakeConsole);
 
-  standardImports.inES5Mode = inES5Mode;
-  standardImports.proxiesAvailableToTamingCode = inES5Mode
-      // In ES5, Domado runs in the taming frame's real global env
-      ? typeof frameGroup.iframe.Proxy !== 'undefined'
-      // ES5/3 provides proxies always.
-      : true;
+  standardImports.proxiesAvailableToTamingCode =
+      // Domado runs in the taming frame's real global env
+      typeof frameGroup.iframe.Proxy !== 'undefined';
 
   standardImports.getUrlParam = frame.tame(frame.markFunction(getUrlParam));
   standardImports.modifyUrlParam = frame.tame(frame.markFunction(
       function(name, value) {
     window.location = withUrlParam(name, value);
   }));
-
-  var ___ = frame.iframe.contentWindow.___;
 
   // Give unfiltered DOM access so we can check the results of actions.
   var directAccess = {
@@ -582,12 +558,7 @@ function createExtraImportsForTesting(frameGroup, frame) {
       frame.domicile.feralNode(tameNode).click();
     },
     emitCssHook: function (css) {
-      if (inES5Mode) {
-        frame.domicile.emitCss(css.join(frame.idSuffix));
-      } else {
-        // same as above but tests more of the wiring for cajoled input
-        frame.imports.emitCss___(css.join(frame.idSuffix));
-      }
+      frame.domicile.emitCss(css.join(frame.idSuffix));
     },
     getInnerHTML: function (tameNode) {
       return frame.domicile.feralNode(tameNode).innerHTML;
@@ -653,16 +624,7 @@ function createExtraImportsForTesting(frameGroup, frame) {
     }
   };
 
-  if (!inES5Mode) {
-    // TODO(kpreid): This wrapper could be replaced by the 'makeDOMAccessible'
-    // tool defined in caja.js for use by Domado.
-    standardImports.directAccess = {
-      v___: function(p) { return directAccess[p]; },
-      m___: function(p, as) { return directAccess[p].apply({}, as); }
-    };
-  } else {
-    standardImports.directAccess = directAccess;
-  }
+  standardImports.directAccess = directAccess;
 
   standardImports.expectFailure =
       frame.tame(frame.markFunction(expectFailure));

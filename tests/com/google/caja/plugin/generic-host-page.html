@@ -128,11 +128,6 @@
       <pre><!--
 -->caja.initialize({
   cajaServer: '/caja',
-  <label>es5Mode: <select name="es5Mode">
-    <option>true</option>
-    <option>false</option>
-    <option selected value="undefined">undefined (Autodetect)</option>
-  </select></label>,
   <label>debug: <input type="checkbox" name="debug" value="true"></label>,
   <label>maxAcceptableSeverity: <select name="maxAcceptableSeverity">
     <option>SAFE</option>
@@ -216,13 +211,6 @@ caja.load(<label><input type="checkbox" name="dom" value="true" checked
   <script>
 
     // validate, don't evaluate
-    var mode;
-    switch (options.es5Mode) {
-      case 'true': mode = true; break;
-      case 'false': mode = false; break;
-      case 'undefined': mode = undefined; break;
-      default: throw new Error('invalid es5Mode field');
-    }
     var net;
     if (caja.policy.net.hasOwnProperty(options.net)) {
       net = caja.policy.net[options.net];
@@ -233,7 +221,6 @@ caja.load(<label><input type="checkbox" name="dom" value="true" checked
     status('caja.initialize()');
     caja.initialize({
       cajaServer: '/caja',
-      es5Mode: mode,
       debug: options.debug,
       maxAcceptableSeverity: options.maxAcceptableSeverity
     }, function() {

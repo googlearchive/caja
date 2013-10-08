@@ -1,0 +1,1 @@
+jsunitPass('testRewriteOccurs');

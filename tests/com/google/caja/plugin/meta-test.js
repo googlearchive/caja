@@ -16,7 +16,7 @@
  * @fileoverview Test our test framework.
  *
  * @author kpreid@switchb.org
- * @requires jsunitRegister, jsunitRun, readyToTest, inES5Mode
+ * @requires jsunitRegister, jsunitRun, readyToTest
  */
 
 (function() {
@@ -35,8 +35,8 @@
 
 function makeMetaTestFrame(driverOrCase, url) {
   var baseURL = getUrlParam('test-driver');
-  var frameURL = 'browser-test-case.html?es5=' + inES5Mode + '&test-' +
-      driverOrCase + '=' + URI.utils.resolve(baseURL, url)
+  var frameURL = 'browser-test-case.html?test-' + driverOrCase + '=' +
+      URI.utils.resolve(baseURL, url)
   var container =
       document.getElementById(jsunit.getCurrentTestId()) || document.body;
 

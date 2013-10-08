@@ -318,15 +318,8 @@ var Domado = (function() {
    * Alias for a common pattern: non-enumerable toString method.
    */
   function setToString(obj, fn) {
-    // ES5/3's virtualization of toString does not work properly w/
-    // defineProperty
-    if ('USELESS' in cajaVM) {  // TODO(kpreid): Better condition/kill this code
-      // Under ES5/3, this will have the overridable semantics we wanted anyway
-      obj.toString = fn;
-    } else {
-      Object.defineProperty(obj, 'toString',
-          allowNonWritableOverride(obj, 'toString', {value: fn}));
-    }
+    Object.defineProperty(obj, 'toString',
+        allowNonWritableOverride(obj, 'toString', {value: fn}));
   }
 
   /**
@@ -6975,22 +6968,16 @@ var Domado = (function() {
         // a deviation from browser behavior (Chrome and Firefox have it on
         // prototype). requestAnimationFrame does not need the same treatment
         // but we might as well be regular.
-        //
-        // Under ES5/3, the set/clear pairs get invoked with 'this' bound
-        // to USELESS, which causes problems on Chrome unless they're wrapped
-        // this way.
         tameSetAndClear(
             this,
-            function(code, millis) {
-                return window.setTimeout(code, millis); },
-            function(id) { return window.clearTimeout(id); },
+            window.setTimeout,
+            window.clearTimeout,
             'setTimeout', 'clearTimeout',
             false, true, this);
         tameSetAndClear(
             this,
-            function(code, millis) {
-                return window.setInterval(code, millis); },
-            function(id) { return window.clearInterval(id); },
+            window.setInterval,
+            window.clearInterval,
             'setInterval', 'clearInterval',
             false, true, this);
         if (window.requestAnimationFrame) {
@@ -6998,7 +6985,7 @@ var Domado = (function() {
               this,
               function(code, ignored) {  // no time arg like setTimeout has
                   return window.requestAnimationFrame(code); },
-              function(id) { return window.cancelAnimationFrame(id); },
+              window.cancelAnimationFrame,
               'requestAnimationFrame', 'cancelAnimationFrame',
               true, false, undefined);
         }

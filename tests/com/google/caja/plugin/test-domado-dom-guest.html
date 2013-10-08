@@ -296,38 +296,19 @@ document.write(
   jsunitRegister('testDocumentWrite',
                  function testDocumentWrite() {
     var el = document.getElementById('testDocumentWrite');
-    if (inES5Mode) {
-      // ES5 (client-side) mode gets the correct outcome because everything is
-      // piped through the document.write path.
-      assertEquals(
-          ''
-          + '<div>'
-            + '<p>Before <code>document.write</code></p>'
-            + '<script type=\"text/javascript\"></scr'+'ipt>'
-            + '<p id="testDocumentWrite-foo">Document written</p>'
-          + '</div>'
-          + '<div>'
-            + '<p>Written afterwards</p>'
-            + '<p>More written afterwards </p>'
-            + '<p>After <code>document.write</code></p>'
-          + '</div>',
-          canonInnerHtml(el.innerHTML));
-    } else {
-      // TODO(mikesamuel): This is wrong because we don't allow the
-      // insertion point to move above its starting position
-      assertEquals(
-          ''
-          + '<div>'
-            + '<p>Before <code>document.write</code></p>'
-            + '<p id="testDocumentWrite-foo">Document written</p>'
-            + '<p>After <code>document.write</code></p>'
-          + '</div>'
-          + '<div>'
-            + '<p>Written afterwards</p>'
-            + '<p>More written afterwards</p>'
-          + '</div>',
-          canonInnerHtml(el.innerHTML));
-    }
+    assertEquals(
+        ''
+        + '<div>'
+          + '<p>Before <code>document.write</code></p>'
+          + '<script type=\"text/javascript\"></scr'+'ipt>'
+          + '<p id="testDocumentWrite-foo">Document written</p>'
+        + '</div>'
+        + '<div>'
+          + '<p>Written afterwards</p>'
+          + '<p>More written afterwards </p>'
+          + '<p>After <code>document.write</code></p>'
+        + '</div>',
+        canonInnerHtml(el.innerHTML));
     pass('testDocumentWrite');
   });
 </script>
@@ -2455,18 +2436,15 @@ After
                    function testDocumentElement() {
       // want to test innerHTML but be indifferent to specific content, so
       // just collect what's already there
-      var style0Text = inES5Mode ?
-          document.getElementsByTagName('style')[0].innerHTML : '';
-      var style1Text = document.getElementsByTagName('style')[inES5Mode ? 1 : 0]
+      var style0Text = document.getElementsByTagName('style')[0].innerHTML;
+      var style1Text = document.getElementsByTagName('style')[1]
           .innerHTML;
       // note: canonInnerHtml needed to match assertDomTree. To be removed; see
       // comment on assertDomTree;
       var headInnerHTML = canonInnerHtml(
           '<title>this title is &amp; test   </title>' +
-          (inES5Mode
-              ? '<style type="text/css">' + style0Text + '</style>' +
-                '<scr'+'ipt></scr'+'ipt>'
-              : '') +
+          '<style type="text/css">' + style0Text + '</style>' +
+          '<scr'+'ipt></scr'+'ipt>' +
           '<style>' + style1Text + '</style>');
       assertDomTree({
           nodeType: 9,
@@ -2509,7 +2487,7 @@ After
                           nodeValue: style1Text
                       } ]
                     };
-                    return !inES5Mode ? [title, dynStyle] : [
+                    return [
                       title,
                       {
                         nodeType: 1,
@@ -3015,53 +2993,49 @@ Test row cell
   jsunitRegister('testStyleElement',
                  function testStyleElement() {
     var el = document.getElementById('testStyleElement-style');
-    if (!inES5Mode) {
-      // Currently not bothering to backport this functionality.
-      assertEquals('no element in cajoling mode', null, el);
+
+    assertEquals('STYLE', el.tagName);
+
+    // Guest-visible styles have no content.
+    // TODO(kpreid): Move virtualized stylesheet content to the actual style
+    // node.
+    assertEquals('innerHTML',
+        '.caja-guest-0___ #testStyleElement-style-caja-guest-0___{' +
+            'display:block;background:yellow;width:1em;}\n'
+        , el.innerHTML);
+
+    // Not allowed to set content.
+    expectFailure(function() {
+      el.innerHTML = 'body { border: 10em dashed red; }';
+    }, 'set style innerHTML');
+    expectFailure(function() {
+      el.textContent = 'body { border: 10em dashed red; }';
+    }, 'set style textContent');
+    expectFailure(function() {
+      el.appendChild(document.createTextNode(
+          'body { border: 10em dashed red; }'));
+    }, 'set style textContent');
+
+    // TODO(kpreid): Implement and test 'sheet' property
+
+    //assertEquals('text/css', el.type);
+    // type= is not whitelisted even if it is
+    // text/css. TODO(kpreid): improve this. Maybe even virtualize non-CSS
+    // style elements.
+    assertEquals('type', '', el.type);
+
+    // ditto
+    //assertEquals('print', el.media);
+    assertEquals('media', '', el.media);
+
+    if (directAccess.feralFeatureTest(el, 'scoped')) {
+      assertEquals('scoped', false, el.scoped);
     } else {
-
-      assertEquals('STYLE', el.tagName);
-
-      // Guest-visible styles have no content.
-      // TODO(kpreid): Move virtualized stylesheet content to the actual style
-      // node.
-      assertEquals('innerHTML',
-          '.caja-guest-0___ #testStyleElement-style-caja-guest-0___{' +
-              'display:block;background:yellow;width:1em;}\n'
-          , el.innerHTML);
-
-      // Not allowed to set content.
-      expectFailure(function() {
-        el.innerHTML = 'body { border: 10em dashed red; }';
-      }, 'set style innerHTML');
-      expectFailure(function() {
-        el.textContent = 'body { border: 10em dashed red; }';
-      }, 'set style textContent');
-      expectFailure(function() {
-        el.appendChild(document.createTextNode(
-            'body { border: 10em dashed red; }'));
-      }, 'set style textContent');
-
-      // TODO(kpreid): Implement and test 'sheet' property
-
-      //assertEquals('text/css', el.type);
-      // type= is not whitelisted even if it is
-      // text/css. TODO(kpreid): improve this. Maybe even virtualize non-CSS
-      // style elements.
-      assertEquals('type', '', el.type);
-
-      // ditto
-      //assertEquals('print', el.media);
-      assertEquals('media', '', el.media);
-
-      if (directAccess.feralFeatureTest(el, 'scoped')) {
-        assertEquals('scoped', false, el.scoped);
-      } else {
-        assertFalse('scoped', 'scoped' in el);
-      }
-
-      assertEquals('disabled', false, el.disabled);
+      assertFalse('scoped', 'scoped' in el);
     }
+
+    assertEquals('disabled', false, el.disabled);
+
     pass('testStyleElement');
  });
 </script>
@@ -3325,9 +3299,7 @@ Test row cell
     }
 
     var body = document.body;
-    var expectedLast = inES5Mode  // supports actual <script> nodes
-        ? document.getElementById('realLastScriptEl')
-        : document.getElementById('testDocumentBodyAppendChild');
+    var expectedLast = document.getElementById('realLastScriptEl');
     var last = getPrevNonWhitespace(document.body.lastChild);
     assertEquals('expected last is not last', expectedLast, last);
 

@@ -1,5 +1,5 @@
 [
-  { "label": "ses", "mode": "none", "tests": [
+  { "label": "ses", "tests": [
     {
       "label": "explicit",
       "bare": "../../../../../src/com/google/caja/ses/explicit.html",

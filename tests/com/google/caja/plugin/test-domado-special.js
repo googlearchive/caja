@@ -113,11 +113,6 @@ fetch('test-domado-special-initial-state.html', function(initialHtml) {
     extraImports.checkGlobalSideEffect =
       frame.tame(frame.markFunction(checkGlobalSideEffect));
 
-    if (frameGroup.testing_makeDomadoRuleBreaker) {
-      var rulebreaker = frameGroup.testing_makeDomadoRuleBreaker();
-      extraImports.rulebreakerBreachSimulation = rulebreaker;
-    }
-
     frame.code('test-domado-special-guest.html')
          .api(extraImports)
          .run(function(result) {

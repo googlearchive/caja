@@ -2,7 +2,6 @@
   { "label": "preliminary", "tests": [
     {
       "bare": "../browser-expectations.html",
-      "mode": "none",
       "comment": [
           "Test the browser environment behaves the way we expect. This is not",
           "a test of Caja per se, but we want to verify that changes to our",
@@ -35,29 +34,6 @@
           "calls."]
     },
     {
-      "driver": "test-cajajs-version-skew-cajoler-response.js",
-      "params": { "cajajs": "/caja/testing/skew-0000/caja.js" },
-      "comment": ["Changing the version baked into *all* the JS will cause an",
-          "incorrect version number to be sent to the cajoler, which should",
-          "then refuse to compile the given content and return an error",
-          "instead."]
-    },
-    {
-      "driver": "test-cajajs-minor-version-skew-cajoler-response.js",
-      "params": { "cajajs": "/caja/testing/skew-mmm/caja.js" },
-      "comment": ["Changing the version baked into *all* the JS will cause a",
-          "different minor version number to be sent to the cajoler, which",
-          "should emit a LINT warning when compiling the given content"]
-    },
-    {
-      "driver": "test-cajajs-version-skew-cajoled-module.js",
-      "mode": "es53"
-    },
-    {
-      "driver": "test-cajajs-minor-version-skew-cajoled-module.js",
-      "mode": "es53"
-    },
-    {
       "label": "version-skew-nonexistent-resources",
       "driver": "test-cajajs-never-starts.js",
       "params": { "resources": "/caja/testing/nonexistent" },
@@ -74,23 +50,8 @@
           "whenReady() calls."]
     },
     { "driver": "test-client-uri-rewriting.js" },
-    { "bare": "cajajs-bare-test.html", "mode": "both" },
-    { "driver": "test-automode1.js", "mode": "es53" },
-    { "driver": "test-automode2.js", "mode": "es53" },
-    { "driver": "test-automode3.js", "mode": "es53" },
-    { "driver": "test-automode4.js", "mode": "es53" }
+    { "bare": "cajajs-bare-test.html" }
   ]},
-  { "label": "cajoler", "mode": "es53", "tests": [
-    { "guest": "test-precajole-guest.html" },
-    { "driver": "test-custom-cajoling-service-client.js" }
-  ]},
-  {
-    "driver": "test-compare-modes.js",
-    "mode": "es5",
-    "comment": ["Mode flag is ignored, but this test should be classified as",
-        "requiring SES compatibility. TODO(kpreid): better scheme"],
-    "params": { "minified": "n/a" }
-  },
   { "label": "guest", "tests": [
     { "guest": "test-basic-functions-guest.html" },
     { "guest": "test-domado-dom-guest.html" },
@@ -103,20 +64,15 @@
     { "driver": "test-domado-foreign.js" },
     { "guest": "test-domado-listlength.html" },
     { "guest": "test-language-guest.html" },
-    { "driver": "test-proxies.js", "mode": "es53" },
     { "guest": "test-inline-script.html" },
-    { "guest": "test-external-script-guest.html", "mode": "es5" },
+    { "guest": "test-external-script-guest.html" },
     { "driver": "test-relative-urls.js" },
     { "driver": "test-defensible-objects.js" },
     { "driver": "test-container-overflow.js" },
     { "driver": "test-target-attribute-presets.js" },
     { "driver": "test-unicode.js" },
-    { "driver": "test-mitigating-url-rewriter.js", "mode": "es5" },
-    { "guest": "test-css-imports-guest.html", "tests": [
-      { "mode": "es53", "failureIsAnOption":
-          "Cajoler fails to handle relative urls in external CSS" },
-      { "mode": "es5" }
-    ]},
+    { "driver": "test-mitigating-url-rewriter.js" },
+    { "guest": "test-css-imports-guest.html" },
     { "guest": "test-scan-guest.html" }
   ]},
   { "label": "taming", "tests": [
@@ -125,7 +81,6 @@
     { "driver": "test-taming-inout.js" },
     { "driver": "test-taming-errors.js" },
     { "driver": "test-taming-advice.js" },
-    { "driver": "test-taming-primitives.js", "mode": "es53" },
     { "driver": "test-apitaming.js" }
   ]},
   {
@@ -133,20 +88,17 @@
     "comment": "TODO(kpreid): integrate headless test runner",
     "manual": true,
     "tests": [
-      { "mode": "none", "bare": "csslexer-test.html" },
-      { "mode": "none", "bare": "cssparser_test.html" },
-      { "mode": "none", "bare": "css-stylesheet-test.html" },
-      { "mode": "none", "bare": "html-emitter-test.html" },
-      { "mode": "none", "bare": "html-sanitizer-test.html" },
-      { "mode": "none", "bare":
-          "html-sanitizer-minified-test.html" },
-      { "mode": "none", "bare": "html-sanitizer-regress.html" },
-      { "mode": "none", "bare":
-        "html-css-sanitizer-test.html" },
-      { "mode": "none", "bare":
-          "html-css-sanitizer-minified-test.html" },
-      { "mode": "none", "bare": "sanitizecss_test.html" },
-      { "mode": "none", "bare": "uri_test.html" }
+      { "bare": "csslexer-test.html" },
+      { "bare": "cssparser_test.html" },
+      { "bare": "css-stylesheet-test.html" },
+      { "bare": "html-emitter-test.html" },
+      { "bare": "html-sanitizer-test.html" },
+      { "bare": "html-sanitizer-minified-test.html" },
+      { "bare": "html-sanitizer-regress.html" },
+      { "bare": "html-css-sanitizer-test.html" },
+      { "bare": "html-css-sanitizer-minified-test.html" },
+      { "bare": "sanitizecss_test.html" },
+      { "bare": "uri_test.html" }
     ]
   }
 ]

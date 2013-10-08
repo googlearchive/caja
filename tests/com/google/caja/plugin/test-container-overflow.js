@@ -14,7 +14,7 @@
 
 /**
  * @author ihab.awad@gmail.com
- * @requires caja, jsunitRun, readyToTest, minifiedMode, inES5Mode
+ * @requires caja, jsunitRun, readyToTest, minifiedMode
  */
 
 (function () {
@@ -24,7 +24,7 @@
   caja.initialize({
     cajaServer: origin + '/caja',
     debug: !minifiedMode,
-    forceES5Mode: inES5Mode
+    maxAcceptableSeverity: 'NEW_SYMPTOM'
   });
   
   // Remove test harness toolbar so it doesn't affect the layout

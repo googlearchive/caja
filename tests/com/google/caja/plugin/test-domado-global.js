@@ -22,8 +22,8 @@
 (function () {
   caja.initialize(basicCajaConfig);
 
-  function registerGlobalTest(cond, testName, url, html, callback) {
-    jsunitRegisterIf(cond, testName, function globalTestWrapper() {
+  function registerGlobalTest(testName, url, html, callback) {
+    jsunitRegister(testName, function globalTestWrapper() {
       var div = createDiv();
       // Load callback is NOT a jsunitCallback because that would be mostly
       // noise.
@@ -40,7 +40,6 @@
   function registerGuestTest(testName, html, varargs) {
     var guestTestArgs = Array.prototype.slice.call(arguments, 2);
     registerGlobalTest(
-        true,
         testName,
         location.protocol + '//' + location.host + '/',
         html,
@@ -81,7 +80,7 @@
             '</body>';
         registerGuestTest(testName,
             html.replace('$', '<script>' + htmlGuestJs + '</script>'),
-            expectHtml.replace('$', inES5Mode ? '<script></script>' : ''));
+            expectHtml.replace('$', '<script></script>'));
       }
 
       registerStructureTest('testFullyExplicit',
@@ -109,7 +108,7 @@
           '', 'b$');
 
       // Test that a completely empty document still produces structure.
-      registerGlobalTest(true, 'testEmptyInput',
+      registerGlobalTest('testEmptyInput',
           location.protocol + '//' + location.host + '/',
           '',
           function(frame) {
@@ -131,7 +130,6 @@
 
     // Is the expected structure generated if a <script> element occurs without
     // any preceding <html> or <head>?
-    if (inES5Mode)
     registerGuestTest('testScriptAsFirstThing',
         '<script>' +
         'assertEvaluatesToTrue("documentElement exists",' +
@@ -202,21 +200,11 @@
           '}</script>' +
           '<body onload="ding()">' +
           '<script>window.globalGuestTest =' + 
-          '    function globalGuestTest(inES5Mode) {' +
+          '    function globalGuestTest() {' +
           '  assertEquals(1, window.testresult);' +
-          // TODO(kpreid): Rewriter transforms an onload listener into an
-          // after-the-body script, so the window.onload property never gets
-          // set. Change the rewriter so that it generates
-          //    <caja-v-body onload="...">
-          //       <script>window.onload = function () { ... };</script>
-          // instead. (That is, the string value stays as an attribute and
-          // the code is also cajoled.) Then remove this inES5Mode conditional.
-          '  if (inES5Mode) {' +
-          '    window.onload();' +
-          '    assertEquals(2, window.testresult);' +
-          '  }' +
-          '}</script>',
-          inES5Mode);
+          '  window.onload();' +
+          '  assertEquals(2, window.testresult);' +
+          '}</script>');
 
       registerGuestTest('testOnloadSetAttr',
           '<script>window.ding = function ding() {' + 
@@ -268,33 +256,12 @@
     })();
 
     /**
-     * Issue 1589, html-emitter gets confused in a couple ways when
-     * head has script but body doesn't
-     */
-    registerGlobalTest(!inES5Mode, 'testHtmlEmitterFinishInHead',
-        'http://nonexistent/',
-        // note, the space is necessary to trigger the bug
-        '<html><head> <script>;</script></head>'
-            + '<body><div>2</div></body></html>',
-        function(frame) {
-          var doc = frame.innerContainer;
-          var html = canonInnerHtml(doc.innerHTML);
-          assertEquals(
-            '<caja-v-html>'
-              + '<caja-v-head></caja-v-head>'
-              + '<caja-v-body><div>2</div></caja-v-body>'
-              + '</caja-v-html>',
-            html);
-          jsunitPass('testHtmlEmitterFinishInHead');
-        });
-
-    /**
      * Tests of window.location.
      */
     (function() {
       function registerLocationTest(tag, url, opt_specific) {
         var testName = 'testLocation-' + tag;
-        registerGlobalTest(true, testName,
+        registerGlobalTest(testName,
             url,
             '<script>' + locationJs + '</script>',
             function(frame) {

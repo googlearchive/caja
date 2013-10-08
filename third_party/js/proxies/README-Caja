@@ -1,9 +1,0 @@
-Retrieved from <http://hg.ecmascript.org/tests/harmony/archive/dda5bb0cae73.zip>
-on 2013-05-01.
-
-Built as:
-./genhtmltests -v > proxytests.html
-./gentests -v > proxytests.js
-
-Some tests in proxytests.html have been disabled due to ES5/3 not supporting
-them. Other changes necessary are marked with comments "// Patched for Caja".
