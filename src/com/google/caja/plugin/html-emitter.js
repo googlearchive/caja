@@ -35,14 +35,6 @@
 if ('I'.toLowerCase() !== 'i') { throw 'I/i problem'; }
 
 /**
- * @param {function} makeDOMAccessible A function which will be called on base
- *     and every object retrieved from it, recursively. This hook is available
- *     in case HtmlEmitter is running in an environment such that unmodified DOM
- *     objects cannot be touched. makeDOMAccessible should be idempotent. Note
- *     that the contract here is stronger than for bridalMaker, in that
- *     this makeDOMAccessible may not return a different object.
- *     Except, this contract may be impossible to satisfy on IE<=8.
- *     TODO(felix8a): check all the implications of violating the contract.
  * @param base a node that is the ancestor of all statically generated HTML.
  * @param opt_mitigatingUrlRewriter a script url rewriting proxy which can be used
  *     to optionally load premitigated scripts instead of mitigating on the
@@ -53,13 +45,12 @@ if ('I'.toLowerCase() !== 'i') { throw 'I/i problem'; }
  * @param opt_guestGlobal the object in the guest frame that is the global scope
  *     for guest code.
  */
-function HtmlEmitter(makeDOMAccessible, base,
-    opt_mitigatingUrlRewriter, opt_domicile, opt_guestGlobal) {
+function HtmlEmitter(base, opt_mitigatingUrlRewriter, opt_domicile,
+      opt_guestGlobal) {
   if (!base) {
     throw new Error(
         'Host page error: Virtual document element was not provided');
   }
-  base = makeDOMAccessible(base);
 
   var targetDocument = base.nodeType === 9  // Document node
       ? base
@@ -69,7 +60,7 @@ function HtmlEmitter(makeDOMAccessible, base,
   // 'insertion point', which is not this; this is the 'current node' and
   // implicitly the 'stack of open elements' via parents.
   var insertionPoint = base;
-  var bridal = bridalMaker(makeDOMAccessible, targetDocument);
+  var bridal = bridalMaker(targetDocument);
 
   // TODO: Take into account <base> elements.
 
@@ -92,9 +83,7 @@ function HtmlEmitter(makeDOMAccessible, base,
     idMap = {};
     var descs = base.getElementsByTagName('*');
     for (var i = 0, desc; (desc = descs[i]); ++i) {
-      desc = makeDOMAccessible(desc);
       var id = desc.getAttributeNode('id');
-      id = makeDOMAccessible(id);
       // The key is decorated to avoid name conflicts and restrictions.
       if (id && id.value) { idMap[id.value + " map entry"] = desc; }
     }
@@ -140,7 +129,7 @@ function HtmlEmitter(makeDOMAccessible, base,
       // and so just doing base.write(htmlString), which would otherwise be
       // sufficient, would insert unwanted structure around our HTML.
       // TODO(kpreid): Fix that.
-      var dummy = makeDOMAccessible(targetDocument.createElement('div'));
+      var dummy = targetDocument.createElement('div');
       dummy.innerHTML = htmlString;
       while (dummy.firstChild) {
         base.appendChild(dummy.firstChild);
@@ -230,7 +219,6 @@ function HtmlEmitter(makeDOMAccessible, base,
 
     // First, store all the children.
     for (var child = limit.firstChild, next; child; child = next) {
-      child = makeDOMAccessible(child);
       next = child.nextSibling;  // removeChild kills nextSibling.
       out.push(child, limit);
       limit.removeChild(child);
@@ -239,9 +227,7 @@ function HtmlEmitter(makeDOMAccessible, base,
     // Second, store your ancestor's next siblings and recurse.
     for (var anc = limit, greatAnc; anc && anc !== base; anc = greatAnc) {
       greatAnc = anc.parentNode;
-      greatAnc = makeDOMAccessible(greatAnc);
       for (var sibling = anc.nextSibling, next; sibling; sibling = next) {
-        sibling = makeDOMAccessible(sibling);
         next = sibling.nextSibling;
         out.push(sibling, greatAnc);
         greatAnc.removeChild(sibling);
@@ -343,8 +329,8 @@ function HtmlEmitter(makeDOMAccessible, base,
 
   function hasChild(el, name) {
     if (!el) { return false; }
-    var child = makeDOMAccessible(el.firstChild);
-    for (; child; child = makeDOMAccessible(child.nextSibling)) {
+    
+    for (var child = el.firstChild; child; child = child.nextSibling) {
       if (child.nodeType === 1 && virtTagName(child) === name) {
         return child;
       }

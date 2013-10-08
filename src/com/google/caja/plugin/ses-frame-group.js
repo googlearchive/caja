@@ -63,11 +63,11 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
   var lazyDomado;
   function getDomado() {
     // don't construct Domado until we know we need it
-    return lazyDomado || (lazyDomado = Domado(null));
+    return lazyDomado || (lazyDomado = Domado());
   }
 
   // TODO(kpreid): Only used for XHR; dependency on feralWin is bogus
-  var bridal = bridalMaker(identity, feralWin.document);
+  var bridal = bridalMaker(feralWin.document);
 
   var unsafe = false;
 
@@ -292,9 +292,8 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
         cajaVM.copyToImports(imports, cajaVM.sharedImports);
       }));
 
-    var htmlEmitter = new tamingWin.HtmlEmitter(
-      identity, domicile.htmlEmitterTarget, uriPolicy.mitigate, domicile,
-      window);
+    var htmlEmitter = new tamingWin.HtmlEmitter(domicile.htmlEmitterTarget,
+      uriPolicy.mitigate, domicile, window);
 
     // Invoked by textual event handlers emitted by Domado.
     // TODO(kpreid): Use a name other than ___ for this purpose; perhaps some

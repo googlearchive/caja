@@ -31,25 +31,17 @@ if ('I'.toLowerCase() !== 'i') { throw 'I/i problem'; }
 /**
  * Construct the bridal object for a specific document.
  *
- * @param {function} makeDOMAccessible A function which will be called on the
- *     document and every object retrieved from it, recursively, and its results
- *     used instead of those objects. This hook is available in case bridal is
- *     running in an environment such that unmodified DOM objects cannot be
- *     touched. makeDOMAccessible may either modify its argument (should be
- *     idempotent) or return a different object.
  * @param {Node} targetDocNode The document to manipulate, or some node owned
  *     by it.
  */
-var bridalMaker = function (makeDOMAccessible, targetDocNode) {
-  targetDocNode = makeDOMAccessible(targetDocNode);
+var bridalMaker = function (targetDocNode) {
   var document = targetDocNode.nodeType === 9 ? targetDocNode :
-      makeDOMAccessible(targetDocNode.ownerDocument);
+      targetDocNode.ownerDocument;
 
-  var window = makeDOMAccessible(
-      bridalMaker.getWindow(document, makeDOMAccessible));
-  var navigator      = makeDOMAccessible(window.navigator);
-  var XMLHttpRequest = makeDOMAccessible(window.XMLHttpRequest);
-  var ActiveXObject  = makeDOMAccessible(window.ActiveXObject);
+  var window = bridalMaker.getWindow(document);
+  var navigator      = window.navigator;
+  var XMLHttpRequest = window.XMLHttpRequest;
+  var ActiveXObject  = window.ActiveXObject;
 
   ////////////////////////////////////////////////////////////////////////////
   // Private section
@@ -92,7 +84,7 @@ var bridalMaker = function (makeDOMAccessible, targetDocNode) {
         "details", "figcaption", "figure", "footer", "header", "hgroup", "mark",
         "meter", "nav", "output", "progress", "section", "summary", "time",
         "video"];
-    var documentFragment = makeDOMAccessible(document.createDocumentFragment());
+    var documentFragment = document.createDocumentFragment();
     for (var i = 0; i < html5_elements.length; i++) {
       try {
         document.createElement(html5_elements[i]);
@@ -142,7 +134,6 @@ var bridalMaker = function (makeDOMAccessible, targetDocNode) {
   var endsWithUnderbars = /__$/;
   var escapeAttrib = html.escapeAttrib;
   function constructClone(node, deep) {
-    node = makeDOMAccessible(node);
     var clone;
     if (node.nodeType === 1 && featureExtendedCreateElement) {
       // From http://blog.pengoworks.com/index.cfm/2007/7/16/IE6--IE7-quirks-with-cloneNode-and-form-elements
@@ -185,17 +176,16 @@ var bridalMaker = function (makeDOMAccessible, targetDocNode) {
           break;
       }
 
-      clone = makeDOMAccessible(document.createElement(tagDesc));
+      clone = document.createElement(tagDesc);
 
-      var attrs = makeDOMAccessible(node.attributes);
+      var attrs = node.attributes;
       for (var i = 0, attr; (attr = attrs[i]); ++i) {
-        attr = makeDOMAccessible(attr);
         if (attr.specified && !endsWithUnderbars.test(attr.name)) {
           setAttribute(clone, attr.nodeName, attr.nodeValue);
         }
       }
     } else {
-      clone = makeDOMAccessible(node.cloneNode(false));
+      clone = node.cloneNode(false);
     }
     if (deep) {
       // TODO(mikesamuel): should we whitelist nodes here, to e.g. prevent
@@ -210,8 +200,6 @@ var bridalMaker = function (makeDOMAccessible, targetDocNode) {
   }
 
   function fixupClone(node, clone) {
-    node = makeDOMAccessible(node);
-    clone = makeDOMAccessible(clone);
     for (var child = node.firstChild, cloneChild = clone.firstChild; cloneChild;
          child = child.nextSibling, cloneChild = cloneChild.nextSibling) {
       fixupClone(child, cloneChild);
@@ -248,14 +236,13 @@ var bridalMaker = function (makeDOMAccessible, targetDocNode) {
   }
 
   function initEvent(event, methodName, type, bubbles, cancelable, args, notCustom) {
-    event = makeDOMAccessible(event);
     methodName = String(methodName);
     type = tameEventType(type, !notCustom);
     bubbles = Boolean(bubbles);
     cancelable = Boolean(cancelable);
 
     if (methodName in event) { // Non-IE, specialized init such as initMouseEvent
-      var method = makeDOMAccessible(event[methodName]);
+      var method = event[methodName];
       if (typeof method !== 'function') {
         // we don't expect this to happen, but if it does, explain
         throw new Error('Domado internal error: event.' + methodName +
@@ -279,8 +266,6 @@ var bridalMaker = function (makeDOMAccessible, targetDocNode) {
   }
 
   function dispatchEvent(element, event) {
-    element = makeDOMAccessible(element);
-    event = makeDOMAccessible(event);
     // TODO(mikesamuel): when we change event dispatching to happen
     // asynchronously, we should exempt custom events since those
     // need to return a useful value, and there may be code bracketing
@@ -316,7 +301,6 @@ var bridalMaker = function (makeDOMAccessible, targetDocNode) {
    *         be used directly.
    */
   function addEventListener(element, type, handler, useCapture) {
-    element = makeDOMAccessible(element);
     type = String(type);
     var tameType = tameEventType(type, false, element.tagName);
     var isNowCustom = type !== tameType;
@@ -383,7 +367,6 @@ var bridalMaker = function (makeDOMAccessible, targetDocNode) {
    * @return {Node} The duplicate node.
    */
   function cloneNode(node, deep) {
-    node = makeDOMAccessible(node);
     var clone;
     if (!document.all) {  // Not IE 6 or IE 7
       clone = node.cloneNode(deep);
@@ -395,9 +378,9 @@ var bridalMaker = function (makeDOMAccessible, targetDocNode) {
   }
 
   function initCanvasElements(doc) {
-    var els = makeDOMAccessible(doc).getElementsByTagName('canvas');
+    var els = doc.getElementsByTagName('canvas');
     for (var i = 0; i < els.length; i++) {
-      initCanvasElement(makeDOMAccessible(els[i]));
+      initCanvasElement(els[i]);
     }
   }
 
@@ -415,9 +398,9 @@ var bridalMaker = function (makeDOMAccessible, targetDocNode) {
         tag.push(' ', attribs[i], '="', escapeAttrib(attribs[i + 1]), '"');
       }
       tag.push('>');
-      return makeDOMAccessible(document.createElement(tag.join('')));
+      return document.createElement(tag.join(''));
     } else {
-      var el = makeDOMAccessible(document.createElement(tagName));
+      var el = document.createElement(tagName);
       for (var i = 0, n = attribs.length; i < n; i += 2) {
         setAttribute(el, attribs[i], attribs[i + 1]);
       }
@@ -441,9 +424,9 @@ var bridalMaker = function (makeDOMAccessible, targetDocNode) {
     // Courtesy Stoyan Stefanov who documents the derivation of this at
     // http://www.phpied.com/dynamic-script-and-style-elements-in-ie/ and
     // http://yuiblog.com/blog/2007/06/07/style/
-    var styleSheet = makeDOMAccessible(document.createElement('style'));
+    var styleSheet = document.createElement('style');
     styleSheet.setAttribute('type', 'text/css');
-    var ssss = makeDOMAccessible(styleSheet.styleSheet);
+    var ssss = styleSheet.styleSheet;
     if (ssss) {   // IE
       ssss.cssText = cssText;
     } else {                // the world
@@ -464,7 +447,6 @@ var bridalMaker = function (makeDOMAccessible, targetDocNode) {
    * @param {string} value the value of an attribute.
    */
   function setAttribute(element, name, value) {
-    element = makeDOMAccessible(element);
     /*
       Hazards:
 
@@ -497,7 +479,7 @@ var bridalMaker = function (makeDOMAccessible, targetDocNode) {
     */
     switch (name) {
       case 'style':
-        makeDOMAccessible(element.style).cssText = value;
+        element.style.cssText = value;
         return value;
       // Firefox will run javascript: URLs in the frame specified by target.
       // This can cause things to run in an unintended frame, so we make sure
@@ -527,8 +509,7 @@ var bridalMaker = function (makeDOMAccessible, targetDocNode) {
     }
     if (featureExtendedCreateElement /* old IE, need workarounds */) {
       try {
-        var attr = makeDOMAccessible(
-          makeDOMAccessible(element.ownerDocument).createAttribute(name));
+        var attr = element.ownerDocument.createAttribute(name);
         attr.value = value;
         element.setAttributeNode(attr);
       } catch (e) {
@@ -549,15 +530,13 @@ var bridalMaker = function (makeDOMAccessible, targetDocNode) {
    *    {@code left}, {@code right}, {@code top}, and {@code bottom}.
    */
   function getBoundingClientRect(el) {
-    el = makeDOMAccessible(el);
     if (el.nodeType === 9 /* Document */) {
-      el = makeDOMAccessible(el.documentElement);
+      el = el.documentElement;
     }
-    var doc = makeDOMAccessible(el.ownerDocument);
+    var doc = el.ownerDocument;
     // Use the native method if present.
     if (el.getBoundingClientRect) {
       var cRect = el.getBoundingClientRect();
-      makeDOMAccessible(cRect);
       if (isIE) {
         // IE has an unnecessary border, which can be mucked with by styles, so
         // the amount of border is not predictable.
@@ -671,12 +650,12 @@ var bridalMaker = function (makeDOMAccessible, targetDocNode) {
     // value string.  This unfortunately fails when element.style is an
     // input element instead of a style object.
     if (name === 'style') {
-      var style = makeDOMAccessible(element.style);
+      var style = element.style;
       if (typeof style.cssText === 'string') {
         return style.cssText;
       }
     }
-    var attr = makeDOMAccessible(element.getAttributeNode(name));
+    var attr = element.getAttributeNode(name);
     if (attr && attr.specified) {
       return attr.value;
     } else {
@@ -688,7 +667,7 @@ var bridalMaker = function (makeDOMAccessible, targetDocNode) {
     if (element.hasAttribute) {  // Non IE
       return element.hasAttribute(name);
     } else {
-      var attr = makeDOMAccessible(element.getAttributeNode(name));
+      var attr = element.getAttributeNode(name);
       return attr !== null && attr.specified;
     }
   }
@@ -701,11 +680,10 @@ var bridalMaker = function (makeDOMAccessible, targetDocNode) {
    * such as ":first-child".
    */
   function getComputedStyle(element, pseudoElement) {
-    if (makeDOMAccessible(element).currentStyle && pseudoElement === void 0) {
-      return makeDOMAccessible(element.currentStyle);
+    if (element.currentStyle && pseudoElement === void 0) {
+      return element.currentStyle;
     } else if (window.getComputedStyle) {
-      return makeDOMAccessible(
-          window.getComputedStyle(element, pseudoElement));
+      return window.getComputedStyle(element, pseudoElement);
     } else {
       throw new Error(
           'Computed style not available for pseudo element '
@@ -726,11 +704,11 @@ var bridalMaker = function (makeDOMAccessible, targetDocNode) {
       for (var i = 0, n = activeXClassIds.length; i < n; i++) {
         var candidate = activeXClassIds[i];
         try {
-          return makeDOMAccessible(new ActiveXObject(candidate));
+          return new ActiveXObject(candidate);
         } catch (e) {}
       }
     }
-    return makeDOMAccessible(new XMLHttpRequest);
+    return new XMLHttpRequest;
   }
 
   return {
@@ -759,11 +737,10 @@ var bridalMaker = function (makeDOMAccessible, targetDocNode) {
 /**
  * Returns the window containing this element.
  */
-// mda = makeDOMAccessible
-bridalMaker.getWindow = function(node, mda) {
-  var doc = mda(node).nodeType === 9  // Document node
+bridalMaker.getWindow = function(node) {
+  var doc = node.nodeType === 9  // Document node
       ? node
-      : mda(node.ownerDocument);
+      : node.ownerDocument;
   // IE
   if (doc.parentWindow) { return doc.parentWindow; }
   // Everything else
@@ -773,7 +750,7 @@ bridalMaker.getWindow = function(node, mda) {
   // Just in case
   var s = doc.createElement('script');
   s.innerHTML = "document.parentWindow = window;";
-  var body = mda(doc.body);
+  var body = doc.body;
   body.appendChild(s);
   body.removeChild(s);
   return doc.parentWindow;

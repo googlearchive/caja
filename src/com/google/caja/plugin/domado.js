@@ -831,14 +831,13 @@ var Domado = (function() {
   }());
 
   /** XMLHttpRequest or an equivalent on IE 6. */
-  function XMLHttpRequestCtor(makeDOMAccessible,
-      XMLHttpRequest, ActiveXObject, XDomainRequest) {
+  function XMLHttpRequestCtor(XMLHttpRequest, ActiveXObject, XDomainRequest) {
     if (XMLHttpRequest &&
-      makeDOMAccessible(new XMLHttpRequest()).withCredentials !== undefined) {
+      new XMLHttpRequest().withCredentials !== undefined) {
       return XMLHttpRequest;
     } else if (XDomainRequest) { 
       return function XDomainRequestObjectForIE() {
-        var xdr = makeDOMAccessible(new XDomainRequest());
+        var xdr = new XDomainRequest();
         xdr.onload = function () {
           if ('function' === typeof xdr.onreadystatechange) {
             xdr.status = 200;
@@ -891,7 +890,6 @@ var Domado = (function() {
 
   function TameXMLHttpRequest(
       taming,
-      rulebreaker,
       xmlHttpRequestMaker,
       naiveUriPolicy,
       getBaseURL) {
@@ -910,8 +908,7 @@ var Domado = (function() {
     function TameXMLHttpRequest() {
       TameXHRConf.confide(this, taming);
       amplify(this, function(privates) {
-        var xhr = privates.feral =
-            rulebreaker.makeDOMAccessible(new xmlHttpRequestMaker());
+        var xhr = privates.feral = new xmlHttpRequestMaker();
         taming.tamesTo(xhr, this);
         
         privates.async = undefined;
@@ -1254,59 +1251,39 @@ var Domado = (function() {
    * objects, and a shared map allowing separate virtual documents to dispatch
    * events across them. (TODO(kpreid): Confirm this explanation is good.)
    *
-   * @param {Object} opt_rulebreaker. If necessary, authorities to break the
-   *     ES5/3 taming membrane and work with the taming-frame system. If
-   *     running under SES, pass null instead.
+   * TODO(kpreid): Revisit whether this stage should exist, now that rulebreaker
+   * is gone.
+   *
    * @return A record of functions attachDocument, dispatchEvent, and
    *     dispatchToHandler.
    */
-  return cajaVM.constFunc(function Domado_(opt_rulebreaker) {
+  return cajaVM.constFunc(function Domado_() {
     // Everything in this scope but not in function attachDocument() below
     // does not contain lexical references to a particular DOM instance, but
     // may have some kind of privileged access to Domado internals.
 
-    // This is only used if opt_rulebreaker is absent (because the plugin ids
-    // are normally managed by es53 when it is not). TODO(kpreid): Is there a
-    // more sensible place to put this management, which would be used in both
-    // modes?
+    // TODO(kpreid): This ID management should probably be handled by
+    // ses-single-frame.js instead.
     var importsToId = new WeakMap(true);
     var idToImports = [];
     var nextPluginId = 0;
-
-    // This parameter is supplied in the ES5/3 case and not in the ES5+SES case.
-    var rulebreaker = opt_rulebreaker ? opt_rulebreaker : cajaVM.def({
-      // These are the stub versions used when in ES5+SES.
-      makeDOMAccessible: function (o) {return o;},
-      makeFunctionAccessible: function (o) {return o;},
-      copyLengthPropertyIfUninterceptable: function (source, target) {},
-      writeToPixelArray: function (source, target, length) {
-        // See the use below for why this exists.
-        for (var i = length-1; i >= 0; i--) {
-          target[+i] = source[+i];
-        }
-      },
-
-      getId: function (imports) {
-        if (importsToId.has(imports)) {
-          return importsToId.get(imports);
-        } else {
-          var id = nextPluginId++;
-          importsToId.set(imports, id);
-          idToImports[id] = imports;
-          return id;
-        }
-      },
-      getImports: function (id) {
-        var imports = idToImports[id];
-        if (imports === undefined) {
-          throw new Error('Internal: imports#', id, ' unregistered');
-        }
-        return imports;
+    function getId(imports) {
+      if (importsToId.has(imports)) {
+        return importsToId.get(imports);
+      } else {
+        var id = nextPluginId++;
+        importsToId.set(imports, id);
+        idToImports[id] = imports;
+        return id;
       }
-    });
-
-    var makeDOMAccessible = rulebreaker.makeDOMAccessible;
-    var makeFunctionAccessible = rulebreaker.makeFunctionAccessible;
+    }
+    function getImports(id) {
+      var imports = idToImports[id];
+      if (imports === undefined) {
+        throw new Error('Internal: imports#', id, ' unregistered');
+      }
+      return imports;
+    }
 
     // value transforming/trivial functions
     function noop() { return undefined; }
@@ -1419,8 +1396,6 @@ var Domado = (function() {
     function tameSetAndClear(target, set, clear, setName, clearName, passArg,
         evalStrings, environment) {
       var ids = new WeakMap();
-      makeFunctionAccessible(set);
-      makeFunctionAccessible(clear);
       function tameSet(action, delayMillis) {
         // Existing browsers treat a timeout/interval of null or undefined as a
         // noop.
@@ -1482,7 +1457,6 @@ var Domado = (function() {
       switch (overflow && overflow.toLowerCase()) {
         case 'visible':
         case 'hidden':
-          makeDOMAccessible(element.style);
           element.style.overflow = 'auto';
           break;
       }
@@ -1529,7 +1503,6 @@ var Domado = (function() {
         throw new Error('Cannot resize to ' + w + ':' + typeof w + ', '
                         + h + ':' + typeof h);
       }
-      makeDOMAccessible(element.style);
       element.style.width = w + 'px';
       element.style.height = h + 'px';
     }
@@ -1573,14 +1546,11 @@ var Domado = (function() {
       //     +--------+
       //     clientWidth (but excludes content outside viewport)
 
-      var style = makeDOMAccessible(element.currentStyle);
+      var style = element.currentStyle;
       if (!style) {
-        style = makeDOMAccessible(
-            bridalMaker.getWindow(element, makeDOMAccessible)
-            .getComputedStyle(element, void 0));
+        style = bridalMaker.getWindow(element)
+            .getComputedStyle(element, void 0);
       }
-
-      makeDOMAccessible(element.style);
 
       // We guess the padding since it's not always expressed in px on IE
       var extraHeight = guessPixelsFromCss(style.paddingBottom)
@@ -1804,19 +1774,13 @@ var Domado = (function() {
 
       var vdocContainsForeignNodes = false;
 
-      outerContainerNode = makeDOMAccessible(outerContainerNode);
       var document = outerContainerNode.nodeType === 9  // Document node
           ? outerContainerNode
           : outerContainerNode.ownerDocument;
-      document = makeDOMAccessible(document);
-      var bridal = bridalMaker(makeDOMAccessible, document);
-      var elementForFeatureTests =
-          makeDOMAccessible(document.createElement('div'));
+      var bridal = bridalMaker(document);
+      var elementForFeatureTests = document.createElement('div');
 
-      var window = bridalMaker.getWindow(outerContainerNode, makeDOMAccessible);
-      window = makeDOMAccessible(window);
-
-      makeDOMAccessible(document.location);
+      var window = bridalMaker.getWindow(outerContainerNode);
 
       // Note that feralPseudoWindow may be an Element or a Window depending.
       var feralPseudoDocument, feralPseudoWindow;
@@ -1838,11 +1802,9 @@ var Domado = (function() {
         // on behalf of the guest. This way, a visual isolation break would
         // require modifying untame(tameWindow).style, which is less likely to
         // be accidentally permitted.
-        var outerIsolator = makeDOMAccessible(
-            document.createElement('div'));
-        feralPseudoDocument = makeDOMAccessible(
-            document.createElement('div'));
-        feralPseudoWindow = makeDOMAccessible(document.createElement('div'));
+        var outerIsolator = document.createElement('div');
+        feralPseudoDocument = document.createElement('div');
+        feralPseudoWindow = document.createElement('div');
         outerIsolator.appendChild(feralPseudoWindow);
         feralPseudoWindow.appendChild(feralPseudoDocument);
         // Class-name hooks: The host page can
@@ -1862,7 +1824,6 @@ var Domado = (function() {
         // needed effects.
         [outerIsolator, feralPseudoWindow, feralPseudoDocument].forEach(
             function(el) {
-          makeDOMAccessible(el.style);
           // Ensure block display and no additional borders/gaps.
           el.style.display = 'block';
           el.style.margin = '0';
@@ -1965,9 +1926,6 @@ var Domado = (function() {
             delete privates.proxyHandler;  // no longer needed
 
             TameNodeConf.confide(proxiedNode, taming, node);
-
-            // special case for ES5/3 lack of interposition on 'length'
-            rulebreaker.copyLengthPropertyIfUninterceptable(node, proxiedNode);
 
             node = proxiedNode;
           }
@@ -2876,7 +2834,6 @@ var Domado = (function() {
        */
       function defaultTameNode(node, foreign) {
         if (node === null || node === void 0) { return null; }
-        node = makeDOMAccessible(node);
         // TODO(mikesamuel): make sure it really is a DOM node
 
         if (taming.hasTameTwin(node)) {
@@ -2908,14 +2865,12 @@ var Domado = (function() {
           return tameDocument;
         }
 
-        node = makeDOMAccessible(node);
-
         // Catch errors because node might be from a different domain.
         try {
           var doc = node.ownerDocument;
           for (var ancestor = node;
               ancestor;
-              ancestor = makeDOMAccessible(ancestor.parentNode)) {
+              ancestor = ancestor.parentNode) {
             if (isContainerNode(ancestor)) {
               // is within the virtual document
               return defaultTameNode(node);
@@ -2937,8 +2892,7 @@ var Domado = (function() {
       function tameEventTarget(nodeOrWindow) {
         if (nodeOrWindow === feralPseudoWindow || nodeOrWindow === window) {
           return tameWindow;
-        } else if (nodeOrWindow &&
-            makeDOMAccessible(nodeOrWindow).nodeType === 1) {
+        } else if (nodeOrWindow && nodeOrWindow.nodeType === 1) {
           return tameRelatedNode(nodeOrWindow);
         } else {
           // Wasn't an element and wasn't the particular window.
@@ -2953,9 +2907,9 @@ var Domado = (function() {
       function isNodeToBeHidden(feralNode) {
         if (!feralNode) return false;
         for (
-            var ancestor = makeDOMAccessible(feralNode.parentNode);
+            var ancestor = feralNode.parentNode;
             ancestor !== null;
-            ancestor = makeDOMAccessible(ancestor.parentNode)) {
+            ancestor = ancestor.parentNode) {
           if (taming.hasTameTwin(ancestor)) {
             if (taming.tame(ancestor) instanceof TameForeignNode) {
               // Every foreign node is already tamed as foreign, by
@@ -3028,7 +2982,6 @@ var Domado = (function() {
        * foreign node filtering, and host-exception wrapping, only.
        */
       function NodeListFilter(feralNodeList) {
-        feralNodeList = makeDOMAccessible(feralNodeList);
         var expectation = [];
         var filteredCache = [];
 
@@ -3062,7 +3015,6 @@ var Domado = (function() {
               feralIndex++) {
             var node = feralNodeList[feralIndex];
             expectation.push(node);
-            makeDOMAccessible(node);
             if (!isNodeToBeHidden(node)) {
               filteredCache.push(node);
             }
@@ -3271,8 +3223,7 @@ var Domado = (function() {
           if (isNumericName(name)) {
             return this.visibleList.item(+name);
           } else {
-            var feral = makeDOMAccessible(this.feral.getNamedItem(
-                this.mapping.untameName(name)));
+            var feral = this.feral.getNamedItem(this.mapping.untameName(name));
             if (!isNodeToBeHidden(feral)) {
               return feral;
             } else {
@@ -3551,7 +3502,6 @@ var Domado = (function() {
        */
       var TokenListConf = new Confidence('TameDOMTokenList');
       function TameDOMTokenList(feral, getTransform, setTransform) {
-        feral = makeDOMAccessible(feral);
         function getItem(i) {
           return TameDOMTokenList.prototype.item.call(self, i);
         }
@@ -3607,8 +3557,8 @@ var Domado = (function() {
         return TameDOMTokenList.call(this, feral, getTransform, setTransform);
       }
       registerArrayLikeClass(TameDOMSettableTokenList, TameDOMTokenList);
-      if (elementForFeatureTests.classList && makeDOMAccessible(
-          elementForFeatureTests.classList).value !== undefined) {
+      if (elementForFeatureTests.classList &&
+          elementForFeatureTests.classList.value !== undefined) {
         Props.define(TameDOMSettableTokenList.prototype, TokenListConf, {
           value: {
             get: TokenListConf.amplifying(function(privates) {
@@ -3632,7 +3582,6 @@ var Domado = (function() {
       finishArrayLikeClass(TameDOMSettableTokenList);
 
       function tameTokenList(feral, getTransform, setTransform) {
-        makeDOMAccessible(feral);
         if ('value' in feral) {
           return new TameDOMSettableTokenList(feral, getTransform,
               setTransform);
@@ -3645,7 +3594,7 @@ var Domado = (function() {
         ensureValidCallback(listener);
         function wrapper(event) {
           return plugin_dispatchEvent(
-              thisNode, event, rulebreaker.getId(tameWindow), listener,
+              thisNode, event, getId(tameWindow), listener,
               // indicate that we want an event argument only
               1);
         }
@@ -3826,14 +3775,12 @@ var Domado = (function() {
        * @constructor
        */
       function TameBackedNode(node, opt_policy, opt_proxyType) {
-        node = makeDOMAccessible(node);
-
         if (!node) {
           throw new Error('Creating tame node with undefined native delegate');
         }
 
         // Determine access policy
-        var parent = makeDOMAccessible(node.parentNode);
+        var parent = node.parentNode;
         var parentPolicy;
         if (!parent || isContainerNode(parent) || isContainerNode(node)) {
           parentPolicy = null;
@@ -4127,7 +4074,6 @@ var Domado = (function() {
       }
       tamingClassTable.registerLazy('Attr', function() {
         function TameBackedAttributeNode(node, ownerElement) {
-          node = makeDOMAccessible(node);
           if ('ownerElement' in node && node.ownerElement !== ownerElement) {
             throw new Error('Inconsistent ownerElement');
           }
@@ -4266,7 +4212,6 @@ var Domado = (function() {
             if (htmlSchema.element(rawNode.tagName).allowed) {
               // Not an opaque node.
               for (var c = rawNode.firstChild; c; c = c.nextSibling) {
-                c = makeDOMAccessible(c);
                 innerTextOf(c, out);
               }
             }
@@ -4277,7 +4222,6 @@ var Domado = (function() {
             break;
           case 11:  // Document Fragment
             for (var c = rawNode.firstChild; c; c = c.nextSibling) {
-              c = makeDOMAccessible(c);
               innerTextOf(c, out);
             }
             break;
@@ -4399,10 +4343,9 @@ var Domado = (function() {
               // emulating how browsers treat offsetParent and the real <BODY>.
               return nodeAmplify(tameDocument.body, function(bodyPriv) {
                 var feralBody = bodyPriv.feral;
-                for (var ancestor =
-                         makeDOMAccessible(privates.feral.parentNode);
+                for (var ancestor = privates.feral.parentNode;
                      ancestor !== feralPseudoDocument;
-                     ancestor = makeDOMAccessible(ancestor.parentNode)) {
+                     ancestor = ancestor.parentNode) {
                   if (ancestor === feralBody) {
                     return defaultTameNode(feralBody);
                   }
@@ -4707,7 +4650,7 @@ var Domado = (function() {
       // http://dev.w3.org/html5/spec/Overview.html#the-canvas-element
       (function() {
         // TODO(felix8a): need to call bridal.initCanvasElement
-        var canvasTest = makeDOMAccessible(document.createElement('canvas'));
+        var canvasTest = document.createElement('canvas');
         if (typeof canvasTest.getContext !== 'function') {
           // If the host browser does not have getContext, then it must not
           // usefully support canvas, so we don't either; skip registering the
@@ -4794,8 +4737,6 @@ var Domado = (function() {
         
         tamingClassTable.registerLazy('ImageData', function() {
           function TameImageData(imageData) {
-            imageData = makeDOMAccessible(imageData);
-
             // Since we can't interpose indexing, we can't wrap the
             // CanvasPixelArray
             // so we have to copy the pixel data. This is horrible, bad, and
@@ -4835,12 +4776,7 @@ var Domado = (function() {
               if (!privates.tamePixelArray) {
 
                 var bareArray = privates.feral.data;
-                // Note: On Firefox 4.0.1, at least, pixel arrays cannot
-                // have added properties (such as our w___). Therefore,
-                // for writing, we use a special routine, and we don't do
-                // makeDOMAccessible because it would have no effect. An
-                // alternative approach would be to muck with the
-                // "Uint8ClampedArray" prototype.
+                // TODO(kpreid): replace tamePixelArray with typed array
 
                 var length = bareArray.length;
                 var tamePixelArray = { // not frozen, user-modifiable
@@ -4855,8 +4791,9 @@ var Domado = (function() {
                     // TODO(kpreid): shouldn't be a public method (but is
                     // harmless).
 
-                    rulebreaker.writeToPixelArray(
-                      tamePixelArray, bareArray, length);
+                    for (var i = length-1; i >= 0; i--) {
+                      bareArray[+i] = tamePixelArray[+i];
+                    }
                   })
                 };
                 for (var i = length-1; i >= 0; i--) {
@@ -4874,7 +4811,7 @@ var Domado = (function() {
           function TameGradient(gradient) {
             TameGradientConf.confide(this, taming);
             TameGradientConf.amplify(this, function(privates) {
-              privates.feral = makeDOMAccessible(gradient);
+              privates.feral = gradient;
             });
             taming.tamesTo(gradient, this);
             Object.freeze(this);
@@ -4948,17 +4885,16 @@ var Domado = (function() {
                   throw new Error(prop + ' takes ' + count +
                       ' args, not ' + (arguments.length - 1));
                 }
+                // In theory this could be type check plus Array.prototype.shift
+                // -- but feeling a little paranoid, so let's construct a
+                // separate arguments array.
                 var args = new Array(count);
                 for (var i = 0; i < count; i++) {
                   args[+i] = enforceType(arguments[+i + 1], 'number',
                       prop + ' argument ' + i);
                 }
-                // The copy-into-array is necessary in ES5/3 because host DOM
-                // won't take an arguments object from inside of ES53.
                 var feral = privates.feral;
-                // TODO(kpreid): Needing to do this not good. A normal mDA isn't
-                // sufficient because we're using .apply for varargs
-                makeDOMAccessible(feral[prop]).apply(feral, args);
+                feral[prop].apply(feral, args);
               })
             };
           });
@@ -5031,7 +4967,6 @@ var Domado = (function() {
 
         tamingClassTable.registerLazy('TextMetrics', function() {
           function TameTextMetrics(feralMetrics) {
-            feralMetrics = makeDOMAccessible(feralMetrics);
             // TextMetrics just acts as a record, so we don't need any forwarding
             // wrapper; copying the data is sufficient.
             [
@@ -5062,7 +4997,6 @@ var Domado = (function() {
           var TameContext2DConf = new Confidence('TameContext2D');
           function TameContext2D(feralContext, policy) {
             // policy is needed for the PropertyTaming accessors
-            feralContext = makeDOMAccessible(feralContext);
             TameContext2DConf.confide(this, taming);
             TameContext2DConf.amplify(this, function(privates) {
               privates.feral = feralContext;
@@ -5376,8 +5310,7 @@ var Domado = (function() {
         }),
         col_lookup: Props.overridable(true, cajaVM.constFunc(function(name) {
           return nodeAmplify(this.target, function(privates) {
-            return makeDOMAccessible(
-                makeDOMAccessible(privates.feral.elements).namedItem(name));
+            return privates.feral.elements.namedItem(name);
           });
         })),
         col_evaluate: Props.overridable(true, cajaVM.constFunc(
@@ -5512,7 +5445,7 @@ var Domado = (function() {
         // to consider whether this should always allow access to said content,
         // and probably other issues.
         return nodeAmplify(tameIFrame, function(privates) {
-          var frameFeralDoc = makeDOMAccessible(privates.feral.contentDocument);
+          var frameFeralDoc = privates.feral.contentDocument;
           if (!privates.contentDomicile ||
               frameFeralDoc !== privates.seenContentDocument) {
             if (!frameFeralDoc) {
@@ -5536,8 +5469,7 @@ var Domado = (function() {
             // Creating HtmlEmitter hooks up document.write, and finish() (i.e.
             // end-of-file, i.e. an empty-string input document) triggers
             // construction of the virtualized global structure.
-            var emitter = new HtmlEmitter(makeDOMAccessible,
-                subDomicile.htmlEmitterTarget,
+            var emitter = new HtmlEmitter(subDomicile.htmlEmitterTarget,
                 naiveUriPolicy.mitigate, subDomicile);
             emitter.finish();
           }
@@ -5545,7 +5477,7 @@ var Domado = (function() {
         });
       }
 
-      var featureTestImage = makeDOMAccessible(document.createElement('img'));
+      var featureTestImage = document.createElement('img');
       defineElement({
         domClass: 'HTMLImageElement',
         properties: function() { return {
@@ -5814,8 +5746,7 @@ var Domado = (function() {
         domClass: 'HTMLStyleElement',
         forceChildrenNotEditable: true,  // critical to style isolation
         properties: function() {
-          var styleForFeatureTests = makeDOMAccessible(
-              document.createElement('style'));
+          var styleForFeatureTests = document.createElement('style');
           return {
             disabled: NP_reflectBoolean,
             media: NP_writePolicyOnly,
@@ -5974,7 +5905,6 @@ var Domado = (function() {
       function fromInt(x) { return '' + (x | 0); }
 
       function tameEvent(event) {
-        event = makeDOMAccessible(event);
         if (!taming.hasTameTwin(event)) {
           var tamed = new (tamingClassTable.getTamingCtor('Event'))(
               event, false);
@@ -5994,8 +5924,7 @@ var Domado = (function() {
 
         var featureTestKeyEvent = {};
         try {
-          featureTestKeyEvent = makeDOMAccessible(
-              document.createEvent('KeyboardEvent'));
+          featureTestKeyEvent = document.createEvent('KeyboardEvent');
         } catch (e) {}
 
         function tameEventView(view) {
@@ -6350,8 +6279,7 @@ var Domado = (function() {
           // TODO(kpreid): Make this a memoized live list.
           var tameForms = [];
           for (var i = 0; i < document.forms.length; i++) {
-            var tameForm = tameRelatedNode(
-              makeDOMAccessible(document.forms).item(i));
+            var tameForm = tameRelatedNode(document.forms.item(i));
             // tameRelatedNode returns null if the node is not part of
             // this node's virtual document.
             if (tameForm !== null) { tameForms.push(tameForm); }
@@ -6686,8 +6614,6 @@ var Domado = (function() {
          * http://www.w3.org/TR/DOM-Level-2-Style/css.html#CSS-CSSStyleDeclaration
          */
         function TameStyle(style, editable, tameEl) {
-          style = makeDOMAccessible(style);
-
           TameStyleConf.confide(this, taming);
           TameStyleConf.amplify(this, function(privates) {
             privates.feral = style;
@@ -6782,7 +6708,7 @@ var Domado = (function() {
         function isNestedInAnchor(el) {
           for (;
               el && el !== feralPseudoDocument;
-              el = makeDOMAccessible(el.parentNode)) {
+              el = el.parentNode) {
             if (el.tagName && el.tagName.toLowerCase() === 'a') {
               return true;
             }
@@ -6847,12 +6773,10 @@ var Domado = (function() {
         // called by cajoled code, so we do not use inertCtor().
         return cajaVM.def(TameXMLHttpRequest(
             taming,
-            rulebreaker,
             XMLHttpRequestCtor(
-                makeDOMAccessible,
-                makeFunctionAccessible(window.XMLHttpRequest),
-                makeFunctionAccessible(window.ActiveXObject),
-                makeFunctionAccessible(window.XDomainRequest)),
+                window.XMLHttpRequest,
+                window.ActiveXObject,
+                window.XDomainRequest),
             naiveUriPolicy,
             function () { return domicile.pseudoLocation.href; }));
       });
@@ -6886,7 +6810,6 @@ var Domado = (function() {
           }
           e = document.createElement('head');
         }
-        e = makeDOMAccessible(e);
         return e;
       });
 
@@ -7069,7 +6992,7 @@ var Domado = (function() {
       // See spec at http://www.whatwg.org/specs/web-apps/current-work/multipage/browsers.html#navigator
       // We don't attempt to hide or abstract userAgent details since
       // they are discoverable via side-channels we don't control.
-      var navigator = makeDOMAccessible(window.navigator);
+      var navigator = window.navigator;
       var tameNavigator = cajaVM.def({
         appName: String(navigator.appName),
         appVersion: String(navigator.appVersion),
@@ -7276,14 +7199,14 @@ var Domado = (function() {
         writable: false
       });
 
-      pluginId = rulebreaker.getId(tameWindow);
+      pluginId = getId(tameWindow);
       windowToDomicile.set(tameWindow, domicile);
 
       // Install virtual UA stylesheet.
       if (!document.caja_gadgetStylesheetInstalled) (function () {
         document.caja_gadgetStylesheetInstalled = true;
         
-        var element = makeDOMAccessible(document.createElement("style"));
+        var element = document.createElement("style");
         element.setAttribute("type", "text/css");
         element.textContent = (
           // Visually contains the virtual document
@@ -7320,13 +7243,13 @@ var Domado = (function() {
      */
     function plugin_dispatchEvent(thisNode, event, pluginId, handler,
           argCount) {
-      var window = bridalMaker.getWindow(thisNode, makeDOMAccessible);
-      event = makeDOMAccessible(event || window.event);
+      var window = bridalMaker.getWindow(thisNode);
+      event = event || window.event;
       // support currentTarget on IE[678]
       if (!event.currentTarget) {
         event.currentTarget = thisNode;
       }
-      var imports = rulebreaker.getImports(pluginId);
+      var imports = getImports(pluginId);
       var domicile = windowToDomicile.get(imports);
       var node = domicile.tameNode(thisNode);
       var isUserAction = eventIsUserAction(event, window);
@@ -7368,7 +7291,7 @@ var Domado = (function() {
     }
 
     function dispatch(isUserAction, pluginId, handler, args) {
-      var domicile = windowToDomicile.get(rulebreaker.getImports(pluginId));
+      var domicile = windowToDomicile.get(getImports(pluginId));
       switch (typeof handler) {
         case 'number':
           handler = domicile.handlers[+handler];

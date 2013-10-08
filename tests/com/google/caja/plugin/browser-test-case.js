@@ -444,7 +444,7 @@ var asyncRequirements = (function () {
 })();
 
 function fetch(url, cb) {
-  var xhr = bridalMaker(function (x){return x;}, document).makeXhr();
+  var xhr = bridalMaker(document).makeXhr();
   xhr.open('GET', url, true);
   xhr.onreadystatechange = function() {
     if (xhr.readyState === 4) {

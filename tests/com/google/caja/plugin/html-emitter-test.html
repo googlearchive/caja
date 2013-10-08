@@ -49,7 +49,7 @@
     }
     var base = document.getElementById('base0');
 
-    var el___, emitter___ = new HtmlEmitter(function (n) {return n;}, base);
+    var el___, emitter___ = new HtmlEmitter(base);
 
     emitter___.attach('id_1___');
     var el___ = emitter___.byId('id_1___');
@@ -85,7 +85,7 @@
 
     base = document.getElementById('base1');
     el___ = undefined;
-    emitter___ = new HtmlEmitter(function (n) {return n;}, base);
+    emitter___ = new HtmlEmitter(base);
 
     console.log('Emitting static');
     emitter___.emitStatic('<p>Hello world<\/p>');
