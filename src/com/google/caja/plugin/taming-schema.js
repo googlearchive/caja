@@ -19,7 +19,7 @@
  * @overrides window
  * @provides TamingSchema
  */
-function TamingSchema(privilegedAccess) {
+function TamingSchema(helper) {
 
   'use strict';
 
@@ -73,7 +73,7 @@ function TamingSchema(privilegedAccess) {
   // All WeakMaps we use deal in host objects, so have a shortcut
   function makeWeakMap() {
     var map = new WeakMap();
-    privilegedAccess.weakMapPermitHostObjects(map);
+    helper.weakMapPermitHostObjects(map);
     return map;
   }
 
@@ -108,7 +108,7 @@ function TamingSchema(privilegedAccess) {
     if (fixed.has(f)) {
       throw new TypeError('Taming controls not for already tamed: ' + f);
     }
-    if (privilegedAccess.isDefinedInCajaFrame(f)) {
+    if (helper.isDefinedInCajaFrame(f)) {
       throw new TypeError('Taming controls not for Caja objects: ' + f);
     }
   }
@@ -193,7 +193,7 @@ function TamingSchema(privilegedAccess) {
   function initAdvice(f) {
     if (!functionAdvice.has(f)) {
       functionAdvice.set(f, function tamingNullAdvice(self, args) {
-        return privilegedAccess.applyFunction(f, self, args);
+        return f.apply(self, args);
       });
     }
     return functionAdvice.get(f);
@@ -202,32 +202,21 @@ function TamingSchema(privilegedAccess) {
   function adviseFunctionBefore(f, advice) {
     var p = initAdvice(f);
     functionAdvice.set(f, function tamingBeforeAdvice(self, args) {
-      return p(
-          self,
-          privilegedAccess.applyFunction(
-              advice,
-              privilegedAccess.USELESS,
-              [f, self, args]));
+      return p(self, advice(f, self, args));
     });
   }
   
   function adviseFunctionAfter(f, advice) {
     var p = initAdvice(f);
     functionAdvice.set(f, function tamingAfterAdvice(self, args) {
-      return privilegedAccess.applyFunction(
-          advice,
-          privilegedAccess.USELESS,
-          [f, self, p(self, args)]);
+      return advice(f, self, p(self, args));
     });
   }
 
   function adviseFunctionAround(f, advice) {
     var p = initAdvice(f);
     functionAdvice.set(f, function tamingAroundAdvice(self, args) {
-      return privilegedAccess.applyFunction(
-          advice,
-          privilegedAccess.USELESS,
-          [p, self, args]);
+      return advice(p, self, args);
     });
   }
 

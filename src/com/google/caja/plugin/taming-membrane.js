@@ -19,20 +19,75 @@
  * @overrides window
  * @provides TamingMembrane
  */
-// TODO(kpreid): Review privilegedAccess for pieces which are no longer
-// necessary in the post-ES5/3 world. Beware of browser bugs where it matters
-// which frame the caller belongs to.
-function TamingMembrane(privilegedAccess, schema) {
+function TamingMembrane(helper, schema) {
 
   'use strict';
 
   var feralByTame = new WeakMap();
   var tameByFeral = new WeakMap();
-  privilegedAccess.weakMapPermitHostObjects(tameByFeral);
+  helper.weakMapPermitHostObjects(tameByFeral);
 
   // Useless value provided as a safe 'this' value to functions.
-  feralByTame.set(privilegedAccess.USELESS, privilegedAccess.USELESS);
-  tameByFeral.set(privilegedAccess.USELESS, privilegedAccess.USELESS);
+  feralByTame.set(helper.USELESS, helper.USELESS);
+  tameByFeral.set(helper.USELESS, helper.USELESS);
+
+  // Distinguished value returned when directConstructor() wishes to indicate
+  // that the direct constructor of some object is the native primordial
+  // "Object" function of some JavaScript frame.
+  var BASE_OBJECT_CONSTRUCTOR = Object.freeze({});
+
+  function directConstructor(obj) {
+    if (obj === null) { return void 0; }
+    if (obj === void 0) { return void 0; }
+    if ((typeof obj) !== 'object') {
+      // Regarding functions, since functions return undefined,
+      // directConstructor() doesn't provide access to the
+      // forbidden Function constructor.
+      // Otherwise, we don't support finding the direct constructor
+      // of a primitive.
+      return void 0;
+    }
+    var directProto = Object.getPrototypeOf(obj);
+    if (!directProto) { return void 0; }
+    var directCtor = directProto.constructor;
+    if (!directCtor) { return void 0; }
+    helper.allFrames().forEach(function(w) {
+      var O;
+      try {
+        O = w.Object;
+      } catch (e) {
+        // met a different-origin frame, probably
+        return;
+      }
+      if (directCtor === O) {
+        if (!Object.prototype.hasOwnProperty.call(directProto, 'constructor')) {
+          // detect prototypes which just didn't bother to set .constructor and
+          // inherited it from Object (Safari's DOMException is the motivating
+          // case).
+          directCtor = void 0;
+        } else {
+          directCtor = BASE_OBJECT_CONSTRUCTOR;
+        }
+      }
+    });
+    return directCtor;
+  }
+
+  function getObjectCtorFor(o) {
+    if (o === undefined || o === null) {
+      return void 0;
+    }
+    var ot = typeof o;
+    if (ot !== 'object' && ot !== 'function') {
+      throw new TypeError('Cannot obtain ctor for non-object');
+    }
+    var proto = undefined;
+    while (o) {
+      proto = o;
+      o = Object.getPrototypeOf(o);
+    }
+    return proto.constructor;
+  }
 
   function isNumericName(n) {
     return typeof n === 'number' || ('' + (+n)) === n;
@@ -68,8 +123,7 @@ function TamingMembrane(privilegedAccess, schema) {
 
   function getFeralProperty(feralObject, feralProp) {
     try {
-      return tame(
-          privilegedAccess.getProperty(feralObject, feralProp));
+      return tame(feralObject[feralProp]);
     } catch (e) {
       throw tameException(e);
     }
@@ -77,7 +131,7 @@ function TamingMembrane(privilegedAccess, schema) {
 
   function setFeralProperty(feralObject, feralProp, feralValue) {
     try {
-      privilegedAccess.setProperty(feralObject, feralProp, feralValue);
+      feralObject[feralProp] = feralValue;
     } catch (e) {
       throw tameException(e);
     }
@@ -107,29 +161,29 @@ function TamingMembrane(privilegedAccess, schema) {
     var t = void 0;
     switch (Object.prototype.toString.call(o)) {
       case '[object Boolean]':
-        t = new Boolean(privilegedAccess.getValueOf(o));
+        t = new Boolean(o.valueOf());
         break;
       case '[object Date]':
-        t = new Date(privilegedAccess.getValueOf(o));
+        t = new Date(o.valueOf());
         break;
       case '[object Number]':
-        t = new Number(privilegedAccess.getValueOf(o));
+        t = new Number(o.valueOf());
         break;
       case '[object RegExp]':
         t = new RegExp(
-            privilegedAccess.getProperty(o, 'source'),
-            (privilegedAccess.getProperty(o, 'global') ? 'g' : '') +
-            (privilegedAccess.getProperty(o, 'ignoreCase') ? 'i' : '') +
-            (privilegedAccess.getProperty(o, 'multiline') ? 'm' : ''));
+            o.source,
+            (o.global ? 'g' : '') +
+            (o.ignoreCase ? 'i' : '') +
+            (o.multiline ? 'm' : ''));
         break;
       case '[object String]':
-        t = new String(privilegedAccess.getValueOf(o));
+        t = new String(o.valueOf());
         break;
       case '[object Error]':
       case '[object DOMException]':
         // paranoia -- Error constructor is specified to stringify
-        var msg = '' + privilegedAccess.getProperty(o, 'message');
-        var name = privilegedAccess.getProperty(o, 'name');
+        var msg = '' + o.message;
+        var name = o.name;
         switch (name) {
           case 'Error':
             t = new Error(msg);
@@ -231,7 +285,7 @@ function TamingMembrane(privilegedAccess, schema) {
   function tameArray(fa) {
     var ta = [];
     for (var i = 0; i < fa.length; i++) {
-      ta[i] = tame(privilegedAccess.getProperty(fa, i));
+      ta[i] = tame(fa[i]);
     }
     return Object.freeze(ta);
   }
@@ -239,7 +293,7 @@ function TamingMembrane(privilegedAccess, schema) {
   function untameArray(ta) {
     var fa = [];
     for (var i = 0; i < ta.length; i++) {
-      privilegedAccess.setProperty(fa, i, untame(ta[i]));
+      fa[i] = untame(ta[i]);
     }
     return Object.freeze(fa);
   }
@@ -276,8 +330,8 @@ function TamingMembrane(privilegedAccess, schema) {
           + f + '. The membrane has previously been compromised.');
     }
     if (ftype === 'object') {
-      var ctor = privilegedAccess.directConstructor(f);
-      if (ctor === privilegedAccess.BASE_OBJECT_CONSTRUCTOR) {
+      var ctor = directConstructor(f);
+      if (ctor === BASE_OBJECT_CONSTRUCTOR) {
         t = preventExtensions(tameRecord(f));
       } else {
         t = copyBuiltin(f);
@@ -322,7 +376,7 @@ function TamingMembrane(privilegedAccess, schema) {
   function tameRecord(f, t) {
     if (!t) { t = {}; }
     var readOnly = schema.tameAs.get(f) === schema.tameTypes.READ_ONLY_RECORD;
-    privilegedAccess.getOwnPropertyNames(f).forEach(function(p) {
+    Object.keys(f).forEach(function(p) {
       if (isNumericName(p)) { return; }
       if (!isValidPropertyName(p)) { return; }
       var get = function() {
@@ -344,7 +398,9 @@ function TamingMembrane(privilegedAccess, schema) {
   }
 
   function tamePreviouslyConstructedObject(f, fc) {
-    if (schema.tameAs.get(fc) !== schema.tameTypes.CONSTRUCTOR) { return void 0; }
+    if (schema.tameAs.get(fc) !== schema.tameTypes.CONSTRUCTOR) {
+      return void 0;
+    }
     var tc = tame(fc);
     var t = Object.create(tc.prototype);
     tameObjectWithMethods(f, t);
@@ -374,13 +430,16 @@ function TamingMembrane(privilegedAccess, schema) {
     });
   }
 
+  // CAUTION: It is ESSENTIAL that we pass USELESS, not (void 0), when
+  // calling down to a feral function. That function may not be declared
+  // in "strict" mode, and so would receive [window] as its "this" arg if
+  // we called it with (void 0), which would be a serious vulnerability.
+
   function tamePureFunction(f) {
     var t = function(_) {
-      // Since it's by definition useless, there's no reason to bother
-      // passing untame(USELESS); we just pass USELESS itself.
       return applyFeralFunction(
           f,
-          privilegedAccess.USELESS,
+          helper.USELESS,  // See notes on USELESS above
           untameArray(arguments));
     };
     addFunctionPropertyHandlers(f, t);
@@ -389,14 +448,14 @@ function TamingMembrane(privilegedAccess, schema) {
   }
 
   function tameCtor(f, fSuper, name) {
-    var fPrototype = privilegedAccess.getProperty(f, 'prototype');
+    var fPrototype = f.prototype;
 
     var t = function (_) {
       if (!(this instanceof t)) {
         // Call as a function
         return applyFeralFunction(
             f,
-            privilegedAccess.USELESS,
+            (void 0),
             untameArray(arguments));
       } else {
         // Call as a constructor
@@ -415,7 +474,7 @@ function TamingMembrane(privilegedAccess, schema) {
     tameRecord(f, t);
 
     var tPrototype = (function() {
-      if (!fSuper || (fSuper === privilegedAccess.getObjectCtorFor(fSuper))) {
+      if (!fSuper || (fSuper === getObjectCtorFor(fSuper))) {
         return {};
       }
       if (!schema.tameAs.get(fSuper) === schema.tameTypes.CONSTRUCTOR) {
@@ -493,7 +552,7 @@ function TamingMembrane(privilegedAccess, schema) {
         var self = this;
         return function(_) {
           return applyFeralFunction(
-              privilegedAccess.getProperty(untame(self), p),
+              untame(self)[p],
               untame(self),
               untameArray(arguments));
         };
@@ -571,12 +630,12 @@ function TamingMembrane(privilegedAccess, schema) {
       throw new TypeError('Feral object found on tame side of taming membrane: '
           + t + '. The membrane has previously been compromised.');
     }
-    if (!privilegedAccess.isDefinedInCajaFrame(t)) {
+    if (!helper.isDefinedInCajaFrame(t)) {
       throw new TypeError('Host object leaked without being tamed');
     }
     if (ttype === 'object') {
-      var ctor = privilegedAccess.directConstructor(t);
-      if (ctor === privilegedAccess.BASE_OBJECT_CONSTRUCTOR) {
+      var ctor = directConstructor(t);
+      if (ctor === BASE_OBJECT_CONSTRUCTOR) {
         f = untameCajaRecord(t);
       } else {
         f = copyBuiltin(t);

@@ -35,26 +35,29 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
 
   tamingWin.ses.mitigateSrcGotchas = additionalParams.mitigateSrcGotchas;
 
-  // TODO(kpreid): With the death of ES5/3, can we now reliably just use
-  // undefined instead of USELESS always?
-  var USELESS = Object.freeze({ USELESS: 'USELESS' });
-  var BASE_OBJECT_CONSTRUCTOR = Object.freeze({});
+  // CAUTION: It is ESSENTIAL that we pass USELESS, not (void 0), when
+  // calling down to a feral function. That function may not be declared
+  // in "strict" mode, and so would receive [window] as its "this" arg if
+  // we called it with (void 0). This could lead to a vulnerability if the
+  // function called happened to modify its "this" arg in some way that an
+  // attacker could redirect into an attack on the global [window].
+  var USELESS = Object.freeze({
+    USELESS: 'USELESS',
+    toString: function() { return '[Caja USELESS object]'; }
+  });
 
-  // TODO(kpreid): Review this for pieces which are no longer necessary in the
-  // post-ES5/3 world.
   var tamingHelper = Object.freeze({
-      applyFunction: applyFunction,
-      getProperty: getProperty,
-      setProperty: setProperty,
-      getOwnPropertyNames: getOwnPropertyNames,
-      directConstructor: directConstructor,
-      getObjectCtorFor: getObjectCtorFor,
       isDefinedInCajaFrame: cajaFrameTracker.isDefinedInCajaFrame,
       USELESS: USELESS,
-      BASE_OBJECT_CONSTRUCTOR: BASE_OBJECT_CONSTRUCTOR,
-      getValueOf: function(o) { return o.valueOf(); },
-      weakMapPermitHostObjects: ses.weakMapPermitHostObjects
+      weakMapPermitHostObjects: ses.weakMapPermitHostObjects,
+      allFrames: allFrames
   });
+
+  function allFrames() {
+    var a = Array.prototype.slice.call(feralWin.frames);
+    a.push(feralWin);
+    return a;
+  }
 
   var frameGroupTamingSchema = TamingSchema(tamingHelper);
   var frameGroupTamingMembrane =
@@ -119,6 +122,7 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
   }
 
   function makeDefensibleFunction(f) {
+    // See notes on USELESS above
     return Object.freeze(function() {
       return f.apply(USELESS, Array.prototype.slice.call(arguments, 0));
     });
@@ -134,77 +138,6 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
 
   function setProperty(o, p, v) {
     return o[p] = v;
-  }
-
-  function directConstructor(obj) {
-    if (obj === null) { return void 0; }
-    if (obj === void 0) { return void 0; }
-    if ((typeof obj) !== 'object') {
-      // Regarding functions, since functions return undefined,
-      // directConstructor() doesn't provide access to the
-      // forbidden Function constructor.
-      // Otherwise, we don't support finding the direct constructor
-      // of a primitive.
-      return void 0;
-    }
-    var directProto = Object.getPrototypeOf(obj);
-    if (!directProto) { return void 0; }
-    var directCtor = directProto.constructor;
-    if (!directCtor) { return void 0; }
-    if (directCtor === feralWin.Object) {
-      if (!Object.prototype.hasOwnProperty.call(directProto, 'constructor')) {
-        // detect prototypes which just didn't bother to set .constructor and
-        // inherited it from Object (Safari's DOMException is the motivating
-        // case).
-        // Ditto for loop below.
-        return void 0;
-      } else {
-        return BASE_OBJECT_CONSTRUCTOR;
-      }
-    }
-    Array.prototype.slice.call(feralWin.frames).forEach(function(w) {
-      var O;
-      try {
-        O = w.Object;
-      } catch (e) {
-        // met a different-origin frame, probably
-        return;
-      }
-      if (directCtor === O) {
-        if (!Object.prototype.hasOwnProperty.call(directProto, 'constructor')) {
-          directCtor = void 0;
-        } else {
-          directCtor = BASE_OBJECT_CONSTRUCTOR;
-        }
-      }
-    });
-    return directCtor;
-  }
-
-  function getObjectCtorFor(o) {
-    if (o === undefined || o === null) {
-      return void 0;
-    }
-    var ot = typeof o;
-    if (ot !== 'object' && ot !== 'function') {
-      throw new TypeError('Cannot obtain ctor for non-object');
-    }
-    var proto = undefined;
-    while (o) {
-      proto = o;
-      o = Object.getPrototypeOf(o);
-    }
-    return proto.constructor;
-  }
-
-  function getOwnPropertyNames(o) {
-    var r = [];
-    Object.getOwnPropertyNames(o).forEach(function(p) {
-      if (Object.getOwnPropertyDescriptor(o, p).enumerable) {
-        r.push(p);
-      }
-    });
-    return r;
   }
 
   //----------------
