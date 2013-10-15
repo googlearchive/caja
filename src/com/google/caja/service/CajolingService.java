@@ -58,7 +58,6 @@ public class CajolingService {
 
   private final List<ContentHandler> handlers = new Vector<ContentHandler>();
   private final ContentTypeCheck typeCheck = new LooseContentTypeCheck();
-  private final String host;
   private final UriFetcher uriFetcher;
 
   public CajolingService() { this(BuildInfo.getInstance()); }
@@ -87,7 +86,6 @@ public class CajolingService {
   }
 
   public CajolingService(BuildInfo buildInfo, String host, UriFetcher fetcher) {
-    this.host = host != null ? host : DEFAULT_HOST;
     this.uriFetcher = fetcher;
     registerHandlers(buildInfo);
   }
@@ -303,8 +301,6 @@ public class CajolingService {
   }
 
   private void registerHandlers(BuildInfo buildInfo) {
-    handlers.add(new JsHandler(buildInfo));
-    handlers.add(new HtmlHandler(buildInfo, host, uriFetcher));
     handlers.add(new ProxyHandler(buildInfo, uriFetcher));
     handlers.add(new com.google.caja.tracing.TracingHandler(buildInfo, uriFetcher));
   }
@@ -330,7 +326,6 @@ public class CajolingService {
 
   public static enum Transform {
     PROXY,
-    CAJOLE,
     TRACING;
   }
 

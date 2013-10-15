@@ -18,10 +18,6 @@
     <servlet-name>CajolingServlet</servlet-name>
     <servlet-class>com.google.caja.service.CajolingServlet</servlet-class>
   </servlet>
-  <servlet>
-    <servlet-name>PrecajoleInfoServlet</servlet-name>
-    <servlet-class>com.google.caja.service.PrecajoleInfoServlet</servlet-class>
-  </servlet>
   
   <servlet-mapping>
     <servlet-name>GWTCajolingServlet</servlet-name>
@@ -30,9 +26,5 @@
   <servlet-mapping>
     <servlet-name>CajolingServlet</servlet-name>
     <url-pattern>/cajole</url-pattern>
-  </servlet-mapping>
-  <servlet-mapping>
-    <servlet-name>PrecajoleInfoServlet</servlet-name>
-    <url-pattern>/precajole/info</url-pattern>
   </servlet-mapping>
 </web-app>

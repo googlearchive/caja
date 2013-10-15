@@ -32,17 +32,6 @@
             <g:Label>Caja Playground</g:Label>
             <g:Label ui:field="version">Unknown</g:Label>
             <g:HorizontalPanel width="100%">
-              <g:ListBox ui:field="mode" visibleItemCount="1">
-                <g:item value='0'>
-                  Autodetect Mode
-                </g:item>
-                <g:item value='1'>
-                  ES5 Mode (Experimental)
-                </g:item>
-                <g:item value='0'>
-                  ES5/3 Mode
-                </g:item>
-              </g:ListBox>
               <g:CheckBox
                  ui:field="unsafe" text="Disable security"/>
             </g:HorizontalPanel>
@@ -124,20 +113,6 @@
             </g:DockLayoutPanel>
         </g:tab>
         <g:tab>
-          <g:header size='7'>Cajoled Source</g:header>
-          <g:DockLayoutPanel>
-          <g:north size="30">
-            <g:HTML styleName="{style.playgroundUI}"></g:HTML>
-          </g:north>
-          <g:center>
-            <g:ScrollPanel>
-              <g:HTML ui:field="cajoledSource">
-              </g:HTML>
-            </g:ScrollPanel>
-          </g:center>
-          </g:DockLayoutPanel>
-        </g:tab>
-        <g:tab>
           <g:header size='7'>Rendered Result</g:header>
           <g:DockLayoutPanel unit='PX'>
             <g:center>
@@ -160,13 +135,6 @@
               <g:AbsolutePanel ui:field="gwtShim"></g:AbsolutePanel>
             </g:south>
           </g:DockLayoutPanel>
-        </g:tab>
-        <g:tab>
-          <g:header size='7'>Compiler Messages</g:header>
-          <g:ScrollPanel>
-            <g:VerticalPanel ui:field="compileMessages">
-            </g:VerticalPanel>
-          </g:ScrollPanel>
         </g:tab>
         <g:tab>
           <g:header size='7'>Runtime Messages</g:header>

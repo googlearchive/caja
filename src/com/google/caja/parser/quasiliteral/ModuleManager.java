@@ -19,6 +19,7 @@ import com.google.caja.plugin.UriFetcher;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessageQueue;
 
+// TODO(kpreid): Review whether this may be deleted
 /**
  * This used to fetch and hold modules for the load() statement implemented
  * in the cajoler.  That's gone now.

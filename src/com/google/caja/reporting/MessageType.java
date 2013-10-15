@@ -121,13 +121,7 @@ public enum MessageType implements MessageTypeInt {
   // logging
   BUILD_INFO("Google Caja. Copyright (C) 2011, Google Inc. Rev %s built on %s.",
              MessageLevel.LOG),
-  COMPILER_DONE("compiler done in %s msec (%s msec in %s)", MessageLevel.LOG),
-
-  // cache diagnostics
-  PRECAJOLE_HIT(
-      "Using precajoled %s",
-      MessageLevel.LOG),
-  ;
+  COMPILER_DONE("compiler done in %s msec (%s msec in %s)", MessageLevel.LOG);
 
   private final String formatString;
   private final MessageLevel level;

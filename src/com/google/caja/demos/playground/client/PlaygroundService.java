@@ -18,15 +18,6 @@ public interface PlaygroundService extends RemoteService {
   public final int ERRORS = 2;
 
   /**
-   * Cajoles input and returns cajoled output and error messages
-   * @param uri Set input source to uri (used only for error messages)
-   * @param input Source to cajole
-   * @return cajoled html, js and cajoling messages
-   */
-  CajolingServiceResult cajole(String base, String uri, String input,
-      boolean debugMode, String opt_idClass);
-
-  /**
    * Returns build info as a string
    */
   String getBuildInfo();

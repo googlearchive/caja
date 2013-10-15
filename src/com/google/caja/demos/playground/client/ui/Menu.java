@@ -23,8 +23,6 @@ public enum Menu {
       "<font color='red'>Tells us what you think</font>"),
   ISSUE("http://code.google.com/p/google-caja/issues/entry",
       "File a bug"),
-  PRECAJOLE("precajole/info?format=html",
-      "Precajoled resources"),
   HELP("http://code.google.com/p/google-caja/wiki/PlaygroundHelp",
       "Help!");
 

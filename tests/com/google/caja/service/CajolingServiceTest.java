@@ -95,58 +95,6 @@ public class CajolingServiceTest extends ServiceTestCase {
     assertError(result);
   }
 
-  // Tests requests for various mime types work.
-  public final void testSupportedContentTypes() throws Exception {
-    registerUri("http://foo/bar.js", "foo()", "text/javascript");
-    registerUri("http://foo/bar.html", "<b>Hello</b>", "text/html");
-    {
-      JSONObject result = requestGet(
-          "?url=http://foo/bar.js&input-mime-type=text/javascript"
-          + cajaBuildVersionParam);
-      assertNotNull(result.get("js"));
-      assertNoError(result);
-    }
-    {
-      JSONObject result = requestGet(
-          "?url=http://foo/bar.html&input-mime-type=text/html"
-          + cajaBuildVersionParam);
-      assertNotNull(result.get("js"));
-      assertNotNull(result.get("html"));
-      assertNoError(result);
-    }
-  }
-
-  public final void testWrongBuildVersion() throws Exception {
-    registerUri("http://foo/bar.js", "foo()", "text/javascript");
-    JSONObject result = requestGet(
-        "?url=http://foo/bar.js&input-mime-type=text/javascript"
-        + "&build-version=0000");
-    assertNull(result.get("js"));
-    assertNull(result.get("html"));
-    assertError(result);
-    assertErrorMessage(result, "Build version error");
-  }
-
-  public final void testWithoutBuildVersion() throws Exception {
-    registerUri("http://foo/bar.js", "foo()", "text/javascript");
-    JSONObject result = requestGet(
-        "?url=http://foo/bar.js&input-mime-type=text/javascript");
-    assertNotNull(result.get("js"));
-    assertNoError(result);
-  }
-
-  // Tests that POST-ing to the service works just as well as GET-ting from it.
-  public final void testPost() throws Exception {
-    JSONObject result = requestPost(
-        "?url=http://foo/bar.html&input-mime-type=text/html&alt=json"
-            + cajaBuildVersionParam,
-        "<p>Foo bar</p>".getBytes("UTF-8"),
-        "text/html",
-        null);
-    assertContainsIgnoreSpace((String) result.get("html"), "Foo bar");
-    assertNoError(result);
-  }
-
   public final void testUnexpectedMimeType() throws Exception {
     registerUri("http://foo/bar.gif", "foo()", "text/javascript");
     JSONObject result = requestGet(
@@ -155,19 +103,5 @@ public class CajolingServiceTest extends ServiceTestCase {
     assertNull(result.get("js"));
     assertNull(result.get("html"));
     assertError(result);
-  }
-
-  public final void testEmptyContent() throws Exception {
-    registerUri("http://foo/bar.html", "", "text/html");
-    byte[] byteData = {};
-    JSONObject result = requestPost(
-        "?url=http://foo/bar.html&input-mime-type=text/html"
-        + "&output-mime-type=application/json" + cajaBuildVersionParam,
-        byteData, "text/html", null);
-    assertTrue("Output missing 'html' key", result.containsKey("html"));
-    assertTrue("Output missing 'javascript' key", result.containsKey("js"));
-    assertEquals("<caja-v-html><caja-v-head></caja-v-head><caja-v-body>" +
-        "</caja-v-body></caja-v-html>", (String)result.get("html"));
-    assertNoError(result);
   }
 }

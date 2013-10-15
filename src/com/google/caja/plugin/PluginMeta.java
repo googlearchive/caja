@@ -14,9 +14,6 @@
 
 package com.google.caja.plugin;
 
-import com.google.caja.precajole.PrecajoleMap;
-import com.google.caja.precajole.StaticPrecajoleMap;
-
 import javax.annotation.Nullable;
 
 /**
@@ -34,28 +31,16 @@ public final class PluginMeta {
    */
   private @Nullable String idClass;
 
-  private PrecajoleMap precajoleMap = null;
-  private boolean precajoleMinify = false;
-
   public PluginMeta() {
     this(UriFetcher.NULL_NETWORK, UriPolicy.DENY_ALL);
   }
 
   public PluginMeta(UriFetcher uriFetcher, @Nullable UriPolicy uriPolicy) {
-    // Use default precajoleMap, so oblivious callers can benefit
-    this(uriFetcher, uriPolicy, StaticPrecajoleMap.getInstance(), false);
-  }
-
-  public PluginMeta(
-      UriFetcher uriFetcher, @Nullable UriPolicy uriPolicy,
-      @Nullable PrecajoleMap precajoleMap, boolean precajoleMinify) {
     if (uriFetcher == null) {
       throw new NullPointerException();
     }
     this.uriFetcher = uriFetcher;
     this.uriPolicy = uriPolicy;
-    this.precajoleMap = precajoleMap;
-    this.precajoleMinify = precajoleMinify;
   }
 
   /**
@@ -82,20 +67,4 @@ public final class PluginMeta {
   public @Nullable String getIdClass() { return idClass; }
 
   public void setIdClass(@Nullable String idClass) { this.idClass = idClass; }
-
-  public void setPrecajoleMap(PrecajoleMap map) {
-    precajoleMap = map;
-  }
-
-  public PrecajoleMap getPrecajoleMap() {
-    return precajoleMap;
-  }
-
-  public void setPrecajoleMinify(boolean value) {
-    precajoleMinify = value;
-  }
-
-  public boolean getPrecajoleMinify() {
-    return precajoleMinify;
-  }
 }

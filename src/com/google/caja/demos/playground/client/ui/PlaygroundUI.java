@@ -13,7 +13,6 @@ import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
-import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.MultiWordSuggestOracle;
 import com.google.gwt.user.client.ui.SuggestBox;
 import com.google.gwt.user.client.ui.TabLayoutPanel;
@@ -32,9 +31,7 @@ public class PlaygroundUI extends Composite {
   @UiField protected AbsolutePanel gwtShim;
   @UiField protected TextBox renderResult;
   @UiField protected HTML renderPanel;
-  @UiField protected VerticalPanel compileMessages;
   @UiField protected VerticalPanel runtimeMessages;
-  @UiField protected HTML cajoledSource;
   @UiField protected TabLayoutPanel editorPanel;
   @UiField protected PlaygroundEditor sourceText;
   @UiField protected TextArea policyText;
@@ -47,7 +44,6 @@ public class PlaygroundUI extends Composite {
   @UiField protected Button defaultButton;
   @UiField protected Tree exampleTree;
   @UiField protected HorizontalPanel feedbackPanel;
-  @UiField protected ListBox mode;
   @UiField protected CheckBox unsafe;
   @UiField protected Label renderTime;
 

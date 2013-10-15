@@ -51,17 +51,14 @@ For help on building and testing Caja, see:
   <property name="test.type"   value="runtests"/>
   <property name="third_party" location="third_party"/>
   <property name="demos"       location="${src.caja}/demos"/>
-  <property name="precajolesrc" value="${third_party}/precajole"/>
   <!--== outputs ==-->
   <property name="reports"     location="ant-reports"/>  <!-- emma reports -->
   <property name="instr"       location="ant-instr"/>  <!-- instrumented src -->
   <property name="lib"         location="ant-lib"/>
   <property name="testlib"     location="ant-testlib"/>
   <property name="gwtlib"      location="ant-gwtlib"/>
-  <property name="precajolelib" location="ant-precajolelib"/>
   <property name="lib.caja"    location="${lib}/com/google/caja"/>
   <property name="docs"        location="ant-docs"/>
-  <property name="ruledocs"    location="${docs}/rules"/>
   <property name="javadocs"    location="${docs}/java"/>
   <property name="jars"        location="ant-jars"/>
   <property name="www"         location="ant-www"/>  <!-- demo files dir -->
@@ -115,7 +112,6 @@ For help on building and testing Caja, see:
   <path id="classpath.tests">
     <!-- Must be first for coverage to work -->
     <pathelement path="${instr}/classes"/>
-    <pathelement path="${precajolelib}/light"/>
     <pathelement path="${testlib}"/>
     <pathelement path="${third_party}/java/emma/emma.jar"/>
     <pathelement path="${third_party}/java/junit/hamcrest-core.jar"/>
@@ -159,7 +155,6 @@ For help on building and testing Caja, see:
     <delete dir="${lib}"/>
     <delete dir="${testlib}"/>
     <delete dir="${gwtlib}"/>
-    <delete dir="${precajolelib}"/>
     <delete dir="${www}"/>
     <delete dir="${maven}"/>
     <delete dir="${war}"/>
@@ -176,7 +171,6 @@ For help on building and testing Caja, see:
     <mkdir dir="${jars}"/>
     <mkdir dir="${lib}"/>
     <mkdir dir="${gwtlib}"/>
-    <mkdir dir="${precajolelib}"/>
     <mkdir dir="${www}"/>
     <mkdir dir="${war}"/>
     <mkdir dir="${gwt-war}"/>
@@ -390,8 +384,7 @@ For help on building and testing Caja, see:
       <instr instrpath="${lib}" destdir="${instr}" mode="fullcopy"
        metadatafile="${reports}/coverage/metadata.em" merge="true">
         <filter value="${emma.filter},
-                       -com.google.caja.tools.*,
-                       -com.google.caja.parser.quasiliteral.*RuleDoclet"/>
+                       -com.google.caja.tools.*"/>
       </instr>
     </emma>
     <mkdir dir="${reports}/${test.type}/results"/>
@@ -473,7 +466,7 @@ For help on building and testing Caja, see:
   </target>
 
   <target name="docs" description="Builds all Caja documentation."
-   depends="javadocs,ruledocs,cajajsdocs"/>
+   depends="javadocs,cajajsdocs"/>
 
   <target name="cajajsdocs">
     <mkdir dir="${docs}/cajajs"/>
@@ -514,13 +507,6 @@ For help on building and testing Caja, see:
     <jar destfile="${jars}/pluginc-javadocs.jar" basedir="${javadocs}"/>
   </target>
 
-  <target name="ruledocs" depends="RuleDoclet"
-      description="Caja rule documentation.">
-    <mkdir dir="${ruledocs}"/>
-    <ruledoclet output="html" outputdir="${ruledocs}"
-     rewriter="com.google.caja.parser.quasiliteral.ES53Rewriter"/>
-  </target>
-
   <target name="tools" depends="PluginCompiler">
     <!-- Now that we have the compiler, build ant task wrappers -->
     <depend closure="yes" destdir="${lib}" srcdir="${src}" />
@@ -528,7 +514,6 @@ For help on building and testing Caja, see:
       <src path="${src}"/>
       <classpath refid="classpath.main"/>
       <include name="**/ancillary/linter/Linter.java"/>
-      <include name="**/precajole/PrecajoleTask.java" />
       <include name="**/tools/*.java"/>
       <compilerarg line="-Xlint:deprecation"/>
       <compilerarg line="-Xlint:unchecked"/>
@@ -546,9 +531,6 @@ For help on building and testing Caja, see:
      classpathref="classpath.main" />
     <taskdef name="genrule" classname="com.google.caja.tools.GenRuleAntTask"
      classpathref="classpath.main"/>
-    <taskdef name="precajole"
-     classname="com.google.caja.precajole.PrecajoleTask"
-     classpathref="classpath.main" />
 
     <copy todir="${lib}">
       <fileset dir="${src}">
@@ -720,7 +702,6 @@ For help on building and testing Caja, see:
       </manifest>
       <fileset dir="${lib}">
         <include name="com/google/caja/**"/>
-        <include name="js/json_sans_eval/json_sans_eval.js"/>
       </fileset>
     </jar>
   </target>
@@ -839,7 +820,6 @@ For help on building and testing Caja, see:
       <output file="${lib.caja}/plugin/ses-single-frame.js"
        language="javascript" renderer="concat"/>
       <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
-      <input file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
       <input file="${lib.caja}/ses/initSESPlus.js" jslint="false"/>
       <input file="${src.caja}/plugin/ses-iframe-earlyfail.js"/>
 
@@ -908,7 +888,7 @@ For help on building and testing Caja, see:
     </replace>
   </target>
 
-  <target name="AllTests" depends="CajolingServlet,PlaygroundBE,PlaygroundSupportingFiles,precajole-light">
+  <target name="AllTests" depends="CajolingServlet,PlaygroundBE,PlaygroundSupportingFiles">
     <copy todir="${testlib}">
       <fileset dir="${src}" includes="**/*.html,**/*.js,**/*.css,**/*.jpg,**/*.png"/>
       <fileset dir="${tests}" includes="**/*.html,**/*.js,**/*.css,**/*.jpg,**/*.png"/>
@@ -981,7 +961,6 @@ For help on building and testing Caja, see:
       <fileset dir="${third_party}">
         <include name="js/envjs/env.js"/>
         <include name="js/jsunit/2.2/jsUnitCore.js"/>
-        <include name="js/json_sans_eval/json_sans_eval.js"/>
       </fileset>
     </copy>
     <copy todir="${testlib}/com/google/caja/plugin"
@@ -1029,7 +1008,6 @@ For help on building and testing Caja, see:
     <delete failonerror="false">
       <fileset dir="${lib}" includes="**/*.js"/>
       <fileset dir="${lib}" includes="**/*.html"/>
-      <fileset dir="${precajolelib}" includes="**/data/*"/>
       <fileset dir="${testlib}" includes="**/*.js"/>
       <fileset dir="${testlib}" includes="**/*.html"/>
     </delete>
@@ -1053,19 +1031,6 @@ For help on building and testing Caja, see:
      message="timestamp: ${build.timestamp}${line.separator}"/>
   </target>
 
-  <target name="RuleDoclet" depends="HtmlParser">
-    <depend closure="yes" destdir="${lib}" srcdir="${src}" />
-    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
-      <src path="${src}"/>
-      <classpath refid="classpath.main"/>
-      <include name="**/caja/quasiliteral/*Doclet.java"/>
-      <include name="**/caja/tools/DocletAntTask.java"/>
-      <compilerarg line="-Xlint:unchecked"/>
-    </javac>
-    <taskdef name="ruledoclet" classname="com.google.caja.tools.DocletAntTask"
-     classpathref="classpath.main" onerror="ignore"/>
-  </target>
-
   <target name="PluginCompiler" depends="build.info, HtmlParser">
     <!-- closure="yes" is necessary because we aren't applying
          javac to **/*.java. TODO(felix8a): combine our javac
@@ -1078,6 +1043,7 @@ For help on building and testing Caja, see:
       <include name="**/caja/plugin/*.java"/>
       <include name="**/caja/plugin/stages/*.java"/>
       <include name="**/caja/plugin/templates/*.java"/>
+      <include name="**/caja/config/*.java"/>
       <exclude name="**/caja/plugin/*Main.java"/>
       <exclude name="**/caja/plugin/BuildServiceImplementation.java"/>
       <compilerarg line="-Xlint:unchecked"/>
@@ -1180,11 +1146,7 @@ For help on building and testing Caja, see:
     </copy>
     <copy todir="${war}">
       <!-- Needed by Playground.html -->
-      <fileset dir="${third_party}/js/json_sans_eval">
-        <include name="json_sans_eval.js" />
-      </fileset>
       <fileset dir="${src.caja}">
-        <include name="es53.js" />
         <include name="tracing.js"/>
       </fileset>
       <fileset dir="${src.caja}/plugin">
@@ -1410,7 +1372,7 @@ For help on building and testing Caja, see:
   </target>
 
   <target name="playground"
-   depends="CajolingServlet, PlaygroundBE, PlaygroundFE, appengine-web, precajole"
+   depends="CajolingServlet, PlaygroundBE, PlaygroundFE, appengine-web"
    description="Builds the playground">
     <!-- In some situations, browsers disagree on what location
       to assign to a constructed iframe, which makes it awkward
@@ -1425,7 +1387,6 @@ For help on building and testing Caja, see:
         <include name="css/*.css" />
       </fileset>
     </copy>
-    <copy todir="${war}/WEB-INF/lib" file="${jars}/precajole.jar" />
   </target>
 
   <target name="alt-playground">
@@ -1585,7 +1546,7 @@ For help on building and testing Caja, see:
     <artifact:pom id="project" file="${maven}/pom.xml" />
   </target>
 
-  <target name="mvn-install" depends="jars,javadocs,precajole,pom"
+  <target name="mvn-install" depends="jars,javadocs,pom"
       description="Generate maven artifacts and install them in ~/.m2">
     <artifact:install file="${maven-jarfile-nodeps}">
       <pom refid="project"/>
@@ -1654,15 +1615,6 @@ For help on building and testing Caja, see:
               out="${src.flash}/tests/BridgeAware.swf"/>
     <buildSwf in="${src.flash}/tests/BridgeOblivious.mxml"
               out="${src.flash}/tests/BridgeOblivious.swf"/>
-  </target>
-
-  <target name="precajole-light" depends="tools">
-    <precajole spec="${precajolesrc}/light.xml" dest="${precajolelib}/light" />
-  </target>
-
-  <target name="precajole" depends="tools">
-    <precajole spec="${precajolesrc}/heavy.xml" dest="${precajolelib}/heavy" />
-    <jar destfile="${jars}/precajole.jar" basedir="${precajolelib}/heavy" />
   </target>
 
   <target name="printlibs">

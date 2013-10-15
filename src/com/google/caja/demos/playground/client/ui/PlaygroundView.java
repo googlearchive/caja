@@ -21,8 +21,6 @@ import com.google.caja.demos.playground.client.Playground;
 import com.google.caja.demos.playground.client.PlaygroundResource;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.dom.client.Element;
-import com.google.gwt.event.dom.client.ChangeEvent;
-import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.FocusEvent;
@@ -31,9 +29,7 @@ import com.google.gwt.event.logical.shared.SelectionEvent;
 import com.google.gwt.event.logical.shared.SelectionHandler;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
-import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Anchor;
-import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HasHorizontalAlignment;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.MultiWordSuggestOracle;
@@ -54,7 +50,6 @@ public class PlaygroundView {
   private final PlaygroundUI playgroundUI;
 
   private int idSeq = 0;
-  private Boolean mode;
 
   private String genId() {
     return "CajaGadget" + (idSeq++) + "___";
@@ -97,8 +92,6 @@ public class PlaygroundView {
     playgroundUI.cajoleButton.addClickHandler(new ClickHandler() {
       public void onClick(ClickEvent event) {
         playgroundUI.runtimeMessages.clear();
-        playgroundUI.compileMessages.clear();
-        playgroundUI.cajoledSource.setText("");
         playgroundUI.renderPanel.setText("");
         playgroundUI.renderTime.setText("Unknown");
         controller.cajole(
@@ -106,7 +99,6 @@ public class PlaygroundView {
             playgroundUI.sourceText.getText(),
             playgroundUI.policyText.getText(),
             true /* debug */,
-            mode /* es5 */,
             genId()
         );
       }
@@ -268,39 +260,6 @@ public class PlaygroundView {
     }
   }-*/;
 
-  private void initMode() {
-    if (null == mode) {
-      playgroundUI.mode.setSelectedIndex(0);
-    } else if (mode) {
-      playgroundUI.mode.setSelectedIndex(1);
-    } else {
-      playgroundUI.mode.setSelectedIndex(2);
-    }
-    playgroundUI.mode.addChangeHandler(new ChangeHandler() {
-      @Override
-      public void onChange(ChangeEvent event) {
-        // Need an absolute URL for IE<=8
-        String base =
-            Window.Location.getProtocol() + "//" +
-            Window.Location.getHost() +
-            Window.Location.getPath();
-        String hash = Window.Location.getHash();
-        int s = playgroundUI.mode.getSelectedIndex();
-        switch (s) {
-          case 1:
-            Window.Location.assign(base + "?es5=true" + hash);
-            break;
-          case 2:
-            Window.Location.assign(base + "?es5=false" + hash);
-            break;
-          default:
-            Window.Location.assign(base + "?es5=auto" + hash);
-            break;
-        }
-      }
-    });
-  }
-
   private void initUnsafe() {
     playgroundUI.unsafe.addValueChangeHandler(
         new ValueChangeHandler<Boolean>() {
@@ -354,14 +313,9 @@ public class PlaygroundView {
     });
   }
 
-  private native void initCaja(
-      boolean debug,
-      int forceES5) /*-{
+  private native void initCaja(boolean debug) /*-{
     var that = this;
     function success(detail) {
-      var mode = detail.es5Mode ? 1 : 2;
-      that.@com.google.caja.demos.playground.client.ui.PlaygroundView::setMode(I)
-          (mode);
     }
     function failed(e) {
         that.@com.google.caja.demos.playground.client.ui.PlaygroundView::addRuntimeMessage(Ljava/lang/String;)
@@ -370,9 +324,10 @@ public class PlaygroundView {
     $wnd.caja.initialize({
       server: '.',
       debug: debug,
-      es5Mode: (forceES5 < 0) ? undefined : (forceES5 > 0),
-      // If autoswitching, choose es5 only when it's safe.
-      maxAcceptableSeverity: (forceES5 < 0) ? 'NO_KNOWN_EXPLOIT_SPEC_VIOLATION' : 'NEW_SYMPTOM'
+      // TODO(kpreid): Make sure we warn the user if the actual severity is
+      // UNSAFE_SPEC_VIOLATION or worse, so that we don't silently appear to
+      // have unknown security bugs.
+      maxAcceptableSeverity: 'NEW_SYMPTOM'
     }, success, failed);
   }-*/;
 
@@ -380,11 +335,10 @@ public class PlaygroundView {
     $wnd.caja.disableSecurityForDebugger(unsafe);
   }-*/;
 
-  public PlaygroundView(Playground controller, Boolean mode) {
+  public PlaygroundView(Playground controller) {
     this.controller = controller;
     this.sourceExamples = new MultiWordSuggestOracle();
     this.policyExamples = new MultiWordSuggestOracle();
-    this.mode = mode;
 
     this.playgroundUI =
       new com.google.caja.demos.playground.client.ui.PlaygroundUI(
@@ -395,9 +349,8 @@ public class PlaygroundView {
     initFeedbackPanel();
     initExamples();
     initEditor();
-    initCaja(true, (mode == null) ? -1 : (mode ? 1 : 0));
+    initCaja(true);
     initPlusOne();
-    initMode();
     initUnsafe();
   }
 
@@ -417,15 +370,6 @@ public class PlaygroundView {
     }
   }
 
-  public void setCajoledSource(String html, String js) {
-    if (html == null && js == null) {
-      playgroundUI.cajoledSource.setText("There were cajoling errors");
-      return;
-    }
-    playgroundUI.cajoledSource.setHTML(prettyPrint(html, "html") +
-      "&lt;script&gt;" + prettyPrint(js, "lang-js") + "&lt;/script&gt;");
-  }
-
   public void setLoading(boolean isLoading) {
     playgroundUI.loadingLabel.setVisible(isLoading);
   }
@@ -434,7 +378,7 @@ public class PlaygroundView {
     return $wnd.prettyPrintOne($wnd.indentAndWrapCode(result), lang);
   }-*/;
 
-  public void setRenderedResult(final boolean es5, String baseUrl,
+  public void setRenderedResult(String baseUrl,
       final String policy, final String html, final String js,
       final String idClass)
   {
@@ -453,7 +397,6 @@ public class PlaygroundView {
         makeUriPolicy(),
         idClass,
         policy,
-        es5,
         html,
         js);
   }
@@ -464,7 +407,6 @@ public class PlaygroundView {
       JavaScriptObject uriPolicy,
       String idClass,
       String policy,
-      boolean es5,
       String html,
       String js) /*-{
     var startTime = Date.now();
@@ -475,7 +417,7 @@ public class PlaygroundView {
         function(frame) {
           var api = that.@com.google.caja.demos.playground.client.ui.PlaygroundView::makeExtraImports(Lcom/google/gwt/core/client/JavaScriptObject;Lcom/google/gwt/core/client/JavaScriptObject;Ljava/lang/String;)($wnd.caja, frame, policy);
           frame = frame.api(api);
-          frame = frame.code(baseUrl, "text/html", html).cajoled(baseUrl, js, html)
+          frame = frame.code(baseUrl, "text/html", html);
           frame.run(function(r) {
             that.@com.google.caja.demos.playground.client.ui.PlaygroundView::setRenderedResult(Ljava/lang/String;)(r + '');
             that.@com.google.caja.demos.playground.client.ui.PlaygroundView::setRenderTime(I)(Date.now() - startTime);
@@ -559,21 +501,6 @@ public class PlaygroundView {
         };
   }-*/;
 
-  public void setMode(int mode) {
-    switch(mode) {
-      case 0: this.mode = null; break;
-      case 1: this.mode = true; break;
-      case 2: this.mode = false; break;
-    }
-    playgroundUI.mode.setSelectedIndex(mode);
-  }
-
-  public void addCompileMessage(String item) {
-    // Rendered using HTMLSnippetProducer serverside
-    HTML i = new HTML(item);
-    playgroundUI.compileMessages.add(i);
-  }
-
   public void addRuntimeError(String message, String source, String lineNum) {
     // Labels are texty, so no escaping needed
     Label i = new Label(
@@ -599,7 +526,6 @@ public class PlaygroundView {
   public enum Tabs {
     SOURCE,
     POLICY,
-    CAJOLED_SOURCE,
     RENDER,
     COMPILE_WARNINGS,
     RUNTIME_WARNINGS,

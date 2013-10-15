@@ -32,6 +32,9 @@ import java.util.List;
  * This is not a core JavaScript parse tree node &mdash; it is never produced by
  * {@link Parser}.
  *
+ * Legacy: still used by TracingRewriter even though there's no longer such
+ * things as cajoling or modules.
+ *
  * @author erights@gmail.com
  * @author ihab.awad@gmail.com
  */

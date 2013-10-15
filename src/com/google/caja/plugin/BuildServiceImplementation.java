@@ -36,7 +36,6 @@ import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.render.JsPrettyPrinter;
-import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MarkupRenderMode;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
@@ -73,7 +72,6 @@ import java.util.regex.Pattern;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 /**
  * Build integration to {@link PluginCompiler} and {@link Minify}.
@@ -171,54 +169,8 @@ public class BuildServiceImplementation implements BuildService {
 
     boolean passed = true;
     ParseTreeNode outputJs;
-    Node outputHtml;
     if ("caja".equals(language)) {
-      PluginMeta meta = new PluginMeta(fetcher, policy);
-      meta.setPrecajoleMinify("minify".equals(rendererType));
-      PluginCompiler compiler = new PluginCompiler(
-          BuildInfo.getInstance(), meta, mq);
-      compiler.setMessageContext(mc);
-      if (Boolean.TRUE.equals(options.get("debug"))) {
-        compiler.setGoals(compiler.getGoals()
-            .without(PipelineMaker.ONE_CAJOLED_MODULE)
-            .with(PipelineMaker.ONE_CAJOLED_MODULE_DEBUG));
-      }
-      if (Boolean.TRUE.equals(options.get("onlyJsEmitted"))) {
-        compiler.setGoals(
-            compiler.getGoals().without(PipelineMaker.HTML_SAFE_STATIC));
-      }
-
-      // Parse inputs
-      for (File f : inputs) {
-        try {
-          URI fileUri = f.getCanonicalFile().toURI();
-          ParseTreeNode parsedInput = new ParserContext(mq)
-              .withInput(new InputSource(fileUri))
-              .withConfig(meta)
-              .build();
-          if (parsedInput == null) {
-            passed = false;
-          } else {
-            compiler.addInput(parsedInput, fileUri);
-          }
-        } catch (IOException ex) {
-          logger.println("Failed to read " + f);
-          passed = false;
-        } catch (ParseException ex) {
-          logger.println("Failed to parse " + f);
-          ex.toMessageQueue(mq);
-          passed = false;
-        } catch (IllegalStateException e) {
-          logger.println("Failed to configure parser " + e.getMessage());
-          passed = false;
-        }
-      }
-
-      // Cajole
-      passed = passed && compiler.run();
-
-      outputJs = passed ? compiler.getJavascript() : null;
-      outputHtml = passed ? compiler.getStaticHtml() : null;
+      throw new IllegalArgumentException("language=caja no longer supported");
     } else if ("javascript".equals(language)) {
       PluginMeta meta = new PluginMeta(fetcher, policy);
       passed = true;
@@ -249,7 +201,6 @@ public class BuildServiceImplementation implements BuildService {
         }
       }
       outputJs = optimizer.optimize();
-      outputHtml = null;
     } else {
       throw new RuntimeException("Unrecognized language: " + language);
     }
@@ -294,10 +245,6 @@ public class BuildServiceImplementation implements BuildService {
       rc.getOut().noMoreTokens();
 
       String htmlOut = "";
-      if (outputHtml != null) {
-        htmlOut = Nodes.render(
-            outputHtml, asXml ? MarkupRenderMode.XML : MarkupRenderMode.HTML);
-      }
 
       String translatedCode;
       if (emitMarkup) {

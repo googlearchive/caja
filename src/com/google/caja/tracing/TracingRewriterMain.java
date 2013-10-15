@@ -23,7 +23,6 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParserContext;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.UncajoledModule;
-import com.google.caja.plugin.PluginCompilerMain;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.plugin.UriPolicy;
@@ -132,8 +131,43 @@ public class TracingRewriterMain {
               MessagePart.Factory.valueOf(e.getMessage())));
     }
   }
+  /**
+   * Dumps messages to the given output stream, returning the highest message
+   * level seen.
+   */
+  private static MessageLevel dumpMessages(MessageQueue mq) {
+    Appendable out = System.err;
+    MessageContext mc = new MessageContext();
+    MessageLevel maxLevel = MessageLevel.values()[0];
+    for (Message m : mq.getMessages()) {
+      MessageLevel level = m.getMessageLevel();
+      if (maxLevel.compareTo(level) < 0) { maxLevel = level; }
+    }
+    MessageLevel ignoreLevel = null;
+    if (maxLevel.compareTo(MessageLevel.LINT) < 0) {
+      // If there's only checkpoints, be quiet.
+      ignoreLevel = MessageLevel.LOG;
+    }
+    try {
+      for (Message m : mq.getMessages()) {
+        MessageLevel level = m.getMessageLevel();
+        if (ignoreLevel != null && level.compareTo(ignoreLevel) <= 0) {
+          continue;
+        }
+        String levelName = level.name();
+        out.append(levelName);
+        if (levelName.length() < 7) {
+          out.append("       ".substring(levelName.length()));
+        }
+        out.append(": ");
+        m.format(mc, out);
+        out.append("\n");
 
-  private static void dumpMessages(MessageQueue mq) {
-    PluginCompilerMain.dumpMessages(mq, new MessageContext(), System.err);
+        if (maxLevel.compareTo(level) < 0) { maxLevel = level; }
+      }
+    } catch (IOException ex) {
+      ex.printStackTrace();
+    }
+    return maxLevel;
   }
 }

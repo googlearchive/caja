@@ -46,14 +46,13 @@ public class Playground implements EntryPoint, ValueChangeHandler<String> {
     cajolingService.fetch(base, url, new AsyncCallback<String>() {
       public void onFailure(Throwable caught) {
         gui.setLoading(false);
-        gui.addCompileMessage(caught.getMessage());
-        gui.selectTab(PlaygroundView.Tabs.COMPILE_WARNINGS);
+        gui.addRuntimeMessage(caught.getMessage());
+        gui.selectTab(PlaygroundView.Tabs.RUNTIME_WARNINGS);
       }
 
       public void onSuccess(String result) {
         gui.setLoading(false);
         gui.setOriginalSource(result);
-        gui.setCajoledSource("", "");
         gui.selectTab(PlaygroundView.Tabs.SOURCE);
       }
     });
@@ -70,8 +69,8 @@ public class Playground implements EntryPoint, ValueChangeHandler<String> {
         new AsyncCallback<String>() {
           public void onFailure(Throwable caught) {
             gui.setLoading(false);
-            gui.addCompileMessage(caught.getMessage());
-            gui.selectTab(PlaygroundView.Tabs.COMPILE_WARNINGS);
+            gui.addRuntimeMessage(caught.getMessage());
+            gui.selectTab(PlaygroundView.Tabs.RUNTIME_WARNINGS);
           }
 
           public void onSuccess(String result) {
@@ -82,62 +81,16 @@ public class Playground implements EntryPoint, ValueChangeHandler<String> {
         });
   }
 
-  public void cajole(String uri, String input, final String policy,
-      boolean debugMode, Boolean es5, final String opt_idClass) {
-    if (null == es5 || !es5) {
-      cajoleES53(uri, input, policy, debugMode, opt_idClass);
-    } else {
-      cajoleES5(uri, input, policy, debugMode, opt_idClass);
-    }
-  }
-
   /**
    * @param uri not used.
    * @param debugMode not used.
    */
-  public void cajoleES5(String uri, String input, final String policy,
+  public void cajole(String uri, String input, final String policy,
       boolean debugMode, final String opt_idClass) {
     gui.setLoading(true);
-    gui.setCajoledSource("", "");
     gui.selectTab(PlaygroundView.Tabs.RENDER);
-    gui.setRenderedResult(true /* es5 */, uri,
-        policy, input, null, opt_idClass);
+    gui.setRenderedResult(uri, policy, input, null, opt_idClass);
     gui.setLoading(false);
-  }
-
-  public void cajoleES53(final String uri, String input, final String policy,
-      boolean debugMode, final String opt_idClass) {
-    gui.setLoading(true);
-    cajolingService.cajole(
-        Window.Location.getHref(), uri, input, debugMode, opt_idClass,
-        new AsyncCallback<CajolingServiceResult>() {
-      public void onFailure(Throwable caught) {
-        gui.setLoading(false);
-        gui.addCompileMessage(caught.getMessage());
-      }
-
-      public void onSuccess(CajolingServiceResult result) {
-        gui.setLoading(false);
-        if (result == null) {
-          gui.addCompileMessage("An unknown error occurred");
-          gui.selectTab(PlaygroundView.Tabs.COMPILE_WARNINGS);
-          return;
-        }
-        for (String message: result.getMessages()) {
-          gui.addCompileMessage(message);
-        }
-        if (result.getHtml() != null) {
-          gui.setCajoledSource(result.getHtml(), result.getJavascript());
-          gui.setRenderedResult(false /* es5 */, uri,
-              policy, result.getHtml(), result.getJavascript(), opt_idClass);
-          gui.selectTab(PlaygroundView.Tabs.RENDER);
-        } else {
-          gui.setCajoledSource(null, null);
-          gui.setRenderedResult(false, uri, null, null, null, null);
-          gui.selectTab(PlaygroundView.Tabs.COMPILE_WARNINGS);
-        }
-      }
-    });
   }
 
   public void onValueChange(ValueChangeEvent<String> change) {
@@ -148,19 +101,12 @@ public class Playground implements EntryPoint, ValueChangeHandler<String> {
   }
 
   public void onModuleLoad() {
-    String query = Window.Location.getParameter("es5");
-    Boolean mode = null == query ? null :
-        query.equalsIgnoreCase("true")
-          ? Boolean.TRUE
-              : query.equalsIgnoreCase("false")
-              ? Boolean.FALSE
-                  : null;
-    gui = new PlaygroundView(this, mode);
+    gui = new PlaygroundView(this);
     gui.setLoading(true);
     cajolingService.getBuildInfo(new AsyncCallback<String>() {
       public void onFailure(Throwable caught) {
         gui.setLoading(false);
-        gui.addCompileMessage(caught.getMessage());
+        gui.addRuntimeMessage(caught.getMessage());
         gui.setVersion("Unknown");
       }
 
