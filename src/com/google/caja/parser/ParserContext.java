@@ -27,7 +27,6 @@ import java.util.Map;
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.Chardet;
-import com.google.caja.lexer.CssTokenType;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.FilePosition;
@@ -37,15 +36,12 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
-import com.google.caja.lexer.TokenQueue;
-import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.html.Dom;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.plugin.UriFetcher.UriFetchException;
 import com.google.caja.reporting.MessageContext;
-import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.ContentType;
 import com.google.caja.util.Pair;
@@ -276,13 +272,6 @@ public final class ParserContext {
       if (tq.isEmpty()) { return null; }
       Parser p = new Parser(tq, mq);
       input = p.parse();
-      tq.expectEmpty();
-    } else if (ContentType.CSS == type) {
-      TokenQueue<CssTokenType> tq = CssParser.makeTokenQueue(cp, mq, false);
-      if (tq.isEmpty()) { return null; }
-
-      CssParser p = new CssParser(tq, mq, MessageLevel.WARNING);
-      input = p.parseStyleSheet();
       tq.expectEmpty();
     } else if (ContentType.HTML == type) {
       DomParser p = new DomParser(new HtmlLexer(cp), false, is, mq);

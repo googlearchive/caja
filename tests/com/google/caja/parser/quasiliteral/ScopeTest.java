@@ -39,7 +39,7 @@ import java.util.ArrayList;
 public class ScopeTest extends CajaTestCase {
 
   private Scope fromProgram(Block n) {
-    return Scope.fromProgram(n, new Rewriter(mq, false, false));
+    return Scope.fromProgram(n, mq);
   }
 
   public final void testSimpleDeclaredFunction() throws Exception {

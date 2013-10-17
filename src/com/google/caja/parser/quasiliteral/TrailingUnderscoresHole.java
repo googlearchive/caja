@@ -47,7 +47,6 @@ public class TrailingUnderscoresHole extends AbstractQuasiHole {
             specimen.getFilePosition(),
             value.substring(0, value.length() - trailing.length()));
         shortIdentifier.getAttributes().putAll(specimen.getAttributes());
-        shortIdentifier.setSynthetic(specimen.isSynthetic());
 
         return putIfDeepEquals(
             bindings,
@@ -67,7 +66,6 @@ public class TrailingUnderscoresHole extends AbstractQuasiHole {
     Identifier withSuffix = new Identifier(
         withoutSuffix.getFilePosition(), n.getValue() + trailing);
     withSuffix.getAttributes().putAll(withoutSuffix.getAttributes());
-    withSuffix.setSynthetic(withoutSuffix.isSynthetic());
     substitutes.add(withSuffix);
     return true;
   }

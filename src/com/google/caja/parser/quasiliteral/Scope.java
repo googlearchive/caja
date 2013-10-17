@@ -14,7 +14,6 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import static com.google.caja.parser.js.SyntheticNodes.s;
 import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
 
 import com.google.caja.lexer.FilePosition;
@@ -38,6 +37,7 @@ import com.google.caja.parser.js.scope.ScopeType;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
+import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.util.Pair;
 import com.google.common.collect.ImmutableSet;
@@ -118,7 +118,7 @@ public class Scope {
   }
 
   private final Scope parent;
-  private final Rewriter rewriter;
+  private final MessageQueue mq;
   private final ScopeType type;
   private boolean hasFreeThis = false;
   private boolean containsArguments = false;
@@ -131,8 +131,8 @@ public class Scope {
   // overlapping of instance variables does not occur.
   private final Set<String> importedVariables = Sets.<String>newTreeSet();
 
-  public static Scope fromProgram(Block root, Rewriter rewriter) {
-    Scope s = new Scope(ScopeType.PROGRAM, rewriter);
+  public static Scope fromProgram(Block root, MessageQueue mq) {
+    Scope s = new Scope(ScopeType.PROGRAM, mq);
     walkBlock(s, root);
     return s;
   }
@@ -176,16 +176,16 @@ public class Scope {
     return s;
   }
 
-  private Scope(ScopeType type, Rewriter rewriter) {
+  private Scope(ScopeType type, MessageQueue mq) {
     this.type = type;
     this.parent = null;
-    this.rewriter = rewriter;
+    this.mq = mq;
   }
 
   private Scope(ScopeType type, Scope parent) {
     this.type = type;
     this.parent = parent;
-    this.rewriter = parent.rewriter;
+    this.mq = parent.mq;
   }
 
   /**
@@ -220,9 +220,6 @@ public class Scope {
    *     determined should be rendered at the start of this Scope.
    */
   public List<Statement> getStartStatements() {
-    for (Statement stmt : startStatements) {
-      rewriter.markTreeForSideEffect(stmt);
-    }
     return Collections.unmodifiableList(startStatements);
   }
 
@@ -294,10 +291,11 @@ public class Scope {
    */
   public Identifier declareStartOfScopeTempVariable() {
     Scope s = getClosestDeclarationContainer();
-    // TODO(ihab.awad): Uses private access to 's' which is of same class but distinct
-    // instance. Violates capability discipline; kittens unduly sacrificed. Refactor.
-    Identifier id = s(new Identifier(
-        FilePosition.UNKNOWN, "x" + (s.tempVariableCounter++) + "___"));
+    // TODO(ihab.awad): Uses private access to 's' which is of same class but
+    // distinct instance. Violates capability discipline; kittens unduly
+    // sacrificed. Refactor.
+    Identifier id = new Identifier(
+        FilePosition.UNKNOWN, "temp" + (s.tempVariableCounter++) + "_");
     s.addStartOfScopeStatement((Statement) substV(
         "var @id;",
         "id", id));
@@ -316,8 +314,9 @@ public class Scope {
    */
   public void declareStartOfScopeVariable(Identifier id) {
     Scope s = getClosestDeclarationContainer();
-    // TODO(ihab.awad): Uses private access to 's' which is of same class but distinct
-    // instance. Violates capability discipline; kittens unduly sacrificed. Refactor.
+    // TODO(ihab.awad): Uses private access to 's' which is of same class but
+    // distinct instance. Violates capability discipline; kittens unduly
+    // sacrificed. Refactor.
     s.addStartOfScopeStatement((Statement)substV(
         "var @id;",
         "id", id));
@@ -568,15 +567,8 @@ public class Scope {
     }
 
     private void visitFunctionConstructor(FunctionConstructor node) {
-      if (node.isSynthetic()) {
-        // Synthetic function definitions are treated as "transparent"; our
-        // scope analysis should "see through" them as though they were just
-        // part of the surrounding code.
-        visitChildren(node);
-      } else {
-        // Stuff inside a nested function is not part of this scope,
-        // so stop the traversal.
-      }
+      // Stuff inside a nested function is not part of this scope,
+      // so stop the traversal.
     }
 
     private void visitCatchStmt(CatchStmt node) {
@@ -608,8 +600,7 @@ public class Scope {
     }
 
     private void visitReference(Reference node) {
-      if (!node.getIdentifier().isSynthetic() &&
-          !exceptionVariables.contains(node.getIdentifierName())) {
+      if (!exceptionVariables.contains(node.getIdentifierName())) {
         references.add(node);
       }
     }
@@ -646,7 +637,7 @@ public class Scope {
     String name = ident.getName();
 
     if (UNMASKABLE_IDENTIFIERS.contains(name)) {
-      s.rewriter.mq.addMessage(
+      s.mq.addMessage(
           RewriterMessageType.CANNOT_MASK_IDENTIFIER,
           ident.getFilePosition(), MessagePart.Factory.valueOf(name));
     }
@@ -657,7 +648,7 @@ public class Scope {
       if (oldType != type
           || oldType.implies(LocalType.FUNCTION)
           || type.implies(LocalType.FUNCTION)) {
-        s.rewriter.mq.getMessages().add(new Message(
+        s.mq.getMessages().add(new Message(
             MessageType.SYMBOL_REDEFINED,
             MessageLevel.LINT,
             ident.getFilePosition(),
@@ -682,9 +673,8 @@ public class Scope {
         // of IE<=8 behavior, but masking is unfortunately common, and
         // the IE<=8 bug doesn't appears to be a security issue.
         // http://code.google.com/p/google-caja/issues/detail?id=1456
-        if (!ident.isSynthetic() &&
-            ident.getFilePosition() != null) {
-          s.rewriter.mq.getMessages().add(new Message(
+        if (ident.getFilePosition() != null) {
+          s.mq.getMessages().add(new Message(
               MessageType.MASKING_SYMBOL,
               MessageLevel.LINT,
               ident.getFilePosition(),

@@ -45,7 +45,6 @@ public abstract class AbstractParseTreeNode implements MutableParseTreeNode,
   private List<Token<?>> comments = Collections.<Token<?>>emptyList();
   private SyntheticAttributes attributes;
   private boolean immutable = false;
-  private boolean synthetic = false;
 
   @Override
   public boolean makeImmutable() {
@@ -58,15 +57,6 @@ public abstract class AbstractParseTreeNode implements MutableParseTreeNode,
 
   @Override
   public boolean isImmutable() { return immutable; }
-
-  public boolean isSynthetic() { return synthetic; }
-
-  public void setSynthetic(boolean value) {
-    if (immutable) {
-      throw new UnsupportedOperationException();
-    }
-    synthetic = value;
-  }
 
   /**
    * The list of children.  This can be appended to for efficient initialization
@@ -421,7 +411,6 @@ public abstract class AbstractParseTreeNode implements MutableParseTreeNode,
     if (attributes != null) {
       cloned.attributes = new SyntheticAttributes(attributes);
     }
-    cloned.synthetic = synthetic;
     return cloned;
   }
 

@@ -21,7 +21,6 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
-import com.google.caja.lexer.Token;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParserBase;
 import com.google.caja.parser.js.Block;
@@ -40,10 +39,10 @@ import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
-import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.ValueProperty;
 import com.google.caja.reporting.DevNullMessageQueue;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -77,7 +76,7 @@ public class QuasiBuilder {
    * @see QuasiNode#match(com.google.caja.parser.ParseTreeNode)
    */
   public static boolean match(String patternText, ParseTreeNode specimen) {
-    return match(patternText, specimen, Rule.makeBindings());
+    return match(patternText, specimen, makeBindings());
   }
 
   /**
@@ -134,7 +133,7 @@ public class QuasiBuilder {
     if (args.length % 2 != 0) {
       throw new SomethingWidgyHappenedError("Wrong # of args for subst()");
     }
-    Map<String, ParseTreeNode> bindings = Rule.makeBindings();
+    Map<String, ParseTreeNode> bindings = makeBindings();
     for (int i = 0; i < args.length; i += 2) {
       ParseTreeNode value = (ParseTreeNode) args[i + 1];
       if (value != null) {
@@ -294,47 +293,12 @@ public class QuasiBuilder {
   }
 
   private static QuasiNode buildSimpleNode(ParseTreeNode n) {
-    // Synthetic nodes are ones which intentionally break caja rules in
-    // source code producers.
-    // Since putting a name like foo___ in a quasiliteral produces code that
-    // breaks the rules, recognize this and mark it synthetic so that
-    // when that quasiliteral is used with subst, the resulting tree has
-    // the correct nodes marked synthetic.
-    boolean isSynthetic = false;
-    if (hasSyntheticAnnotation(n)) {
-      isSynthetic = true;
-    } else if (n instanceof Identifier) {
-      Identifier ident = (Identifier) n;
-      isSynthetic = ident.getName() != null && ident.getName().endsWith("__");
-    } else if (n instanceof Reference) {
-      Reference ref = (Reference) n;
-      isSynthetic = ref.getIdentifierName().endsWith("__");
-    }
-
     // StringLiteral values are the raw text, so compare by decoded value.
     QuasiNode.Equivalence cmp = (n instanceof StringLiteral)
         ? QuasiNode.EQUAL_UNESCAPED : QuasiNode.SAFE_EQUALS;
 
-    if (isSynthetic) {
-      return new SyntheticQuasiNode(
-          n.getClass(), n.getValue(), cmp, buildChildrenOf(n));
-    } else {
-      return new SimpleQuasiNode(
-          n.getClass(), n.getValue(), cmp, buildChildrenOf(n));
-    }
-  }
-
-  private static boolean hasSyntheticAnnotation(ParseTreeNode n) {
-    // HACK(mikesamuel): Switching based on comments this way is a horrible
-    // kludge.  This is only a stopgap until we can get rid of synthetics
-    // entirely and/or a real quasi parser that doesn't have to work off the
-    // regular javascript parser.
-    for (Token<?> comment : n.getComments()) {
-      if (comment.text.indexOf("@synthetic") >= 0) {
-        return SyntheticNodes.isSynthesizable(n);
-      }
-    }
-    return false;
+    return new SimpleQuasiNode(
+        n.getClass(), n.getValue(), cmp, buildChildrenOf(n));
   }
 
   private static QuasiNode buildMatchNode(
@@ -460,5 +424,9 @@ public class QuasiBuilder {
     Statement topLevelStatement = parser.parse();
     parser.getTokenQueue().expectEmpty();
     return topLevelStatement;
+  }
+
+  private static Map<String, ParseTreeNode> makeBindings() {
+     return Maps.newLinkedHashMap();
   }
 }

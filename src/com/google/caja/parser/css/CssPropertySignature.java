@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.css;
 
+import com.google.caja.lexer.CssLexer;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenConsumer;
@@ -471,6 +472,68 @@ public abstract class CssPropertySignature implements ParseTreeNode {
     }
   }
 
+  private static String unescape(String s, boolean removeSpaces) {
+    int pos = 0;
+    StringBuilder sb = null;
+    for (int i = 0, n = s.length(); i < n; ++i) {
+      char ch = s.charAt(i);
+      // http://www.w3.org/TR/CSS21/syndata.html#value-def-string
+      // string         {string1}|{string2}
+      // string1        \"([^\n\r\f\\"]|\\{nl}|{escape})*\"
+      // string2        \'([^\n\r\f\\']|\\{nl}|{escape})*\'
+      // escape         {unicode}|\\[^\n\r\f0-9a-f]
+      // unicode        \\[0-9a-f]{1,6}(\r\n|[ \n\r\t\f])?
+      if ('\\' == ch && i + 1 < n) {
+        if (null == sb) { sb = new StringBuilder(); }
+        sb.append(s, pos, i);
+        char ch1 = s.charAt(++i);
+        if (CssLexer.isHexChar(ch1)) {
+          // up to 6 hex digits
+          int end = i;
+          while (end < n && end - i < 6 && CssLexer.isHexChar(s.charAt(end))) {
+            ++end;
+          }
+          int chi = Integer.parseInt(s.substring(i, end), 16);
+          i = end - 1;
+          // Hex escape may be followed by a single space character to separate
+          // it from any following character that happens to be a hex digit.
+          if (i + 1 < n) {
+            char nextChar = s.charAt(i + 1);
+            if (CssLexer.isSpaceChar(nextChar)) {
+              ++i;
+              // "\r\n" is specially handled in the {escape} production above.
+              if ('\r' == nextChar && i + 1 < n && '\n' == s.charAt(i + 1)) {
+                ++i;
+              }
+            }
+          }
+  
+          // chi may have up to 6 digits, so may be outside Java's char's range,
+          // but is within the range supported by java.lang.String codepoints.
+          sb.appendCodePoint(chi);
+        } else if ('\r' == ch1) {
+          // Newline not considered part of string
+          if (i + 1 < n && s.charAt(i + 1) == '\n') { ++i; }
+        } else if ('\n' == ch1) {
+          // Newline not considered part of string
+        } else {
+          sb.append(ch1);
+        }
+        pos = i + 1;
+      } else if (CssLexer.isSpaceChar(ch) && removeSpaces) {
+        if (null == sb) { sb = new StringBuilder(); }
+        if (i > pos) { sb.append(s, pos, i); }
+        pos = i + 1;
+      }
+    }
+    if (null == sb) {
+      return s;
+    } else {
+      sb.append(s, pos, s.length());
+      return sb.toString();
+    }
+  }
+
   public static final class Parser {
     private static Pattern[] TOKENS = {
       // whitespace
@@ -594,7 +657,7 @@ public abstract class CssPropertySignature implements ParseTreeNode {
               Name.css(s.substring(1, s.length() - 1)));
         } else if (ch0 == '"') {  // a quoted literal
           sig = new QuotedLiteralSignature(
-              CssParser.unescape(s.substring(1, s.length() - 1), false));
+              CssPropertySignature.unescape(s.substring(1, s.length() - 1), false));
         } else if (ch0 == '<') {  // a symbol
           sig = new SymbolSignature(Name.css(s.substring(1, s.length() - 1)));
         } else { // a literal number or punctuation mark

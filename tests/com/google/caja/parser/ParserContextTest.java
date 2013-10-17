@@ -19,8 +19,6 @@ import java.net.URI;
 import java.util.Map;
 
 import com.google.caja.lexer.InputSource;
-import com.google.caja.parser.css.CssParserTest;
-import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.Dom;
 import com.google.caja.parser.html.DomParserTest;
 import com.google.caja.parser.js.Block;
@@ -77,26 +75,13 @@ public class ParserContextTest extends CajaTestCase {
     assertTrue(node instanceof Block);
   }
 
-  public final void testMinimalGuessCssContentType() throws Exception {
-    ParseTreeNode node = new ParserContext(DevNullMessageQueue.singleton())
-      .withInput("div { color: red; }")
-      .build();
-    assertEquals(node.getFilePosition().source(), InputSource.UNKNOWN);
-    assertTrue(node instanceof CssTree.StyleSheet);
-  }
-
   public final void testGuessCharProducer() throws Exception {
-    InputStream css = TestUtil.getResource(CssParserTest.class,
-        "cssparserinput1.css").toURL().openStream();
     InputStream html = TestUtil.getResource(DomParserTest.class,
         "amazon.com.html").toURL().openStream();
     InputStream js  = TestUtil.getResource(ParserTest.class,
         "parsertest1.js").toURL().openStream();
 
     ParserContext ctx = new ParserContext(DevNullMessageQueue.singleton());
-
-    ParseTreeNode cssNode = ctx.withInput(css).withInput(ContentType.CSS).build();
-    assertTrue(cssNode instanceof CssTree.StyleSheet);
 
     ParseTreeNode htmlNode = ctx.withInput(html).withInput(ContentType.HTML).build();
     assertTrue(htmlNode instanceof Dom);

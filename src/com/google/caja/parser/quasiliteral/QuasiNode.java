@@ -19,6 +19,7 @@ import com.google.caja.parser.ParseTreeNodes;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,7 +46,7 @@ public abstract class QuasiNode {
   public Map<String, ParseTreeNode> match(ParseTreeNode specimen) {
     List<ParseTreeNode> specimens = Lists.newArrayList();
     specimens.add(specimen);
-    Map<String, ParseTreeNode> bindings = Rule.makeBindings();
+    Map<String, ParseTreeNode> bindings = Maps.newLinkedHashMap();
     return consumeSpecimens(specimens, bindings) ? bindings : null;
   }
 

@@ -26,7 +26,6 @@ import com.google.caja.parser.js.LabeledStatement;
 import com.google.caja.parser.js.LabeledStmtWrapper;
 import com.google.caja.parser.js.Noop;
 import com.google.caja.parser.js.StringLiteral;
-import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
@@ -746,10 +745,6 @@ public class ParseTreeNodeTest extends CajaTestCase {
     try {
       n.setComments(Arrays.asList(
           Token.instance("test", JsTokenType.COMMENT, FilePosition.UNKNOWN)));
-      fail();
-    } catch (UnsupportedOperationException e) { /* OK */ }
-    try {
-      SyntheticNodes.s(n);
       fail();
     } catch (UnsupportedOperationException e) { /* OK */ }
   }

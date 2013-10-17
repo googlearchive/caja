@@ -46,7 +46,6 @@ import java.util.concurrent.TimeUnit;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.google.caja.tracing.TracingRewriterTest;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
@@ -107,8 +106,7 @@ public final class RhinoExecutor implements Executor {
       WeakHashMap.class.getName(),
       WrappedException.class.getName(),
       "org.apache.xerces.*",
-      "com.google.caja.parser.quasiliteral.ES53ConformanceTest$Caja",
-      TracingRewriterTest.TestCollector.class.getName());
+      "com.google.caja.parser.quasiliteral.ES53ConformanceTest$Caja");
 
   private static final ContextFactory SANDBOXINGFACTORY = new ContextFactory() {
     @Override

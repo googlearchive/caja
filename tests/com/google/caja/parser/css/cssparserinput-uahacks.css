@@ -1,2 +1,0 @@
-/* Paragraphs are red on IE6 and IE7 and blue on other supported browsers. */
-p { color: blue; *color: red; background-color: #fff }

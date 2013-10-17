@@ -302,7 +302,6 @@ public class CajolingService {
 
   private void registerHandlers(BuildInfo buildInfo) {
     handlers.add(new ProxyHandler(buildInfo, uriFetcher));
-    handlers.add(new com.google.caja.tracing.TracingHandler(buildInfo, uriFetcher));
   }
 
   private Pair<String, String> applyHandler(
@@ -325,8 +324,7 @@ public class CajolingService {
   }
 
   public static enum Transform {
-    PROXY,
-    TRACING;
+    PROXY;
   }
 
   public static final String RENDER_PRETTY = "pretty";

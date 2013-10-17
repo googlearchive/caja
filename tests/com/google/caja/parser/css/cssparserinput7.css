@@ -1,4 +1,0 @@
-@charset "non-utf-8";
-/* non utf-8 */
-@import 'foo.css';
-@unknown('hi');
