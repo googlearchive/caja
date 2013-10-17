@@ -175,6 +175,11 @@ public abstract class CajaTestCase extends TestCase {
     return js(cp, true);
   }
 
+
+  // TODO(kpreid): This appears to be the only remaining user of our HTML
+  // parsing infrastructure, and it is used for JsHtmlSanitizerTest. Replace
+  // it with a less customized HTML parser.
+
   protected Element xml(CharProducer cp) throws ParseException {
     return (Element) parseMarkup(cp, true, true);
   }

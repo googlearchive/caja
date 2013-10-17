@@ -220,7 +220,19 @@ public class Scope {
    *     determined should be rendered at the start of this Scope.
    */
   public List<Statement> getStartStatements() {
+    for (Statement stmt : startStatements) {
+      recursiveImmutable(stmt);
+    }
     return Collections.unmodifiableList(startStatements);
+  }
+
+  private static void recursiveImmutable(ParseTreeNode node) {
+    if (node instanceof Statement) {
+      node.makeImmutable();
+      for (ParseTreeNode child : node.children()) {
+        recursiveImmutable(child);
+      }
+    }
   }
 
   public void addStartStatement(Statement s) {
@@ -517,7 +529,7 @@ public class Scope {
     // harvested), then they must be free variables, so record them as such.
     for (Reference ref : v.getReferences()) {
       String name = ref.getIdentifierName();
-      if (ReservedNames.ARGUMENTS.equals(name)) {
+      if ("arguments".equals(name)) {  // JS magic identifier
         s.containsArguments = true;
       } else if (Keyword.THIS.toString().equals(name)) {
         s.hasFreeThis = true;

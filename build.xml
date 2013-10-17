@@ -1050,10 +1050,8 @@ For help on building and testing Caja, see:
     </javac>
     <copy todir="${lib}">
       <fileset dir="${src}">
-        <include name="**/caja/es53.js"/><!-- es53 legacy -->
         <include name="**/caja/console.js"/>
         <include name="**/caja/flash/caja-flash.js"/>
-        <include name="**/caja/log-to-console.js"/><!-- es53 legacy -->
         <include name="**/caja/plugin/bridal.js"/>
         <include name="**/caja/plugin/csslexer.js"/>
         <include name="**/caja/plugin/uri.js"/>
