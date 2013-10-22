@@ -540,54 +540,6 @@ o.x;
       <returndoc><p>the supplied <code>o</code>.</p></returndoc>
     </method>
 
-    <!-- unwrapDom -->
-
-    <method>
-      <name>unwrapDom</name>
-      <doc><p>Unwrap the value a DOM node provided to host code from guest code.</p>
-      <p>When guest code attempts to pass to host code a DOM node across the taming
-      boundary, what is actually passed is a wrapper object holding the DOM node.
-      This container object must be opened using <code>unwrapDom</code> to get at the
-      underlying DOM node.</p>
-      <p>Consider the host code:</p>
-<pre class="prettyprint lang-javascript">
-/* <strong>host page code</strong> */
-function operateOnNode(n) { }
-caja.markFunction(operateOnNode);
-
-/* then provide to guest code: */
-aFrame.api({
-  operateOnNode: tame(operateOnNode)
-})
-</pre>
-      <p>Assume that guest code running within a Caja tamed HTML DOM hands a DOM
-      node back to the host code using the <code>operateOnNode</code> function, as follows:</p>
-<pre class="prettyprint lang-html">
-&lt;!-- <strong>guest markup</strong> --&gt;
-&lt;div id="aNode"&gt;&lt;/div&gt;
-&lt;script type="text/javascript"&gt;
-  operateOnNode(document.getElementById('aNode'));
-&lt;/script&gt;
-</pre>
-        <p>To gain access to the actual underlying DOM node, the host function
-	<code>operateOnNode</code> would need to be implemented as follows:</p>
-<pre class="prettyprint lang-javascript">
-/* <strong>host page code</strong> */
-function operateOnNode(n) {
-  /* 'n' is an opaque wrapper object */
-  var r = caja.unwrapDom(n);
-  /* 'r' is now the actual underlying DOM node */
-}
-</pre>
-      </doc>
-      <arg>
-        <name>n</name>
-        <doc><p>an opaque wrapper for a DOM node, created by Caja when guest code
-	passes a DOM node to host code.</p></doc>
-      </arg>
-      <returndoc><p>the actual underlying DOM node.</p></returndoc>
-    </method>
-
     <!-- examples -->
 
     <example>
@@ -776,32 +728,6 @@ caja.load(
     <doc><p>Object representing a virtual frame in which Caja runs
     guest code. Contains a confined ECMAScript 5 JavaScript context,
     with an optional confined DOM <code>document</code>.</p></doc>
-
-    <method>
-      <name>cajoled</name>
-      <doc><p>Specifies that this <code>frame</code> is to run code
-      that has been pre-compiled ("cajoled") by the Caja
-      compiler. This is used for cases where the host code is
-      integrating tightly with Caja; has run the Java code directly
-      (either via an API or by command line invocation) to compile the
-      code; and wishes to inject it for use.</p></doc>
-      <arg>
-        <name>uri</name>
-        <doc><p>The base URI of the original code, to be used when
-        virtualizing the DOM.</p></doc>
-      </arg>
-      <arg>
-        <name>js</name>
-        <doc><p>The cajoled JavaScript output from the Caja
-        compiler.</p></doc>
-      </arg>
-      <arg>
-        <name>html</name>
-        <doc><p>The cajoled HTML output from the Caja
-        compiler.</p></doc>
-      </arg>
-      <returndoc><p>this <code>frame</code> object.</p></returndoc>
-    </method>
 
     <method>
       <name>code</name>
