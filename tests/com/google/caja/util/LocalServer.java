@@ -68,6 +68,8 @@ public class LocalServer {
     // static file serving for tests
     final ResourceHandler resource_handler = new ResourceHandler();
     resource_handler.setResourceBase(".");
+    resource_handler.getMimeTypes().addMimeMapping(
+        "ujs", "text/javascript;charset=utf-8");
 
     // caja (=playground for now) server under /caja directory
     final String subdir = "/caja";

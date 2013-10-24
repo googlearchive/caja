@@ -17,6 +17,12 @@ package com.google.caja.service;
 import com.google.caja.reporting.BuildInfo;
 
 /**
+ * Note: These tests are now redundant with browser-side test
+ * .../plugin/test-fetch-proxy.js. They have been left in because there's no
+ * need to delete them and it's a little better to have Java tests for Java
+ * code, but in the event the implementation of the proxy is changed these might
+ * as well be discarded.
+ *
  * @author kpreid@switchb.org (Kevin Reid)
  */
 public class ProxyHandlerTest extends ServiceTestCase {

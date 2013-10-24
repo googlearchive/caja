@@ -891,7 +891,7 @@ For help on building and testing Caja, see:
   <target name="AllTests" depends="CajolingServlet,PlaygroundBE,PlaygroundSupportingFiles">
     <copy todir="${testlib}">
       <fileset dir="${src}" includes="**/*.html,**/*.js,**/*.css,**/*.jpg,**/*.png"/>
-      <fileset dir="${tests}" includes="**/*.html,**/*.js,**/*.css,**/*.jpg,**/*.png"/>
+      <fileset dir="${tests}" includes="**/*.html,**/*.js,**/*.css,**/*.jpg,**/*.png,**/*.ujs"/>
       <fileset dir="${src}" includes="**/apitaming/*"/>
       <fileset dir="${tests}" includes="**/apitaming/*"/>
     </copy>
