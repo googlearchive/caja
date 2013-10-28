@@ -37,8 +37,10 @@
  *
  * @author Mark S. Miller
  * @requires ___global_test_function___, ___global_valueOf_function___
- * @requires JSON, navigator, this, eval, document
- * @overrides ses, RegExp, WeakMap, Object, parseInt, repairES5Module
+ * @requires JSON, eval, this
+ * @requires navigator, document, DOMException
+ * @overrides ses, repairES5Module
+ * @overrides RegExp, WeakMap, Object, parseInt
  */
 var RegExp;
 var ses;
@@ -847,6 +849,19 @@ var ses;
   // repairs to attempt. Then these repairs are run. Then all the
   // tests are rerun to see how they were effected by these repair
   // attempts. Finally, we report what happened.
+
+  // Certain tests cannot operate without freezing primordial objects;
+  // they must therefore be run in separate frames with fresh
+  // primordials. Since the repairs will not have been performed in
+  // those frames, we use these flags to have the tests explicitly
+  // perform those repairs.
+  //
+  // TODO(kpreid): Figure out a better design for solving this problem.
+  // For example, it would be good to generically run the relevant tests
+  // after startSES has frozen everything and abort otherwise (this is
+  // done as a special case for FREEZING_BREAKS_PROTOTYPES only).
+  var repair_FREEZING_BREAKS_PROTOTYPES_wasApplied = false;
+  var repair_TYPED_ARRAY_PROTOS_LOOK_UNFROZEN_wasApplied = false;
 
   /**
    * If {@code Object.getOwnPropertyNames} is missing, we consider
@@ -2749,6 +2764,95 @@ var ses;
     }
   }
 
+  var typedArrayNames = [
+    'Int8Array',
+    'Uint8Array',
+    'Uint8ClampedArray',
+    'Int16Array',
+    'Uint16Array',
+    'Int32Array',
+    'Uint32Array',
+    'Float32Array',
+    'Float64Array'
+  ];
+
+  function test_TYPED_ARRAYS_THROW_DOMEXCEPTION() {
+    if (global.DataView === 'undefined') { return false; }
+    if (global.DOMException === 'undefined') { return false; }
+    function subtest(f) {
+      try {
+        f();
+      } catch (e) {
+        if (e instanceof DOMException) {
+          return true;
+        } else if (e instanceof Error && !(e instanceof DOMException)) {
+          return false;
+        } else {
+          return 'Exception from ' + f + ' of unexpected type: ' + e;
+        }
+      }
+      return f + ' did not throw';
+    };
+    return [
+      function() { new global.Int8Array(1).set(new global.Int8Array(), 10); },
+      function() { new global.DataView(new global.ArrayBuffer(1)).getInt8(-1); }
+    ].some(subtest);
+  }
+
+  /**
+   * Observed on Safari 6.0.5 (8536.30.1): frozen typed array prototypes report
+   * their properties as writable.
+   */
+  function test_TYPED_ARRAY_PROTOS_LOOK_UNFROZEN() {
+    // note: cannot test without frames
+    return inTestFrame(function(window) {
+      // Apply the repair which should fix the problem to the testing frame.
+      // TODO(kpreid): Design a better architecture to handle cases like this
+      // than one-off state flags.
+      if (repair_TYPED_ARRAY_PROTOS_LOOK_UNFROZEN_wasApplied) {
+        // optional argument not supplied by normal repair process
+        repair_TYPED_ARRAY_PROTOS_LOOK_UNFROZEN(window);
+      }
+
+      var fail = false;
+      typedArrayNames.forEach(function(ctorName) {
+        var ctor = window[ctorName];
+        if (!ctor) { return; }
+        var proto = ctor.prototype;
+
+        window.Object.freeze(proto);
+        if (!window.Object.isFrozen(proto)) {
+          fail = true;
+          return;
+        }
+
+        window.Object.getOwnPropertyNames(proto, function(prop) {
+          if (typeof fail === 'string') { return; }
+
+          // check attributes
+          var desc = window.Object.getOwnPropertyDescriptor(proto, prop);
+          if (!desc.configurable && desc.writable) {
+            fail = true;
+          } else if (!desc.configurable && !desc.writable) {
+            // correct result
+          } else {
+            fail = 'Unexpected property attributes for ' + ctorName + '.' +
+                prop;
+            return;
+          }
+
+          // check actual writability
+          try { proto[prop] = 9; } catch (e) {}
+          if (proto[prop] !== desc.value) {
+            fail = 'Unexpected actual writability of ' + ctorName + '.' + prop;
+            return;
+          }
+        });
+      });
+      return fail;
+    });
+  }
+
   ////////////////////// Repairs /////////////////////
   //
   // Each repair_NAME function exists primarily to repair the problem
@@ -3182,8 +3286,6 @@ var ses;
   // error message is matched elsewhere (for tighter bounds on catch)
   var NO_CREATE_NULL =
       'Repaired Object.create can not support Object.create(null)';
-  // flag used for the test-of-repair which cannot operate normally.
-  var repair_FREEZING_BREAKS_PROTOTYPES_wasApplied = false;
   // optional argument is used for the test-of-repair
   function repair_FREEZING_BREAKS_PROTOTYPES(opt_Object) {
     var baseObject = opt_Object || Object;
@@ -3316,6 +3418,69 @@ var ses;
       ses.verifyStrictFunctionBody = verifyStrictFunctionBodyByParsing;
     } else {
       // No known repairs under these conditions
+    }
+  }
+
+  function repair_TYPED_ARRAYS_THROW_DOMEXCEPTION() {
+    var protos = typedArrayNames.map(
+        function(ctorName) { return global[ctorName].prototype; });
+    protos.push(global.DataView.prototype);
+    protos.forEach(function(proto) {
+      Object.getOwnPropertyNames(proto).forEach(function(prop) {
+        if (/^[gs]et/.test(prop)) {
+          var origMethod = proto[prop];
+          proto[prop] = function exceptionAdapterWrapper(var_args) {
+            try {
+              origMethod.apply(this, arguments);
+            } catch (e) {
+              if (e instanceof DOMException) {
+                throw new RangeError(e.message);
+              }
+            }
+          };
+        }
+      });
+    });
+  }
+
+  function repair_TYPED_ARRAY_PROTOS_LOOK_UNFROZEN(opt_global) {
+    var targetGlobal = opt_global || global;
+    var typedArrayProtos = targetGlobal.Object.freeze(typedArrayNames.map(
+        function(ctorName) { return targetGlobal[ctorName].prototype; }));
+
+    var isFrozen = targetGlobal.Object.isFrozen;
+    var getOwnPropertyDescriptor = targetGlobal.Object.getOwnPropertyDescriptor;
+
+    Object.defineProperty(targetGlobal.Object, 'getOwnPropertyDescriptor', {
+      configurable: true,
+      writable: true,  // allow other repairs to stack on
+      value: function getOwnPropertyDescriptor_typedArrayPatch(object, prop) {
+        var desc = getOwnPropertyDescriptor(object, prop);
+        if (desc && typedArrayProtos.indexOf(object) !== -1 &&
+            'value' in desc && ses._primordialsHaveBeenFrozen) {
+          // If it is one of the typed array prototypes then it will have been
+          // frozen by startSES.
+          desc.writable = false;
+        }
+        return desc;
+      }
+    });
+
+    Object.defineProperty(targetGlobal.Object, 'isFrozen', {
+      configurable: true,
+      writable: true,  // allow other repairs to stack on
+      value: function isFrozen_typedArrayPatch(object) {
+        // If it is one of the typed array prototypes then it will have been
+        // frozen by startSES.
+        var v = typedArrayProtos.indexOf(object) !== -1;
+        return isFrozen(object) || (v && ses._primordialsHaveBeenFrozen);
+      }
+    });
+
+    // isSealed does not need repair as it already gives the correct answer.
+
+    if (targetGlobal === global) {
+      repair_TYPED_ARRAY_PROTOS_LOOK_UNFROZEN_wasApplied = true;
     }
   }
 
@@ -4336,6 +4501,32 @@ var ses;
       sections: ['15.3.2.1'],
       tests: []
     },
+    {
+      id: 'TYPED_ARRAYS_THROW_DOMEXCEPTION',
+      description: 'Typed Array operations throw DOMException',
+      test: test_TYPED_ARRAYS_THROW_DOMEXCEPTION,
+      repair: repair_TYPED_ARRAYS_THROW_DOMEXCEPTION,
+      // indirectly unsafe: DOMException is poisonous to WeakMaps on FF, so we
+      // choose not to expose it, and un-whitelisted types do not get frozen by
+      // startSES and are therefore global mutable state.
+      preSeverity: severities.NOT_OCAP_SAFE,
+      canRepair: true,
+      urls: [],  // TODO(kpreid): file bugs if appropriate
+      sections: ['13.2.3'],
+      tests: []  // hopefully will be in ES6 tests
+    },
+    {
+      id: 'TYPED_ARRAY_PROTOS_LOOK_UNFROZEN',
+      description: 'Typed Array prototypes look unfrozen',
+      test: test_TYPED_ARRAY_PROTOS_LOOK_UNFROZEN,
+      repair: repair_TYPED_ARRAY_PROTOS_LOOK_UNFROZEN,
+      preSeverity: severities.SAFE_SPEC_VIOLATION,
+      canRepair: true,
+      urls: [],  // TODO(kpreid): file bugs if appropriate
+          // appears on Safari only
+      sections: ['15.2.3.9', '15.2.3.12'],
+      tests: []  // hopefully will be in ES6 tests
+    }
   ];
 
   // UNSHIFT_IGNORES_SEALED

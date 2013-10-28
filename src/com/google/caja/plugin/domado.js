@@ -41,7 +41,7 @@
  *
  * @author mikesamuel@gmail.com (original Domita)
  * @author kpreid@switchb.org (port to ES5)
- * @requires console
+ * @requires console, Uint8ClampedArray
  * @requires bridalMaker, cajaVM, cssSchema, lexCss, URI, unicode
  * @requires parseCssDeclarations, sanitizeCssProperty, sanitizeCssSelectors
  * @requires html, html4, htmlSchema
@@ -4799,14 +4799,6 @@ var Domado = (function() {
         
         tamingClassTable.registerLazy('ImageData', function() {
           function TameImageData(imageData) {
-            // Since we can't interpose indexing, we can't wrap the
-            // CanvasPixelArray
-            // so we have to copy the pixel data. This is horrible, bad, and
-            // awful.
-            // TODO(kpreid): No longer true in ES5-land; we can interpose but
-            // not under ES5/3. Use proxies conditional on the same switch that
-            // controls liveness of node lists.
-
             TameImageDataConf.confide(this, taming);
             taming.permitUntaming(this);
 
@@ -4822,6 +4814,14 @@ var Domado = (function() {
               // putImageData
               privates.tamePixelArray = undefined;
 
+              privates.writeback = function() {
+                // This is invoked just before each putImageData to copy pixels
+                // back into the feral world
+                if (privates.tamePixelArray) {
+                  privates.feral.data.set(privates.tamePixelArray);
+                }
+              };
+
               Object.preventExtensions(privates);
             });
             Object.freeze(this);
@@ -4836,32 +4836,9 @@ var Domado = (function() {
             // inspecting the pixels.
             data: Props.ampGetter(function(privates) {
               if (!privates.tamePixelArray) {
-
-                var bareArray = privates.feral.data;
-                // TODO(kpreid): replace tamePixelArray with typed array
-
-                var length = bareArray.length;
-                var tamePixelArray = { // not frozen, user-modifiable
-                  // TODO: Investigate whether it would be an optimization
-                  // to make this an array with properties added.
-                  toString: innocuous(function() {
-                    return '[domado object CanvasPixelArray]';
-                  }),
-                  _d_canvas_writeback: innocuous(function() {
-                    // This is invoked just before each putImageData
-
-                    // TODO(kpreid): shouldn't be a public method (but is
-                    // harmless).
-
-                    for (var i = length-1; i >= 0; i--) {
-                      bareArray[+i] = tamePixelArray[+i];
-                    }
-                  })
-                };
-                for (var i = length-1; i >= 0; i--) {
-                  tamePixelArray[+i] = bareArray[+i];
-                }
-                privates.tamePixelArray = tamePixelArray;
+                // Creates copy containing no feral references
+                privates.tamePixelArray =
+                    new Uint8ClampedArray(privates.feral.data);
               }
               return privates.tamePixelArray;
             })
@@ -5204,10 +5181,7 @@ var Domado = (function() {
                     ' arguments';
               }
               TameImageDataConf.amplify(tameImageData, function(imageDataPriv) {
-                var tamePixelArray = imageDataPriv.tamePixelArray;
-                if (tamePixelArray) {
-                  tamePixelArray._d_canvas_writeback();
-                }
+                imageDataPriv.writeback();
                 privates.feral.putImageData(imageDataPriv.feral,
                     dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight);
               });

@@ -102,6 +102,7 @@ var ses;
   if (!ses) { ses = {}; }
 
   var t = true;
+  var TypedArrayWhitelist;  // defined and used below
   ses.whitelist = {
     cajaVM: {                        // Caja support
       // This object is present here only to make it itself processed by the
@@ -441,6 +442,62 @@ var ses;
     JSON: {
       parse: t,
       stringify: t
+    },
+    ArrayBuffer: {                   // Khronos Typed Arrays spec; ops are safe
+      length: t,  // does not inherit from Function.prototype on Chrome
+      name: t,  // ditto
+      isView: t,
+      prototype: {
+        byteLength: 'accessor',
+        slice: t
+      }
+    },
+    Int8Array: TypedArrayWhitelist = {  // Typed Arrays spec
+      length: t,  // does not inherit from Function.prototype on Chrome
+      name: t,  // ditto
+      BYTES_PER_ELEMENT: t,
+      prototype: {
+        buffer: 'accessor',
+        byteOffset: 'accessor',
+        byteLength: 'accessor',
+        length: 'accessor',
+        BYTES_PER_ELEMENT: t,
+        set: t,
+        subarray: t
+      }
+    },
+    Uint8Array: TypedArrayWhitelist,
+    Uint8ClampedArray: TypedArrayWhitelist,
+    Int16Array: TypedArrayWhitelist,
+    Uint16Array: TypedArrayWhitelist,
+    Int32Array: TypedArrayWhitelist,
+    Uint32Array: TypedArrayWhitelist,
+    Float32Array: TypedArrayWhitelist,
+    Float64Array: TypedArrayWhitelist,
+    DataView: {                      // Typed Arrays spec
+      length: t,  // does not inherit from Function.prototype on Chrome
+      name: t,  // ditto
+      prototype: {
+        buffer: 'accessor',
+        byteOffset: 'accessor',
+        byteLength: 'accessor',
+        getInt8: t,
+        getUint8: t,
+        getInt16: t,
+        getUint16: t,
+        getInt32: t,
+        getUint32: t,
+        getFloat32: t,
+        getFloat64: t,
+        setInt8: t,
+        setUint8: t,
+        setInt16: t,
+        setUint16: t,
+        setInt32: t,
+        setUint32: t,
+        setFloat32: t,
+        setFloat64: t
+      }
     }
   };
 })();

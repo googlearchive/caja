@@ -34,7 +34,7 @@ public class MainBrowserTest extends CatalogTestCase {
   @Override
   protected int waitForCompletionTimeout() {
     if (entry.getLabel().startsWith("guest-scan-")) {
-      return 60000;     // msec
+      return 100000;     // msec
     } else {
       return super.waitForCompletionTimeout();
     }

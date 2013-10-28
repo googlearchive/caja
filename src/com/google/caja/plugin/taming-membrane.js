@@ -15,7 +15,9 @@
 /**
  * Generic taming membrane implementation.
  *
- * @requires WeakMap
+ * @requires WeakMap, ArrayBuffer, Int8Array, Uint8Array, Uint8ClampedArray,
+ *    Int16Array, Uint16Array, Int32Array, Uint32Array, Float32Array,
+ *    Float64Array, DataView
  * @overrides window
  * @provides TamingMembrane
  */
@@ -153,11 +155,18 @@ function TamingMembrane(helper, schema) {
     }
   }
 
-  // Given a builtin object "o" provided by either a guest or host frame,
-  // return a copy constructed in the taming frame. Return undefined if
-  // "o" is not a builtin object. Note that we only call this function if we
-  // know that "o" is *not* a primitive.
-  function copyBuiltin(o) {
+  /**
+   * Given a builtin object "o" from either side of the membrane, return a copy
+   * constructed in the taming frame. Return undefined if "o" is not of a type
+   * handled here. Note that we only call this function if we know that "o" is
+   * *not* a primitive.
+   *
+   * This function handles only objects which we copy exactly once and reuse
+   * the copy (via tamesTo()) if the same object is met again. For objects which
+   * we copy every  time they are passed across the membrane, see
+   * copyTreatedMutable below.
+   */
+  function copyTreatedImmutable(o) {
     var t = void 0;
     switch (Object.prototype.toString.call(o)) {
       case '[object Boolean]':
@@ -213,8 +222,56 @@ function TamingMembrane(helper, schema) {
             t.name = '' + name;
             break;
         }
+        break;
     }
     return t;
+  }
+
+  function copyArray(o, recursor) {
+    var copy = [];
+    for (var i = 0; i < o.length; i++) {
+      copy[i] = recursor(o[i]);
+    }
+    return Object.freeze(copy);
+  }
+  
+  /**
+   * Given a builtin object "o" from either side of the membrane, return a copy
+   * constructed in the taming frame. Return undefined if "o" is not of a type
+   * handled here. Note that we only call this function if we know that "o" is
+   * *not* a primitive.
+   *
+   * This function handles only objects which should be copied every time they
+   * are passed across the membrane. For objects which we wish to copy at most
+   * once, see copyTreatedImmutable above.
+   */
+  function copyTreatedMutable(o, recursor) {
+    if (Array.isArray(o)) {
+      // No tamesTo(...) for arrays; we copy across the membrane
+      return copyArray(o, recursor);
+    } else {
+      var t = undefined;
+      switch (Object.prototype.toString.call(o)) {
+        // Note that these typed array tamings break any buffer sharing, but
+        // that's in line with our general policy of copying.
+        case '[object ArrayBuffer]':
+          t = ArrayBuffer.prototype.slice.call(o, 0);
+          break;
+        case '[object Int8Array]': t = new Int8Array(o); break;
+        case '[object Uint8Array]': t = new Uint8Array(o); break;
+        case '[object Uint8ClampedArray]': t = new Uint8ClampedArray(o); break;
+        case '[object Int16Array]': t = new Int16Array(o); break;
+        case '[object Uint16Array]': t = new Uint16Array(o); break;
+        case '[object Int32Array]': t = new Int32Array(o); break;
+        case '[object Uint32Array]': t = new Uint32Array(o); break;
+        case '[object Float32Array]': t = new Float32Array(o); break;
+        case '[object Float64Array]': t = new Float64Array(o); break;
+        case '[object DataView]':
+          t = new DataView(recursor(o.buffer), o.byteOffset, o.byteLength);
+          break;
+      }
+      return t;
+    }
   }
 
   // This is a last resort for passing a safe "demilitarized zone" exception
@@ -279,25 +336,6 @@ function TamingMembrane(helper, schema) {
     schema.fix(f);
   }
 
-  /**
-   * Private utility functions to tame and untame arrays.
-   */
-  function tameArray(fa) {
-    var ta = [];
-    for (var i = 0; i < fa.length; i++) {
-      ta[i] = tame(fa[i]);
-    }
-    return Object.freeze(ta);
-  }
-
-  function untameArray(ta) {
-    var fa = [];
-    for (var i = 0; i < ta.length; i++) {
-      fa[i] = untame(ta[i]);
-    }
-    return Object.freeze(fa);
-  }
-
   function errGet(p) {
     return Object.freeze(function() {
       throw new TypeError('Unreadable property: ' + p);
@@ -318,23 +356,21 @@ function TamingMembrane(helper, schema) {
       // Primitive value; tames to self
       return f;
     }
-    var ftype = typeof f;
-    if (Array.isArray(f)) {
-      // No tamesTo(...) for arrays; we copy across the membrane
-      return tameArray(f);
-    }
     var t = tameByFeral.get(f);
+    if (t) { return t; }
+    t = copyTreatedMutable(f, tame);
     if (t) { return t; }
     if (feralByTame.has(f)) {
       throw new TypeError('Tame object found on feral side of taming membrane: '
           + f + '. The membrane has previously been compromised.');
     }
+    var ftype = typeof f;
     if (ftype === 'object') {
       var ctor = directConstructor(f);
       if (ctor === BASE_OBJECT_CONSTRUCTOR) {
         t = preventExtensions(tameRecord(f));
       } else {
-        t = copyBuiltin(f);
+        t = copyTreatedImmutable(f);
         if (t === void 0) {
           if (ctor === void 0) {
             throw new TypeError('Cannot determine ctor of: ' + f);
@@ -440,7 +476,7 @@ function TamingMembrane(helper, schema) {
       return applyFeralFunction(
           f,
           helper.USELESS,  // See notes on USELESS above
-          untameArray(arguments));
+          copyArray(arguments, untame));
     };
     addFunctionPropertyHandlers(f, t);
     preventExtensions(t);
@@ -456,11 +492,11 @@ function TamingMembrane(helper, schema) {
         return applyFeralFunction(
             f,
             (void 0),
-            untameArray(arguments));
+            copyArray(arguments, untame));
       } else {
         // Call as a constructor
         var o = Object.create(fPrototype);
-        applyFeralFunction(f, o, untameArray(arguments));
+        applyFeralFunction(f, o, copyArray(arguments, untame));
         tameObjectWithMethods(o, this);
         tamesTo(o, this);
       }
@@ -511,7 +547,7 @@ function TamingMembrane(helper, schema) {
       return applyFeralFunction(
           f,
           untame(this),
-          untameArray(arguments));
+          copyArray(arguments, untame));
     };
     addFunctionPropertyHandlers(f, t);
     preventExtensions(t);
@@ -554,7 +590,7 @@ function TamingMembrane(helper, schema) {
           return applyFeralFunction(
               untame(self)[p],
               untame(self),
-              untameArray(arguments));
+              copyArray(arguments, untame));
         };
       });
     } else if (schema.grantAs.has(f, p, schema.grantTypes.READ)) {
@@ -619,12 +655,9 @@ function TamingMembrane(helper, schema) {
       // Primitive value; untames to self
       return t;
     }
-    var ttype = typeof t;
-    if (Array.isArray(t)) {
-      // No tamesTo(...) for arrays; we copy across the membrane
-      return untameArray(t);
-    }
     var f = feralByTame.get(t);
+    if (f) { return f; }
+    f = copyTreatedMutable(t, untame);
     if (f) { return f; }
     if (tameByFeral.has(t)) {
       throw new TypeError('Feral object found on tame side of taming membrane: '
@@ -633,12 +666,13 @@ function TamingMembrane(helper, schema) {
     if (!helper.isDefinedInCajaFrame(t)) {
       throw new TypeError('Host object leaked without being tamed');
     }
+    var ttype = typeof t;
     if (ttype === 'object') {
       var ctor = directConstructor(t);
       if (ctor === BASE_OBJECT_CONSTRUCTOR) {
         f = untameCajaRecord(t);
       } else {
-        f = copyBuiltin(t);
+        f = copyTreatedImmutable(t);
         if (f === void 0) {
           throw new TypeError(
               'Untaming of guest constructed objects unsupported: ' + t);
@@ -655,7 +689,7 @@ function TamingMembrane(helper, schema) {
     // Untaming of *constructors* which are defined in Caja is unsupported.
     // We untame all functions defined in Caja as xo4a.
     return function(_) {
-      return applyTameFunction(t, tame(this), tameArray(arguments));
+      return applyTameFunction(t, tame(this), copyArray(arguments, tame));
     };
   }
 

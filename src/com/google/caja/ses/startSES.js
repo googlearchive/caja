@@ -1657,6 +1657,11 @@ ses.startSES = function(global,
   // can skip it for non-defensive frames that must only be confined.
   cajaVM.def(sharedImports);
 
+  // Internal communication back to repairES5 repairs that need to know if
+  // things have been frozen. TODO(kpreid): Consider making this more specific
+  // (identifying the actually frozen objects) if that doesn't cost too much.
+  ses._primordialsHaveBeenFrozen = true;
+
   // The following objects are ambiently available via language constructs, and
   // therefore if we did not clean and defend them we have a problem. This is
   // defense against mistakes in modifying the whitelist, not against browser

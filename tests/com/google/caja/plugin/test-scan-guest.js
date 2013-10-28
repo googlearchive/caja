@@ -29,7 +29,8 @@
  *     HTMLTextAreaElement, HTMLVideoElement, HTMLButtonElement,
  *     Audio, Image, Option, XMLHttpRequest, Window, Document, Node, Element,
  *     Attr, Text, CSSStyleDeclaration, CanvasRenderingContext2D,
- *     CanvasGradient, ImageData, Location
+ *     CanvasGradient, ImageData, Location,
+ *     ArrayBuffer, Int8Array, DataView
  * @overrides window
  */
 
@@ -351,6 +352,11 @@
     var genAccessorSet = genMethod(G.value(cajaVM.def({
       toString: function() { return '<setter garbage>'; }
     })));
+    function genInstance(ctor) {
+      return G.lazyValue(function() {
+        return obtainInstance(ctor);
+      });
+    }
     /** Add third value-callback to an arguments generator */
     function annotate(calls, callback) {
       return G.apply(function (call) {
@@ -1253,9 +1259,103 @@
     obtainInstance.define(CanvasGradient,
         document.createElement('canvas').getContext('2d').createLinearGradient(
             0, 1, 2, 3));
-    obtainInstance.define(ImageData,
-        document.createElement('canvas').getContext('2d').createImageData(
-            2, 2));
+    obtainInstance.define(ImageData, (function() {
+      var v = document.createElement('canvas').getContext('2d').createImageData(
+          2, 2);
+      // v.data is an unfrozen native Uint8ClampedArray
+      expectedUnfrozen.setByIdentity(v.data);
+      expectedUnfrozen.setByIdentity(v.data.buffer);
+      return v;
+    }()));
+
+    // Combined Typed Array processing
+    // TODO(kpreid): Reorder everything so that args, obtainInstance, and
+    // expectedUnfrozen are done together for all types.
+    (function() { // hide specialized locals
+
+      argsByAnyFrame('ArrayBuffer', genNew(genSmallInteger));
+      argsByAnyFrame('ArrayBuffer.prototype.slice',
+          freshResult(genMethod(genSmallInteger, genSmallInteger)));
+      obtainInstance.define(ArrayBuffer, new ArrayBuffer(3));
+      expectedUnfrozen.setByConstructor(ArrayBuffer, true);
+      expectedUnfrozen.setByConstructor(
+          simpleEval(tamingEnv, 'ArrayBuffer'), true);
+
+      forEachFrame('Int8Array', function(arrayCtor) {
+        // inert ctor we need to note
+        var ArrayBufferView =
+            Object.getPrototypeOf(arrayCtor.prototype).constructor;
+        if (ArrayBufferView === Object) return;
+        var refArrayBufferView = Ref.is(ArrayBufferView);
+        functionArgs.set(refArrayBufferView, genNew());
+        expectedAlwaysThrow.mark(refArrayBufferView);
+      });
+
+      var typedArrayCall = G.tuple(G.value(CONSTRUCT), G.any(
+          G.tuple(genSmallInteger),
+          G.tuple(genInstance(Int8Array)),
+          G.tuple(genNumbers(2)),
+          genConcat(
+            G.tuple(genInstance(ArrayBuffer)),
+            genNumbers(2))));
+      function setupTypedArray(name, doAllCalls) {
+        var ref = RefAnyFrame(name);
+        var ctor = window[name];
+
+        functionArgs.set(ref, doAllCalls
+            ? typedArrayCall
+            : genNew(G.value(0)));
+        obtainInstance.define(ctor, new ctor(3));
+        expectedUnfrozen.mark(ref);
+
+        argsByAnyFrame(name + '.prototype.set', doAllCalls
+            ? G.any(
+                genMethod(genInstance(Int8Array), genSmallInteger),
+                genMethod(G.value([1, 2, 3]), genSmallInteger))
+            : genMethod(G.value([1, 2, 3]), G.value(0)));
+        argsByAnyFrame(name + '.prototype.subarray', freshResult(
+            doAllCalls
+              ? genMethod(genSmallInteger, genSmallInteger)
+              : genMethod(G.value(1), G.value(2))));
+      }
+      // To save on scan time, we only fully exercise some of the array types
+      // (chosen for coverage of different cases: 1-byte, clamped, endianness,
+      // floats).
+      setupTypedArray('Int8Array', true);
+      setupTypedArray('Uint8Array', false);
+      setupTypedArray('Uint8ClampedArray', true);
+      setupTypedArray('Int16Array', false);
+      setupTypedArray('Uint16Array', false);
+      setupTypedArray('Int32Array', false);
+      setupTypedArray('Uint32Array', true);
+      setupTypedArray('Float32Array', false);
+      setupTypedArray('Float64Array', true);
+
+      argsByAnyFrame('DataView', genNew(
+          genInstance(ArrayBuffer), genSmallInteger, genSmallInteger));
+      obtainInstance.define(DataView, new DataView(new ArrayBuffer(8)));
+      expectedUnfrozen.setByConstructor(DataView, true);
+      var get8 = genMethod(genSmallInteger);
+      argsByAnyFrame('DataView.prototype.getInt8', get8);
+      argsByAnyFrame('DataView.prototype.getUint8', get8);
+      var getWide = genMethod(genSmallInteger, genBoolean);
+      argsByAnyFrame('DataView.prototype.getInt16', getWide);
+      argsByAnyFrame('DataView.prototype.getUint16', getWide);
+      argsByAnyFrame('DataView.prototype.getInt32', getWide);
+      argsByAnyFrame('DataView.prototype.getUint32', getWide);
+      argsByAnyFrame('DataView.prototype.getFloat32', getWide);
+      argsByAnyFrame('DataView.prototype.getFloat64', getWide);
+      var set8 = genMethod(genSmallInteger, genNumber);
+      argsByAnyFrame('DataView.prototype.setInt8', set8);
+      argsByAnyFrame('DataView.prototype.setUint8', set8);
+      var setWide = genMethod(genSmallInteger, genNumber, genBoolean);
+      argsByAnyFrame('DataView.prototype.setInt16', setWide);
+      argsByAnyFrame('DataView.prototype.setUint16', setWide);
+      argsByAnyFrame('DataView.prototype.setInt32', setWide);
+      argsByAnyFrame('DataView.prototype.setUint32', setWide);
+      argsByAnyFrame('DataView.prototype.setFloat32', setWide);
+      argsByAnyFrame('DataView.prototype.setFloat64', setWide);
+    })();
 
     var tamingFeralWin = directAccess.evalInTamingFrame('window');
     var guestFeralWin = directAccess.evalInGuestFrame('window');
