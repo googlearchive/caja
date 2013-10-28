@@ -54,7 +54,8 @@
       fail(name + ' assertThrowsRestricted');
     } catch (e) {
       e = '' + e;
-      if (!(/Node is restricted/.test(e) || /Node not editable\./.test(e))) {
+      if (!(/Node is restricted/.test(e) || /Node not editable\./.test(e) ||
+          /This operation requires a /.test(e))) {
         fail(name + ' assertThrowsRestricted failed with ' + e);
       }
     }
@@ -78,14 +79,18 @@
     assertEquals(name + 'attributes', 0, node.attributes.length);
     assertBottom(name + 'attributes[0]', node.attributes[0]);
     // There is no getAttribute method but a client could try this:
-    assertBottom(name + 'getAttribute unknown',
-      Element.prototype.getAttribute.call(node, 'testattr'));
-    assertBottom(name + 'getAttribute known',
-      Element.prototype.getAttribute.call(node, 'title'));
-    assertBottom(name + 'getAttributeNode unknown',
-      Element.prototype.getAttributeNode.call(node, 'testattr'));
-    assertBottom(name + 'getAttributeNode known',
-      Element.prototype.getAttributeNode.call(node, 'title'));
+    assertThrowsRestricted(name + 'getAttribute unknown', function() {
+      Element.prototype.getAttribute.call(node, 'testattr');
+    });
+    assertThrowsRestricted(name + 'getAttribute known', function() {
+      Element.prototype.getAttribute.call(node, 'title');
+    });
+    assertThrowsRestricted(name + 'getAttributeNode unknown', function() {
+      Element.prototype.getAttributeNode.call(node, 'testattr');
+    });
+    assertThrowsRestricted(name + 'getAttributeNode known', function() {
+      Element.prototype.getAttributeNode.call(node, 'title');
+    });
 
     // assertFalse(name + 'isSupported()', node.isSupported('', ''));
 

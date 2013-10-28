@@ -400,7 +400,8 @@ var Domado = (function() {
    * objects).
    */
   var Confidence = (function () {
-    function Confidence(typename) {
+    // superTable, superTypename are undefined if there is no supertype
+    function _SubConfidence(typename, superTable, superTypename) {
       var table = new WeakMap();
 
       /**
@@ -424,7 +425,14 @@ var Domado = (function() {
         }
 
         var privates;
-        if (opt_sameAs !== undefined) {
+        if (superTable !== undefined) {
+          privates = superTable.get(object);
+          if (!privates) {
+            throw new Error(typename + ': object must already be a ' +
+                superTypename);
+          }
+          // TODO(kpreid): validate taming, opt_sameAs
+        } else if (opt_sameAs !== undefined) {
           privates = table.get(opt_sameAs);
           if (!privates) {
             throw new Error(typename + ': opt_sameAs not confided');
@@ -491,11 +499,21 @@ var Domado = (function() {
         }
       };
 
+      this.subtype = function(subtypeName) {
+        return new _SubConfidence(subtypeName, table, typename);
+      }.bind(this);
+
       this.typename = typename;
+    }
+
+    function Confidence(typename) {
+      return new _SubConfidence(typename, undefined, undefined);
     }
     Confidence.prototype.toString = cajaVM.constFunc(function() {
       return this.typename + 'Confidence';
     });
+
+    _SubConfidence.prototype = Confidence.prototype;
 
     return cajaVM.def(Confidence);
   })();
@@ -742,6 +760,22 @@ var Domado = (function() {
     }
 
     /**
+     * A non-overridable, enumerable, amplifying (as in confidence.amplifying)
+     * getter and setter.
+     *
+     * The functions should be function literals.
+     */
+    function ampAccessor(getter, setter) {
+      return markPropMaker(function(env) {
+        return {
+          enumerable: true,
+          get: env.amplifying(getter),
+          set: env.amplifying(setter)
+        };
+      });
+    }
+
+    /**
      * Checkable label for all property specs implemented functions.
      * TODO(kpreid): Have fewer custom property makers outside of Props itself;
      * provide tools to build them instead.
@@ -771,6 +805,7 @@ var Domado = (function() {
       plainMethod: plainMethod,
       ampMethod: ampMethod,
       ampGetter: ampGetter,
+      ampAccessor: ampAccessor,
       cond: cond,
       NO_PROPERTY: NO_PROPERTY,
       markPropMaker: markPropMaker
@@ -1302,7 +1337,6 @@ var Domado = (function() {
 
     var TameEventConf = new Confidence('TameEvent');
     var TameEventT = TameEventConf.guard;
-    var eventAmp = TameEventConf.amplifying;
     var eventAmplify = TameEventConf.amplify;
     var TameImageDataConf = new Confidence('TameImageData');
     var TameImageDataT = TameImageDataConf.guard;
@@ -1903,8 +1937,6 @@ var Domado = (function() {
       //     be vulnerable to this?)
       var TameNodeConf = new Confidence('TameNode');
       var TameNodeT = TameNodeConf.guard;
-      var nodeAmp = TameNodeConf.amplifying;
-      var nodeAmplify = TameNodeConf.amplify;
 
       var tameException = taming.tameException;
 
@@ -1916,16 +1948,17 @@ var Domado = (function() {
        * done after the outermost constructor?
        */
       function finishNode(node) {
-        nodeAmplify(node, function(privates) {
+        TameNodeConf.amplify(node, function(privates) {
           if (proxiesAvailable && privates.proxyHandler) {
             // The proxy construction is deferred until now because the ES5/3
             // implementation of proxies requires that the proxy's prototype is
             // frozen.
             var proxiedNode = Proxy.create(privates.proxyHandler,
                 Object.getPrototypeOf(node));
-            delete privates.proxyHandler;  // no longer needed
-
-            TameNodeConf.confide(proxiedNode, taming, node);
+            privates.proxyInit(proxiedNode, privates.proxyHandler);
+            // no longer needed
+            delete privates.proxyHandler;
+            delete privates.proxyInit;
 
             node = proxiedNode;
           }
@@ -2509,6 +2542,10 @@ var Domado = (function() {
         /**
          * Ensure that a taming wrapper for the given underlying property is
          * memoized via the taming membrane, but only if 'memo' is true.
+         *
+         * @param {boolean} memo Memoize if true, construct every time if false.
+         * @param {string} feralProp feral property name to use as lookup key.
+         * @param {function} tamer function(privates, feralValue) -> tamedValue
          */
         TameMemoIf: function(memo, feralProp, tamer) {
           assert(typeof memo === 'boolean');  // in case of bad data
@@ -2518,11 +2555,11 @@ var Domado = (function() {
               get: memo ? env.amplifying(function(privates) {
                 var feral = privates.feral[feralProp];
                 if (!taming.hasTameTwin(feral)) {
-                  taming.tamesTo(feral, tamer.call(this, feral));
+                  taming.tamesTo(feral, tamer.call(this, privates, feral));
                 }
                 return taming.tame(feral);
               }) : env.amplifying(function(privates) {
-                return tamer.call(this, privates.feral[feralProp]);
+                return tamer.call(this, privates, privates.feral[feralProp]);
               })
             };
           });
@@ -3702,7 +3739,7 @@ var Domado = (function() {
         if (!policy || !policy.requireEditable) {
           throw new Error("Domado internal error: Policy missing or invalid");
         }
-        nodeAmplify(this, function(privates) {
+        TameNodeConf.amplify(this, function(privates) {
           privates.policy = policy;
         });
         return this;
@@ -3764,6 +3801,7 @@ var Domado = (function() {
       // abstract TameNode.prototype.attributes
       cajaVM.def(TameNode);  // and its prototype
 
+      var TameBackedNodeConf = TameNodeConf.subtype('TameBackedNode');
       /**
        * A tame node that is backed by a real node.
        *
@@ -3786,7 +3824,7 @@ var Domado = (function() {
           parentPolicy = null;
         } else {
           // Parent is inside the vdoc.
-          parentPolicy = nodeAmplify(defaultTameNode(parent),
+          parentPolicy = TameBackedNodeConf.amplify(defaultTameNode(parent),
               function(parentPriv) {
             return parentPriv.policy;
           });
@@ -3815,7 +3853,8 @@ var Domado = (function() {
 
         TameNode.call(this, policy);
 
-        nodeAmplify(this, function(privates) {
+        TameBackedNodeConf.confide(this, taming);
+        TameBackedNodeConf.amplify(this, function(privates) {
           privates.feral = node;
 
           // protocol for EventTarget operations
@@ -3824,6 +3863,7 @@ var Domado = (function() {
 
           if (proxiesAvailable && opt_proxyType) {
             privates.proxyHandler = new opt_proxyType(this);
+            privates.proxyInit = opt_proxyType.domadoProxyInit;
           }
         });
       }
@@ -3832,7 +3872,7 @@ var Domado = (function() {
           'function' === typeof elementForFeatureTests.compareDocumentPosition;
       var containsAvailable = elementForFeatureTests.contains;
           // typeof is 'object' on IE
-      Props.define(TameBackedNode.prototype, TameNodeConf, {
+      Props.define(TameBackedNode.prototype, TameBackedNodeConf, {
         nodeType: PT.ro,
         nodeName: PT.ro,
         nodeValue: PT.ro,
@@ -3842,15 +3882,15 @@ var Domado = (function() {
         previousSibling: PT.related,
         parentNode: PT.related,
         childNodes: PT.TameMemoIf(nodeListsAreLive, 'childNodes',
-            nodeAmp(function(privates, f) {
+            function(privates, f) {
           if (privates.policy.childrenVisible) {
             return new TameNodeList(f, defaultTameNode);
           } else {
             return fakeNodeList([], 'NodeList');
           }
-        })),
+        }),
         attributes: PT.TameMemoIf(namedNodeMapsAreLive, 'attributes',
-            nodeAmp(function(privates, feralMap) {
+            function(privates, feralMap) {
           if (privates.policy.attributesVisible) {
             var feralOwnerElement = privates.feral;
             return new TameNamedNodeMap(feralMap, {
@@ -3868,7 +3908,7 @@ var Domado = (function() {
             // TODO(kpreid): no namedItem interface
             return fakeNodeList([], 'HTMLCollection');
           }
-        })),
+        }),
         cloneNode: Props.ampMethod(function(privates, deep) {
           privates.policy.requireUnrestricted();
           var clone = bridal.cloneNode(privates.feral, Boolean(deep));
@@ -3878,7 +3918,7 @@ var Domado = (function() {
         }),
         appendChild: Props.ampMethod(function(privates, child) {
           child = child || {};
-          return nodeAmplify(child, function(childPriv) {
+          return TameBackedNodeConf.amplify(child, function(childPriv) {
             checkAdoption(privates, childPriv);
 
             privates.feral.appendChild(childPriv.feral);
@@ -3888,12 +3928,12 @@ var Domado = (function() {
         insertBefore: Props.ampMethod(function(privates, toInsert, child) {
           if (child === void 0) { child = null; }
 
-          nodeAmplify(toInsert, function(iPriv) {
+          TameBackedNodeConf.amplify(toInsert, function(iPriv) {
             checkAdoption(privates, iPriv);
             if (child === null) {
               privates.feral.insertBefore(iPriv.feral, null);
             } else {
-              nodeAmplify(child, function(childPriv) {
+              TameBackedNodeConf.amplify(child, function(childPriv) {
                 privates.feral.insertBefore(iPriv.feral, childPriv.feral);
               });
             }
@@ -3901,15 +3941,15 @@ var Domado = (function() {
           return toInsert;
         }),
         removeChild: Props.ampMethod(function(privates, child) {
-          nodeAmplify(child, function(childPriv) {
+          TameBackedNodeConf.amplify(child, function(childPriv) {
             privates.policy.requireChildrenEditable();
             privates.feral.removeChild(childPriv.feral);
           });
           return child;
         }),
         replaceChild: Props.ampMethod(function(privates, newChild, oldChild) {
-          nodeAmplify(newChild, function(newPriv) {
-            nodeAmplify(oldChild, function(oldPriv) {
+          TameBackedNodeConf.amplify(newChild, function(newPriv) {
+            TameBackedNodeConf.amplify(oldChild, function(oldPriv) {
               checkAdoption(privates, newPriv);
 
               privates.feral.replaceChild(newPriv.feral, oldPriv.feral);
@@ -3936,7 +3976,7 @@ var Domado = (function() {
             compareDocumentPositionAvailable,
             Props.ampMethod(function(privates, other) {
           if (!other) { return 0; }
-          return nodeAmplify(other, function(otherPriv) {
+          return TameBackedNodeConf.amplify(other, function(otherPriv) {
             var otherNode = otherPriv.feral;
             var bitmask = +privates.feral.compareDocumentPosition(otherNode);
             // To avoid leaking information about the relative positioning of
@@ -3967,7 +4007,7 @@ var Domado = (function() {
             containsAvailable ?
                 Props.ampMethod(function(privates, other) {
                   if (other === null || other === void 0) { return false; }
-                  return nodeAmplify(other, function(otherPriv) {
+                  return TameBackedNodeConf.amplify(other, function(otherPriv) {
                     return privates.feral.contains(otherPriv.feral);
                   });
                 }) :
@@ -4010,13 +4050,16 @@ var Domado = (function() {
         TameBackedNode.call(this, node, nodePolicyForeign);
       }
       inertCtor(TameForeignNode, TameBackedNode);
+      // no subtype defined as these methods are harmless
       Props.define(TameForeignNode.prototype, TameNodeConf, {
+        // These methods are needed because TameForeignNode doesn't inherit
+        // TameElement, but a foreign node (itself, not its children) can appear
+        // in a node list.
         getElementsByTagName: Props.plainMethod(function(tagName) {
           // needed because TameForeignNode doesn't inherit TameElement
           return fakeNodeList([], 'NodeList');
         }),
         getElementsByClassName: Props.plainMethod(function(className) {
-          // needed because TameForeignNode doesn't inherit TameElement
           return fakeNodeList([], 'HTMLCollection');
         })
       });
@@ -4032,6 +4075,7 @@ var Domado = (function() {
         inertCtor(TameTextNode, TameBackedNode);
         var textAccessor = Props.actAs('nodeValue', PT.filterProp(identity,
             function(value) { return String(value || ''); }));
+        // no subtype defined as nodeValue is generic
         Props.define(TameTextNode.prototype, TameNodeConf, {
           nodeValue: textAccessor,
           textContent: textAccessor,
@@ -4073,19 +4117,20 @@ var Domado = (function() {
         }
       }
       tamingClassTable.registerLazy('Attr', function() {
+        var TameAttrConf = TameBackedNodeConf.subtype('TameAttr');
         function TameBackedAttributeNode(node, ownerElement) {
           if ('ownerElement' in node && node.ownerElement !== ownerElement) {
             throw new Error('Inconsistent ownerElement');
           }
 
-          var ownerPolicy = nodeAmplify(defaultTameNode(ownerElement),
-              function(ownerPriv) {
-            return ownerPriv.policy;
-          });
+          var ownerPolicy = TameElementConf.amplify(
+            defaultTameNode(ownerElement),
+            function(ownerPriv) { return ownerPriv.policy; });
 
           TameBackedNode.call(this, node, ownerPolicy);
 
-          nodeAmplify(this, function(privates) {
+          TameAttrConf.confide(this, taming);
+          TameAttrConf.amplify(this, function(privates) {
             privates.ownerElement = ownerElement;
           });
         }
@@ -4111,7 +4156,7 @@ var Domado = (function() {
             throw new Error('Not implemented.');
           })
         };
-        Props.define(TameBackedAttributeNode.prototype, TameNodeConf, {
+        Props.define(TameBackedAttributeNode.prototype, TameAttrConf, {
           nodeName: nameAccessor,
           name: nameAccessor,
           specified: {
@@ -4124,7 +4169,7 @@ var Domado = (function() {
           value: valueAccessor,
           ownerElement: {
             enumerable: true,
-            get: nodeAmp(function(privates) {
+            get: TameAttrConf.amplifying(function(privates) {
               return defaultTameNode(privates.ownerElement);
             })
           },
@@ -4151,6 +4196,10 @@ var Domado = (function() {
         return cajaVM.def(TameBackedAttributeNode);  // and defend its prototype
       });
 
+      // Elements in general and specific elements:
+
+      var TameElementConf = TameBackedNodeConf.subtype('TameElement');
+
       // Register set handlers for onclick, onmouseover, etc.
       function registerElementScriptAttributeHandlers(tameElementPrototype) {
         var seenAlready = {};
@@ -4169,7 +4218,8 @@ var Domado = (function() {
               Object.defineProperty(tameElementPrototype, attribName, {
                 enumerable: canHaveEnumerableAccessors,
                 configurable: false,
-                set: nodeAmp(function eventHandlerSetter(privates, listener) {
+                set: TameElementConf.amplifying(
+                    function eventHandlerSetter(privates, listener) {
                   privates.policy.requireEditable();
                   if (!listener) {  // Clear the current handler
                     privates.feral[attribName] = null;
@@ -4187,8 +4237,6 @@ var Domado = (function() {
         }
       }
 
-      // Elements in general and specific elements:
-
       // TODO(kpreid): See if it's feasible to make TameElement lazy constructed
       // for guests that don't do any DOM manipulation until after load. Will
       // require deferring the tameContainerNode.
@@ -4198,7 +4246,8 @@ var Domado = (function() {
       function TameElement(node, opt_policy, opt_proxyType) {
         assert(node.nodeType === 1);
         TameBackedNode.call(this, node, opt_policy, opt_proxyType);
-        nodeAmplify(this, function(privates) {
+        TameElementConf.confide(this);
+        TameElementConf.amplify(this, function(privates) {
           privates.geometryDelegate = node;
         });
       }
@@ -4247,12 +4296,12 @@ var Domado = (function() {
       });
       var textContentProp = {
         enumerable: true,
-        get: nodeAmp(function(privates) {
+        get: TameElementConf.amplifying(function(privates) {
           var text = [];
           innerTextOf(privates.feral, text);
           return text.join('');
         }),
-        set: nodeAmp(function(privates, newText) {
+        set: TameElementConf.amplifying(function(privates, newText) {
           // This operation changes the child node list (but not other
           // properties of the element) so it checks childrenEditable. Note that
           // this check is critical to security, as else a client can set the
@@ -4269,7 +4318,7 @@ var Domado = (function() {
       var tagNameAttr = PT.ROView(function(name) {
         return realToVirtualElementName(String(name));
       });
-      Props.define(TameElement.prototype, TameNodeConf, {
+      Props.define(TameElement.prototype, TameElementConf, {
         id: PT.filterAttr(defaultToEmptyStr, identity),
         className: {
           enumerable: true,
@@ -4291,7 +4340,7 @@ var Domado = (function() {
         tagName: tagNameAttr,
         style: {
           enumerable: true,
-          get: nodeAmp(function(privates) {
+          get: TameElementConf.amplifying(function(privates) {
             return new (tamingClassTable.getTamingCtor('CSSStyleDeclaration'))(
                 privates.feral.style, privates.policy.editable, this);
           }),
@@ -4304,7 +4353,7 @@ var Domado = (function() {
           get: innocuous(function() {
             return htmlFragmentSerialization(this);
           }),
-          set: nodeAmp(function(privates, htmlFragment) {
+          set: TameElementConf.amplifying(function(privates, htmlFragment) {
             // This operation changes the child node list (but not other
             // properties of the element) so it checks childrenEditable. Note
             // that this check is critical to security, as else a client can set
@@ -4334,14 +4383,15 @@ var Domado = (function() {
         },
         offsetParent: {
           enumerable: true,
-          get: nodeAmp(function(privates) {
+          get: TameElementConf.amplifying(function(privates) {
             var feralOffsetParent = privates.feral.offsetParent;
             if (!feralOffsetParent) {
               return feralOffsetParent;
             } else if (feralOffsetParent === feralPseudoDocument) {
               // Return the body if the node is contained in the body. This is
               // emulating how browsers treat offsetParent and the real <BODY>.
-              return nodeAmplify(tameDocument.body, function(bodyPriv) {
+              return TameBackedNodeConf.amplify(tameDocument.body,
+                  function(bodyPriv) {
                 var feralBody = bodyPriv.feral;
                 for (var ancestor = privates.feral.parentNode;
                      ancestor !== feralPseudoDocument;
@@ -4471,7 +4521,8 @@ var Domado = (function() {
             })),
         getBoundingClientRect: Props.ampMethod(function(privates) {
           var elRect = bridal.getBoundingClientRect(privates.feral);
-          return nodeAmplify(this.ownerDocument, function(docPriv) {
+          return TameHTMLDocumentConf.amplify(this.ownerDocument,
+              function(docPriv) {
             var vdoc = bridal.getBoundingClientRect(docPriv.feralContainerNode);
             var vdocLeft = vdoc.left, vdocTop = vdoc.top;
             return ({
@@ -4486,7 +4537,7 @@ var Domado = (function() {
       if ('classList' in elementForFeatureTests) {
         Props.define(TameElement.prototype, TameNodeConf, {
           classList: PT.TameMemoIf(true, 'classList',
-                         nodeAmp(function(privates, feralList) {
+              function(privates, feralList) {
             var element = this;
             return new TameDOMSettableTokenList(feralList,
                 function classListGetTransform(token) {
@@ -4496,10 +4547,17 @@ var Domado = (function() {
                   return rewriteAttribute(element.tagName, 'class',
                       html4.atype.CLASSES, token);
                 });
-          }))
+          })
         });
       }
       cajaVM.def(TameElement);  // and its prototype
+
+      // Maps taming class ctors to their Confidences; used for establishing
+      // subtype relationships and for non-method functions wishing to amplify
+      // a particular subtype.
+      // TODO(kpreid): Review whether this ought to be part of TamingClassTable.
+      var elementCtorConfidences = new WeakMap();
+      elementCtorConfidences.set(TameElement, TameElementConf);
 
       /**
        * Define a taming class for a subclass of HTMLElement.
@@ -4529,7 +4587,7 @@ var Domado = (function() {
         }
         var superclassRef = record.superclass || 'HTMLElement';
         var proxyType = record.proxyType;
-        var construct = record.construct || identity;
+        var construct = record.construct;
         var shouldBeVirtualized = "virtualized" in record
             ? record.virtualized : false;
         var opt_policy = record.forceChildrenNotEditable
@@ -4538,6 +4596,8 @@ var Domado = (function() {
           var superclass = typeof superclassRef === 'string'
               ? tamingClassTable.getTamingCtor(superclassRef)
               : superclassRef;
+          var confidence = elementCtorConfidences.get(superclass)
+              .subtype(domClass);
           function TameSpecificElement(node) {
             if (shouldBeVirtualized !== null) {
               var isVirtualized =
@@ -4549,13 +4609,15 @@ var Domado = (function() {
               }
             }
             superclass.call(this, node, opt_policy, proxyType);
-            construct.call(this);
+            confidence.confide(this, taming);
+            if (construct) { confidence.amplify(this, construct); }
           }
           inertCtor(TameSpecificElement, superclass);
           if (record.properties) {
-            Props.define(TameSpecificElement.prototype, TameNodeConf,
+            Props.define(TameSpecificElement.prototype, confidence,
                 (0,record.properties)());
           }
+          elementCtorConfidences.set(TameSpecificElement, confidence);
           // Note: cajaVM.def will be applied to all registered node classes
           // later, so users of defineElement don't need to.
           return cajaVM.def(TameSpecificElement);
@@ -5303,13 +5365,26 @@ var Domado = (function() {
       function FormElementProxyHandler(target) {
         CollectionProxyHandler.call(this, target);
       }
+      FormElementProxyHandler.domadoProxyInit = cajaVM.constFunc(
+          function(proxy, handler) {
+        var TameFormElementConf = elementCtorConfidences.get(
+            tamingClassTable.getTamingCtor('HTMLFormElement'));
+
+        // TODO(kpreid): this is ugly
+        [TameNodeConf, TameBackedNodeConf, TameElementConf, TameFormElementConf]
+            .forEach(function(c) {
+          c.confide(proxy, taming, handler.target);
+        });
+      });
       inherit(FormElementProxyHandler, CollectionProxyHandler);
       Props.define(FormElementProxyHandler.prototype, null, {
         toString: Props.overridable(false, function() {
           return '[FormElementProxyHandler]';
         }),
         col_lookup: Props.overridable(true, cajaVM.constFunc(function(name) {
-          return nodeAmplify(this.target, function(privates) {
+          // using less specific but readily available TameElementConf because
+          // this.target is reliably a form element
+          return TameElementConf.amplify(this.target, function(privates) {
             return privates.feral.elements.namedItem(name);
           });
         })),
@@ -5340,7 +5415,7 @@ var Domado = (function() {
       defineElement({
         domClass: 'HTMLFormElement',
         proxyType: FormElementProxyHandler,
-        construct: nodeAmp(function(privates) {
+        construct: function(privates) {
           // Must be a value property because ES5/3 does not allow .length
           // accessors.
           // TODO(kpreid): Detect and use an accessor on ES5.
@@ -5349,10 +5424,10 @@ var Domado = (function() {
           Object.defineProperty(this, "length", {
             value: privates.feral.length
           });
-        }),
+        },
         properties: function() { return {
           action: PT.filterAttr(defaultToEmptyStr, String),
-          elements: PT.TameMemoIf(false, 'elements', function(f) {
+          elements: PT.TameMemoIf(false, 'elements', function(privates, f) {
             // TODO(kpreid): make tameHTMLCollection live-capable
             return tameHTMLCollection(f, defaultTameNode);
           }),
@@ -5388,17 +5463,16 @@ var Domado = (function() {
 
       defineElement({
         domClass: 'HTMLIFrameElement',
-        construct: nodeAmp(function(privates) {
+        construct: function(privates) {
           privates.contentDomicile = undefined;
           privates.seenContentDocument = undefined;
-        }),
+        },
         properties: function() { return {
-          align: {
-            enumerable: true,
-            get: nodeAmp(function(privates) {
+          align: Props.ampAccessor(
+            function(privates) {
               return privates.feral.align;
-            }),
-            set: nodeAmp(function(privates, alignment) {
+            },
+            function(privates, alignment) {
               privates.policy.requireEditable();
               alignment = String(alignment);
               if (alignment === 'left' ||
@@ -5406,22 +5480,21 @@ var Domado = (function() {
                   alignment === 'center') {
                 privates.feral.align = alignment;
               }
-            })
-          },
-          frameBorder: {
-            enumerable: true,
-            get: nodeAmp(function(privates) {
+            }
+          ),
+          frameBorder: Props.ampAccessor(
+            function(privates) {
               return privates.feral.frameBorder;
-            }),
-            set: nodeAmp(function(privates, border) {
+            },
+            function(privates, border) {
               privates.policy.requireEditable();
               border = String(border).toLowerCase();
               if (border === '0' || border === '1' ||
                   border === 'no' || border === 'yes') {
                 privates.feral.frameBorder = border;
               }
-            })
-          },
+            }
+          ),
           height: PT.filterProp(identity, Number),
           width:  PT.filterProp(identity, Number),
           src: PT.filterAttr(identity, identity), // rewrite handled for attr
@@ -5444,7 +5517,11 @@ var Domado = (function() {
         // TODO(kpreid): Once we support loading content via src=, we will need
         // to consider whether this should always allow access to said content,
         // and probably other issues.
-        return nodeAmplify(tameIFrame, function(privates) {
+
+        // TODO(kpreid): memoize this lookup?
+        var TameIFrameConf = elementCtorConfidences.get(
+            tamingClassTable.getTamingCtor('HTMLIFrameElement'));
+        return TameIFrameConf.amplify(tameIFrame, function(privates) {
           var frameFeralDoc = privates.feral.contentDocument;
           if (!privates.contentDomicile ||
               frameFeralDoc !== privates.seenContentDocument) {
@@ -5556,7 +5633,8 @@ var Domado = (function() {
         domClass: 'HTMLSelectElement',
         properties: function() { return {
           multiple: PT.rw,
-          options: PT.TameMemoIf(nodeListsAreLive, 'options', function(f) {
+          options: PT.TameMemoIf(nodeListsAreLive, 'options',
+              function(privates, f) {
             return new TameOptionsList(f, defaultTameNode, 'name');
           }),
           selectedIndex: PT.filterProp(identity, toInt),
@@ -5590,20 +5668,19 @@ var Domado = (function() {
           crossOrigin: NP_writePolicyOnly,
           currentSrc: PT.ro,
           currentTime: PT.ro,
-          defaultMuted: {
+          defaultMuted: Props.ampAccessor(
             // TODO: express this generically
-            enumerable: true,
-            get: nodeAmp(function(privates) {
+            function(privates) {
               return privates.feral.defaultMuted;
-            }),
-            set: innocuous(function(v) {
-              if (v) {
+            },
+            function(privates, value) {
+              if (value) {
                 this.setAttribute('muted', '');
               } else {
                 this.removeAttribute('muted');
               }
-            })
-          },
+            }
+          ),
           defaultPlaybackRate: PT.filterProp(identity, Number),
           duration: PT.ro,
           ended: PT.ro,
@@ -5710,7 +5787,8 @@ var Domado = (function() {
 
       // General hook in document.createElement which currently only applies to
       // <script>s; keeping it simple till we need more generality.
-      var postInitCreatedElement = nodeAmp(function(privates) {
+      var postInitCreatedElement =
+          TameElementConf.amplifying(function(privates) {
         if (privates.feral.tagName === 'SCRIPT') {
           privates.feral.appendChild(
             document.createTextNode(
@@ -5721,11 +5799,11 @@ var Domado = (function() {
       defineElement({
         domClass: 'HTMLScriptElement',
         forceChildrenNotEditable: true,  // critical to script isolation
-        construct: nodeAmp(function(privates) {
+        construct: function(privates) {
           privates.scriptSrc = undefined;
           // See also postInitCreatedElement, which initializes
           // document.createElement'd scripts for src loading
-        }),
+        },
         properties: function() { return {
           src: NP_writePolicyOnly,
           setAttribute: Props.ampMethod(function(privates, attrib, value) {
@@ -5797,7 +5875,8 @@ var Domado = (function() {
         properties: function() { return {
           // TODO(kpreid): Arrange so there are preexisting functions to pass
           // into TameMemoIf rather than repeating this inline stuff.
-          cells: PT.TameMemoIf(nodeListsAreLive, 'cells', function(feralList) {
+          cells: PT.TameMemoIf(nodeListsAreLive, 'cells',
+              function(privates, feralList) {
             return new TameNodeList(feralList, defaultTameNode);
           }),
           rowIndex: PT.ro,
@@ -5820,7 +5899,8 @@ var Domado = (function() {
       defineElement({
         domClass: 'HTMLTableSectionElement',
         properties: function() { return {
-          rows: PT.TameMemoIf(nodeListsAreLive, 'rows', function(feralList) {
+          rows: PT.TameMemoIf(nodeListsAreLive, 'rows',
+              function(privates, feralList) {
             return new TameNodeList(feralList, defaultTameNode);
           }),
           insertRow: Props.ampMethod(function(privates, index) {
@@ -5842,13 +5922,13 @@ var Domado = (function() {
         domClass: 'HTMLTableElement',
         properties: function() { return {
           tBodies: PT.TameMemoIf(nodeListsAreLive, 'tBodies',
-              nodeAmp(function(privates, f) {
+              function(privates, f) {
             if (privates.policy.childrenVisible) {
               return new TameNodeList(f, defaultTameNode);
             } else {
               return fakeNodeList([], 'NodeList');
             }
-          })),
+          }),
           tHead: NP_tameDescendant,
           tFoot: NP_tameDescendant,
           cellPadding: PT.filterAttr(Number, fromInt),
@@ -6141,9 +6221,11 @@ var Domado = (function() {
         return '"' + String(value).replace(/[^\w-]/g, '\\$&') + '"';
       }
 
+      var TameHTMLDocumentConf = TameNodeConf.subtype('TameHTMLDocument');
       function TameHTMLDocument(doc, container, domain) {
         TameNode.call(this, nodePolicyEditable);
-        nodeAmplify(this, function(privates) {
+        TameHTMLDocumentConf.confide(this, taming);
+        TameHTMLDocumentConf.amplify(this, function(privates) {
           privates.feralDoc = doc;
           privates.feralContainerNode = container;
           privates.onLoadListeners = [];
@@ -6164,7 +6246,7 @@ var Domado = (function() {
             finishNode(makeTameNodeByType(container));
         });
 
-        Props.define(this, TameNodeConf, {
+        Props.define(this, TameHTMLDocumentConf, {
           domain: P_constant(domain)
         });
 
@@ -6186,7 +6268,7 @@ var Domado = (function() {
           return privates.tameContainerNode[prop](opt1, opt2);
         });
       });
-      Props.define(TameHTMLDocument.prototype, TameNodeConf, {
+      Props.define(TameHTMLDocument.prototype, TameHTMLDocumentConf, {
         nodeType: P_constant(9),
         nodeName: P_constant('#document'),
         nodeValue: P_constant(null),
@@ -6272,7 +6354,7 @@ var Domado = (function() {
             // None of our children are elements, fail
             return null;
           })},
-        forms: { enumerable: true, get: nodeAmp(function(privates) {
+        forms: Props.ampGetter(function(privates) {
           // privates not used but we need host-exception protection and
           // authority to access 'document'
           
@@ -6285,7 +6367,7 @@ var Domado = (function() {
             if (tameForm !== null) { tameForms.push(tameForm); }
           }
           return fakeNodeList(tameForms, 'HTMLCollection');
-        })},
+        }),
         title: {
           // TODO(kpreid): get the title element pointer in conformant way
 
@@ -6510,8 +6592,8 @@ var Domado = (function() {
         if (tame === null || tame === undefined) {
           return tame;
         } else {
-          // NOTE: will be undefined for pseudo nodes
-          return nodeAmplify(tame,
+          // NOTE: will be undefined for pseudo (non-backed) nodes
+          return TameNodeConf.amplify(tame,
               function(privates) { return privates.feral; });
         }
       }
@@ -7074,7 +7156,7 @@ var Domado = (function() {
             // a portion of the element's content as defined at
             // http://www.w3.org/TR/CSS2/selector.html#q20
             function(tameElement, pseudoElement) {
-          return nodeAmplify(tameElement, function(elPriv) {
+          return TameElementConf.amplify(tameElement, function(elPriv) {
             // Coerce all nullish values to undefined, since that is the value
             // for unspecified parameters.
             // Per bug 973: pseudoElement should be null according to the
@@ -7146,8 +7228,8 @@ var Domado = (function() {
 
 
 
-      if (nodeAmplify(tameDocument,
-                      function(p) { return p.policy.editable; })) {
+      if (TameHTMLDocumentConf.amplify(tameDocument,
+          function(p) { return p.policy.editable; })) {
         // Powerful singleton authority not granted for RO document
         tameDocument.defaultView = tameWindow;
 
