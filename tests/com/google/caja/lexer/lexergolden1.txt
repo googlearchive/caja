@@ -36,7 +36,9 @@ STRI ['a string constant']: lexertest1.js:9+1@100 - 20@119
 PUNC [;]: lexertest1.js:9+20@119 - 21@120
 WORD [s]: lexertest1.js:10+1@121 - 2@122
 PUNC [=]: lexertest1.js:10+3@123 - 4@124
-STRI ['a string that spans multiple physical lines but not logical ones']: lexertest1.js:10+5@125 - 12+22@195
+STRI ['a string that \
+spans multiple physical lines \
+but not logical ones']: lexertest1.js:10+5@125 - 12+22@195
 PUNC [;]: lexertest1.js:12+22@195 - 23@196
 STRI ['a string with "double quotes" inside and ']: lexertest1.js:13+1@197 - 44@240
 PUNC [+]: lexertest1.js:13+45@241 - 46@242
@@ -49,98 +51,96 @@ PUNC [;]: lexertest1.js:15+57@337 - 58@338
 KEYW [var]: lexertest1.js:16+1@339 - 4@342
 WORD [s]: lexertest1.js:16+5@343 - 6@344
 PUNC [=]: lexertest1.js:16+7@345 - 8@346
-STRI ["double quotes work inside strings too.pretty well actually"]: lexertest1.js:16+9@347 - 17+22@409
+STRI ["double quotes work inside strings too.\
+pretty well actually"]: lexertest1.js:16+9@347 - 17+22@409
 PUNC [;]: lexertest1.js:17+22@409 - 23@410
-COMM [// a line comment that oddly spans multiple physical lines]: lexertest1.js:19+1@412 - 20+30@472
-COMM [/* multiline comments have
-   no need for such silliness */]: lexertest1.js:22+1@474 - 23+33@533
+COMM [// a line comment that ends with a \]: lexertest1.js:19+1@412 - 37@448
+STRI ['does not absorb the next line']: lexertest1.js:20+1@449 - 32@480
+PUNC [;]: lexertest1.js:20+32@480 - 33@481
+COMM [/* multiline comments also *\
+/ "don't care about backslash newline" */]: lexertest1.js:22+1@483 - 23+42@554
 COMM [/*/ try and confuse the lexer
     with a star-slash before
     the end of the comment.
- */]: lexertest1.js:25+1@535 - 28+4@625
-COMM [/* comments can have embedded "strings" */]: lexertest1.js:30+1@627 - 43@669
-STRI ["and /*vice-versa*/ "]: lexertest1.js:31+1@670 - 22@691
-WORD [we]: lexertest1.js:33+1@693 - 3@695
-PUNC [(]: lexertest1.js:33+3@695 - 4@696
-WORD [need]: lexertest1.js:33+4@696 - 8@700
-PUNC [-]: lexertest1.js:33+9@701 - 10@702
-WORD [to]: lexertest1.js:33+11@703 - 13@705
-PUNC [+]: lexertest1.js:33+14@706 - 15@707
-PUNC [{]: lexertest1.js:33+16@708 - 17@709
-PUNC [{]: lexertest1.js:33+17@709 - 18@710
-PUNC [{]: lexertest1.js:33+18@710 - 19@711
-WORD [test]: lexertest1.js:33+19@711 - 23@715
-WORD [punctuation]: lexertest1.js:33+24@716 - 35@727
-WORD [thoroughly]: lexertest1.js:33+36@728 - 46@738
-PUNC [}]: lexertest1.js:33+46@738 - 47@739
-PUNC [}]: lexertest1.js:33+47@739 - 48@740
-PUNC [}]: lexertest1.js:33+48@740 - 49@741
-PUNC [)]: lexertest1.js:33+49@741 - 50@742
-PUNC [;]: lexertest1.js:33+50@742 - 51@743
-WORD [left]: lexertest1.js:35+1@745 - 5@749
-PUNC [<<=]: lexertest1.js:35+6@750 - 9@753
-WORD [shift_amount]: lexertest1.js:35+10@754 - 22@766
-PUNC [;]: lexertest1.js:35+22@766 - 23@767
-FLOA [14.0005e-6]: lexertest1.js:37+1@769 - 11@779
-WORD [is]: lexertest1.js:37+12@780 - 14@782
-WORD [one]: lexertest1.js:37+15@783 - 18@786
-WORD [token]: lexertest1.js:37+19@787 - 24@792
-PUNC [?]: lexertest1.js:37+24@792 - 25@793
-COMM [// check that exponentials with signs extracted properly during splitting]: lexertest1.js:39+1@795 - 74@868
-KEYW [var]: lexertest1.js:40+1@869 - 4@872
-WORD [num]: lexertest1.js:40+5@873 - 8@876
-PUNC [=]: lexertest1.js:40+9@877 - 10@878
-INTE [1000]: lexertest1.js:40+11@879 - 15@883
-PUNC [-]: lexertest1.js:40+15@883 - 16@884
-FLOA [1e+2]: lexertest1.js:40+16@884 - 20@888
-PUNC [*]: lexertest1.js:40+20@888 - 21@889
-INTE [2]: lexertest1.js:40+21@889 - 22@890
-PUNC [;]: lexertest1.js:40+22@890 - 23@891
-COMM [// check that dotted identifiers split, but decimal numbers not.]: lexertest1.js:42+1@893 - 65@957
-WORD [foo]: lexertest1.js:43+1@958 - 4@961
-PUNC [.]: lexertest1.js:43+4@961 - 5@962
-WORD [bar]: lexertest1.js:43+5@962 - 8@965
-PUNC [=]: lexertest1.js:43+9@966 - 10@967
-FLOA [4.0]: lexertest1.js:43+11@968 - 14@971
-PUNC [;]: lexertest1.js:43+14@971 - 15@972
-WORD [foo2]: lexertest1.js:44+1@973 - 5@977
-PUNC [.]: lexertest1.js:44+5@977 - 6@978
-WORD [bar]: lexertest1.js:44+6@978 - 9@981
-PUNC [=]: lexertest1.js:44+10@982 - 11@983
-WORD [baz]: lexertest1.js:44+12@984 - 15@987
-PUNC [;]: lexertest1.js:44+15@987 - 16@988
-FLOA [.5]: lexertest1.js:46+1@990 - 3@992
-COMM [// a numeric token]: lexertest1.js:46+5@994 - 23@1012
-COMM [// test how line continuations affect punctuation]: lexertest1.js:48+1@1014 - 50@1063
-INTE [1]: lexertest1.js:49+1@1064 - 2@1065
-PUNC [+]: lexertest1.js:49+2@1065 - 3@1066
-PUNC [+]: lexertest1.js:49+3@1066 - 50+2@1069
-INTE [2]: lexertest1.js:50+2@1069 - 3@1070
-PUNC [;]: lexertest1.js:50+3@1070 - 4@1071
-COMM [// should parse as 1 + + 2, not 1 ++ 2;]: lexertest1.js:51+1@1072 - 40@1111
-WORD [foo]: lexertest1.js:52+1@1112 - 4@1115
-WORD [bar]: lexertest1.js:52+4@1115 - 53+4@1120
-PUNC [;]: lexertest1.js:53+4@1120 - 5@1121
-WORD [elipsis]: lexertest1.js:55+1@1123 - 8@1130
-PUNC [...]: lexertest1.js:55+8@1130 - 11@1133
-PUNC [;]: lexertest1.js:55+11@1133 - 12@1134
-COMM [/* and extending the example at line 30 " interleaved */]: lexertest1.js:57+1@1136 - 57@1192
-STRI [" */"]: lexertest1.js:57+58@1193 - 58+2@1200
-WORD [also]: lexertest1.js:58+2@1200 - 6@1204
-COMM [/* " /* */]: lexertest1.js:58+7@1205 - 17@1215
-COMM [// Backslashes in character sets do not end regexs.]: lexertest1.js:60+1@1217 - 52@1268
-WORD [r]: lexertest1.js:61+1@1269 - 2@1270
-PUNC [=]: lexertest1.js:61+3@1271 - 4@1272
-REGE [/./]: lexertest1.js:61+5@1273 - 8@1276
-PUNC [,]: lexertest1.js:61+8@1276 - 9@1277
-REGE [/\//]: lexertest1.js:61+10@1278 - 14@1282
-PUNC [,]: lexertest1.js:61+14@1282 - 15@1283
-REGE [/[/]/]: lexertest1.js:61+16@1284 - 21@1289
-PUNC [,]: lexertest1.js:61+21@1289 - 22@1290
-REGE [/[\/]\//]: lexertest1.js:61+23@1291 - 31@1299
-WORD [isNaN]: lexertest1.js:63+1@1301 - 6@1306
-PUNC [(]: lexertest1.js:63+6@1306 - 7@1307
-WORD [NaN]: lexertest1.js:63+7@1307 - 10@1310
-PUNC [)]: lexertest1.js:63+10@1310 - 11@1311
-PUNC [;]: lexertest1.js:63+11@1311 - 12@1312
-COMM [// leave some whitespace at the end of this file  ]: lexertest1.js:65+1@1314 - 51@1364
+ */]: lexertest1.js:25+1@556 - 28+4@646
+COMM [/* comments can have embedded "strings" */]: lexertest1.js:30+1@648 - 43@690
+STRI ["and /*vice-versa*/ "]: lexertest1.js:31+1@691 - 22@712
+WORD [we]: lexertest1.js:33+1@714 - 3@716
+PUNC [(]: lexertest1.js:33+3@716 - 4@717
+WORD [need]: lexertest1.js:33+4@717 - 8@721
+PUNC [-]: lexertest1.js:33+9@722 - 10@723
+WORD [to]: lexertest1.js:33+11@724 - 13@726
+PUNC [+]: lexertest1.js:33+14@727 - 15@728
+PUNC [{]: lexertest1.js:33+16@729 - 17@730
+PUNC [{]: lexertest1.js:33+17@730 - 18@731
+PUNC [{]: lexertest1.js:33+18@731 - 19@732
+WORD [test]: lexertest1.js:33+19@732 - 23@736
+WORD [punctuation]: lexertest1.js:33+24@737 - 35@748
+WORD [thoroughly]: lexertest1.js:33+36@749 - 46@759
+PUNC [}]: lexertest1.js:33+46@759 - 47@760
+PUNC [}]: lexertest1.js:33+47@760 - 48@761
+PUNC [}]: lexertest1.js:33+48@761 - 49@762
+PUNC [)]: lexertest1.js:33+49@762 - 50@763
+PUNC [;]: lexertest1.js:33+50@763 - 51@764
+WORD [left]: lexertest1.js:35+1@766 - 5@770
+PUNC [<<=]: lexertest1.js:35+6@771 - 9@774
+WORD [shift_amount]: lexertest1.js:35+10@775 - 22@787
+PUNC [;]: lexertest1.js:35+22@787 - 23@788
+FLOA [14.0005e-6]: lexertest1.js:37+1@790 - 11@800
+WORD [is]: lexertest1.js:37+12@801 - 14@803
+WORD [one]: lexertest1.js:37+15@804 - 18@807
+WORD [token]: lexertest1.js:37+19@808 - 24@813
+PUNC [?]: lexertest1.js:37+24@813 - 25@814
+COMM [// check that exponentials with signs extracted properly during splitting]: lexertest1.js:39+1@816 - 74@889
+KEYW [var]: lexertest1.js:40+1@890 - 4@893
+WORD [num]: lexertest1.js:40+5@894 - 8@897
+PUNC [=]: lexertest1.js:40+9@898 - 10@899
+INTE [1000]: lexertest1.js:40+11@900 - 15@904
+PUNC [-]: lexertest1.js:40+15@904 - 16@905
+FLOA [1e+2]: lexertest1.js:40+16@905 - 20@909
+PUNC [*]: lexertest1.js:40+20@909 - 21@910
+INTE [2]: lexertest1.js:40+21@910 - 22@911
+PUNC [;]: lexertest1.js:40+22@911 - 23@912
+COMM [// check that dotted identifiers split, but decimal numbers not.]: lexertest1.js:42+1@914 - 65@978
+WORD [foo]: lexertest1.js:43+1@979 - 4@982
+PUNC [.]: lexertest1.js:43+4@982 - 5@983
+WORD [bar]: lexertest1.js:43+5@983 - 8@986
+PUNC [=]: lexertest1.js:43+9@987 - 10@988
+FLOA [4.0]: lexertest1.js:43+11@989 - 14@992
+PUNC [;]: lexertest1.js:43+14@992 - 15@993
+WORD [foo2]: lexertest1.js:44+1@994 - 5@998
+PUNC [.]: lexertest1.js:44+5@998 - 6@999
+WORD [bar]: lexertest1.js:44+6@999 - 9@1002
+PUNC [=]: lexertest1.js:44+10@1003 - 11@1004
+WORD [baz]: lexertest1.js:44+12@1005 - 15@1008
+PUNC [;]: lexertest1.js:44+15@1008 - 16@1009
+FLOA [.5]: lexertest1.js:46+1@1011 - 3@1013
+COMM [// a numeric token]: lexertest1.js:46+5@1015 - 23@1033
+COMM [// javascript does not have line continuations.]: lexertest1.js:48+1@1035 - 48@1082
+WORD [foo\]: lexertest1.js:49+1@1083 - 5@1087
+WORD [bar]: lexertest1.js:50+1@1088 - 4@1091
+PUNC [;]: lexertest1.js:50+4@1091 - 5@1092
+WORD [ellipsis]: lexertest1.js:52+1@1094 - 9@1102
+PUNC [...]: lexertest1.js:52+9@1102 - 12@1105
+PUNC [;]: lexertest1.js:52+12@1105 - 13@1106
+COMM [/* and extending the example at line 30 " interleaved */]: lexertest1.js:54+1@1108 - 57@1164
+STRI [" */\
+"]: lexertest1.js:54+58@1165 - 55+2@1172
+WORD [also]: lexertest1.js:55+2@1172 - 6@1176
+COMM [/* " /* */]: lexertest1.js:55+7@1177 - 17@1187
+COMM [// Backslashes in character sets do not end regexs.]: lexertest1.js:57+1@1189 - 52@1240
+WORD [r]: lexertest1.js:58+1@1241 - 2@1242
+PUNC [=]: lexertest1.js:58+3@1243 - 4@1244
+REGE [/./]: lexertest1.js:58+5@1245 - 8@1248
+PUNC [,]: lexertest1.js:58+8@1248 - 9@1249
+REGE [/\//]: lexertest1.js:58+10@1250 - 14@1254
+PUNC [,]: lexertest1.js:58+14@1254 - 15@1255
+REGE [/[/]/]: lexertest1.js:58+16@1256 - 21@1261
+PUNC [,]: lexertest1.js:58+21@1261 - 22@1262
+REGE [/[\/]\//]: lexertest1.js:58+23@1263 - 31@1271
+WORD [isNaN]: lexertest1.js:60+1@1273 - 6@1278
+PUNC [(]: lexertest1.js:60+6@1278 - 7@1279
+WORD [NaN]: lexertest1.js:60+7@1279 - 10@1282
+PUNC [)]: lexertest1.js:60+10@1282 - 11@1283
+PUNC [;]: lexertest1.js:60+11@1283 - 12@1284
+COMM [// leave some whitespace at the end of this file  ]: lexertest1.js:62+1@1286 - 51@1336

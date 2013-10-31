@@ -117,6 +117,22 @@ public class JsMinimalPrinterTest extends CajaTestCase {
         + "b;");
   }
 
+  public final void testBackslashNewline() throws Exception {
+    // Backslash newline is elided in strings.
+    assertRendered(
+        "{var x='string continuation'}",
+        "var x = 'string \\\ncontinuation'");
+    // Backslash newline is not special in comments.
+    assertRendered(
+        "{var x='noncontinuation'}",
+        "var x = // comment \\\n'noncontinuation'");
+    // Backslash newline elsewhere is a syntax error, and is rendered
+    // in a way that is still a syntax error.
+    assertLexed(
+        "illegal\\ continuation",
+        "illegal\\\ncontinuation");
+  }
+
   public final void testDivisionByRegex() throws Exception {
     assertLexed("3/ /foo/", "3 / /foo/;");
   }

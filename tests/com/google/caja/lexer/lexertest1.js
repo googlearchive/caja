@@ -16,11 +16,11 @@ but not logical ones';
 var s = "double quotes work inside strings too.\
 pretty well actually";
 
-// a line comment that oddly \
-spans multiple physical lines
+// a line comment that ends with a \
+'does not absorb the next line';
 
-/* multiline comments have
-   no need for such silliness */
+/* multiline comments also *\
+/ "don't care about backslash newline" */
 
 /*/ try and confuse the lexer
     with a star-slash before
@@ -45,14 +45,11 @@ foo2.bar = baz;
 
 .5  // a numeric token
 
-// test how line continuations affect punctuation
-1+\
-+2;
-// should parse as 1 + + 2, not 1 ++ 2;
+// javascript does not have line continuations.
 foo\
 bar;
 
-elipsis...;
+ellipsis...;
 
 /* and extending the example at line 30 " interleaved */ " */\
 "also /* " /* */

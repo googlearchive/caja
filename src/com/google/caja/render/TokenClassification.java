@@ -51,8 +51,6 @@ enum TokenClassification {
             return COMMENT;
           }
           if (ch1 == '/') {
-            // This would escape the following newline.
-            if (chLast == '\\') { throw new IllegalArgumentException(); }
             return COMMENT;
           }
           if (n > 2) {  // /= is 2 characters and / is 1

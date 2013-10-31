@@ -89,3 +89,18 @@ Block
       Block
         DirectivePrologue
           Directive : bogusburps
+  FunctionDeclaration
+    Identifier : directiveCannotHaveEscape
+    FunctionConstructor
+      Identifier : directiveCannotHaveEscape
+      Block
+        DirectivePrologue
+          Directive : use\x20strict
+  FunctionDeclaration
+    Identifier : directiveCannotHaveContinuation
+    FunctionConstructor
+      Identifier : directiveCannotHaveContinuation
+      Block
+        DirectivePrologue
+          Directive : use \
+strict

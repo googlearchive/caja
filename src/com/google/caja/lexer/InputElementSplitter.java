@@ -24,7 +24,7 @@ import com.google.caja.reporting.MessageType;
  * @author mikesamuel@gmail.com
  */
 final class InputElementSplitter extends AbstractTokenStream<JsTokenType> {
-  private final DecodingCharProducer p;
+  private final CharProducer p;
   /**
    * A trie used to split a chunk of text into punctuation tokens and
    * non-punctuation tokens.
@@ -49,7 +49,7 @@ final class InputElementSplitter extends AbstractTokenStream<JsTokenType> {
 
   public InputElementSplitter(CharProducer p, PunctuationTrie<?> punctuation,
                               boolean isQuasiliteral) {
-    this.p = lineContinuingCharProducer(p);
+    this.p = p;
     this.punctuation = punctuation;
     this.isQuasiliteral = isQuasiliteral;
   }
@@ -71,11 +71,6 @@ final class InputElementSplitter extends AbstractTokenStream<JsTokenType> {
     if (start < limit && JsLexer.isJsSpace(buf[start])) {
       ++start;
       while (start < limit && JsLexer.isJsSpace(buf[start])) {
-        if (tokenBreak(start)) {
-          p.consumeTo(start);
-          return Token.instance(
-              "\\", JsTokenType.LINE_CONTINUATION, p.getCurrentPosition());
-        }
         ++start;
       }
       p.consumeTo(start);
@@ -96,9 +91,8 @@ final class InputElementSplitter extends AbstractTokenStream<JsTokenType> {
           if (ch2 == ch && !escaped) {
             closed = true;
             break;
-          } else if (JsLexer.isJsLineSeparator(ch2)) {
+          } else if (!escaped && JsLexer.isJsLineSeparator(ch2)) {
             // will register as an unterminated string token below
-            break;
           }
           escaped = !escaped && ch2 == '\\';
         }
@@ -135,7 +129,7 @@ final class InputElementSplitter extends AbstractTokenStream<JsTokenType> {
                   ++end;
                   break;
                 } else {
-                  star = (ch2 == '*') && !tokenBreak(end);
+                  star = (ch2 == '*');
                 }
               }
               if (!closed) {
@@ -235,7 +229,7 @@ final class InputElementSplitter extends AbstractTokenStream<JsTokenType> {
             if (isQuasi && (ch2 == '*' || ch2 == '+' || ch2 == '?')) {
               ++end;
               break;
-            } else if (JsLexer.isJsSpace(ch2) || tokenBreak(end)
+            } else if (JsLexer.isJsSpace(ch2)
                 || '\'' == ch2 || '"' == ch2
                 || punctuation.contains(ch2)) {
               break;
@@ -306,64 +300,10 @@ final class InputElementSplitter extends AbstractTokenStream<JsTokenType> {
     while (end < limit) {
       char ch = buf[end];
       PunctuationTrie<?> t2 = t.lookup(ch);
-      if (null == t2 || !t2.isTerminal() || tokenBreak(end)) { break; }
+      if (null == t2 || !t2.isTerminal()) { break; }
       ++end;
       t = t2;
     }
     return end;
-  }
-
-  /**
-   * True if the given offset into p fell on a line continuation.
-   * This helps us distinguish between <pre>
-   * a++
-   * b
-   * </pre>
-   * and
-   * <pre>
-   * a+\
-   * +
-   * b
-   * </pre>
-   * where the fist is equivalent to <pre>{ a ++; b; }</pre> and the latter to
-   * <pre>{ (a + (+b)); }</pre>.
-   */
-  private boolean tokenBreak(int offset) {
-    if (offset == p.getLimit()) { return false; }
-    int nUnderlyingChars = (
-        p.getUnderlyingOffset(offset + 1) - p.getUnderlyingOffset(offset));
-    return nUnderlyingChars != 1;
-  }
-
-  DecodingCharProducer lineContinuingCharProducer(CharProducer p) {
-    return DecodingCharProducer.make(new DecodingCharProducer.Decoder() {
-      @Override
-      void decode(char[] chars, int offset, int limit) {
-        int end = offset;
-        while (end + 1 < limit
-               && chars[end] == '\\'
-               && (chars[end + 1] == '\r' || chars[end + 1] == '\n')) {
-          if (chars[end + 1] == '\r'
-              && chars[end + 2] < limit && chars[end + 2] == '\n') {
-            end += 3;
-          } else {
-            end += 2;
-          }
-        }
-        // TODO: can this first clause go away?
-        if (end == offset) {
-          this.end = offset + 1;
-          this.codePoint = chars[offset];
-        } else if (end <= limit) {  // Skipped one or more line continuations
-          this.end = end + 1;
-          this.codePoint = chars[end];
-        } else {
-          this.end = end;
-          // If a run of line escapes runs right up until the end-of-file,
-          // pretend there is a newline at the end of file.
-          this.codePoint = '\n';
-        }
-      }
-    }, p);
   }
 }
