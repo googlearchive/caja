@@ -1348,16 +1348,6 @@ var Domado = (function() {
     var JS_SPACE = '\t\n\r ';
     // An identifier that does not end with __.
     var JS_IDENT = '(?:[a-zA-Z_][a-zA-Z0-9$_]*[a-zA-Z0-9$]|[a-zA-Z])_?';
-    var SIMPLE_HANDLER_PATTERN = new RegExp(
-        '^[' + JS_SPACE + ']*'
-        + '(return[' + JS_SPACE + ']+)?'  // Group 1 is present if it returns.
-        + '(' + JS_IDENT + ')[' + JS_SPACE + ']*'  // Group 2 is a func name.
-        // Which can be passed optionally the event, and optionally this node.
-        + '\\((event'  // Group 3 is present if 1 arg
-          + '([' + JS_SPACE + ']*,[' + JS_SPACE + ']*this)?'  //Group 4 if 2 arg
-          + '[' + JS_SPACE + ']*)?\\)'
-        // And it can end with a semicolon.
-        + '[' + JS_SPACE + ']*(?:;?[' + JS_SPACE + ']*)$');
 
     // These id patterns match the ones in HtmlAttributeRewriter.
 
@@ -1437,7 +1427,7 @@ var Domado = (function() {
         if (action) {
           if (typeof action === 'function') {
             // OK
-          } else if (evalStrings && cajaVM.compileModule) {
+          } else if (evalStrings) {
             // Note specific ordering: coercion to string occurs at time of
             // call, syntax errors occur async.
             var code = '' + action;
@@ -2281,39 +2271,19 @@ var Domado = (function() {
             return null;
           case html4.atype.SCRIPT:
             value = String(value);
-            var fnNameExpr, doesReturn, argCount;
-            var match = value.match(SIMPLE_HANDLER_PATTERN);
-            if (match) {
-              // Translate a handler that calls a simple function like
-              //   return foo(this, event)
-              doesReturn = !!match[1];
-              fnNameExpr = '"' + match[2] + '"';
-                  // safe because match[2] must be an identifier
-              argCount =
-                  match[4] !== undefined ? 2 :
-                  match[3] !== undefined ? 1 : 0;
-            } else if (cajaVM.compileExpr) {
-              // Compile arbitrary handler code (only in SES mode)
-              doesReturn = true;
-              var handlerFn = cajaVM.compileExpr(
-                '(function(event) { ' + value + ' })'
-              )(tameWindow);
-              fnNameExpr = domicile.handlers.push(handlerFn) - 1;
-              argCount = 1;
-            } else {
-              if (typeof console !== 'undefined') {
-                console.log('Cannot emulate complex event handler ' + tagName +
-                    ' ' + attribName + '="' + value + '" in ES5/3 mode');
-              }
-              return "/*not supported*/";
-            }
-            var trustedHandler = (doesReturn ? 'return ' : '')
-                + '___.plugin_dispatchEvent___('
-                + 'this, event, ' + pluginId + ', '
-                + fnNameExpr + ', ' + argCount + ');';
+
+            var handlerFn = cajaVM.compileExpr(
+              '(function(event) { ' + value + ' })'
+            )(tameWindow);
+            var fnNameExpr = domicile.handlers.push(handlerFn) - 1;
+
+            var trustedHandler = '___.plugin_dispatchEvent___(this, event, ' +
+                pluginId + ', ' + fnNameExpr + ');';
             if (attribName === 'onsubmit') {
               trustedHandler =
                 'try { ' + trustedHandler + ' } finally { return false; }';
+            } else {
+              trustedHandler = 'return ' + trustedHandler;
             }
             return trustedHandler;
           case html4.atype.URI:
@@ -3631,9 +3601,7 @@ var Domado = (function() {
         ensureValidCallback(listener);
         function wrapper(event) {
           return plugin_dispatchEvent(
-              thisNode, event, getId(tameWindow), listener,
-              // indicate that we want an event argument only
-              1);
+              thisNode, event, getId(tameWindow), listener);
         }
         return wrapper;
       }
@@ -4679,31 +4647,11 @@ var Domado = (function() {
               // because it generates event-handler strings, not functions --
               // and for the TameWindow there is no real element to hang those
               // handler strings on. TODO(kpreid): refactor to fix that.
-              if (cajaVM.compileExpr) { // ES5 case: eval available
-                // Per http://www.whatwg.org/specs/web-apps/current-work/multipage/webappapis.html#event-handler-attributes
-                tameWindow[attribName] = cajaVM.compileExpr(
-                    'function cajaEventHandlerAttribFn_' + attribName +
-                    '(event) {\n' + value + '\n}')(tameWindow);
-              } else {
-                var match = value.match(SIMPLE_HANDLER_PATTERN);
-                if (!match) { return; }
-                //var doesReturn = match[1];  // not currently used
-                var fnName = match[2];
-                // TODO(kpreid): Synthesize a load event object.
-                // Select appropriate arguments
-                var wrapper;
-                if (match[3] !== undefined) {
-                  wrapper = function() {
-                      tameWindow[fnName].call(this, {}, this); };
-                } else if (match[2] !== undefined) {
-                  wrapper = function() {
-                    tameWindow[fnName].call(this, {}); };
-                } else {
-                  wrapper = function() {
-                    tameWindow[fnName].call(this); };
-                }
-                tameWindow[attribName] = wrapper;
-              }
+
+              // Per http://www.whatwg.org/specs/web-apps/current-work/multipage/webappapis.html#event-handler-attributes
+              tameWindow[attribName] = cajaVM.compileExpr(
+                  'function cajaEventHandlerAttribFn_' + attribName +
+                  '(event) {\n' + value + '\n}')(tameWindow);
             }
           }))
         }; }
@@ -7297,8 +7245,7 @@ var Domado = (function() {
     /**
      * Function called from rewritten event handlers to dispatch an event safely.
      */
-    function plugin_dispatchEvent(thisNode, event, pluginId, handler,
-          argCount) {
+    function plugin_dispatchEvent(thisNode, event, pluginId, handler) {
       var window = bridalMaker.getWindow(thisNode);
       event = event || window.event;
       // support currentTarget on IE[678]
@@ -7312,7 +7259,7 @@ var Domado = (function() {
       try {
         return dispatch(
           isUserAction, pluginId, handler,
-          [ node, domicile.tameEvent(event), node ].slice(0, argCount + 1));
+          [ node, domicile.tameEvent(event) ]);
       } catch (ex) {
         imports.onerror(ex.message, 'unknown', 0);
       }

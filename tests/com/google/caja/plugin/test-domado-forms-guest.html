@@ -188,10 +188,12 @@
         + '<input type="submit" value="Submit"></form>';
 
     // TODO(kpreid): This is matching implementation details. What do we
-    // actually want to test for here?
+    // actually want to test for here? At least:
+    // * autocomplete="off"
+    // * try/finally forcing false return value
     assertEquals('<form autocomplete="off" onsubmit="'
                  + 'try { ___.plugin_dispatchEvent___'
-                 + '(this, event, 0, &quot;foo&quot;, 0);'
+                 + '(this, event, 0, 0);'  // serial #s may change
                  + ' } finally { return false; }" target="_blank">'
                  + '<input autocomplete="off" type="submit" value="Submit">'
                  + '</form>',
