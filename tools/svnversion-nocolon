@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
 # A wrapper around 'svnversion' that removes the colons
-# and lowercases (appengine restrictions)
-svnversion | sed s/:/_/g | tr 'A-Z' 'a-z'
+# and lowercases (appengine restrictions) and canonicalizes
+# svn 1.7 "Unversioned directory" = svn 1.6 "exported"
+# to "unknown".
+svnversion | perl -pe '
+  s/^(Unversioned.*|Uncommitted.*|exported)$/unknown/;
+  s/:/_/g;
+  tr/A-Z/a-z/;
+'

@@ -1275,7 +1275,7 @@ For help on building and testing Caja, see:
     </copy>
     <replaceregexp
         flags="g"
-        match="(cajaBuildVersion\s*=|'cajolerVersion':)\s*'([\dmsp_]+|exported)'"
+        match="(cajaBuildVersion\s*=|'cajolerVersion':)\s*'([\dmsp_]+|unknown)'"
         replace="\1'0000'">
       <fileset dir="${war}/testing/skew-0000" includes="**/*.js"/>
     </replaceregexp>
@@ -1289,7 +1289,7 @@ For help on building and testing Caja, see:
     </copy>
     <replaceregexp
         flags="g"
-        match="(cajaBuildVersion\s*=|'cajolerVersion':)\s*'([\dmsp_]+|exported)'"
+        match="(cajaBuildVersion\s*=|'cajolerVersion':)\s*'([\dmsp_]+|unknown)'"
         replace="\1'${ver.mmm}'">
       <fileset dir="${war}/testing/skew-mmm" includes="**/*.js"/>
     </replaceregexp>
