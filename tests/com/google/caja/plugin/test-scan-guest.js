@@ -44,16 +44,8 @@
   var PLAIN_CALL = scanning.PLAIN_CALL;
   var getFunctionName = scanning.getFunctionName;
 
-  /** Fake evaluator for ES5/3 compatibility */
-  function simpleEval(env, expr) {
-    var match;
-    if ((match = /^(.*)\.([\w$]+)$/.exec(expr))) {
-      return simpleEval(env, match[1])[match[2]];
-    } else if ((match = /^([\w$]+)$/.exec(expr))) {
-      return env[match[1]];
-    } else {
-      throw new EvalError('simpleEval does not implement: ' + expr);
-    }
+  function evalInEnv(env, expr) {
+    return cajaVM.compileExpr(expr)(env);
   }
 
   function getPropertyDescriptor(object, prop) {
@@ -399,22 +391,20 @@
     function forEachFrame(code, callback) {
       // actually, any _should-be-visible_ frame, i.e. guest and taming.
 
-      // Note: Can't use evalInTamingFrame to get from the taming frame, because
-      // we want the ES5/3-virtualized view.
+      // TODO(kpreid): There are no longer ever distinct frames.
+      // Remove this logic unless we think we might want to reintroduce them
+      // (e.g. in the event of guest iframes?) or adapt the scanner to other
+      // applications.
+
       try {
         if (tamingEnv.Object !== window.Object) {
-          callback(simpleEval(tamingEnv, code));
-          callback(simpleEval(window, code));
+          callback(evalInEnv(tamingEnv, code));
+          callback(evalInEnv(window, code));
         } else {
-          callback(simpleEval(window, code));
+          callback(evalInEnv(window, code));
         }
       } catch (e) {
-        // ignore ES5/3 restriction
-        if (e.message !== 'Property name may not end in double underscore.') {
-          throw e;
-        } else {
-          return Ref.all();
-        }
+        return Ref.all();
       }
     }
     function RefAnyFrame(code) {
@@ -704,21 +694,12 @@
         G.value(undefined, 10, ejectFn1)));
     expectedAlwaysThrow.setByIdentity(cajaVM.eject, true);
 
-    argsByIdentity(cajaVM.enforce, genMethod( // ES5/3 only
-        G.value(function(){return false;},
-                function(){return true;}),
-        genString));
-    argsByIdentity(cajaVM.enforceNat, genMethod(genSmallInteger));  //ES5/3 only
-    argsByIdentity(cajaVM.Nat, genMethod(genNumber));  //SES only
-    argsByIdentity(cajaVM.enforceType, genMethod(genString, genTypeName));
-        //ES5/3 only
+    argsByIdentity(cajaVM.Nat, genMethod(genNumber));
     argsByIdentity(cajaVM['ev'+'al'], genMethod(genJS));
     argsByIdentity(cajaVM.confine, genMethod(genJS));
         // TODO(kpreid): provide opt_endowments arg and code which abuses it
     argsByIdentity(cajaVM.guard, G.none);
-    argsByIdentity(cajaVM.identity, genMethod(genString));  // ES5/3 only
     argsByIdentity(cajaVM.is, G.none);
-    argsByIdentity(cajaVM.isFunction, genMethod(genJSONValue));  // ES5/3 only
     argsByIdentity(cajaVM.log, genMethod(genString));
     argsByIdentity(cajaVM.manifest, genMethod());
     argsByIdentity(cajaVM.makeArrayLike, genMethod(genSmallInteger));
@@ -731,7 +712,6 @@
           return cajaVM.Trademark('foo').stamp;
         })), genFreshObject));
     argsByIdentity(cajaVM.tamperProof, G.none);
-    argsByIdentity(cajaVM.Token, genMethod(genString));  // ES5/3 only
     argsByIdentity(window.cajaHandleEmbed, G.none);  // TODO abuse
 
     // sealers
@@ -898,7 +878,7 @@
     argsByIdentity(parseFloat, genCall(genString));
     argsByIdentity(isFinite, genCall(genSmallInteger));
 
-    argsByIdentity(window.StringMap /* SES only */, annotate(
+    argsByIdentity(window.StringMap, annotate(
         freshResult(genAllCall()), function(context, thrown) {
       if (!thrown) {
         argsByIdentity(context.get().get, genMethod(genString));
@@ -1174,8 +1154,8 @@
       }
       if (object === currentArrayLike.prototype &&
           cajaVM.makeArrayLike.canBeFullyLive) {
-        // The SES or ES5/3 proxy-based ArrayLike implementation's prototype
-        // appears extensible because it is a proxy (with an unbounded set of
+        // The proxy-based ArrayLike implementation's prototype appears
+        // extensible because it is a proxy (with an unbounded set of
         // numeric properties).
         return true;
       }
@@ -1227,10 +1207,8 @@
       for (var obj = el;
            obj && getFunctionName(obj.constructor) !== 'Object';
            obj = Object.getPrototypeOf(obj)) {
-        if (obj.constructor) { // conditional to workaround Firefox+ES5/3 oddity
-          obtainInstance.define(obj.constructor, el);
-          argsByIdentity(obj.constructor, G.none);
-        }
+        obtainInstance.define(obj.constructor, el);
+        argsByIdentity(obj.constructor, G.none);
       }
     });
     obtainInstance.define(Function, dummyFunction);
@@ -1279,7 +1257,7 @@
       obtainInstance.define(ArrayBuffer, new ArrayBuffer(3));
       expectedUnfrozen.setByConstructor(ArrayBuffer, true);
       expectedUnfrozen.setByConstructor(
-          simpleEval(tamingEnv, 'ArrayBuffer'), true);
+          evalInEnv(tamingEnv, 'ArrayBuffer'), true);
 
       forEachFrame('Int8Array', function(arrayCtor) {
         // inert ctor we need to note
@@ -1428,16 +1406,13 @@
       directAccess.scrollToEnd();
     }
 
-    // ES5/3 has a separate taming frame and guest frames; ES5 currently does
-    // not.
+    // TODO(kpreid): ES5/3 legacy; see comments on forEachFrame.
     if (tamingEnv.Object !== Object) {
       // This ensures that taming-frame prototypes get meaningful names. It also
       // makes sure that its Object.prototype isn't found indirectly via the
       // .prototype.[[Prototype]] of some unfortunate function which doesn't
       // work very well as a ctor.
-      // String (wrapper) is included because it can be found in ES5/3 as
-      // Array.prototype.concat.call('foo', ...).
-      ['Object', 'Function', 'Array', 'String'].forEach(function(type) {
+      ['Object', 'Function', 'Array'].forEach(function(type) {
         var ctorC = Context.root(tamingEnv[type],
             '<taming env>.' + type,
             '<taming env>.' + type);

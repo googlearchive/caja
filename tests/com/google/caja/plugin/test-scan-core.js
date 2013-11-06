@@ -45,17 +45,8 @@ var scanning;  // exports
   }
 
   function isNativeFunction(f) {
-    try {
-      return (/^[^{}]*\{\s*\[native code\]\s*}\s*$/
-          .test(Function.prototype.toString.call(f)));
-    } catch (e) {
-      // ES5/3 Function.prototype is semi-toxic and throws in this case.
-      //
-      // Also, Function.prototype is not a native function in the sense we care
-      // about (it is exercised separately), and also does not throw, so we
-      // don't care about the return value.
-      return false;
-    }
+    return (/^[^{}]*\{\s*\[native code\]\s*}\s*$/
+        .test(Function.prototype.toString.call(f)));
   }
   // self-test
   isNativeFunction(Function.prototype);  // don't care, must not throw
@@ -245,7 +236,7 @@ var scanning;  // exports
     // Note: identityTable and prototypeTable are object-keyed maps; they don't
     // especially need to be weak (but that doesn't hurt either).
     var identityTable = new WeakMap();
-    var lastPathElementTable = {};
+    var lastPathElementTable = Object.create(null);
     var suffixTable = [];
     var prototypeTable = new WeakMap();
     var specialCases = [];
@@ -268,8 +259,7 @@ var scanning;  // exports
     }
 
     function setByPropertyName(name, value) {
-      // name mangled to protect against ES5/3 magic for 'toString' at least
-      lastPathElementTable[' ' + name] = value;
+      lastPathElementTable[name] = value;
     }
 
     function setByPathSuffix(name, value) {
@@ -307,9 +297,8 @@ var scanning;  // exports
       }
 
       if ((m = /\.([^.]+)$/.exec(path)) &&
-          Object.prototype.hasOwnProperty.call(lastPathElementTable,
-              ' ' + m[1])) {
-        return lastPathElementTable[' ' + m[1]];
+          Object.prototype.hasOwnProperty.call(lastPathElementTable, m[1])) {
+        return lastPathElementTable[m[1]];
       }
 
       if ((m = suffixTable.filter(function(record) {
