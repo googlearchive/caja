@@ -95,16 +95,12 @@ var ses;
     return node.type === 'CallExpression' && isId(node.callee);
   }
 
-  function parentNode(scope) {
-    return scope.path[scope.path.length - 2];
-  }
-
   /**
    * Rewrite func decls in place by appending assignments on the global object
    * turning expression "function x() {}" to
    * function x(){}; global.x = x;
    */
-  function rewriteFuncDecl(scope, node) {
+  function rewriteFuncDecl(scope, node, parentNode) {
     var exprNode = {
       'type': 'ExpressionStatement',
       'expression': {
@@ -114,7 +110,7 @@ var ses;
         'right': node.id
       }
     };
-    var body = parentNode(scope).body;
+    var body = parentNode.body;
     var currentIdx = body.indexOf(node);
     var nextIdx = currentIdx + 1;
 
@@ -131,7 +127,7 @@ var ses;
    * initializer "for (var x = 1;;) {}" into an expression:
    * "for (this.x = this.x, this.x = 1;;) {}"
    */
-  function rewriteVars(scope, node) {
+  function rewriteVars(scope, node, parentNode) {
 
     // TODO(jasvir): Consider mitigating top-level vars in for..in
     // loops.  We currently do not support rewriting var declarations
@@ -141,7 +137,7 @@ var ses;
 
     // We can support rewriting these vars iff requested.
 
-    if (parentNode(scope).type === 'ForInStatement') {
+    if (parentNode.type === 'ForInStatement') {
       return;
     }
     var assignments = [];
@@ -161,7 +157,7 @@ var ses;
         });
       }
     });
-    if (parentNode(scope).type === 'ForStatement') {
+    if (parentNode.type === 'ForStatement') {
       node.type = 'SequenceExpression';
       node.expressions = assignments;
     } else {
@@ -299,12 +295,10 @@ var ses;
 
   function rewrite(scope, node) {
     ses.rewriter_.traverse(node, {
-      enter: function enter(node) {
-          scope.path.push(node);
-
+      enter: function enter(node, parentNode) {
           if (scope.options.rewriteTopLevelFuncs &&
               isFunctionDecl(node) && scope.scopeLevel === 0) {
-            rewriteFuncDecl(scope, node);
+            rewriteFuncDecl(scope, node, parentNode);
             scope.dirty = true;
           } else if (scope.options.rewriteTypeOf &&
               isTypeOf(node) && isId(node.argument)) {
@@ -312,7 +306,7 @@ var ses;
             scope.dirty = true;
           } else if (scope.options.rewriteTopLevelVars &&
                      isVariableDecl(node) && scope.scopeLevel === 0) {
-            rewriteVars(scope, node);
+            rewriteVars(scope, node, parentNode);
             scope.dirty = true;
           } else if (scope.options.rewriteFunctionCalls &&
                      isFunctionCall(node)) {
@@ -334,10 +328,6 @@ var ses;
           }
       },
       leave: function leave(node) {
-          var last = scope.path.pop();
-          if (node !== last) {
-            throw new Error('Internal error traversing the AST');
-          }
           if (introducesVarScope(node)) {
             scope.scopeLevel--;
           }
@@ -351,10 +341,12 @@ var ses;
       var scope = {
         options: options,
         dirty: false,
-        path: [],
         scopeLevel: 0
       };
       rewrite(scope, ast);
+      if (scope.scopeLevel !== 0) {
+        throw new Error('Internal error traversing the AST');
+      }
       return scope.dirty;
     } else {
       return false;
