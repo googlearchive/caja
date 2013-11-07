@@ -14,10 +14,23 @@
 
 /**
  * @fileoverview
- * Creates an export object so that subsequent loads do not pollute
- * the global namespace
+ * Trivial shim for mitigateGotchas's dependencies' module exports.
+ *
+ * This fails to be a proper loader in that it gives all the modules a single
+ * exports object, conflating their namespaces; this just happens to work for
+ * the case we care about. If we start doing anything remotely more interesting
+ * we should be more correct about it, perhaps using the makeSimpleAMDLoader
+ * already available.
  *
  * @author jasvir@gmail.com
- * \@provides exports
+ * @author kpreid@switchb.org
+ * \@provides exports, require, define
  */
 var exports = {};
+function require(name) {
+  return exports;
+}
+function define(d, f) {
+  f(exports);
+}
+define.amd = true;

@@ -1,12 +1,13 @@
 /*
-  Copyright (C) 2012 Michael Ficarra <escodegen.copyright@michael.ficarra.me>
+  Copyright (C) 2012-2013 Yusuke Suzuki <utatane.tea@gmail.com>
+  Copyright (C) 2012-2013 Michael Ficarra <escodegen.copyright@michael.ficarra.me>
+  Copyright (C) 2012-2013 Mathias Bynens <mathias@qiwi.be>
+  Copyright (C) 2013 Irakli Gozalishvili <rfobic@gmail.com>
   Copyright (C) 2012 Robert Gust-Bardon <donate@robert.gust-bardon.org>
   Copyright (C) 2012 John Freeman <jfreeman08@gmail.com>
   Copyright (C) 2011-2012 Ariya Hidayat <ariya.hidayat@gmail.com>
-  Copyright (C) 2012 Mathias Bynens <mathias@qiwi.be>
   Copyright (C) 2012 Joost-Wim Boekesteijn <joost-wim@boekesteijn.nl>
   Copyright (C) 2012 Kris Kowal <kris.kowal@cixar.com>
-  Copyright (C) 2012 Yusuke Suzuki <utatane.tea@gmail.com>
   Copyright (C) 2012 Arpad Borsos <arpad.borsos@googlemail.com>
 
   Redistribution and use in source and binary forms, with or without
@@ -30,33 +31,16 @@
   THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/*jslint bitwise:true */
-/*global escodegen:true, exports:true, generateStatement:true, generateExpression:true, generateFunctionBody:true, process:true, require:true, define:true*/
-
-(function (factory, global) {
-    'use strict';
-
-    // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js,
-    // and plain browser loading,
-    if (typeof define === 'function' && define.amd) {
-        define(['exports'], function (exports) {
-            factory(exports, global);
-        });
-    } else if (typeof exports !== 'undefined') {
-        factory(exports, global);
-    } else {
-        factory((global.escodegen = {}), global);
-    }
-}(function (exports, global) {
+/*global exports:true, generateStatement:true, generateExpression:true, require:true, global:true*/
+(function () {
     'use strict';
 
     var Syntax,
         Precedence,
         BinaryPrecedence,
         Regex,
-        VisitorKeys,
-        VisitorOption,
         SourceNode,
+        estraverse,
         isArray,
         base,
         indent,
@@ -73,12 +57,17 @@
         directive,
         extra,
         parse,
-        sourceMap;
+        sourceMap,
+        FORMAT_MINIFY,
+        FORMAT_DEFAULTS;
+
+    estraverse = require('estraverse');
 
     Syntax = {
         AssignmentExpression: 'AssignmentExpression',
         ArrayExpression: 'ArrayExpression',
         ArrayPattern: 'ArrayPattern',
+        ArrowFunctionExpression: 'ArrowFunctionExpression',
         BlockStatement: 'BlockStatement',
         BinaryExpression: 'BinaryExpression',
         BreakStatement: 'BreakStatement',
@@ -129,6 +118,7 @@
         Sequence: 0,
         Assignment: 1,
         Conditional: 2,
+        ArrowFunction: 2,
         LogicalOR: 3,
         LogicalAND: 4,
         BitwiseOR: 5,
@@ -304,37 +294,12 @@
     };
 
     function hasLineTerminator(str) {
-        return /[\r\n]/g.test(str);
+        return (/[\r\n]/g).test(str);
     }
 
     function endsWithLineTerminator(str) {
         var ch = str.charAt(str.length - 1);
         return ch === '\r' || ch === '\n';
-    }
-
-    function shallowCopy(obj) {
-        var ret = {}, key;
-        for (key in obj) {
-            if (obj.hasOwnProperty(key)) {
-                ret[key] = obj[key];
-            }
-        }
-        return ret;
-    }
-
-    function deepCopy(obj) {
-        var ret = {}, key, val;
-        for (key in obj) {
-            if (obj.hasOwnProperty(key)) {
-                val = obj[key];
-                if (typeof val === 'object' && val !== null) {
-                    ret[key] = deepCopy(val);
-                } else {
-                    ret[key] = val;
-                }
-            }
-        }
-        return ret;
     }
 
     function updateDeeply(target, override) {
@@ -416,6 +381,67 @@
         return result;
     }
 
+    // Generate valid RegExp expression.
+    // This function is based on https://github.com/Constellation/iv Engine
+
+    function escapeRegExpCharacter(ch, previousIsBackslash) {
+        // not handling '\' and handling \u2028 or \u2029 to unicode escape sequence
+        if ((ch & ~1) === 0x2028) {
+            return (previousIsBackslash ? 'u' : '\\u') + ((ch === 0x2028) ? '2028' : '2029');
+        } else if (ch === 10 || ch === 13) {  // \n, \r
+            return (previousIsBackslash ? '' : '\\') + ((ch === 10) ? 'n' : 'r');
+        }
+        return String.fromCharCode(ch);
+    }
+
+    function generateRegExp(reg) {
+        var match, result, flags, i, iz, ch, characterInBrack, previousIsBackslash;
+
+        result = reg.toString();
+
+        if (reg.source) {
+            // extract flag from toString result
+            match = result.match(/\/([^/]*)$/);
+            if (!match) {
+                return result;
+            }
+
+            flags = match[1];
+            result = '';
+
+            characterInBrack = false;
+            previousIsBackslash = false;
+            for (i = 0, iz = reg.source.length; i < iz; ++i) {
+                ch = reg.source.charCodeAt(i);
+
+                if (!previousIsBackslash) {
+                    if (characterInBrack) {
+                        if (ch === 93) {  // ]
+                            characterInBrack = false;
+                        }
+                    } else {
+                        if (ch === 47) {  // /
+                            result += '\\';
+                        } else if (ch === 91) {  // [
+                            characterInBrack = true;
+                        }
+                    }
+                    result += escapeRegExpCharacter(ch, previousIsBackslash);
+                    previousIsBackslash = ch === 92;  // \
+                } else {
+                    // if new RegExp("\\\n') is provided, create /\n/
+                    result += escapeRegExpCharacter(ch, previousIsBackslash);
+                    // prevent like /\\[/]/
+                    previousIsBackslash = false;
+                }
+            }
+
+            return '/' + result + '/' + flags;
+        }
+
+        return result;
+    }
+
     function escapeAllowedCharacter(ch, next) {
         var code = ch.charCodeAt(0), hex = code.toString(16), result = '\\';
 
@@ -434,8 +460,8 @@
                 result += 'u' + '0000'.slice(hex.length) + hex;
             } else if (ch === '\u0000' && '0123456789'.indexOf(next) < 0) {
                 result += '0';
-            } else if (ch === '\v') {
-                result += 'v';
+            } else if (ch === '\x0B') { // '\v'
+                result += 'x0B';
             } else {
                 result += 'x' + '00'.slice(hex.length) + hex;
             }
@@ -471,7 +497,7 @@
     }
 
     function escapeDirective(str) {
-        var i, iz, ch, single, buf, quote;
+        var i, iz, ch, buf, quote;
 
         buf = str;
         if (typeof buf[0] === 'undefined') {
@@ -496,7 +522,7 @@
     }
 
     function escapeString(str) {
-        var result = '', i, len, ch, next, singleQuotes = 0, doubleQuotes = 0, single;
+        var result = '', i, len, ch, singleQuotes = 0, doubleQuotes = 0, single;
 
         if (typeof str[0] === 'undefined') {
             str = stringToArray(str);
@@ -540,7 +566,8 @@
     }
 
     function isWhiteSpace(ch) {
-        return '\t\v\f \xa0'.indexOf(ch) >= 0 || (ch.charCodeAt(0) >= 0x1680 && '\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\ufeff'.indexOf(ch) >= 0);
+        // Use `\x0B` instead of `\v` for IE < 9 compatibility
+        return '\t\x0B\f \xa0'.indexOf(ch) >= 0 || (ch.charCodeAt(0) >= 0x1680 && '\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\ufeff'.indexOf(ch) >= 0);
     }
 
     function isLineTerminator(ch) {
@@ -554,6 +581,11 @@
             ((ch.charCodeAt(0) >= 0x80) && Regex.NonAsciiIdentifierPart.test(ch));
     }
 
+    // takes char code
+    function isDecimalDigit(ch) {
+        return (ch >= 48 && ch <= 57);   // 0..9
+    }
+
     function toSourceNode(generated, node) {
         if (node == null) {
             if (generated instanceof SourceNode) {
@@ -563,9 +595,9 @@
             }
         }
         if (node.loc == null) {
-            return new SourceNode(null, null, sourceMap, generated);
+            return new SourceNode(null, null, sourceMap, generated, node.name || null);
         }
-        return new SourceNode(node.loc.start.line, node.loc.start.column, (sourceMap === true ? node.loc.source || null : sourceMap), generated);
+        return new SourceNode(node.loc.start.line, node.loc.start.column, (sourceMap === true ? node.loc.source || null : sourceMap), generated, node.name || null);
     }
 
     function join(left, right) {
@@ -574,7 +606,9 @@
             leftChar = leftSource.charAt(leftSource.length - 1),
             rightChar = rightSource.charAt(0);
 
-        if (((leftChar === '+' || leftChar === '-') && leftChar === rightChar) || (isIdentifierPart(leftChar) && isIdentifierPart(rightChar))) {
+        if ((leftChar === '+' || leftChar === '-') && leftChar === rightChar ||
+        isIdentifierPart(leftChar) && isIdentifierPart(rightChar) ||
+        leftChar === '/' && rightChar === 'i') { // infix word operators all start with `i`
             return [left, ' ', right];
         } else if (isWhiteSpace(leftChar) || isLineTerminator(leftChar) || isWhiteSpace(rightChar) || isLineTerminator(rightChar)) {
             return [left, right];
@@ -606,7 +640,7 @@
     }
 
     function adjustMultilineComment(value, specialBase) {
-        var array, i, len, line, j, ch, spaces, previousBase;
+        var array, i, len, line, j, spaces, previousBase;
 
         array = value.split(/\r\n|[\r\n]/);
         spaces = Number.MAX_VALUE;
@@ -672,7 +706,7 @@
     }
 
     function addCommentsToStatement(stmt, result) {
-        var i, len, comment, save, node, tailingToStatement, specialBase, fragment;
+        var i, len, comment, save, tailingToStatement, specialBase, fragment;
 
         if (stmt.leadingComments && stmt.leadingComments.length > 0) {
             save = result;
@@ -778,16 +812,32 @@
         return toSourceNode(result, expr);
     }
 
+    function generateIdentifier(node) {
+        return toSourceNode(node.name, node);
+    }
+
     function generateFunctionBody(node) {
-        var result, i, len, expr;
-        result = ['('];
-        for (i = 0, len = node.params.length; i < len; i += 1) {
-            result.push(node.params[i].name);
-            if (i + 1 < len) {
-                result.push(',' + space);
+        var result, i, len, expr, arrow;
+
+        arrow = node.type === Syntax.ArrowFunctionExpression;
+
+        if (arrow && node.params.length === 1 && node.params[0].type === Syntax.Identifier) {
+            // arg => { } case
+            result = [generateIdentifier(node.params[0])];
+        } else {
+            result = ['('];
+            for (i = 0, len = node.params.length; i < len; i += 1) {
+                result.push(generateIdentifier(node.params[i]));
+                if (i + 1 < len) {
+                    result.push(',' + space);
+                }
             }
+            result.push(')');
         }
-        result.push(')');
+
+        if (arrow) {
+            result.push(space, '=>');
+        }
 
         if (node.expression) {
             result.push(space);
@@ -807,7 +857,22 @@
     }
 
     function generateExpression(expr, option) {
-        var result, precedence, type, currentPrecedence, i, len, raw, fragment, multiline, leftChar, leftSource, rightChar, rightSource, allowIn, allowCall, allowUnparenthesizedNew, property, key, value;
+        var result,
+            precedence,
+            type,
+            currentPrecedence,
+            i,
+            len,
+            raw,
+            fragment,
+            multiline,
+            leftChar,
+            leftSource,
+            rightChar,
+            allowIn,
+            allowCall,
+            allowUnparenthesizedNew,
+            property;
 
         precedence = option.precedence;
         allowIn = option.allowIn;
@@ -856,6 +921,11 @@
             );
             break;
 
+        case Syntax.ArrowFunctionExpression:
+            allowIn |= (Precedence.ArrowFunction < precedence);
+            result = parenthesize(generateFunctionBody(expr), Precedence.ArrowFunction, precedence);
+            break;
+
         case Syntax.ConditionalExpression:
             allowIn |= (Precedence.Conditional < precedence);
             result = parenthesize(
@@ -889,14 +959,19 @@
 
             allowIn |= (currentPrecedence < precedence);
 
-            result = join(
-                generateExpression(expr.left, {
-                    precedence: currentPrecedence,
-                    allowIn: allowIn,
-                    allowCall: true
-                }),
-                expr.operator
-            );
+            fragment = generateExpression(expr.left, {
+                precedence: currentPrecedence,
+                allowIn: allowIn,
+                allowCall: true
+            });
+
+            leftSource = fragment.toString();
+
+            if (leftSource.charAt(leftSource.length - 1) === '/' && isIdentifierPart(expr.operator.charAt(0))) {
+                result = [fragment, ' ', expr.operator];
+            } else {
+                result = join(fragment, expr.operator);
+            }
 
             fragment = generateExpression(expr.right, {
                 precedence: currentPrecedence + 1,
@@ -904,7 +979,8 @@
                 allowCall: true
             });
 
-            if (expr.operator === '/' && fragment.toString().charAt(0) === '/') {
+            if (expr.operator === '/' && fragment.toString().charAt(0) === '/' ||
+            expr.operator.slice(-1) === '<' && fragment.toString().slice(0, 3) === '!--') {
                 // If '/' concats with '/', it is interpreted as comment start
                 result.push(' ', fragment);
             } else {
@@ -995,13 +1071,23 @@
                 }), ']');
             } else {
                 if (expr.object.type === Syntax.Literal && typeof expr.object.value === 'number') {
-                    if (result.indexOf('.') < 0) {
-                        if (!/[eExX]/.test(result) && !(result.length >= 2 && result[0] === '0')) {
-                            result.push('.');
-                        }
+                    fragment = toSourceNode(result).toString();
+                    // When the following conditions are all true,
+                    //   1. No floating point
+                    //   2. Don't have exponents
+                    //   3. The last character is a decimal digit
+                    //   4. Not hexadecimal OR octal number literal
+                    // we should add a floating point.
+                    if (
+                            fragment.indexOf('.') < 0 &&
+                            !/[eExX]/.test(fragment) &&
+                            isDecimalDigit(fragment.charCodeAt(fragment.length - 1)) &&
+                            !(fragment.length >= 2 && fragment.charCodeAt(0) === 48)  // '0'
+                            ) {
+                        result.push('.');
                     }
                 }
-                result.push('.' + expr.property.name);
+                result.push('.', generateIdentifier(expr.property));
             }
 
             result = parenthesize(result, Precedence.Member, precedence);
@@ -1089,13 +1175,15 @@
 
         case Syntax.FunctionExpression:
             result = 'function';
+
             if (expr.id) {
-                result += ' ' + expr.id.name;
+                result = [result + ' ',
+                          generateIdentifier(expr.id),
+                          generateFunctionBody(expr)];
             } else {
-                result += space;
+                result = [result + space, generateFunctionBody(expr)];
             }
 
-            result = [result, generateFunctionBody(expr)];
             break;
 
         case Syntax.ArrayPattern:
@@ -1186,7 +1274,7 @@
             }
             multiline = expr.properties.length > 1;
 
-            withIndent(function (indent) {
+            withIndent(function () {
                 fragment = generateExpression(expr.properties[0], {
                     precedence: Precedence.Sequence,
                     allowIn: true,
@@ -1282,7 +1370,7 @@
             break;
 
         case Syntax.Identifier:
-            result = expr.name;
+            result = generateIdentifier(expr);
             break;
 
         case Syntax.Literal:
@@ -1315,7 +1403,12 @@
                 break;
             }
 
-            result = expr.value.toString();
+            if (typeof expr.value === 'boolean') {
+                result = expr.value ? 'true' : 'false';
+                break;
+            }
+
+            result = generateRegExp(expr.value);
             break;
 
         case Syntax.ComprehensionExpression:
@@ -1498,7 +1591,8 @@
             })];
             // 12.4 '{', 'function' is not allowed in this position.
             // wrap expression with parentheses
-            if (result.toString().charAt(0) === '{' || (result.toString().slice(0, 8) === 'function' && " (".indexOf(result.toString().charAt(8)) >= 0) || (directive && directiveContext && stmt.expression.type === Syntax.Literal && typeof stmt.expression.value === 'string')) {
+            fragment = toSourceNode(result).toString();
+            if (fragment.charAt(0) === '{' || (fragment.slice(0, 8) === 'function' && ' ('.indexOf(fragment.charAt(8)) >= 0) || (directive && directiveContext && stmt.expression.type === Syntax.Literal && typeof stmt.expression.value === 'string')) {
                 result = ['(', result, ')' + semicolon];
             } else {
                 result.push(semicolon);
@@ -1512,7 +1606,10 @@
                         precedence: Precedence.Assignment,
                         allowIn: allowIn,
                         allowCall: true
-                    }) + space + '=' + space,
+                    }),
+                    space,
+                    '=',
+                    space,
                     generateExpression(stmt.init, {
                         precedence: Precedence.Assignment,
                         allowIn: allowIn,
@@ -1520,7 +1617,7 @@
                     })
                 ];
             } else {
-                result = stmt.id.name;
+                result = generateIdentifier(stmt.id);
             }
             break;
 
@@ -1581,10 +1678,28 @@
         case Syntax.TryStatement:
             result = ['try', maybeBlock(stmt.block)];
             result = maybeBlockSuffix(stmt.block, result);
-            for (i = 0, len = stmt.handlers.length; i < len; i += 1) {
-                result = join(result, generateStatement(stmt.handlers[i]));
-                if (stmt.finalizer || i + 1 !== len) {
-                    result = maybeBlockSuffix(stmt.handlers[i].body, result);
+            if (stmt.handlers) {
+                // old interface
+                for (i = 0, len = stmt.handlers.length; i < len; i += 1) {
+                    result = join(result, generateStatement(stmt.handlers[i]));
+                    if (stmt.finalizer || i + 1 !== len) {
+                        result = maybeBlockSuffix(stmt.handlers[i].body, result);
+                    }
+                }
+            } else {
+                // new interface
+                if (stmt.handler) {
+                    result = join(result, generateStatement(stmt.handler));
+                    if (stmt.finalizer || stmt.guardedHandlers.length > 0) {
+                        result = maybeBlockSuffix(stmt.handler.body, result);
+                    }
+                }
+
+                for (i = 0, len = stmt.guardedHandlers.length; i < len; i += 1) {
+                    result = join(result, generateStatement(stmt.guardedHandlers[i]));
+                    if (stmt.finalizer || i + 1 !== len) {
+                        result = maybeBlockSuffix(stmt.guardedHandlers[i].body, result);
+                    }
                 }
             }
             if (stmt.finalizer) {
@@ -1771,7 +1886,9 @@
             break;
 
         case Syntax.FunctionDeclaration:
-            result = [(stmt.generator && !extra.moz.starlessGenerator ? 'function* ' : 'function ') + stmt.id.name, generateFunctionBody(stmt)];
+            result = [(stmt.generator && !extra.moz.starlessGenerator ? 'function* ' : 'function '),
+                      generateIdentifier(stmt.id),
+                      generateFunctionBody(stmt)];
             break;
 
         case Syntax.ReturnStatement:
@@ -1885,8 +2002,9 @@
         extra = options;
 
         if (sourceMap) {
-            if (typeof process !== 'undefined') {
+            if (!exports.browser) {
                 // We assume environment is node.js
+                // And prevent from including source-map by browserify
                 SourceNode = require('source-map').SourceNode;
             } else {
                 SourceNode = global.sourceMap.SourceNode;
@@ -1960,7 +2078,7 @@
         }
 
         pair = result.toStringWithSourceMap({
-            file: options.sourceMap,
+            file: options.file,
             sourceRoot: options.sourceMapRoot
         });
 
@@ -1970,283 +2088,27 @@
         return pair.map.toString();
     }
 
-    // simple visitor implementation
-
-    VisitorKeys = {
-        AssignmentExpression: ['left', 'right'],
-        ArrayExpression: ['elements'],
-        ArrayPattern: ['elements'],
-        BlockStatement: ['body'],
-        BinaryExpression: ['left', 'right'],
-        BreakStatement: ['label'],
-        CallExpression: ['callee', 'arguments'],
-        CatchClause: ['param', 'body'],
-        ConditionalExpression: ['test', 'consequent', 'alternate'],
-        ContinueStatement: ['label'],
-        DirectiveStatement: [],
-        DoWhileStatement: ['body', 'test'],
-        DebuggerStatement: [],
-        EmptyStatement: [],
-        ExpressionStatement: ['expression'],
-        ForStatement: ['init', 'test', 'update', 'body'],
-        ForInStatement: ['left', 'right', 'body'],
-        FunctionDeclaration: ['id', 'params', 'body'],
-        FunctionExpression: ['id', 'params', 'body'],
-        Identifier: [],
-        IfStatement: ['test', 'consequent', 'alternate'],
-        Literal: [],
-        LabeledStatement: ['label', 'body'],
-        LogicalExpression: ['left', 'right'],
-        MemberExpression: ['object', 'property'],
-        NewExpression: ['callee', 'arguments'],
-        ObjectExpression: ['properties'],
-        ObjectPattern: ['properties'],
-        Program: ['body'],
-        Property: ['key', 'value'],
-        ReturnStatement: ['argument'],
-        SequenceExpression: ['expressions'],
-        SwitchStatement: ['discriminant', 'cases'],
-        SwitchCase: ['test', 'consequent'],
-        ThisExpression: [],
-        ThrowStatement: ['argument'],
-        TryStatement: ['block', 'handlers', 'finalizer'],
-        UnaryExpression: ['argument'],
-        UpdateExpression: ['argument'],
-        VariableDeclaration: ['declarations'],
-        VariableDeclarator: ['id', 'init'],
-        WhileStatement: ['test', 'body'],
-        WithStatement: ['object', 'body'],
-        YieldExpression: ['argument']
+    FORMAT_MINIFY = {
+        indent: {
+            style: '',
+            base: 0
+        },
+        renumber: true,
+        hexadecimal: true,
+        quotes: 'auto',
+        escapeless: true,
+        compact: true,
+        parentheses: false,
+        semicolons: false
     };
 
-    VisitorOption = {
-        Break: 1,
-        Skip: 2
-    };
+    FORMAT_DEFAULTS = getDefaultOptions().format;
 
-    function traverse(top, visitor) {
-        var worklist, leavelist, node, ret, current, current2, candidates, candidate, marker = {};
-
-        worklist = [ top ];
-        leavelist = [ null ];
-
-        while (worklist.length) {
-            node = worklist.pop();
-
-            if (node === marker) {
-                node = leavelist.pop();
-                if (visitor.leave) {
-                    ret = visitor.leave(node, leavelist[leavelist.length - 1]);
-                } else {
-                    ret = undefined;
-                }
-                if (ret === VisitorOption.Break) {
-                    return;
-                }
-            } else if (node) {
-                if (visitor.enter) {
-                    ret = visitor.enter(node, leavelist[leavelist.length - 1]);
-                } else {
-                    ret = undefined;
-                }
-
-                if (ret === VisitorOption.Break) {
-                    return;
-                }
-
-                worklist.push(marker);
-                leavelist.push(node);
-
-                if (ret !== VisitorOption.Skip) {
-                    candidates = VisitorKeys[node.type];
-                    current = candidates.length;
-                    while ((current -= 1) >= 0) {
-                        candidate = node[candidates[current]];
-                        if (candidate) {
-                            if (isArray(candidate)) {
-                                current2 = candidate.length;
-                                while ((current2 -= 1) >= 0) {
-                                    if (candidate[current2]) {
-                                        worklist.push(candidate[current2]);
-                                    }
-                                }
-                            } else {
-                                worklist.push(candidate);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // based on LLVM libc++ upper_bound / lower_bound
-    // MIT License
-
-    function upperBound(array, func) {
-        var diff, len, i, current;
-
-        len = array.length;
-        i = 0;
-
-        while (len) {
-            diff = len >>> 1;
-            current = i + diff;
-            if (func(array[current])) {
-                len = diff;
-            } else {
-                i = current + 1;
-                len -= diff + 1;
-            }
-        }
-        return i;
-    }
-
-    function lowerBound(array, func) {
-        var diff, len, i, current;
-
-        len = array.length;
-        i = 0;
-
-        while (len) {
-            diff = len >>> 1;
-            current = i + diff;
-            if (func(array[current])) {
-                i = current + 1;
-                len -= diff + 1;
-            } else {
-                len = diff;
-            }
-        }
-        return i;
-    }
-
-    function extendCommentRange(comment, tokens) {
-        var target, token;
-
-        target = upperBound(tokens, function search(token) {
-            return token.range[0] > comment.range[0];
-        });
-
-        comment.extendedRange = [comment.range[0], comment.range[1]];
-
-        if (target !== tokens.length) {
-            comment.extendedRange[1] = tokens[target].range[0];
-        }
-
-        target -= 1;
-        if (target >= 0) {
-            if (target < tokens.length) {
-                comment.extendedRange[0] = tokens[target].range[1];
-            } else if (token.length) {
-                comment.extendedRange[1] = tokens[tokens.length - 1].range[0];
-            }
-        }
-
-        return comment;
-    }
-
-    function attachComments(tree, providedComments, tokens) {
-        // At first, we should calculate extended comment ranges.
-        var comments = [], comment, len, i;
-
-        if (!tree.range) {
-            throw new Error('attachComments needs range information');
-        }
-
-        // tokens array is empty, we attach comments to tree as 'leadingComments'
-        if (!tokens.length) {
-            if (providedComments.length) {
-                for (i = 0, len = providedComments.length; i < len; i += 1) {
-                    comment = deepCopy(providedComments[i]);
-                    comment.extendedRange = [0, tree.range[0]];
-                    comments.push(comment);
-                }
-                tree.leadingComments = comments;
-            }
-            return tree;
-        }
-
-        for (i = 0, len = providedComments.length; i < len; i += 1) {
-            comments.push(extendCommentRange(deepCopy(providedComments[i]), tokens));
-        }
-
-        // This is based on John Freeman's implementation.
-        traverse(tree, {
-            cursor: 0,
-            enter: function (node) {
-                var comment;
-
-                while (this.cursor < comments.length) {
-                    comment = comments[this.cursor];
-                    if (comment.extendedRange[1] > node.range[0]) {
-                        break;
-                    }
-
-                    if (comment.extendedRange[1] === node.range[0]) {
-                        if (!node.leadingComments) {
-                            node.leadingComments = [];
-                        }
-                        node.leadingComments.push(comment);
-                        comments.splice(this.cursor, 1);
-                    } else {
-                        this.cursor += 1;
-                    }
-                }
-
-                // already out of owned node
-                if (this.cursor === comments.length) {
-                    return VisitorOption.Break;
-                }
-
-                if (comments[this.cursor].extendedRange[0] > node.range[1]) {
-                    return VisitorOption.Skip;
-                }
-            }
-        });
-
-        traverse(tree, {
-            cursor: 0,
-            leave: function (node) {
-                var comment;
-
-                while (this.cursor < comments.length) {
-                    comment = comments[this.cursor];
-                    if (node.range[1] < comment.extendedRange[0]) {
-                        break;
-                    }
-
-                    if (node.range[1] === comment.extendedRange[0]) {
-                        if (!node.trailingComments) {
-                            node.trailingComments = [];
-                        }
-                        node.trailingComments.push(comment);
-                        comments.splice(this.cursor, 1);
-                    } else {
-                        this.cursor += 1;
-                    }
-                }
-
-                // already out of owned node
-                if (this.cursor === comments.length) {
-                    return VisitorOption.Break;
-                }
-
-                if (comments[this.cursor].extendedRange[0] > node.range[1]) {
-                    return VisitorOption.Skip;
-                }
-            }
-        });
-
-        return tree;
-    }
-
-    // Sync with package.json.
-    exports.version = '0.0.16-dev';
-
+    exports.version = require('./package.json').version;
     exports.generate = generate;
-    exports.traverse = traverse;
-    exports.attachComments = attachComments;
-
-}, this));
+    exports.attachComments = estraverse.attachComments;
+    exports.browser = false;
+    exports.FORMAT_MINIFY = FORMAT_MINIFY;
+    exports.FORMAT_DEFAULTS = FORMAT_DEFAULTS;
+}());
 /* vim: set sw=4 ts=4 et tw=80 : */

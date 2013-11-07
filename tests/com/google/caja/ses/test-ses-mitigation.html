@@ -23,18 +23,14 @@
     <script type="text/javascript" src="/ant-lib/com/google/caja/console.js"></script>
     <script type="text/javascript" src="../plugin/jsUnitCore.js"></script>
     <script type="text/javascript" src="../plugin/jsunit.js"></script>
-    <script type="text/javascript" src="/ant-testlib/js/acorn/acorn.js"></script>
-    <script type="text/javascript" src="/ant-testlib/js/escodegen/escodegen.js"></script>
-    <script type="text/javascript" src="/ant-testlib/js/escodegen/estraverse.js"></script>
-    <script type="text/javascript">
-      window.ses = {
-        rewriter_: {
-          parse: acorn.parse,
-          traverse: escodegen.traverse,
-          generate: escodegen.generate
-        }
-      };
-    </script>
+
+    <!-- createExports / exportsToSES glue up the modules -->
+    <script type="text/javascript" src="createExports.js"></script>
+      <script type="text/javascript" src="/ant-testlib/js/acorn/acorn.js"></script>
+      <script type="text/javascript" src="/ant-testlib/js/escodegen/escodegen.js"></script>
+      <script type="text/javascript" src="/ant-testlib/js/escodegen/estraverse.js"></script>
+    <script type="text/javascript" src="exportsToSES.js"></script>
+
     <script type="text/javascript" src="/ant-testlib/com/google/caja/ses/mitigateGotchas.js"></script>
     <script type="text/javascript" src="test-ses-mitigation.js"></script>
   </head>
