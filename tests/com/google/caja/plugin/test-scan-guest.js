@@ -1451,6 +1451,28 @@
     }
   };
 
+  // used by testScanner only
+  /** Make a simple isolated object graph. */
+  function detach(object, seen) {
+    if (object !== Object(object)) { return object; }
+    if (!seen) { seen = new WeakMap(); }
+    if (seen.has(object)) { return seen.get(object); }
+    if (Object.getPrototypeOf(object) !== Object.prototype) {
+      throw new Error('non-Object not supported');
+    }
+    var copy = Object.create(null);
+    Object.getOwnPropertyNames(object).forEach(function(prop) {
+      var desc = Object.getOwnPropertyDescriptor(object, prop);
+      ['value', 'get', 'set'].forEach(function (descProp) {
+        if (descProp in desc) { desc[descProp] = detach(desc[descProp], seen); }
+      });
+      Object.defineProperty(copy, prop, desc);
+    });
+    if (!Object.isExtensible(object)) { Object.preventExtensions(copy); }
+    seen.set(object, copy);
+    return copy;
+  }
+
   /** Test the scanner's own functionality. */
   window.testScanner = function testScanner() {
     // non-identifier props in programs
@@ -1464,10 +1486,11 @@
         pass('testScanner');
       }
     });
-    scanner.skip('Object');
+
     // each property here is an 'object is extensible' problem
-    scanner.queue(Context.root(Object.freeze({a: {}, 1: {}, '!': {}}),
-        'foo', 'bar'));
+    var specimen = detach(Object.freeze({a: {}, 1: {}, '!': {}}));
+
+    scanner.queue(Context.root(specimen, 'foo', 'bar'));
     scanner.scan();
 
     // test trueApply which has proven to be tricky.
