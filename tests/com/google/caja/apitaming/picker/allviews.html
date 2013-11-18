@@ -5,12 +5,19 @@
       google.load('picker', '1.0');
 
       function createPicker() {
-        var picker = new google.picker.PickerBuilder()
+        var pickerBuilder = new google.picker.PickerBuilder();
+
+        document.getElementById('msgs').innerHTML = ''
+            + 'setDeveloperKey=' + pickerBuilder.setDeveloperKey + '\n'
+            + 'setOAuthToken=' + pickerBuilder.setOAuthToken;
+
+        var picker = pickerBuilder
               .addView(google.picker.ViewId.DOCS)
               .addView(google.picker.ViewId.DOCS_IMAGES)
               .addView(google.picker.ViewId.DOCS_IMAGES_AND_VIDEOS)
               .addView(google.picker.ViewId.DOCS_VIDEOS)
               .addView(google.picker.ViewId.DOCUMENTS)
+              .addView(google.picker.ViewId.DRAWINGS)
               .addView(google.picker.ViewId.FOLDERS)
               .addView(google.picker.ViewId.FORMS)
               .addView(google.picker.ViewId.IMAGE_SEARCH)
