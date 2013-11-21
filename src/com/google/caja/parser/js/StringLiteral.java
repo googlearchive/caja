@@ -149,6 +149,7 @@ public final class StringLiteral extends Literal {
 
     StringBuffer sb = new StringBuffer(s.length());
     do {
+      m.appendReplacement(sb, "");
       String g;
       char repl;
       if (null != (g = m.group(1))) {  // unicode escape
@@ -166,10 +167,10 @@ public final class StringLiteral extends Literal {
           case 'f': repl = '\f'; break;
           case 't': repl = '\t'; break;
           case 'v': repl = '\u000b'; break;
+          case '\n': continue;      // backslash newline is elided
           default: repl = ch; break;
         }
       }
-      m.appendReplacement(sb, "");
       sb.append(repl);
     } while (m.find());
     m.appendTail(sb);

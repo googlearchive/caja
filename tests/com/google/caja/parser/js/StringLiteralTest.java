@@ -33,6 +33,7 @@ public class StringLiteralTest extends CajaTestCase {
     assertEquals("\"\"", StringLiteral.getUnquotedValueOf("'\\\"\\\"'"));
     assertEquals("foo\bar", StringLiteral.getUnquotedValueOf("'foo\\bar'"));
     assertEquals("foo\nbar", StringLiteral.getUnquotedValueOf("'foo\\nbar'"));
+    assertEquals("foobar", StringLiteral.getUnquotedValueOf("'foo\\\nbar'"));
     assertEquals("foo\\bar\\baz",
         StringLiteral.getUnquotedValueOf("'foo\\\\bar\\\\baz'"));
     assertEquals(

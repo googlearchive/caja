@@ -42,6 +42,7 @@ caja.tamingGoogleLoader.addPolicyFactory('google.picker', function(frame, utils)
 
   p.DocsView = function() {};
   p.DocsView.__super__ = ['google', 'picker', 'View'];
+  p.DocsView.prototype.setSelectFolderEnabled = function() {};
   p.DocsView.prototype.setIncludeFolders = function() {};
   p.DocsView.prototype.setMode = function() {};
   p.DocsView.prototype.setOwnedByMe = function() {};
@@ -130,8 +131,10 @@ caja.tamingGoogleLoader.addPolicyFactory('google.picker', function(frame, utils)
   p.PickerBuilder.prototype.setAppId = function() {};
   p.PickerBuilder.prototype.setAuthUser = function() {};
   p.PickerBuilder.prototype.setCallback = function() {};
+  p.PickerBuilder.prototype.setDeveloperKey = function() {};
   p.PickerBuilder.prototype.setDocument = function() {};
   p.PickerBuilder.prototype.setLocale = function() {};
+  p.PickerBuilder.prototype.setOAuthToken = function() {};
   p.PickerBuilder.prototype.setRelayUrl = function() {};
   p.PickerBuilder.prototype.setSelectableMimeTypes = function() {};
   p.PickerBuilder.prototype.setSize = function() {};
@@ -161,6 +164,7 @@ caja.tamingGoogleLoader.addPolicyFactory('google.picker', function(frame, utils)
   p.ViewId.DOCS_IMAGES_AND_VIDEOS = 1;
   p.ViewId.DOCS_VIDEOS = 1;
   p.ViewId.DOCUMENTS = 1;
+  p.ViewId.DRAWINGS = 1;
   p.ViewId.FOLDERS = 1;
   p.ViewId.FORMS = 1;
   p.ViewId.IMAGE_SEARCH = 1;

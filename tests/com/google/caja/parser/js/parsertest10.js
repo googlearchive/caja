@@ -51,3 +51,12 @@ function arbitraryBlocksCannotBeStrict() {
 function malformedOkayWithWarning() {
   "bogusburps";
 }
+
+function directiveCannotHaveEscape() {
+  "use\x20strict";
+}
+
+function directiveCannotHaveContinuation() {
+  "use \
+strict";
+}

@@ -149,6 +149,16 @@ public class ParserTest extends CajaTestCase {
         MessageType.UNRECOGNIZED_DIRECTIVE_IN_PROLOGUE,
         "parsertest10.js:52+3 - 15",
         MessagePart.Factory.valueOf("bogusburps"));
+    assertNextMessage(
+        msgs,
+        MessageType.UNRECOGNIZED_DIRECTIVE_IN_PROLOGUE,
+        "parsertest10.js:56+3 - 18",
+        MessagePart.Factory.valueOf("use\\x20strict"));
+    assertNextMessage(
+        msgs,
+        MessageType.UNRECOGNIZED_DIRECTIVE_IN_PROLOGUE,
+        "parsertest10.js:60+3 - 61+8",
+        MessagePart.Factory.valueOf("use \\\nstrict"));
 
     assertFalse(msgs.hasNext());
   }
@@ -211,9 +221,8 @@ public class ParserTest extends CajaTestCase {
       assertEquals(MessageType.EXPECTED_TOKEN,
                    ex.getCajaMessage().getMessageType());
     }
-    // But it should pass if there is a line-continuation
-    js(fromString("throw \\\n new Error()"));
   }
+
   public final void testCommaOperatorInReturn() throws Exception {
     Block bl = js(fromString("return 1  \n  , 2;"));
     assertTrue("" + mq.getMessages(), mq.getMessages().isEmpty());
