@@ -31,6 +31,7 @@ var ses;
   global.ses = global.ses || {};
 
   ses.rewriter_ = {};
+  ses.rewriter_.tokTypes = exports.tokTypes;
   ses.rewriter_.traverse = exports.traverse;
   ses.rewriter_.parse = exports.parse;
   ses.rewriter_.generate = exports.generate;

@@ -798,6 +798,7 @@ For help on building and testing Caja, see:
       <output file="${lib.caja}/plugin/utility-frame.js"
        language="javascript" renderer="concat"/>
       <input file="${src.caja}/plugin/caja-iframe-build-version.js"/>
+      <input file="${src.caja}/ses/StringMap.js"/>
       <input file="${src.caja}/ses/createExports.js"/>
       <input file="${third_party}/js/acorn/acorn.js" jslint="false"/>
       <input file="${third_party}/js/escodegen/escodegen.js" jslint="false"/>

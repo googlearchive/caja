@@ -24,18 +24,13 @@
     <script type="text/javascript" src="../plugin/jsUnitCore.js"></script>
     <script type="text/javascript" src="../plugin/jsunit.js"></script>
 
-    <script type="text/javascript" src="StringMap.js"></script>
-    <!-- createExports / exportsToSES glue up the modules -->
-    <script type="text/javascript" src="createExports.js"></script>
-      <script type="text/javascript" src="/ant-testlib/js/acorn/acorn.js"></script>
-      <script type="text/javascript" src="/ant-testlib/js/escodegen/escodegen.js"></script>
-      <script type="text/javascript" src="/ant-testlib/js/escodegen/estraverse.js"></script>
-    <script type="text/javascript" src="exportsToSES.js"></script>
-
-    <script type="text/javascript" src="/ant-testlib/com/google/caja/ses/mitigateGotchas.js"></script>
+    <!-- we don't need all of SES, but this is most convenient for getting the
+         minified version to test -->
+    <script type="text/javascript" src="/ant-lib/com/google/caja/plugin/utility-frame.opt.js"></script>
+    <script type="text/javascript" src="/ant-lib/com/google/caja/ses/initSES-minified.js"></script>
   </head>
   <body class="readytotest">
-    <p id="toolbar"><a href="test-ses-mitigation-min.html">minified</a></p>
+    <p id="toolbar"><a href="test-ses-mitigation.html">unminified</a></p>
     <script type="text/javascript" src="test-ses-mitigation.js"></script>
   </body>
 </html>

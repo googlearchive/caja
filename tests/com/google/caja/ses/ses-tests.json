@@ -48,7 +48,16 @@
     },
     {
       "label": "mitigation",
-      "bare": "../ses/test-ses-mitigation.html"
+      "tests": [
+        {
+          "label": "nomin",
+          "bare": "../ses/test-ses-mitigation.html"
+        },
+        {
+          "label": "min",
+          "bare": "../ses/test-ses-mitigation-min.html"
+        }
+      ]
     },
     {
       "label": "parts",

@@ -27,12 +27,48 @@
  * //requires ses.rewriter_
  * //provides ses.mitigateSrcGotchas
  * @author Jasvir Nagra (jasvir@google.com)
+ * @requires JSON, StringMap
  * @overrides ses
  */
 
 var ses;
 
 (function() {
+  // There is a bug which is problematic for us: JS implementations vary on
+  // whether they consider a reserved word written using unicode escapes to
+  // actually be a reserved word; for example, the following program can be
+  // parsed two ways:
+  //    de\u006Cete /"x/ //";
+  //
+  // The specification is somewhat unclear but the consensus is that the correct
+  // behavior is to parse an escaped reserved word as a reserved word. See:
+  //   https://bugs.ecmascript.org/show_bug.cgi?id=277
+  //   https://code.google.com/p/v8/issues/detail?id=2222
+  //   https://bugzilla.mozilla.org/show_bug.cgi?id=744784
+  //   https://bugzilla.mozilla.org/show_bug.cgi?id=694360
+  //   https://bugs.webkit.org/show_bug.cgi?id=90678
+  // 
+  // This has two consequences for us:
+  // 1. We cannot rely on the JS implementation to parse such a program in the
+  //    same way we do (unless we were to vary our parser's behavior based on a
+  //    feature test, which we currently do not), so if we parse a program, then
+  //    we must also rerender it in an unambiguous way matching our
+  //    interpretation (rather than passing the original source to the browser's
+  //    parser); but our parser, Acorn, takes the incorrect "de\u006Cete is an
+  //    identifier" option which cannot be supported on all platforms.
+  // 2. Our parser, Acorn, and renderer, escodegen, are inconsistent with each
+  //    other: an escaped reserved word is parsed as an identifier, but will be
+  //    rendered unescaped.
+  //
+  // Due to the above issues, and since such programs are therefore unportable,
+  // we currently take the simplest approach, namely to reject such programs.
+  // In order to do so, we must traverse all programs we parse; the constant
+  // defined here marks the locations where kludges to do so have been inserted.
+  // If implementations stop being inconsistent about this issue (or if acorn,
+  // escodegen, and the current JS implementation happen to agree), then we
+  // could change this to false.
+  var ESCAPED_KEYWORD_AMBIGUITY = true;
+
   function introducesVarScope(node) {
     return node.type === 'FunctionExpression' ||
            node.type === 'FunctionDeclaration';
@@ -93,6 +129,28 @@ var ses;
    */
   function isFunctionCall(node) {
     return node.type === 'CallExpression' && isId(node.callee);
+  }
+
+  var nameIsReservedWord = (function() {
+    // TODO(kpreid): Fragile; find a better way to do this that does not depend
+    // on Acorn's data structures quite so much.
+    var tokTypes = ses.rewriter_.tokTypes;
+    var table = new StringMap();
+    for (var k in tokTypes) {
+      if ('keyword' in tokTypes[k]) {
+        table.set(tokTypes[k].keyword, 0);
+      }
+    }
+    return table.has.bind(table);
+  })();
+
+  // Is the node one whose identifier child is an IdentifierName in the ES5
+  // grammar, and therefore allowed to be a ReservedWord?
+  function isIdentifierNameContext(node) {
+    var type = node.type;
+    // property initializer nodes have no .type; they have a .kind but so do
+    // labels
+    return type === 'MemberExpression' || !!(node.kind && node.key);
   }
 
   /**
@@ -296,6 +354,17 @@ var ses;
   function rewrite(scope, node) {
     ses.rewriter_.traverse(node, {
       enter: function enter(node, parentNode) {
+
+          if (ESCAPED_KEYWORD_AMBIGUITY && isId(node)) {
+            if (nameIsReservedWord(node.name) &&
+                !isIdentifierNameContext(parentNode)) {
+              throw new SyntaxError(
+                  'Programs containing Unicode escapes in reserved words ' +
+                  'will be misparsed on some platforms and are not currently ' +
+                  'permitted by SES.');
+            }
+          }
+
           if (scope.options.rewriteTopLevelFuncs &&
               isFunctionDecl(node) && scope.scopeLevel === 0) {
             rewriteFuncDecl(scope, node, parentNode);
@@ -337,7 +406,7 @@ var ses;
   }
 
   function rewriteProgram(options, ast) {
-    if (needsRewriting(options)) {
+    if (ESCAPED_KEYWORD_AMBIGUITY || needsRewriting(options)) {
       var scope = {
         options: options,
         dirty: false,
@@ -378,12 +447,15 @@ var ses;
         return funcBodySrc;
       }
     } catch (e) {
-      logger.warn('Failed to parse program', e);
-      // TODO(jasvir): Consider using the thrown exception to provide
-      // a more useful descriptive error message.  Be aware of naively
-      // interpolating error message strings.
+      var message = '' + e;
+      // Chrome console does not display an Error object usefully but as
+      // "Error {}" so we use the explicit stringification.
+      logger.warn('Failed to parse program: ' + message);
+      var quotedMessage = JSON.stringify(message);
       return '' +
-        '(function() { throw new SyntaxError("Failed to parse program"); })()';
+        '(function() { throw new SyntaxError("Failed to parse program: " + ' +
+        quotedMessage +
+        '); })()';
     }
   };
 
