@@ -58,56 +58,109 @@ function assertNoMitigate(src, options) {
   assertMitigate(src, src, options);
 }
 
+function assertMitigateFails(src, options, error) {
+  var out = '';
+  var logger = { warn: function (var_args) {
+    out += Array.prototype.join.call(arguments, ' ');
+  }};
+
+  ses.mitigateSrcGotchas(src, options, logger);
+  assertEquals(src, error, out);
+}
+
 jsunitRegister('testRewritePropertyUpdateExpr',
     function testRewritePropertyUpdateExpr() {
-      var o = { rewritePropertyUpdateExpr: true };
+  var o = { rewritePropertyUpdateExpr: true };
 
-      assertNoMitigate('x++;', o);
+  assertNoMitigate('x++;', o);
 
-      assertMitigate('o[(1, "x")]++;', 'o.x++;', o);
-      assertMitigate('o[(1, "x")]--;', 'o.x--;', o);
-      assertMitigate('o[(1, "x")]++;', 'o["x"]++;', o);
-      assertMitigate('o[(1, "x")]--;', 'o["x"]--;', o);
-      assertMitigate('o[(1, 3)]++;', 'o[3]++;', o);
-      assertMitigate('o[(1, 3)]--;', 'o[3]--;', o);
+  assertMitigate('o[(1, "x")]++;', 'o.x++;', o);
+  assertMitigate('o[(1, "x")]--;', 'o.x--;', o);
+  assertMitigate('o[(1, "x")]++;', 'o["x"]++;', o);
+  assertMitigate('o[(1, "x")]--;', 'o["x"]--;', o);
+  assertMitigate('o[(1, 3)]++;', 'o[3]++;', o);
+  assertMitigate('o[(1, 3)]--;', 'o[3]--;', o);
 
-      assertNoMitigate('o[3 + 4]++;', o);
-      assertNoMitigate('o[p]++;', o);
+  assertNoMitigate('o[3 + 4]++;', o);
+  assertNoMitigate('o[p]++;', o);
 
-      assertMitigate('o[q[(1, "y")]++]--;', 'o[q.y++]--;', o);
-      assertMitigate('foo(q[(1, "y")]++)[(1, 3)]--;', 'foo(q.y++)[3]--;', o);
+  assertMitigate('o[q[(1, "y")]++]--;', 'o[q.y++]--;', o);
+  assertMitigate('foo(q[(1, "y")]++)[(1, 3)]--;', 'foo(q.y++)[3]--;', o);
 
-      jsunitPass('testRewritePropertyUpdateExpr');
-    });
+  jsunitPass();
+});
 
 jsunitRegister('testRewritePropertyCompoundAssignmentExpr',
     function testRewritePropertyCompoundAssignmentExpr() {
-      var o = { rewritePropertyCompoundAssignmentExpr: true };
+  var o = { rewritePropertyCompoundAssignmentExpr: true };
 
-      assertNoMitigate('x += 1;', o);
-      assertNoMitigate('o.x = 1;', o);
-      assertNoMitigate('o.x = o.x + 1;', o);
+  assertNoMitigate('x += 1;', o);
+  assertNoMitigate('o.x = 1;', o);
+  assertNoMitigate('o.x = o.x + 1;', o);
 
-      assertMitigate('o[(1, "x")] += 1;', 'o.x += 1;', o);
-      assertMitigate('o[(1, "x")] += 1;', 'o["x"] += 1;', o);
-      assertMitigate('o[(1, 3)] += 1;', 'o[3] += 1;', o);
-      assertMitigate('o[(1, "x")] -= 1;', 'o.x -= 1;', o);
-      assertMitigate('o[(1, "x")] *= 1;', 'o.x *= 1;', o);
-      assertMitigate('o[(1, "x")] /= 1;', 'o.x /= 1;', o);
-      assertMitigate('o[(1, "x")] &= 1;', 'o.x &= 1;', o);
-      assertMitigate('o[(1, "x")] |= 1;', 'o.x |= 1;', o);
-      assertMitigate('o[(1, "x")] ^= 1;', 'o.x ^= 1;', o);
-      assertMitigate('o[(1, "x")] %= 1;', 'o.x %= 1;', o);
-      assertMitigate('o[(1, "x")] <<= 1;', 'o.x <<= 1;', o);
-      assertMitigate('o[(1, "x")] >>= 1;', 'o.x >>= 1;', o);
-      assertMitigate('o[(1, "x")] >>>= 1;', 'o.x >>>= 1;', o);
+  assertMitigate('o[(1, "x")] += 1;', 'o.x += 1;', o);
+  assertMitigate('o[(1, "x")] += 1;', 'o["x"] += 1;', o);
+  assertMitigate('o[(1, 3)] += 1;', 'o[3] += 1;', o);
+  assertMitigate('o[(1, "x")] -= 1;', 'o.x -= 1;', o);
+  assertMitigate('o[(1, "x")] *= 1;', 'o.x *= 1;', o);
+  assertMitigate('o[(1, "x")] /= 1;', 'o.x /= 1;', o);
+  assertMitigate('o[(1, "x")] &= 1;', 'o.x &= 1;', o);
+  assertMitigate('o[(1, "x")] |= 1;', 'o.x |= 1;', o);
+  assertMitigate('o[(1, "x")] ^= 1;', 'o.x ^= 1;', o);
+  assertMitigate('o[(1, "x")] %= 1;', 'o.x %= 1;', o);
+  assertMitigate('o[(1, "x")] <<= 1;', 'o.x <<= 1;', o);
+  assertMitigate('o[(1, "x")] >>= 1;', 'o.x >>= 1;', o);
+  assertMitigate('o[(1, "x")] >>>= 1;', 'o.x >>>= 1;', o);
 
-      assertMitigate(
-          'foo(o[(1, "x")] += 1)[(1, "z")] += (q[(1, "y")] += 1)',
-          'foo(o.x += 1).z += (q.y += 1);',
-          o);
+  assertMitigate(
+      'foo(o[(1, "x")] += 1)[(1, "z")] += (q[(1, "y")] += 1)',
+      'foo(o.x += 1).z += (q.y += 1);',
+      o);
 
-      jsunitPass('testRewritePropertyCompoundAssignmentExpr');
-    });
+  jsunitPass();
+});
+
+
+jsunitRegister('testEscapedKeyword', function testEscapedKeyword() {
+  // To best exercise the relevant code path, provide options which require a
+  // parse, but do not require any normal rewriting.
+  var o = { parseFunctionBody: true };
+
+  var out = '';
+  var logger = { warn: function (var_args) {
+    out += Array.prototype.join.call(arguments, ' ');
+  }};
+
+  // note double backslash; this is a unicode escape sequence in the program
+  // text
+  assertMitigateFails('de\\u006Cete /"x/ //";', o,
+      'Failed to parse program: SyntaxError: Programs containing Unicode ' +
+      'escapes in reserved words will be misparsed on some platforms and are ' +
+      'not currently permitted by SES.');
+
+  // Reserved words in IdentifierName positions are not rejected.
+  assertNoMitigate('({delete: 1})', o);
+  assertNoMitigate('({get delete() {}})', o);
+  assertNoMitigate('({set delete(x) {}})', o);
+  assertNoMitigate('foo.delete', o);
+  assertNoMitigate('foo().delete', o);
+  assertNoMitigate('foo.delete()', o);
+
+  jsunitPass();
+});
+
+// Note for context: A prior attempt to upgrade third_party/js/escodegen
+// resulted in a bug where every character in regexp literals was doubled, only
+// with minified SES. This test is provided to notice/explain the problem if we
+// hit it again.
+jsunitRegister('testRegexpRegression', function testRegexpRegression() {
+  var options = {
+    forceParseAndRender: true,
+    rewriteFunctionCalls: true
+  };
+  assertMitigate('(1, f)(/31337/g);', 'f(/31337/g);', options);
+
+  jsunitPass();
+});
 
 jsunitRun();
