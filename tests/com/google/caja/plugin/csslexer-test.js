@@ -966,6 +966,13 @@ jsunitRegister('testLex59', function testLex59() {
   jsunit.pass();
 });
 
+jsunitRegister('testLex60', function testLex59() {
+  assertLexedCss(
+    'a:hover:focus',
+    'a', ':', 'hover', ':', 'focus');
+  jsunit.pass();
+});
+
 jsunitRegister('testIssue1804', function testIssue1804() {
   assertLexedCss(',',  ',');
   assertLexedCss('a,', 'a', ',');

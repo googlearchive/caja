@@ -287,6 +287,7 @@ jsunitRegister('testCssSelectors',
     "#foo:first-letter", "sfx", [[".sfx #foo-sfx:first-letter"], []]);
   assertSelector("#foo:focus", "sfx", [[".sfx #foo-sfx:focus"], []]);
   assertSelector("#foo:hover", "sfx", [[".sfx #foo-sfx:hover"], []]);
+  assertSelector("#x:hover:focus", "sfx", [[".sfx #x-sfx:hover:focus"], []]);
   assertSelector("#foo:bogus", "sfx", [[], []]);
   jsunit.pass();
 });
