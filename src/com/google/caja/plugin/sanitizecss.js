@@ -637,12 +637,11 @@ var sanitizeMediaQuery = undefined;
                 valid = false;
               }
               historySensitive = true;
-              pseudoSelector = ':' + tok;
+              pseudoSelector += ':' + tok;
               element = 'a';
             } else if (
-              HISTORY_NON_SENSITIVE_PSEUDO_SELECTOR_WHITELIST.test(tok)) {
-              historySensitive = false;
-              pseudoSelector = ':' + tok;
+                HISTORY_NON_SENSITIVE_PSEUDO_SELECTOR_WHITELIST.test(tok)) {
+              pseudoSelector += ':' + tok;
             } else {
               break;
             }
