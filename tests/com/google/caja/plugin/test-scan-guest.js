@@ -23,7 +23,8 @@
  *     setTimeout, clearTimeout, setInterval, clearInterval,
  *     requestAnimationFrame, cancelAnimationFrame,
  *     cajaVM, directAccess, getUrlParam,
- *     assertTrue, assertEquals, pass, jsunitFail,
+ *     assertTrue, assertEquals, jsunitRegister, jsunitCallback, pass,
+ *     jsunitFail,
  *     Event, HTMLInputElement, HTMLMediaElement, HTMLTableRowElement,
  *     HTMLTableSectionElement, HTMLTableElement, HTMLImageElement,
  *     HTMLTextAreaElement, HTMLVideoElement, HTMLButtonElement,
@@ -194,7 +195,6 @@
     scanner.skip('scanning');
     scanner.skip('toggleNonErrors');
     scanner.skip('testUniverse');
-    scanner.skip('testScanner');
 
     // returns its parameters to help catch leaks
     function dummyFunction() {
@@ -1451,7 +1451,9 @@
     }
   };
 
-  // used by testScanner only
+  // --- Tests of the scanner's own functionality. ---
+
+  // used by meta tests only
   /** Make a simple isolated object graph. */
   function detach(object, seen) {
     if (object !== Object(object)) { return object; }
@@ -1473,18 +1475,18 @@
     return copy;
   }
 
-  /** Test the scanner's own functionality. */
-  window.testScanner = function testScanner() {
-    // non-identifier props in programs
+  jsunitRegister('testMetaScannerAndProgramIdentifiers', function() {
+    // Testing the scanner operation, and incidentally that property names
+    // are correctly handled.
     var problemPrograms = ['bar["!"]', 'bar[1]', 'bar.a'];
     var scanner = new Scanner({
       logProblem: function(description, context) {
         assertEquals(problemPrograms.shift(), context.getProgram());
       },
-      finished: function() {
+      finished: jsunitCallback(function() {
         assertEquals(0, problemPrograms.length);
-        pass('testScanner');
-      }
+        pass();
+      })
     });
 
     // each property here is an 'object is extensible' problem
@@ -1492,7 +1494,37 @@
 
     scanner.queue(Context.root(specimen, 'foo', 'bar'));
     scanner.scan();
+  });
 
+  jsunitRegister('testMetaPrograms', function() {
+    // TODO(kpreid): Would be better if there was an abstraction over performing
+    // the operations (that is, something which e.g. both invokes a method and
+    // constructs the Context for its return value), so we don't have to use the
+    // Context operations which are kinda internal.
+    var c = Context.root(function f() {}, 'foo', 'bar');
+    assertEquals('root program', 'bar', c.getProgram());
+    assertEquals('proto', 'Object.getPrototypeOf(bar)',
+        c.property('[[Prototype]]', 'junk', null).getProgram());
+
+    assertEquals('invocation not thrown', 'bar.call("thiss", "arg1")',
+        c.invocation(2, 'thiss', ['arg1'], false).getProgram());
+    assertEquals('invocation thrown',
+        '(function(){try{ bar.call("thiss", "arg1") }catch(e){return e}}())',
+        c.invocation(2, 'thiss', ['arg1'], true).getProgram());
+    assertEquals('constructor', 'new (bar)()',
+        c.invocation(2, CONSTRUCT, [], false).getProgram());
+    // TODO(kpreid): unrealistic values
+    assertEquals('method call', 'bar("arg1")',
+        c.invocation(2, THIS, ['arg1'], false).getProgram());
+    assertEquals('plain call', '(0,bar)("arg1")',
+        c.invocation(2, PLAIN_CALL, ['arg1'], false).getProgram());
+
+    // TODO(kpreid): test (and implement) argument lists with object values
+
+    pass();
+  });
+
+  jsunitRegister('testMetaTrueApply', function() {
     // test trueApply which has proven to be tricky.
     var trueApply = scanning.trueApply;
     function argsIdentity() {
@@ -1502,9 +1534,12 @@
     assertEquals('1 a', trueApply(argsIdentity, ['a']));
     assertEquals('2 a,b', trueApply(argsIdentity, ['a', 'b']));
     assertEquals('3 a,b,c', trueApply(argsIdentity, ['a', 'b', 'c']));
+    pass();
+  });
 
-    // TODO(kpreid): more meta-tests
-  };
+  // TODO(kpreid): more meta-tests
+
+  // --- UI glue ---
 
   // wire up checkbox
   var hideCheckbox;

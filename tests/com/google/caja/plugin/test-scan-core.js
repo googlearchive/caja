@@ -174,12 +174,33 @@ var scanning;  // exports
     }
   }
 
-  function printNamedly(object) {
-    if (typeof object === 'function') {
-      var name = getFunctionName(object);
-      return name === '' ? object.toString().replace(/\s+/, ' ') : name;
+  function printNamedly(value) {
+    if (typeof value === 'function') {
+      var name = getFunctionName(value);
+      return name === '' ? value.toString().replace(/\s+/, ' ') : name;
     } else {
-      return String(object);
+      return String(value);
+    }
+  }
+
+  function printEvaluatably(value) {
+    switch (typeof value) {
+      case 'number':
+        if (isNaN(value)) {
+          return 'NaN';
+        } else if (!isFinite(value) && value > 0) {
+          return 'Infinity';
+        } else if (!isFinite(value) && value < 0) {
+          return '-Infinity';
+        } else {
+          return value.toString();
+        }
+      case 'object':
+      case 'function':
+        // TODO(kpreid): implement this where feasible
+        return '.../* ' + printNamedly(value) + ' */';
+      default:
+        return JSON.stringify(value);
     }
   }
 
@@ -395,13 +416,17 @@ var scanning;  // exports
      *     object on methods (i.e. an instance if the object is a prototype).
      * @param getThisArgC Ditto but for the thisArg for invoking the object
      *     itself as a function/method.
+     * @param getProgramInfo Returns { src:, thisArg: } where 'src' is an
+     *     expression to return the object and 'thisArg' is the object which
+     *     would be the 'this' value in a function call expression of the form
+     *     (src + '(' + ... + ')').
      *
      *     getSelfC and getThisArgC are thunks (lazy) so that we can avoid
      *     attempting to obtain an instance of a not-actually-a-constructor.
      * @param getProgram A thunk for program source which returns the object.
      */
     function makeContext(object, path, depth, getSelfC, getThisArgC,
-        getProgram) {
+        getProgramInfo) {
       var context;
       var prefix = path === '' ? '' : path + '.';
       if (getSelfC === 'self') {
@@ -415,20 +440,24 @@ var scanning;  // exports
         toDetailsString: function() {
           return (
               '| Path:     ' + path + '\n' +
-              '| Program:  ' + getProgram() + '\n' +
+              '| Program:  ' + context.getProgram() + '\n' +
               '| toString: ' + safeToString(object));
         },
         get: function() { return object; },
         getPath: function() { return path; },
         getDepth: function() { return depth; },
-        getter: function(name, getter) {
+        getter: function(name, desc, getter) {
           function getterProgram() {
-            return 'Object.getOwnPropertyDescriptor(' +
-                context.getProgram() + ', "' + name + '").get';
+            return {
+              thisArg: desc,
+              src: 'Object.getOwnPropertyDescriptor(' +
+                  context.getProgram() + ', "' + name + '").get'
+            };
           }
           getterProgram.invocationShortcut = function() {
             return context.getProgram() + '.' + name;
           };
+          getterProgram.invocationShortcut.implicitThis = context.get();
           return makeContext(
               getter,
               prefix + 'get ' + name,
@@ -437,7 +466,7 @@ var scanning;  // exports
               getSelfC,
               getterProgram);
         },
-        setter: function(name, setter) {
+        setter: function(name, desc, setter) {
           return makeContext(
               setter,
               prefix + 'set ' + name,
@@ -445,8 +474,11 @@ var scanning;  // exports
               'self',
               getSelfC,
               function() {
-                return 'Object.getOwnPropertyDescriptor(' +
-                    context.getProgram() + ', "' + name + '").set';
+                return {
+                  thisArg: desc,
+                  src: 'Object.getOwnPropertyDescriptor(' +
+                      context.getProgram() + ', "' + name + '").set'
+                };
               });
         },
         property: function(p, pval, obtainInstance) {
@@ -471,7 +503,10 @@ var scanning;  // exports
                 },
                 getSelfC,
                 function() {
-                  return context.getProgram() + '.prototype';
+                  return {
+                    thisArg: pval,
+                    src: context.getProgram() + '.prototype'
+                  };
                 });
             return protoctx;
           } else if (p === '[[Prototype]]') {
@@ -482,7 +517,10 @@ var scanning;  // exports
                 getSelfC,
                 function() { return noThisContext; },
                 function() {
-                  return 'Object.getPrototypeOf(' + context.getProgram() + ')';
+                  return {
+                    thisArg: pval,
+                    src: 'Object.getPrototypeOf(' + context.getProgram() + ')'
+                  };
                 });
           } else {
             return makeContext(
@@ -492,37 +530,71 @@ var scanning;  // exports
                 'self',
                 getSelfC,
                 function() {
+                  var src;
                   if (/^[a-z_]\w*$/i.test(p)) {
-                    return context.getProgram() + '.' + p;
-                  } else if (/^-?[0-9]+$/.test(p)) {
-                    p = parseInt(p);
+                    src = context.getProgram() + '.' + p;
+                  } else {
+                    if (/^-?[0-9]+$/.test(p)) {
+                      p = parseInt(p);
+                    }
+                    src = context.getProgram() + '[' + JSON.stringify(p) + ']';
                   }
-                  return context.getProgram() + '[' + JSON.stringify(p) + ']';
+                  return {
+                    thisArg: pval,
+                    src: src
+                  };
                 });
           }
         },
-        invocation: function(ival, argstr, thrown) {
+        invocation: function(ival, thisArgSpec, args, thrown) {
+          var thisArgStr;
+          switch (thisArgSpec) {
+            case CONSTRUCT: thisArgStr = 'CONSTRUCT'; break;
+            case THIS: thisArgStr = 'THIS'; break;
+            case PLAIN_CALL: thisArgStr = 'PLAIN'; break;
+            default: thisArgStr = String(thisArgSpec); break;
+          }
+          var callStr = '<' + thisArgStr + '>(' + args.map(printNamedly) + ')';
           return makeContext(
               ival,
-              path + argstr + (thrown ? ' thrown ' : ''),
+              path + callStr + (thrown ? ' thrown ' : ''),
               depth + 1,
               'self',
               getSelfC,
               function() {
-                if (thrown) {
-                  return 'thrown(' + context.getProgram() +
-                      ', ...)';
-                } else if ('invocationShortcut' in context.getProgram) {
-                  // TODO(kpreid): check args once that is formalized
-                  return context.getProgram.invocationShortcut();
+                var argsStr = args.map(printEvaluatably);
+                var functionInfo = getProgramInfo();
+                var program;
+                if ('invocationShortcut' in getProgramInfo &&
+                    thisArgSpec === THIS &&
+                    context.getThisArg() ===
+                        getProgramInfo.invocationShortcut.implicitThis &&
+                    args.length === 0) {
+                  program = getProgramInfo.invocationShortcut();
+                } else if (thisArgSpec === CONSTRUCT) {
+                  program = 'new (' + functionInfo.src + ')(' + argsStr + ')';
+                } else if (thisArgSpec === THIS &&
+                      context.getThisArg() === functionInfo.thisArg) {
+                  program = functionInfo.src + '(' + argsStr + ')';
+                } else if (thisArgSpec === PLAIN_CALL) {
+                  program = '(0,' + functionInfo.src + ')(' + argsStr + ')';
                 } else {
-                  return context.getProgram() + '.call(...)';
+                  program = functionInfo.src + '.call(' +
+                      printEvaluatably(thisArgSpec) + ', ' + argsStr + ')';
                 }
+                if (thrown) {
+                  program = '(function(){try{ ' + program +
+                      ' }catch(e){return e}}())';
+                }
+                return {
+                  thisArg: undefined,
+                  src: program
+                };
               });
         },
         getThisArg: function() { return getThisArgC().get(); },
         /** Return a program which evaluates to the object. */
-        getProgram: getProgram
+        getProgram: function() { return getProgramInfo().src; }
       };
       return context;
     }
@@ -532,7 +604,7 @@ var scanning;  // exports
         'self',
         0,
         function() { return noThisContext; },
-        function() { return 'undefined'; });
+        function() { return { thisArg: undefined, src: 'undefined' }; });
 
     return {
       root: function(o, path, code) {
@@ -542,7 +614,7 @@ var scanning;  // exports
             0,
             'self',
             function() { return noThisContext; },
-            function() { return code; });
+            function() { return { thisArg: undefined, src: code }; });
       }
     };
   })();
@@ -700,7 +772,8 @@ var scanning;  // exports
           var didPlainCall = false;
 
           var doInvocation = function(tuple) {
-            var thisArg = tuple[0];
+            var thisArgSpec = tuple[0];
+            var thisArg = thisArgSpec;
             var args = tuple[1];
             var hook = tuple[2];
             if (tuple.length < 2 || tuple.length > 3 ||
@@ -710,10 +783,8 @@ var scanning;  // exports
                   '\n' + context.toDetailsString());
             }
             var result;
-            var thisArgStr = '<' + thisArg + '>';
             var thrown;
             if (thisArg === CONSTRUCT) {
-              thisArgStr = '<CONSTRUCT>';
               try {
                 switch (args.length) {
                   case 0: result = new object(); break;
@@ -734,7 +805,6 @@ var scanning;  // exports
                 thrown = true;
               }
             } else if (thisArg === PLAIN_CALL) {
-              thisArgStr = '<PLAIN>';
               didPlainCall = true;
               // Do a plain function call, literally, with no call/apply
               try {
@@ -747,7 +817,6 @@ var scanning;  // exports
             } else {
               if (thisArg === THIS) {
                 thisArg = context.getThisArg();
-                thisArgStr = '<THIS>';
               }
               try {
                 result = Function.prototype.apply.call(object, thisArg, args);
@@ -759,10 +828,9 @@ var scanning;  // exports
             }
             didSomeCall = true;
             didNonThrowingCall = didNonThrowingCall || !thrown;
-            // TODO(kpreid): Make these live objects instead of strings, so that
-            // we can print clearer paths and more complete programs.
-            var subcontext = context.invocation(result, thisArgStr + '(' +
-                args.map(printNamedly) + ')', thrown);
+            // TODO(kpreid): Should pass in real thisArg, maybe in a context
+            var subcontext = context.invocation(
+                  result, thisArgSpec, args, thrown);
             if (hook) {
               // TODO(kpreid): Context should include thrown flag
               hook(subcontext, thrown);
@@ -841,10 +909,10 @@ var scanning;  // exports
             queue(context.property(name, v, obtainInstance), last);
           }
           if ((v = desc.get)) {
-            queue(context.getter(name, v), last);
+            queue(context.getter(name, desc, v), last);
           }
           if ((v = desc.set)) {
-            queue(context.setter(name, v), last);
+            queue(context.setter(name, desc, v), last);
           }
         }
         var ownPropertyNames;
