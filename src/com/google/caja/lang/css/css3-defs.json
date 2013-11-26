@@ -88,6 +88,23 @@
       "source": "http://dev.w3.org/csswg/css-animations/#animation-timing-function"
     },
 
+    { "key": "appearance",
+      "signature": "none",
+      "initial": "none",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/-moz-appearance",
+      "comment": [
+        "This exists as -moz-appearance and -webkit-appearance.",
+        "It won't be standardized, and use is strongly discouraged.",
+        "There's a very large set of valid values: button, caret, etc.",
+        "But use in the wild is mostly just appearance:none.",
+        "So we're only allowing 'none' to keep the sanitizer small.",
+        "TODO(felix8a): css sanitizer needs a way to allow bare identifiers."
+      ]
+    },
+
     { "key": "azimuth",
       "signature": "<angle> | [[ left-side | far-left | left | center-left | center | center-right | right | far-right | right-side ] || behind ] | leftwards | rightwards",
       "default": "center",
