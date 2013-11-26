@@ -15,6 +15,7 @@
     "animation-name",
     "animation-play-state",
     "animation-timing-function",
+    "appearance",
     "azimuth",
     "backface-visibility",
     "background",
