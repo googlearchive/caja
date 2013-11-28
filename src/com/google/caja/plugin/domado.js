@@ -43,10 +43,9 @@
  * @author kpreid@switchb.org (port to ES5)
  * @requires console, Uint8ClampedArray
  * @requires bridalMaker, cajaVM, cssSchema, lexCss, URI, unicode
- * @requires parseCssDeclarations, sanitizeCssProperty, sanitizeCssSelectors
+ * @requires parseCssDeclarations, sanitizeCssProperty, sanitizeCssSelectorList
  * @requires html, html4, htmlSchema
  * @requires WeakMap, Proxy
- * @requires CSS_PROP_BIT_HISTORY_INSENSITIVE
  * @requires HtmlEmitter
  * @provides Domado
  * @overrides window
@@ -3484,23 +3483,20 @@ var Domado = (function() {
         throw error;
       }
       function tameQuerySelector(rootFeralNode, guestSelector, returnAll) {
-        var virtualizedSelectors = sanitizeCssSelectors(
+        var sanitizedSelectors = sanitizeCssSelectorList(
           lexCss(guestSelector), qsaVirtualization, querySelectorFail);
-        var historyInsensitiveVirtualizedSelectors =
-          virtualizedSelectors[0].join(',');
+        sanitizedSelectors = sanitizedSelectors.join(',');
         if (returnAll) {
           // TODO(kpreid): Review whether significant performance improvements
           // could be obtained by *not* using our live NodeList emulation, since
           // querySelectorAll is explicitly not live.
           return new TameNodeList(
-              rootFeralNode.querySelectorAll(
-                  historyInsensitiveVirtualizedSelectors),
+              rootFeralNode.querySelectorAll(sanitizedSelectors),
               defaultTameNode);
         } else {
           // May return null; defaultTameNode is OK with that.
           return defaultTameNode(
-              rootFeralNode.querySelector(
-                  historyInsensitiveVirtualizedSelectors));
+              rootFeralNode.querySelector(sanitizedSelectors));
         }
       }
 
@@ -6739,22 +6735,7 @@ var Domado = (function() {
             privates.readByCanonicalName = function(canonName) {
               var propName = allCssProperties.domToCss(canonName);
               var schemaElement = cssSchema[propName];
-              var canReturnDirectValue =
-                  (schemaElement
-                   && (schemaElement.cssPropBits
-                       & CSS_PROP_BIT_HISTORY_INSENSITIVE))
-                  || !isNestedInAnchor(this.rawElement);
-              if (canReturnDirectValue) {
-                return superReadByCanonicalName.call(this, canonName);
-              } else {
-                return TameStyleConf.amplify(
-                    // TODO(kpreid): Explain why we're using this node's answer
-                    new TameComputedStyle(feralPseudoDocument,
-                        this.pseudoElement),
-                    function(p2) {
-                  return p2.readByCanonicalName(canonName);
-                });
-              }
+              return superReadByCanonicalName.call(this, canonName);
             };
             privates.writeByCanonicalName = function(canonName) {
               throw 'Computed styles not editable: This code should be ' +
@@ -6787,7 +6768,7 @@ var Domado = (function() {
 
 
       var cssIdClassPrefixRE =
-          new RegExp('(^|[},]\)\s*\\.' + idClass + ' ', 'g');
+          new RegExp('(^|[},])\\s*\\.' + idClass + ' ', 'g');
       /**
        * Create a CSS stylesheet with the given text and append it to the DOM.
        * @param {string} cssText a well-formed stylesheet production.
