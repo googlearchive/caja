@@ -15,8 +15,6 @@
 -->
 
 <style type="text/css">
-  a:visited { color: purple; }
-  a:link { color: blue; }
   .invisible { display: none; float: left }
   body.foo #test-body-classes-yes,
   body.bar #test-body-classes-no { font-style: italic }
@@ -28,9 +26,6 @@
 </style>
 
 </style>
-
-<!-- Ensure http://www.google.com/favicon.ico is :visited -->
-<img src="http://www.google.com/favicon.ico"/>
 
 <div id="untrusted_content"
  title="<Untrusted Content Title>"
@@ -71,21 +66,4 @@
   <div class="testcontainer" id="testOpaqueNodes-IDSUFFIX"
    ><!-- Comment -->a<script id="howdy-script-IDSUFFIX">/* Howdy */</script
    >b<object id="dangerous-object">obj</object>c</div>
-
-  <!-- http://www.google.com/favicon.ico has been visited
-       by the above IMG tag -->
-  <a id="direct-visited-IDSUFFIX" href="http://www.google.com/favicon.ico">
-    Visited
-  </a>
-  <a href="http://www.google.com/">
-    <span id="nested-visited-IDSUFFIX">Visited</span>
-  </a>
-
-  <!-- http://www.example.com/ is reserved by RFC2606 -->
-  <a id="direct-link-IDSUFFIX" href="http://www.example.com/">
-    Link
-  </a>
-  <a href="http://www.example.com/">
-    <span id="nested-link-IDSUFFIX">Link</span>
-  </a>
 </div>

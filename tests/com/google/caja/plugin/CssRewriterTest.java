@@ -167,8 +167,8 @@ public class CssRewriterTest extends CajaTestCase {
               }
               consumeMessage(message.getFilePosition(), type, level, args);
             }
-            assertNoErrors();
           }
+          assertNoErrors();
         } catch (Exception ex) {
           System.err.println("Test " + name + "\n" + render(testCase));
           throw ex;

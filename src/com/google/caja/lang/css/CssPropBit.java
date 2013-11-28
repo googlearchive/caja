@@ -30,11 +30,7 @@ public enum CssPropBit {
   QSTRING(8),
   /** Are URLs allowed. */
   URL(16),
-  /**
-   * Allowed to be read via computed style directly without computing the style
-   * as if the link were not visited.
-   */
-  HISTORY_INSENSITIVE(32),
+  // 32 used to be a flag HISTORY_INSENSITIVE
   /**
    * Can identifiers that are not reserved words be treated as their literal
    * text instead of being treated as symbols.
@@ -42,10 +38,7 @@ public enum CssPropBit {
   UNRESERVED_WORD(64),
   /** Are unicode ranges allowed? */
   UNICODE_RANGE(128),
-  /**
-   * Allowed to be specified in a history-sensitive manner in a CSS stylesheet.
-   */
-  ALLOWED_IN_LINK(256),
+  // 256 used to be a flag ALLOWED_IN_LINK
   /**
    * Non-keyword terms treated as global names that need to be namespaced.
    */

@@ -26,7 +26,6 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.ElKey;
-import com.google.caja.parser.html.Namespaces;
 import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
@@ -34,10 +33,7 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Name;
-import com.google.caja.util.Pair;
 import com.google.caja.util.TypesafeSet;
-import com.google.common.collect.Lists;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
@@ -89,7 +85,6 @@ public final class CssRewriter {
    * @param t non null.  modified in place.
    */
   public void rewrite(AncestorChain<? extends CssTree> t) {
-    rewriteHistorySensitiveRulesets(t);
     quoteLooseWords(t);
     fixTerms(t);
     // Once at the beginning, and again at the end.
@@ -122,187 +117,6 @@ public final class CssRewriter {
     // Translate embedded URLs to either "safe" or "unsafe" variant depending
     // on whether a server-side URI policy has been provided.
     translateUrls(t);
-  }
-
-  /**
-   * A set of pseudo classes that are allowed in restricted context because they
-   * can leak user history information.
-   * <p>
-   * From http://www.w3.org/TR/css3-selectors/#dynamic-pseudos : <blockquote>
-   *   <h3>6.6.1. Dynamic pseudo-classes</h3>
-   *   The link pseudo-classes: :link and :visited<br>
-   *   <br>
-   *   User agents commonly display unvisited links differently from previously
-   *   visited ones. Selectors provides the pseudo-classes :link and :visited to
-   *   distinguish them:<ul>
-   *     <li>The :link pseudo-class applies to links that have not yet been
-   *         visited.
-   *     <li>The :visited pseudo-class applies once the link has been visited by
-   *         the user.
-   *   </ul>
-   * </blockquote>
-   */
-  private static final TypesafeSet<Name> LINK_PSEUDO_CLASSES = TypesafeSet.of(
-      Name.css("link"), Name.css("visited"));
-
-  /**
-   * Split any ruleset containing :link or :visited pseudoclasses into two
-   * rulesets: one with these pseudoclasses in the selector, and one without.
-   * (One of these resulting rulesets may be empty and thus not emitted.) So
-   * for example, the stylesheet:
-   *
-   * <pre>
-   *   :visited, a:link, p, div { color: blue }
-   * </pre>
-   *
-   * <p>becomes:
-   *
-   * <pre>
-   *   :visited, a:link { color: blue }
-   *   p, div { color: blue }
-   * </pre>
-   *
-   * <p>We do this because, downstream, we are going to cull away declarations
-   * for properties which are not permitted to depend on the :link or :visisted
-   * pseudoclasses. We do this, in turn, to prevent history mining attacks.
-   *
-   * <p>Furthermore, scope any selectors containing linky pseudo classes to
-   * operate only on anchor (<A>) elements. Modify it if necessary, or record
-   * an error if the selector is already scoped to some element that is not an
-   * anchor. For example:
-   *
-   * <pre>
-   *   div#foo     -->  div#foo     (unmodified)
-   *   :visited    -->  a:visited
-   *   :link       -->  a:link
-   *   *:visited   -->  a:visited
-   *   p:visited   -->  ERROR
-   * </pre>
-   *
-   * <p>We do this to ensure the most predictable possible browser behavior
-   * around this sensitive and exploitable issue.
-   */
-  private void rewriteHistorySensitiveRulesets(
-      final AncestorChain<? extends CssTree> t) {
-    t.node.acceptPreOrder(new Visitor() {
-        public boolean visit(AncestorChain<?> ancestors) {
-          if (!(ancestors.node instanceof CssTree.RuleSet)) { return true; }
-          Pair<CssTree.RuleSet, CssTree.RuleSet> rewritten =
-              rewriteHistorySensitiveRuleset((CssTree.RuleSet) ancestors.node);
-          if (rewritten != null) {
-            t.node.insertBefore(rewritten.a, ancestors.node);
-            t.node.insertBefore(rewritten.b, ancestors.node);
-            t.node.removeChild(ancestors.node);
-          }
-          return false;
-        }
-      }, t.parent);
-  }
-
-  private Pair<CssTree.RuleSet, CssTree.RuleSet> rewriteHistorySensitiveRuleset(
-      CssTree.RuleSet ruleSet) {
-    List<CssTree> linkeyChildren = Lists.newArrayList();
-    List<CssTree> nonLinkeyChildren = Lists.newArrayList();
-
-    for (CssTree child : ruleSet.children()) {
-      if (child instanceof CssTree.Selector) {
-        CssTree.Selector selector = (CssTree.Selector) child;
-        if (vetLinkToHistorySensitiveSelector(selector)) {
-          linkeyChildren.add(selector);
-        } else {
-          nonLinkeyChildren.add(selector);
-        }
-      } else {
-        // All the selectors come first, so now we know whether we need to split
-        // the child lists in two.
-        if (linkeyChildren.isEmpty() || nonLinkeyChildren.isEmpty()) {
-          return null;
-        } else {
-          linkeyChildren.add(child);
-          nonLinkeyChildren.add((CssTree) child.clone());
-        }
-      }
-    }
-
-    return Pair.pair(
-        new CssTree.RuleSet(ruleSet.getFilePosition(), linkeyChildren),
-        new CssTree.RuleSet(ruleSet.getFilePosition(), nonLinkeyChildren));
-  }
-
-  /**
-   * Rewrites any visited or link pseudo class elements to have element name A.
-   * @return true if argument is a compound selector like
-   *     {@code div#foo > p > *:visited}.
-   */
-  private boolean vetLinkToHistorySensitiveSelector(CssTree.Selector selector) {
-    boolean modified = false;
-    for (CssTree child : selector.children()) {
-      if (child instanceof CssTree.SimpleSelector) {
-        modified |= vetLinkToHistorySensitiveSimpleSelector(
-            (CssTree.SimpleSelector) child);
-      }
-    }
-    return modified;
-  }
-
-  /** The name of an anchor {@code <A>} HTML tag. */
-  private static final ElKey HTML_ANCHOR = ElKey.forHtmlElement("a");
-
-  /**
-   * Rewrites any visited or link pseudo class elements to have element name A.
-   * @return true iff argument is a simple selector like {@code *:visited}.
-   */
-  private boolean vetLinkToHistorySensitiveSimpleSelector(
-      CssTree.SimpleSelector selector) {
-    if (selector.children().isEmpty()) { return false; }
-    if (!containsLinkPseudoClass(selector)) { return false; }
-    CssTree firstChild = selector.children().get(0);
-    if (firstChild instanceof CssTree.WildcardElement) {
-      // "*#foo:visited" --> "a#foo:visited"
-      selector.replaceChild(
-          new CssTree.IdentLiteral(
-              firstChild.getFilePosition(), HTML_ANCHOR.toString()),
-          firstChild);
-      return true;
-    } else if (firstChild instanceof CssTree.IdentLiteral) {
-      // "a#foo:visited" is legal; "p#foo:visited" is not
-      String value = ((CssTree.IdentLiteral) firstChild).getValue();
-      if (!HTML_ANCHOR.equals(
-              ElKey.forElement(Namespaces.HTML_DEFAULT, value))) {
-        mq.addMessage(
-            PluginMessageType.CSS_LINK_PSEUDO_SELECTOR_NOT_ALLOWED_ON_NONANCHOR,
-            firstChild.getFilePosition());
-      }
-      return false;
-    } else {
-      // "#foo:visited" --> "a#foo:visited"
-      selector.insertBefore(
-          new CssTree.IdentLiteral(
-              firstChild.getFilePosition(), HTML_ANCHOR.toString()),
-          firstChild);
-      return true;
-    }
-  }
-
-  private static boolean containsLinkPseudoClass(
-      CssTree.SimpleSelector selector) {
-    final boolean[] result = new boolean[1];
-    selector.visitPreOrder(new ParseTreeNodeVisitor() {
-      public boolean visit(ParseTreeNode node) {
-        if (node instanceof CssTree.Pseudo) {
-          CssTree firstChild = (CssTree) node.children().get(0);
-          if (firstChild instanceof CssTree.IdentLiteral) {
-            CssTree.IdentLiteral ident = (CssTree.IdentLiteral) firstChild;
-            if (LINK_PSEUDO_CLASSES.contains(Name.css(ident.getValue()))) {
-              result[0] = true;
-              return false;
-            }
-          }
-        }
-        return true;
-      }
-    });
-    return result[0];
   }
 
   /**
@@ -653,10 +467,14 @@ public final class CssRewriter {
         Name.css("right"),
         Name.css("root"),
         Name.css("scope"),
-        // Name.css("target"),      // disallowed
+        // :target is disallowed because you can use it to guess the
+        // container URL's #fragment. This is low risk and might be
+        // allowable, since the attack is all or nothing: you can't
+        // use :target to guess part of a #fragment.
+        // Name.css("target"),
         Name.css("user-error"),
-        Name.css("valid")
-        // Name.css("visited"),     // disallowed
+        Name.css("valid"),
+        Name.css("visited")
       );
   private void removeUnsafeConstructs(AncestorChain<? extends CssTree> t) {
 
@@ -699,18 +517,10 @@ public final class CssRewriter {
               Name pseudoName = Name.css(
                   ((CssTree.IdentLiteral) child).getValue());
               if (!ALLOWED_PSEUDO_CLASSES.contains(pseudoName)) {
-                // Allow the visited pseudo selector but not with any styles
-                // that can be fetched via getComputedStyle in Domado's
-                // COMPUTED_STYLE_WHITELIST.
-                if (!(LINK_PSEUDO_CLASSES.contains(pseudoName)
-                      && strippedPropertiesBannedInLinkClasses(
-                          ancestors.parent.parent.cast(CssTree.Selector.class)
-                          ))) {
-                  mq.addMessage(PluginMessageType.UNSAFE_CSS_PSEUDO_SELECTOR,
-                                invalidNodeMessageLevel, node.getFilePosition(),
-                                node);
-                  remove = true;
-                }
+                mq.addMessage(PluginMessageType.UNSAFE_CSS_PSEUDO_SELECTOR,
+                              invalidNodeMessageLevel, node.getFilePosition(),
+                              node);
+                remove = true;
               }
             } else {
               StringBuilder rendered = new StringBuilder();
@@ -922,56 +732,6 @@ public final class CssRewriter {
       }
     }
     return null;
-  }
-
-  private boolean strippedPropertiesBannedInLinkClasses(
-      AncestorChain<CssTree.Selector> sel) {
-    if (!(sel.parent.node instanceof CssTree.RuleSet)) { return false; }
-    TypesafeSet<Name> propertyNames
-        = LinkStyleWhitelist.PROPERTIES_ALLOWED_IN_LINK_CLASSES;
-    CssTree.RuleSet rs = sel.parent.cast(CssTree.RuleSet.class).node;
-    MutableParseTreeNode.Mutation mut = rs.createMutation();
-    for (CssTree child : rs.children()) {
-      if (child instanceof CssTree.Selector
-          || child instanceof CssTree.EmptyDeclaration) {
-        continue;
-      }
-      CssTree.PropertyDeclaration pd;
-      if (child instanceof CssTree.PropertyDeclaration) {
-        pd = (CssTree.PropertyDeclaration) child;
-      } else {
-        pd = ((CssTree.UserAgentHack) child).getDeclaration();
-      }
-      CssTree.Property p = pd.getProperty();
-      Name propName = p.getPropertyName();
-      boolean allowedInLinkClass = propertyNames.contains(propName);
-      if (!allowedInLinkClass && propName.getCanonicalForm().startsWith("_")) {
-        allowedInLinkClass = propertyNames.contains(Name.css(
-            propName.getCanonicalForm().substring(1)));
-      }
-      if (!allowedInLinkClass || mightContainUrl(pd.getExpr())) {
-        mq.getMessages().add(new Message(
-            PluginMessageType.DISALLOWED_CSS_PROPERTY_IN_SELECTOR,
-            this.invalidNodeMessageLevel,
-            p.getFilePosition(), p.getPropertyName(),
-            sel.node.getFilePosition()));
-        mut.removeChild(child);
-      }
-    }
-    mut.execute();
-    return true;
-  }
-
-  private static boolean mightContainUrl(CssTree.Expr expr) {
-    for (int n = expr.getNTerms(), i = 0; i < n; ++i) {
-      CssTree.CssExprAtom atom = expr.getNthTerm(i).getExprAtom();
-      if (!(atom instanceof CssTree.IdentLiteral
-            || atom instanceof CssTree.QuantityLiteral
-            || atom instanceof CssTree.HashLiteral)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   private static final Pattern SAFE_SELECTOR_PART

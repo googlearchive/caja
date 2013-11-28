@@ -19,7 +19,6 @@
  * is used to generate css-defs.js.
  *
  * @author mikesamuel@gmail.com
- * \@requires CSS_PROP_BIT_ALLOWED_IN_LINK
  * \@requires CSS_PROP_BIT_GLOBAL_NAME
  * \@requires CSS_PROP_BIT_HASH_VALUE
  * \@requires CSS_PROP_BIT_NEGATIVE_QUANTITY
@@ -35,14 +34,14 @@
  * \@overrides window
  * \@requires parseCssStylesheet
  * \@provides sanitizeCssProperty
- * \@provides sanitizeCssSelectors
+ * \@provides sanitizeCssSelectorList
  * \@provides sanitizeStylesheet
  * \@provides sanitizeStylesheetWithExternals
  * \@provides sanitizeMediaQuery
  */
 
 var sanitizeCssProperty = undefined;
-var sanitizeCssSelectors = undefined;
+var sanitizeCssSelectorList = undefined;
 var sanitizeStylesheet = undefined;
 var sanitizeStylesheetWithExternals = undefined;
 var sanitizeMediaQuery = undefined;
@@ -368,7 +367,7 @@ var sanitizeMediaQuery = undefined;
   //    https://developer.mozilla.org/en-US/docs/Web/CSS/Reference
   //    https://developer.mozilla.org/en-US/docs/Web/CSS/Pseudo-classes
   //    http://dev.w3.org/csswg/selectors4/
-  var HISTORY_NON_SENSITIVE_PSEUDO_SELECTOR_WHITELIST =
+  var PSEUDO_SELECTOR_WHITELIST =
     new RegExp(
         '^(active|after|before|blank|checked|default|disabled'
         + '|drop|empty|enabled|first|first-child|first-letter'
@@ -376,20 +375,16 @@ var sanitizeMediaQuery = undefined;
         + '|in-range|indeterminate|invalid|last-child|last-of-type'
         + '|left|link|only-child|only-of-type|optional|out-of-range'
         + '|placeholder-shown|read-only|read-write|required|right'
-        + '|root|scope|user-error|valid'
+        + '|root|scope|user-error|valid|visited'
         + ')$');
-
-  // TODO(felix8a): This might be removable since modern browsers
-  // already prevent history sniffing
-  var HISTORY_SENSITIVE_PSEUDO_SELECTOR_WHITELIST = /^(link|visited)$/;
 
   // Set of punctuation tokens that are child/sibling selectors.
   var COMBINATOR = {};
   COMBINATOR['>'] = COMBINATOR['+'] = COMBINATOR['~'] = COMBINATOR;
 
   /**
-   * Given a series of tokens, returns two lists of sanitized selectors.
-   * @param {Array.<string>} selectors In the form produces by csslexer.js.
+   * Given a series of tokens, returns a list of sanitized selectors.
+   * @param {Array.<string>} selectors In the form produced by csslexer.js.
    * @param {{
    *     containerClass: ?string,
    *     idSuffix: string,
@@ -415,22 +410,15 @@ var sanitizeMediaQuery = undefined;
    *     If it returns falsey, then processing is aborted and null is returned.
    *     If not present or it returns truthy, then the complex selector is
    *     dropped from the selector list.
-   * @return {Array.<Array.<string>>}? an array of length 2 where the zeroeth
-   *    element contains history-insensitive selectors and the first element
-   *    contains history-sensitive selectors.
+   * @return {Array.<string>}? an array of sanitized selectors.
    *    Null when the untraslatable compound selector handler aborts processing.
    */
-  sanitizeCssSelectors = function(
+  sanitizeCssSelectorList = function(
       selectors, virtualization, opt_onUntranslatableSelector) {
     var containerClass = virtualization.containerClass;
     var idSuffix = virtualization.idSuffix;
     var tagPolicy = virtualization.tagPolicy;
-
-    // Produce two distinct lists of selectors to sequester selectors that are
-    // history sensitive (:visited), so that we can disallow properties in the
-    // property groups for the history sensitive ones.
-    var historySensitiveSelectors = [];
-    var historyInsensitiveSelectors = [];
+    var sanitized = [];
 
     // Remove any spaces that are not operators.
     var k = 0, i, inBrackets = 0, tok;
@@ -464,8 +452,6 @@ var sanitizeMediaQuery = undefined;
 
 
     function processComplexSelector(start, end) {
-      var historySensitive = false;
-
       // Space around commas is not an operator.
       if (selectors[start] === ' ') { ++start; }
       if (end-1 !== start && selectors[end] === ' ') { --end; }
@@ -632,15 +618,7 @@ var sanitizeMediaQuery = undefined;
             }
           } else if (start < end && selectors[start] === ':') {
             tok = selectors[++start];
-            if (HISTORY_SENSITIVE_PSEUDO_SELECTOR_WHITELIST.test(tok)) {
-              if (!/^[a*]?$/.test(element)) {
-                valid = false;
-              }
-              historySensitive = true;
-              pseudoSelector += ':' + tok;
-              element = 'a';
-            } else if (
-                HISTORY_NON_SENSITIVE_PSEUDO_SELECTOR_WHITELIST.test(tok)) {
+            if (PSEUDO_SELECTOR_WHITELIST.test(tok)) {
               pseudoSelector += ':' + tok;
             } else {
               break;
@@ -673,9 +651,7 @@ var sanitizeMediaQuery = undefined;
             safeSelector = '.' + containerClass + ' ' + safeSelector;
           }
 
-          (historySensitive
-           ? historySensitiveSelectors
-           : historyInsensitiveSelectors).push(safeSelector);
+          sanitized.push(safeSelector);
         }  // else nothing there.
         return true;
       } else {
@@ -683,8 +659,7 @@ var sanitizeMediaQuery = undefined;
           || opt_onUntranslatableSelector(selectors.slice(start, end));
       }
     }
-
-    return [historyInsensitiveSelectors, historySensitiveSelectors];
+    return sanitized;
   };
 
   (function () {
@@ -781,26 +756,6 @@ var sanitizeMediaQuery = undefined;
   }());
 
   (function () {
-
-    /**
-     * Given a series of sanitized tokens, removes any properties that would
-     * leak user history if allowed to style links differently depending on
-     * whether the linked URL is in the user's browser history.
-     * @param {Array.<string>} blockOfProperties
-     */
-    function sanitizeHistorySensitive(blockOfProperties) {
-      var elide = false;
-      for (var i = 0, n = blockOfProperties.length; i < n-1; ++i) {
-        var token = blockOfProperties[i];
-        if (':' === blockOfProperties[i+1]) {
-          elide =
-            !(cssSchema[token].cssPropBits & CSS_PROP_BIT_ALLOWED_IN_LINK);
-        }
-        if (elide) { blockOfProperties[i] = ''; }
-        if (';' === token) { elide = false; }
-      }
-      return blockOfProperties.join('');
-    }
 
     /**
      * Extracts a url out of an at-import rule of the form:
@@ -975,8 +930,6 @@ var sanitizeMediaQuery = undefined;
               }
             },
             'startRuleset': function (selectorArray) {
-              var historySensitiveSelectors = void 0;
-              var removeHistoryInsensitiveSelectors = false;
               if (!elide) {
                 var selector = void 0;
                 if (blockStack[blockStack.length - 1] === '@keyframes') {
@@ -984,70 +937,26 @@ var sanitizeMediaQuery = undefined;
                   selector = selectorArray.join(' ')
                     .match(/^ *(?:from|to|\d+(?:\.\d+)?%) *(?:, *(?:from|to|\d+(?:\.\d+)?%) *)*$/i);
                   elide = !selector;
-                  historySensitiveSelectors = [];
                   if (selector) { selector = selector[0].replace(/ +/g, ''); }
                 } else {
-                  var selectors = sanitizeCssSelectors(
+                  var selectors = sanitizeCssSelectorList(
                       selectorArray, virtualization);
-                  var historyInsensitiveSelectors = selectors[0];
-                  historySensitiveSelectors = selectors[1];
-                  if (!historyInsensitiveSelectors.length
-                      && !historySensitiveSelectors.length) {
+                  if (!selectors || !selectors.length) {
                     elide = true;
                   } else {
-                    selector = historyInsensitiveSelectors.join(', ');
-                    if (!selector) {
-                      // If we have only history sensitive selectors, use an
-                      // impossible rule so that we can capture the content for
-                      // later processing by history insenstive content for use
-                      // below.
-                      selector = 'head > html';
-                      removeHistoryInsensitiveSelectors = true;
-                    }
+                    selector = selectors.join(', ');
                   }
                 }
                 if (!elide) {
                   safeCss.push(selector, '{');
                 }
               }
-              blockStack.push(
-                  elide
-                  ? null
-                  // Sometimes a single list of selectors is split in two,
-                  //   div, a:visited
-                  // because we want to allow some properties for DIV that
-                  // we don't want to allow for A:VISITED to avoid leaking
-                  // user history.
-                  // Store the history sensitive selectors and the position
-                  // where the block starts so we can later create a copy
-                  // of the permissive tokens, and filter it to handle the
-                  // history sensitive case.
-                  : {
-                      historySensitiveSelectors: historySensitiveSelectors,
-                      endOfSelectors: safeCss.length - 1,  // 1 is open curly
-                      removeHistoryInsensitiveSelectors:
-                         removeHistoryInsensitiveSelectors
-                    });
+              blockStack.push(null);
             },
             'endRuleset': function () {
-              var rules = blockStack.pop();
-              var propertiesEnd = safeCss.length;
+              blockStack.pop();
               if (!elide) {
                 safeCss.push('}');
-                if ('object' === typeof rules) {
-                  var extraSelectors = rules.historySensitiveSelectors;
-                  if (extraSelectors.length) {
-                    var propertyGroupTokens =
-                      safeCss.slice(rules.endOfSelectors);
-                    safeCss.push(extraSelectors.join(', '),
-                                 sanitizeHistorySensitive(propertyGroupTokens));
-                  }
-                }
-              }
-              if (rules && rules.removeHistoryInsensitiveSelectors) {
-                safeCss.splice(
-                    // -1 and +1 account for curly braces.
-                    rules.endOfSelectors - 1, propertiesEnd + 1);
               }
               checkElide();
             },
@@ -1101,7 +1010,7 @@ var sanitizeMediaQuery = undefined;
 // Exports for closure compiler.
 if (typeof window !== 'undefined') {
   window['sanitizeCssProperty'] = sanitizeCssProperty;
-  window['sanitizeCssSelectors'] = sanitizeCssSelectors;
+  window['sanitizeCssSelectorList'] = sanitizeCssSelectorList;
   window['sanitizeStylesheet'] = sanitizeStylesheet;
   window['sanitizeMediaQuery'] = sanitizeMediaQuery;
 }

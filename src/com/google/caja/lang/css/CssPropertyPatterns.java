@@ -36,7 +36,6 @@ import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.ValueProperty;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
-import com.google.caja.plugin.LinkStyleWhitelist;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
@@ -445,7 +444,6 @@ public class CssPropertyPatterns {
     for (int propIndex = 0, n = propData.size(); propIndex < n; ++propIndex) {
       Pair<CssSchema.CssPropertyInfo, CssPropertyData> d
           = propData.get(propIndex);
-      CssSchema.CssPropertyInfo prop = d.a;
       CssPropertyData data = d.b;
 
       ObjectConstructor dataObj = new ObjectConstructor(unk);
@@ -453,16 +451,6 @@ public class CssPropertyPatterns {
       int propBits = 0;
       for (CssPropBit b : data.properties) {
         propBits |= b.jsValue;
-      }
-
-      if (prop != null) {
-        if (LinkStyleWhitelist.HISTORY_INSENSITIVE_STYLE_WHITELIST
-            .contains(prop.name)) {
-          propBits |= CssPropBit.HISTORY_INSENSITIVE.jsValue;
-        } else if (LinkStyleWhitelist.PROPERTIES_ALLOWED_IN_LINK_CLASSES
-                   .contains(prop.name)) {
-          propBits |= CssPropBit.ALLOWED_IN_LINK.jsValue;
-        }
       }
 
       dataObj.appendChild(

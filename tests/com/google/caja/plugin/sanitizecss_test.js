@@ -17,7 +17,7 @@
 function assertSelector(
     source, prefix, expected, opt_onUntranslatableSelector) {
   var tokens = lexCss(source);
-  var sanitized = sanitizeCssSelectors(
+  var sanitized = sanitizeCssSelectorList(
     tokens,
     {
       containerClass: prefix,
@@ -259,7 +259,7 @@ jsunitRegister('testColonsInSelectors',
                function testColonsInSelectors() {
   var source = 'input.cl\\:a\\3a ss[type = "text"], input#foo\\:bar';
   var tokens = lexCss(source);
-  var sanitized = sanitizeCssSelectors(
+  var sanitized = sanitizeCssSelectorList(
     tokens,
     {
       containerClass: 'sfx',
@@ -267,59 +267,59 @@ jsunitRegister('testColonsInSelectors',
       tagPolicy: function(el, args) { return { tagName: el }; }
     });
   assertArrayEquals(
-    [['.sfx input.cl\\:a\\:ss[type="text"]',
-      '.sfx input#foo\\:bar-sfx'], []],
+    ['.sfx input.cl\\:a\\:ss[type="text"]',
+     '.sfx input#foo\\:bar-sfx'],
     sanitized);
   jsunit.pass();
 });
 
 jsunitRegister('testCssSelectors',
                function testCssSelectors() {
-  assertSelector("#foo:visited", "sfx", [[], [".sfx a#foo-sfx:visited"]]);
-  assertSelector("#foo:link", "sfx", [[], [".sfx a#foo-sfx:link"]]);
+  assertSelector("#foo:visited", "sfx", [".sfx #foo-sfx:visited"]);
+  assertSelector("#foo:link", "sfx", [".sfx #foo-sfx:link"]);
 
-  assertSelector("#foo:active", "sfx", [[".sfx #foo-sfx:active"], []]);
-  assertSelector("#foo:after", "sfx", [[".sfx #foo-sfx:after"], []]);
-  assertSelector("#foo:before", "sfx", [[".sfx #foo-sfx:before"], []]);
+  assertSelector("#foo:active", "sfx", [".sfx #foo-sfx:active"]);
+  assertSelector("#foo:after", "sfx", [".sfx #foo-sfx:after"]);
+  assertSelector("#foo:before", "sfx", [".sfx #foo-sfx:before"]);
   assertSelector(
-    "#foo:first-child", "sfx", [[".sfx #foo-sfx:first-child"], []]);
+    "#foo:first-child", "sfx", [".sfx #foo-sfx:first-child"]);
   assertSelector(
-    "#foo:first-letter", "sfx", [[".sfx #foo-sfx:first-letter"], []]);
-  assertSelector("#foo:focus", "sfx", [[".sfx #foo-sfx:focus"], []]);
-  assertSelector("#foo:hover", "sfx", [[".sfx #foo-sfx:hover"], []]);
-  assertSelector("#x:hover:focus", "sfx", [[".sfx #x-sfx:hover:focus"], []]);
-  assertSelector("#foo:bogus", "sfx", [[], []]);
+    "#foo:first-letter", "sfx", [".sfx #foo-sfx:first-letter"]);
+  assertSelector("#foo:focus", "sfx", [".sfx #foo-sfx:focus"]);
+  assertSelector("#foo:hover", "sfx", [".sfx #foo-sfx:hover"]);
+  assertSelector("#x:hover:focus", "sfx", [".sfx #x-sfx:hover:focus"]);
+  assertSelector("#foo:bogus", "sfx", []);
   jsunit.pass();
 });
 
 jsunitRegister('testAttrSelectors',
                function testAttrSelectors() {
   assertSelector(
-    "div[class*='substr']", "sfx", [[".sfx div[class*=\"substr\"]"], []]);
+    "div[class*='substr']", "sfx", [".sfx div[class*=\"substr\"]"]);
   assertSelector(
-    "div[class|='substr' i]", "sfx", [[".sfx div[class|=\"substr\" i]"], []]);
+    "div[class|='substr' i]", "sfx", [".sfx div[class|=\"substr\" i]"]);
   assertSelector(
-    "p[title |= \"sub\"]", "sfx", [[".sfx p[title|=\"sub\"]"], []]);
+    "p[title |= \"sub\"]", "sfx", [".sfx p[title|=\"sub\"]"]);
   assertSelector(
-    "p[id ~= \"\\\"\"]", "sfx", [[".sfx p[id~=\"\\22 -sfx\"]"], []]);
+    "p[id ~= \"\\\"\"]", "sfx", [".sfx p[id~=\"\\22 -sfx\"]"]);
   // ids allowed on any element.  unquoted values are quoted.
-  assertSelector("*[id ~= foo]", "sfx", [[".sfx *[id~=\"foo-sfx\"]"], []]);
+  assertSelector("*[id ~= foo]", "sfx", [".sfx *[id~=\"foo-sfx\"]"]);
   // id existence check allowed
-  assertSelector("*[id]", "sfx", [[".sfx *[id]"], []]);
+  assertSelector("*[id]", "sfx", [".sfx *[id]"]);
   assertSelector(
-    "input[type=text]", "sfx", [[".sfx input[type=\"text\"]"], []]);
+    "input[type=text]", "sfx", [".sfx input[type=\"text\"]"]);
   // Can't deal with case insensitive matches of case sensitive suffix.
-  assertSelector("p[id ~= \"\\\"\" i]", "sfx", [[], []]);
+  assertSelector("p[id ~= \"\\\"\" i]", "sfx", []);
   // Drop empty values for suffix and prefix operators instead of turning a
   // predicate that always fails into one that can succeed.
-  assertSelector("p[id^='']", "sfx", [[], []]);
+  assertSelector("p[id^='']", "sfx", []);
   // URIs require rewriting, so it isn't meaningful to match against URIs.
   // Also, it leaks the base URL.
   // Maybe store the original of URI attrs in a custom attr.
-  assertSelector("a[href*='?pwd=hello-kitty']", "sfx", [[], []]);
-  assertSelector("a[href]", "sfx", [[".sfx a[href]"], []]);
-  assertSelector("A[href]", "sfx", [[".sfx a[href]"], []]);
-  assertSelector("A[HREF]", "sfx", [[".sfx a[href]"], []]);
+  assertSelector("a[href*='?pwd=hello-kitty']", "sfx", []);
+  assertSelector("a[href]", "sfx", [".sfx a[href]"]);
+  assertSelector("A[href]", "sfx", [".sfx a[href]"]);
+  assertSelector("A[HREF]", "sfx", [".sfx a[href]"]);
   jsunit.pass();
 });
 
@@ -327,7 +327,7 @@ jsunitRegister('testMixedSubselectorsOrderIndependent',
                function testMixedSubselectorsOrderIndependent() {
   assertSelector(
     "div[title=foo].c1#id.c2", "zzz",
-    [[".zzz div.c1#id-zzz.c2[title=\"foo\"]"], []]);
+    [".zzz div.c1#id-zzz.c2[title=\"foo\"]"]);
   jsunit.pass();
 });
 
@@ -347,11 +347,11 @@ jsunitRegister('testUntranslatableSelectorHandler',
   // No handler
   assertSelector(
       "p.bar, b, bad[], p.foo", "x",
-      [[".x p.bar", ".x b", ".x p.foo"], []]);
+      [".x p.bar", ".x b", ".x p.foo"]);
   // Explicitly permissive
   assertSelector(
       "p.bar, b, bad[], p.foo", "x",
-      [[".x p.bar", ".x b", ".x p.foo"], []],
+      [".x p.bar", ".x b", ".x p.foo"],
       function () { return true; });
   // Fail early.
   assertSelector(
@@ -361,13 +361,13 @@ jsunitRegister('testUntranslatableSelectorHandler',
   // Don't fail early on nothing
   assertSelector(
       "p,,p", "x",
-      [[".x p", ".x p"], []],
+      [".x p", ".x p"],
       function () { return false; });
   // Test the callback value.
   var source =
     "p, b.bad__, p, div > *[bogus], p[title=@], div + p[id=bad bad],"
     + " a[href~='untranslatable'], a:visited, p, b#bad__, b#__bad";
-  var expected = [[".x p", ".x p", ".x p"], [".x a:visited"]];
+  var expected = [".x p", ".x p", ".x a:visited", ".x p"];
   var log = [];
   assertSelector(
       source, "x", expected,
@@ -402,10 +402,10 @@ jsunitRegister('testImportant', function testImportant() {
 });
 
 jsunitRegister('testIssue1804', function testIssue1804() {
-  assertSelector("a,", "sfx", [[".sfx a"], []]);
-  assertSelector(",a", "sfx", [[".sfx a"], []]);
-  assertSelector(",",  "sfx", [[], []]);
-  assertSelector("a[", "sfx", [[], []]);
+  assertSelector("a,", "sfx", [".sfx a"]);
+  assertSelector(",a", "sfx", [".sfx a"]);
+  assertSelector(",",  "sfx", []);
+  assertSelector("a[", "sfx", []);
   jsunit.pass();
 });
 

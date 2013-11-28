@@ -81,7 +81,14 @@ runCssSelectorTests([
       },
       {
         "cssText": "div[rejectedfortest] { color: blue }",
-        "golden": ""
+        "golden": "",
+        "messages": [
+          {
+            "type": "UNKNOWN_ATTRIBUTE",
+            "level": "ERROR",
+            "args": ["rejectedfortest"]
+          }
+        ]
       },
     ]
   },
@@ -117,7 +124,14 @@ runCssSelectorTests([
     "tests": [
       {
         "cssText": "div[rejectedfortest] { color: blue }",
-        "golden": ""
+        "golden": "",
+        "messages": [
+          {
+            "type": "UNKNOWN_ATTRIBUTE",
+            "level": "ERROR",
+            "args": ["div::rejectedfortest", "{css selector}"]
+          }
+        ]
       }
     ]
   },
@@ -140,7 +154,14 @@ runCssSelectorTests([
       {
         "cssText": "a { bogus: bogus }",
         "golden": "",
-        "altGolden": ".namespace__ a{}"
+        "altGolden": ".namespace__ a{}",
+        "messages": [
+          {
+            "type": "UNKNOWN_CSS_PROPERTY",
+            "level": "ERROR",
+            "args": ["bogus"]
+          }
+        ]
       },
       // make sure it doesn't interfere with others
       {
@@ -153,11 +174,25 @@ runCssSelectorTests([
       },
       {
         "cssText": "a { bogus: bogus; font-weight: bold }",
-        "golden": ".namespace__ a{font-weight:bold}"
+        "golden": ".namespace__ a{font-weight:bold}",
+        "messages": [
+          {
+            "type": "UNKNOWN_CSS_PROPERTY",
+            "level": "ERROR",
+            "args": ["bogus"]
+          }
+        ]
       },
       {
         "cssText": "a { font-weight: bold; bogus: bogus }",
-        "golden": ".namespace__ a{font-weight:bold}"
+        "golden": ".namespace__ a{font-weight:bold}",
+        "messages": [
+          {
+            "type": "UNKNOWN_CSS_PROPERTY",
+            "level": "ERROR",
+            "args": ["bogus"]
+          }
+        ]
       }
     ]
   },
@@ -189,11 +224,25 @@ runCssSelectorTests([
     "tests": [
       {
         "cssText": "a:attr(href) { color: blue }",
-        "golden": ""
+        "golden": "",
+        "messages": [
+          {
+            "type": "UNSAFE_CSS_PSEUDO_SELECTOR",
+            "level": "ERROR",
+            "args": [":attr(href)"]
+          }
+        ]
       },
       {
         "cssText": "a:attr(href) { color: blue } b { font-weight: bolder }",
-        "golden": ".namespace__ b{font-weight:bolder}"
+        "golden": ".namespace__ b{font-weight:bolder}",
+        "messages": [
+          {
+            "type": "UNSAFE_CSS_PSEUDO_SELECTOR",
+            "level": "ERROR",
+            "args": [":attr(href)"]
+          }
+        ]
       }
     ]
   },
@@ -298,69 +347,62 @@ runCssSelectorTests([
     "tests": [
       {
         "cssText": "a:link, a:badness { color:blue }",
-        "golden": ".namespace__ a:link{color:blue}"
-      },
-      {
-        "cssText": "a:visited { color:blue }",
-        "golden": ".namespace__ a:visited{color:blue}",
-        "messages": []
-      },
-
-    // Properties that are on Domado's HISTORY_INSENSITIVE_STYLE_WHITELIST
-    // should not be allowed in any rule that correlates with the :visited
-    // pseudo selector.
-    // TODO: How is this a whitelist then?
-      {
-        "cssText": 
-          "a:visited { color:blue; float:left; _float:left; *float:left }",
-        "golden": ".namespace__ a:visited{color:blue}",
+        "golden": ".namespace__ a:link{color:blue}",
         "messages": [
           {
-            "type": "DISALLOWED_CSS_PROPERTY_IN_SELECTOR",
+            "type": "UNSAFE_CSS_PSEUDO_SELECTOR",
             "level": "ERROR",
-            "args": [
-              "test:1+25@25 - 30@30",
-              "float",
-              "test:1+1@1 - 10@10"
-            ]
-          },
-          {
-            "type": "DISALLOWED_CSS_PROPERTY_IN_SELECTOR",
-            "level": "ERROR",
-            "args": [
-              "test:1+37@37 - 43@43",
-              "_float",
-              "test:1+1@1 - 10@10"
-            ]
-          },
-          {
-            "type": "DISALLOWED_CSS_PROPERTY_IN_SELECTOR",
-            "level": "ERROR",
-            "args": [
-              "test:1+51@51 - 56@56",
-              "float",
-              "test:1+1@1 - 10@10"
-            ]
+            "args": ["Pseudo"]  // TODO(felix8a): confusing error message
           }
         ]
       },
       {
+        "cssText": "a:visited { color:blue }",
+        "golden": ".namespace__ a:visited{color:blue}"
+      },
+
+    // These used to test for history-sensitive selector mangling.
+      {
+        "cssText": 
+          "a:visited { color:blue; float:left; _float:left; *float:left }",
+        "golden":
+          ""
+          + ".namespace__ a:visited{"
+          +   "color:blue;float:left;_float:left;*float:left"
+          + "}",
+        "altGolden":
+          ""
+          + ".namespace__ a:visited{"
+          +   "color:blue;float:left"
+          + "}"
+      },
+      {
         "cssText":
           "a:visited { COLOR:blue; FLOAT:left; _FLOAT:left; *FLOAT:left }",
-        "golden": ".namespace__ a:visited{color:blue}"
+        "golden":
+          ""
+          + ".namespace__ a:visited{"
+          +   "color:blue;float:left;_float:left;*float:left"
+          + "}",
+        // TODO(felix8a): why the js/java discrepency
+        "altGolden":
+          ""
+          + ".namespace__ a:visited{"
+          +   "color:blue;float:left"
+          + "}"
       },
 
       {
         "cssText": "*:visited { color: blue; }",
-        "golden": ".namespace__ a:visited{color:blue}"
+        "golden": ".namespace__ *:visited{color:blue}"
       },
       {
         "cssText": "#foo:visited { color: blue; }",
-        "golden": ".namespace__ a#foo-namespace__:visited{color:blue}"
+        "golden": ".namespace__ #foo-namespace__:visited{color:blue}"
       },
       {
         "cssText": ".foo:link { color: blue; }",
-        "golden": ".namespace__ a.foo:link{color:blue}"
+        "golden": ".namespace__ .foo:link{color:blue}"
       },
 
       {
@@ -370,19 +412,11 @@ runCssSelectorTests([
         + "  color: blue;\n"
         + "}",
         "golden": ""
-        + ".namespace__ a#foo-namespace__:visited, .namespace__ a.bar:link{"
-        +   "color:blue\n"
-        + "}"
-        + ".namespace__ div, .namespace__ p{"
+        + ".namespace__ #foo-namespace__:visited, "
+        + ".namespace__ div, "
+        + ".namespace__ .bar:link, "
+        + ".namespace__ p{"
         +   "padding:1px;"
-        +   "color:blue"
-        + "}",
-        "altGolden": ""  // TODO: Fix difference in order in Java.
-        + ".namespace__ div, .namespace__ p{"
-        +   "padding:1px;"
-        +   "color:blue"
-        + "}"
-        + ".namespace__ a#foo-namespace__:visited, .namespace__ a.bar:link{"
         +   "color:blue"
         + "}"
       },
@@ -400,17 +434,20 @@ runCssSelectorTests([
         + "}",
         "messages": []
       },
-      // Differs from the previous only in that it has the :visited pseudo
-      // selector which means we can't allow it to cause a network fetch because
-      // that could leak user history state.
 
+      // Differs from the previous only in that it has the :visited pseudo
       {
         "cssText": ""
         + "a#foo-bank:visited {"
-        + "  background-image: 'http://whitelisted-host.com/?bank=X&u=Al';"
+        + "  background: 'http://whitelisted-host.com/?bank=X&u=Al';"
         + "  color: purple"
         + "}",
-        "golden": ".namespace__ a#foo-bank-namespace__:visited{color:purple}"
+        "golden": ""
+        + ".namespace__ a#foo-bank-namespace__:visited{"
+        +   "background:url(\"http://whitelisted-host.com/?bank=X&u=Al\");"
+        +   "color:purple"
+        + "}",
+        "messages": []
       }
     ]
   },
