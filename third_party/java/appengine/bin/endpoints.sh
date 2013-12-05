@@ -20,14 +20,8 @@ if [ ! -e "$JAR_FILE2" ]; then
 fi
 
 CLASSPATH="$JAR_FILE1:$JAR_FILE2:$SDK_LIB/shared/servlet-api.jar:$SDK_LIB/appengine-tools-api.jar:$SDK_LIB/opt/user/datanucleus/v1/jdo2-api-2.3-eb.jar"
-for jar in $SDK_LIB/user/*.jar; do
-  CLASSPATH=$CLASSPATH:$jar
+for jar in "$SDK_LIB"/user/*.jar; do
+  CLASSPATH="$CLASSPATH:$jar"
 done
 
-if [ $1 == 'get-java-client-lib' ]; then
-  shift
-  java -cp "$CLASSPATH" com.google.api.server.spi.tools.WebApisTool \
-      get-client-lib -cp war/WEB-INF/classes -l java -o war/WEB-INF "$@"
-else
-  java -cp "$CLASSPATH" com.google.api.server.spi.tools.WebApisTool "$@"
-fi
+java -cp "$CLASSPATH" com.google.api.server.spi.tools.EndpointsTool "$@"

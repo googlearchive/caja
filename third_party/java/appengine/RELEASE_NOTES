@@ -1,7 +1,537 @@
-Copyright 2008 Google Inc.
+Copyright 2013 Google Inc.
 All rights reserved.
 
 App Engine Java SDK - Release Notes
+
+Version 1.8.8
+=============
+- Dedicated Memcache is now a GA feature. Our deprecation policy applies and
+  customers are encouraged to use this feature in production.
+- Memcache API calls are tracked by a new metric that estimates resource usage,
+  Memcache Compute Units (MCU's).  There is a new quota bucket and
+  dashboard graph corresponding to the metric, as well as an option in the
+  memcache viewer to display top keys by MCU's.
+- Fixed an issue with cloning apps not creating proper service account names.
+    https://code.google.com/p/googleappengine/issues/detail?id=10235
+- Fixed an issue with users receiving errors when uploading large files to GCS.
+    https://code.google.com/p/googleappengine/issues/detail?id=10101
+
+Version 1.8.7
+=============
+- Cloud Endpoints is now a GA feature.
+- Memcache configuration changes and mutations (flush, set, etc.) made from the
+  Admin Console are now recorded in the admin console logs.
+- The max_concurrent_requests setting is now configurable per version/module.
+    http://code.google.com/p/googleappengine/issues/detail?id=7927
+- LogService API functions related to the modules feature will be changing.
+  The following functions will be deprecated and new versions will be provided:
+    LogQuery.getModuleVersions(), LogQuery.moduleVersions() and
+    LogQuery.Builder.withModuleVersions().
+  The following functions will be removed in a future release:
+    LogQuery.getModuleVersions(), LogQuery.moduleVersions(),
+    LogQuery.Builder.withModuleVersions(), LogQuery.getServerVersions(),
+    LogQuery.serverVersions() and LogQuery.Builder.withServerVersions().
+  Serialized LogQuery objects with values set using any of the above removed
+  methods will not be supported in a future release.
+- Fixed an issue with Datastore not correctly validating namespaces with
+  greater than 500 characters.
+- Fixed and issue with vacuum_indexes not working in the SDK.
+    https://code.google.com/p/googleappengine/issues/detail?id=10168
+
+Version 1.8.6
+=============
+- GetAccessToken in the OAuth package is now a GA feature.
+- The LogsService API functions related to the Modules feature will be
+  changing as follows:
+    The following functions will be deprecated and new versions will be
+    provided: LogQuery.getModuleVersions(), LogQuery.moduleVersions() and
+    LogQuery.Builder.withModuleVersions().
+    The following functions will be removed in an upcoming release:
+    LogQuery.getModuleVersions(), LogQuery.moduleVersions() and
+    LogQuery.Builder.withModuleVersions(), LogQuery.getServerVersions(),
+    LogQuery.serverVersions() and LogQuery.Builder.withServerVersions().
+    Serialized LogQuery objects with values set using any of the above removed
+    methods will not be supported in an upcoming release.
+- A memcache size chart has been added to admin console's dashboard.  Access it
+  via the drop-down above the graph.  The chart graphs memcache size over time
+  enabling customers to determine when cache flush events occurred. This is a
+  preview feature.
+- The Cloud Endpoints API @ApiSerializer has been renamed to @ApiTransformer
+  and the Serializer interface has been renamed to Transformer.
+  @ApiSerializationProperty has also been renamed to @ApiResourceProperty.
+- If a customer passes invalid data to a memcache put() call, they now see a
+  more useful error message.
+    https://code.google.com/p/googleappengine/issues/detail?id=8671
+- Fixed an issue with the SDK that allows an invalid Datastore query combination
+  of group by and filter properties.
+- Fixed an issue affecting validation of the size of Datastore property names.
+- Fixed an issue with Datastore query validation for strings with exactly 500
+  characters.
+    https://code.google.com/p/googleappengine/issues/detail?id=10019
+
+Version 1.8.5
+=============
+- The Search API is now a GA feature.
+- The Conversion API, a decommissioned feature, has been removed from the
+  runtime. Applications in production that import the API should be fixed as
+  soon as possible.
+- Fixed an issue with the Admin Console Datastore Viewer throwing errors when
+  fetching UTF-8 kinds.
+    https://code.google.com/p/googleappengine/issues/detail?id=7570
+- Fixed an issue where files that contain an '@' could not be deployed.
+- Fixed an issue with the Datastore Admin not being able to backup to another
+  app.
+    https://code.google.com/p/googleappengine/issues/detail?id=9808
+
+Version 1.8.4
+=============
+- A Datastore Admin fix in this release improves security by ensuring that
+  scheduled backups can now only be started by a cron or task queue task.
+  Administrators can still start a backup by going to the Datastore Admin
+  in the Admin Console.
+- The Java SDK local datastore now defaults to an HRD-like consistency policy,
+  including eventually consistent global queries. For more information see
+  developers.google.com/appengine/docs/java/tools/devserver#Using_the_Datastore
+- The Conversion API, a decommissioned feature, has been removed from the SDK.
+  In the next release, the API will be removed from the runtime and any
+  attempt to import the API will raise an exception. Applications in
+  production that import the API should be fixed as soon as possible.
+- Fixed the implementation of the Cloud SQL JDBC driver for App Engine which
+  restricted the connection lifetime to the lifetime of the HTTP request.
+  This will unblock users who want to use long running connections (e.g. in
+  connection pools).
+- Fixed bulkloader issue for Java caused by improper updates of the Java
+  Remote API handlers in a previous version of the runtimes.
+- Fixed Eclipse plugin on the development server to eliminate complaints
+  about missing indexes when using equality filters.
+- Fixed the issue with SASL provider registration that was impacting
+  developers' ability to connect to GMail via IMAP.
+
+Version 1.8.3
+=============
+- Published a major rewrite of the Search API documentation. Please see:
+    https://developers.google.com/appengine/docs/java/search
+- Interfacing into the Task Queue REST API no longer requires including "s~"
+  at the beginning of the project name.
+- Fixed an issue with the Mail API, email addresses that contain encoded
+  newlines as specified in rfc2047 are now parsed correctly.
+- Fixed an issue with ChannelService.sendMessage() failing when a client id has
+  3 or more dashes.
+- Fixed an issue with the Channel API send_message function not working in the
+  SDK.
+- Fixed an issue with the Local Channel service failing to properly validate
+  tokens.
+- Fixed an issue with enabling cloud integration for existing apps.
+    https://code.google.com/p/googleappengine/issues/detail?id=9602
+- Fixed an issue with the Datastore Admin UI failing to load due to the app
+  having too many kinds.
+    https://code.google.com/p/googleappengine/issues/detail?id=9749
+
+Version 1.8.2
+=============
+- Dedicated memcache is now available to all developers. With
+  dedicated memcache you can purchase in-memory data caching capacity
+  exclusively for your application, cache more data and drive up cache hit
+  rates. This is a Preview feature. For more information please see:
+  https://developers.google.com/appengine/docs/adminconsole/memcache
+- App Engine Modules is now available to all developers. App Engine Modules
+  allow developers to segment their applications into logical subcomponents.
+  This is a Preview feature. More information on this feature can be found
+  here:
+  https://developers.google.com/appengine/docs/java/modules/
+- Fixed an issue with the Channel API's Javascript library; a memory leak
+  occurred when closing channels.
+    https://code.google.com/p/googleappengine/issues/detail?id=9283
+- Fixed an issue with App Engine receiving erroneous XMPP presence from
+  Google Hangouts.
+    https://code.google.com/p/googleappengine/issues/detail?id=9498
+
+Version 1.8.1
+=============
+- This SDK will be the last release that can deploy Java 6 apps. In 1.8.2,
+  the SDK will only be compiled with the Java 7 compiler and the only target
+  runtime will be Java 7.
+- The Task Queue async API is now a GA feature. The asynchronous methods
+  improve utilization by allowing your app to add, lease and delete multiple
+  tasks in parallel.
+- Cloud Console projects are now created by default whenever a new App Engine
+  app is created.  This is a Preview feature.
+- In an upcoming release the Experimental Google Cloud Storage API Functions
+  will be decommissioned. This API and its Experimental status is documented at
+  the following link:
+  https://developers.google.com/appengine/docs/java/googlestorage/overview
+- The Google Cloud Storage library will replace Google Cloud Storage API and is
+  now available as a Preview feature.  More information can be found at
+  https://code.google.com/p/appengine-gcs-client/
+- Bandwidth between App Engine and Google Cloud Storage is currently free of
+  charge (this may change in the future for certain levels of service).
+- The Search API has graduated from Experimental to Preview. Apps that have
+  billing enabled can exceed the free quota levels and will be charged for
+  usage above these levels.
+- Estimated number of search results will only be accurate if it is less than
+  or equal to the number of results requested. By default this can be
+  overridden by setting number_found_accuracy QueryOption in the Search API.
+- Dates, atoms, and number fields can now be found by searching without a field
+  restriction in the Search API.
+- A quoted empty string now returns atom fields with empty values for the
+  Search API.
+- Snippet and count functions are no longer allowed in sort expressions for the
+  Search API.
+- The Search API now has improved error messages for user errors and internal
+  errors.
+- The Datastore now assigns scattered auto ids by default. Legacy auto ids
+  are still available via the 'auto_id_policy' option in appengine-web.xml.
+- The Sockets API now allows client code to call get/set options against
+  sockets. Previously, calls raised "Not Implemented" exceptions. When
+  java.net.Socket.get<option>() is called, a mock value is returned, calls to
+  set<option>() will be silently ignored.
+- Fixed an issue with the namespace not being displayed when a user attempts
+  to select a namespace in the Admin Console.
+    https://code.google.com/p/googleappengine/issues/detail?id=8164
+- Fixed an issue in the Admin Console Logs page to correctly display 'Until'
+  instead of 'Since' for logs search criteria.
+    https://code.google.com/p/googleappengine/issues/detail?id=8659
+
+Version 1.8.0
+=============
+- The Mail API now allows attachments with .zip and .gzip extensions as long as
+  the archives do not contain entries with blacklisted extensions.
+  http://code.google.com/p/googleappengine/issues/detail?id=5933
+- New Billing Enabled apps will no longer default to an email quota of 20,000
+  per day. Instead, apps will need to file a request through the admin console
+  to get email quotas increased.
+- Admin console dashboard charts and reports for all users have been fully
+  migrated to the new, more reliable backend announced in 1.7.6.
+- The maximum size of POST requests made through URLfetch has been increased
+  from 5MB to 10MB.
+- Fixed an interaction issue between the Java MapReduce library and the Files
+  API which causes loss of data. If you are using the experimental Java
+  MapReduce library, we strongly encourage you to update to the latest version
+  of the library in the public svn:
+  https://code.google.com/p/appengine-mapreduce/source/checkout
+- Fixed an issue with the Mail API to prevent sending mail from a Google Apps
+  mail account that has been suspended.
+    https://code.google.com/p/googleappengine/issues/detail?id=6181
+- Fixed an issue that caused Full-Text Search to fail in the Java dev_appserver.
+    https://code.google.com/p/googleappengine/issues/detail?id=9088
+- Fixed an issue with Java dev_appserver which caused the AdWords API to not
+  work.
+    https://code.google.com/p/googleappengine/issues/detail?id=9213
+- Fixed an issue with the Java SDK jar file being too large for Windows 64.
+- Fixed a JAXBPermission.setDatatypeConverter permission issue in Java7 runtime.
+
+Version 1.7.7
+=============
+- The Sockets API, which allows applications to make outgoing TCP connections
+  and send/receive UDP packets to the Internet using both IPv4 and IPv6, is now
+  available as an experimental feature.
+- The Java runtime now defaults to Java7. If you still need to use the Java6
+  runtime, please use the --use_java6 flag when deploying your app. We encourage
+  you to move to Java7 as soon as possible.
+- Billing enabled apps will no longer be subject to a $2.10 minimum weekly
+  spend.  Instead, apps will only be charged for their actual usage.
+- Fixed an issue where Datastore auto ids assigned by the scattered id
+  policy were too large to be represented as floating point numbers in the SDK.
+- Fixed an issue with sort by doc_id not translating correctly causing
+  InvalidRequest errors in the Search API
+    https://code.google.com/p/googleappengine/issues/detail?id=8958
+
+Version 1.7.6
+=============
+- Improvements to the App Engine billing system will be rolled out gradually to
+  all apps.
+- The application summary no longer displays the default version of a running
+  application, instead it lists the application as 'RUNNING'. In an upcoming
+  release applications will have multiple logical sub components, each of which
+  will have a default version.  This UI update is meant to align with this
+  functionality.
+- Projection queries are now a fully supported GA feature.
+- The XMPP API now has multi-JID getPresence(). This provides the ability to get
+  the availability of multiple users.
+- The Java dev_appserver now allocates automatic ids using the 'scattered' id
+  allocation policy by default. For more information, please see "Specifying the
+  Automatic ID Allocation Policy":
+  https://developers.google.com/appengine/docs/java/tools/devserver#Using_the_
+  Datastore
+- Admin console dashboard charts and current load/errors reports will be moving
+  to a new, more reliable backend. The change will be gradually rolling to users
+  of admin console over the next few weeks.
+- New Search API quotas are now displayed in the Admin Console. These quotas are
+  not currently enforced, but will be part of the pricing model for the Search
+  API in a future release.
+- The experimental Search API's ability to explicitly sort search results by
+  SortExpression.RANK_FIELD_NAME (i.e. _order_id) field in ascending order has
+  been removed.
+- Globally consistent indexes in the experimental Search API are now deprecated
+  and will be removed in the next release.
+- Task Queue tasks may now be added and deleted asynchronously. This allows
+  applications to perform common task queue operations without blocking. This is
+  an experimental feature.
+- Fixed an issue which caused an incorrect server error message when setting the
+  default version on the admin console, though the version was set correctly.
+- Fixed an issue that caused java.security.AccessControlException when creating
+  a SOAP connection.
+- Fixed an issue that caused NullPointerException in ListIndexesResponse
+    http://code.google.com/p/googleappengine/issues/detail?id=8359
+- Fixed an issue that caused an incorrect log message when launching the Java
+  dev_appserver
+    https://code.google.com/p/googleappengine/issues/detail?id=8851
+
+Version 1.7.5
+=============
+- New instance classes F4_1G and B4_1G are now available.  These instances have
+  compute capacity equal to F4/B4 but with a maximum of 1G RAM instead
+  of 512MB.
+- The DataNucleus plugin has been upgraded to 2.1.2.
+- The deprecated classes AddException, AddResponse, ListException,
+  ListIndexesException, ListIndexesRequest, ListIndexesResponse, ListRequest,
+  ListResponse, and RemoveException were removed from the Search API in the
+  SDK.  If your app references any of these classes, you must deploy a new
+  version without these references before the next release of App Engine.
+  If you do not do this, your app may stop working in production.
+- The Conversion API, which was decommissioned last release, has been removed
+  from the SDK. In a future release, the API will be removed from the
+  runtime and applications that attempt to use it may stop working.
+  Applications in production that import the library should be fixed as soon as
+  possible.
+- We are making Java 7 available as an experimental feature. We strongly
+  encourage local and production testing for all existing applications. For
+  more information, please visit:
+  http://developers.google.com/appengine/docs/java/java7
+- The Channel API now has the ability to send channel messages from any app
+  version or backend regardless of where the channel was created.
+    http://code.google.com/p/googleappengine/issues/detail?id=5123
+- The URL Fetch service now supports PATCH method requests.
+    http://code.google.com/p/googleappengine/issues/detail?id=6316
+- The Mail API can now send mail bounce notifications to the app. The
+  notification will be delivered to /_ah/bounce if mail_bounce inbound
+  services are enabled.
+    http://code.google.com/p/googleappengine/issues/detail?id=7451
+- The Blobstore service now returns the created filename instead of the blobKey
+  when using Cloud Storage
+    http://code.google.com/p/googleappengine/issues/detail?id=8337
+- Fixed an issue with Datastore callback annotations not working when running
+  locally on Windows.
+    http://code.google.com/p/googleappengine/issues/detail?id=7208
+
+Version 1.7.4
+=============
+- Traffic Splitting is now a GA feature.
+- Task Queue Statistics is now a GA feature.
+- Logs API now has the ability to fetch requests based on a list of
+  request_ids. Currently, this only works in production and is not supported
+  in dev_appserver.
+- The SDK now includes an IDE-friendly zip with the source for the App Engine
+  APIs. The zip resides in <SDK_ROOT>/src/user.
+- Additional support for Maven now exists through both Maven archetypes and a
+  Maven plugin. Documentation for the new Maven support can be found at
+  https://developers.google.com/appengine/docs/java/tools/maven
+- DISTINCT for Datastore queries is now available as an experimental feature.
+- The decommissioned Conversion API has been removed.
+- Various JSP improvements
+    JSPs are now compiled together as opposed to one by one. This improves the
+    compilation process time.
+    JSP compiled classes are packaged in JAR files.
+    You can now avoid the upload of JSP source, which is typically not needed
+    at runtime. This can be done via the new --delete_jsps option in the
+    appcfg tool. By default, this option is not set.
+    You can now package all the WEB-INF/classes/* classes into jar files. This
+    can be done via the new --enable_jar_classes option in the appcfg tools. By
+    default, this option is not set.
+- Users can now set how many columns can be viewed in the Datastore Viewer via
+  a drop-down menu which customizes the number of columns displayed.
+    http://code.google.com/p/googleappengine/issues/detail?id=8158
+- Fixed an issue with BackendService.getCurrentInstance() returning thread ID
+  instead of integer instance ID in production.
+    http://code.google.com/p/googleappengine/issues/detail?id=8338
+- Fixed an issue with Datastore Backup failing when a schema has a very large
+  number of properties.
+    http://code.google.com/p/googleappengine/issues/detail?id=8363
+- Fixed an issue with users being unable to change Authentication Type after
+  app creation in the Admin Console.
+    http://code.google.com/p/googleappengine/issues/detail?id=8394
+
+Version 1.7.3
+=============
+- We encourage you to try and test your application using Java 7 and the App
+  Engine SDK. Note that Java 7 is *not* a supported runtime.
+- Java 7 Features that we encourage you to try in dev appserver:
+    Strings in switch
+    Binary integral literals and underscores in number literals
+    Multi-catch and more precise rethrow
+    Improved type inference for generic instance creation (diamond)
+    try-with-resources statement
+    Simplified varargs method invocation
+- Java 7 features that are NOT supported:
+    All new Java 7 classes (the Google App Engine whitelist has not been
+    updated yet)
+    Method Handles
+    Invoke Dynamic bytecode
+- InetAddress name resolution now displays UnknownHostException instead of a
+  runtime exception error when the host is unknown.
+- Datastore Index stats now report type instead of representation-type.
+- Class Loading Priority can now be granted to specific JAR files by adding
+  class-loader-config element in appengine-web.xml file. This is an
+  experimental feature.
+- Queries with transactions are now fully checked for consistency in Remote
+  API.
+- Global Consistent Indexes are now deprecated in the Search API.
+- ListResponse<Document> listDocuments(ListRequest) has been deprecated and
+  replaced with GetResponse<Document> getRange(GetRequest) in the Search API.
+- ListIndexesReponse listIndexes(ListIndexesRequest) has been deprecated and
+  replaced with GetResponse<Index> getIndexes(GetIndexesRequest) in the Search
+  API.
+- getField(String) has been deprecated and aliased to getFields(String) in the
+  Search API.
+- AddResponse Index.add() has been deprecated and renamed to PutResponse
+  Index.put() in the Search API.
+- RemoveResponse Index.remove() has been deprecated and renamed to
+  DeleteReponse Index.delete() in the Search API.
+- Users can now change authentication options after app creation
+    http://code.google.com/p/googleappengine/issues/detail?id=483
+- Fixed an issue with Channel API breaking when using urlfetch service. This
+  issue was limited to the SDK.
+    http://code.google.com/p/googleappengine/issues/detail?id=8166
+- Fixed an issue with ResponseRewriterFilter not being threadsafe when using
+  Remote API.
+    http://code.google.com/p/googleappengine/issues/detail?id=8167
+
+Version 1.7.2
+=============
+- Paid applications can now upload Static files and Code > 1GB. Additional
+  storage will be billed at $0.13/GB per month.  Free applications will
+  continue to be provided 1GB of storage at no charge. Free quota will apply
+  per application.
+- Thread support via com.google.appengine.api.ThreadManager is now a
+  GA feature.
+- The Conversion API will be decommissioned soon. Developers using this API
+  will receive a warning message. Please find an alternative document
+  conversion/OCR service.
+- You can now fetch Task Queue Statistics. This allows you to fetch
+  statistics and information about your task queue from within your
+  application. Statistics include information such as the number of tasks
+  in a queue, how many tasks were executed in the last minute and enforced
+  rate.  This is an experimental feature.
+- Added Timezone selection widget in Admin Console Admin Logs.
+- Added a warning message about caching when modifying or deleting entities
+  in the local Datastore.
+- Added a flush cache button to the SDK dev console and Admin Console.
+- Attempting to update multiple entity groups in a single transaction
+  in Datastore now throws an error suggesting to use XG transactions.
+- Search API now has a string maximum length limit of 2000 characters.
+- Added millisecond variants for setting start/end time on LogQuery class in
+  Logs Reader API.
+- The local Datastore now enforces the 500 character maximum key length.
+- Added SDK response header rewrite framework functionality to help with
+  response headers returned by users.
+- We now allow a user with multiple google accounts the ability to create an
+  app if they are an SMS verified user.
+    http://code.google.com/p/googleappengine/issues/detail?id=1419
+- A more useful error message now displays when a deployment fails
+  due to local date/time settings being improperly set.
+    http://code.google.com/p/googleappengine/issues/detail?id=2033
+- Granted java.io.SerializablePermission for enableSubclassImplementation
+  and enableSubstitution.
+    http://code.google.com/p/googleappengine/issues/detail?id=2500
+- Cron Descriptions may now include non-ASCII characters.
+    http://code.google.com/p/googleappengine/issues/detail?id=2641
+- App Config Service Delete App Version Call Count quota raised to
+  10,000/day.
+    http://code.google.com/p/googleappengine/issues/detail?id=2808
+- There are now more descriptive error messages for Datastore Admin
+  deadline exceeded errors in stack traces.
+    http://code.google.com/p/googleappengine/issues/detail?id=5413
+- Replaced error code “Administrators cannot be removed right now”
+  with a more descriptive message.
+    http://code.google.com/p/googleappengine/issues/detail?id=7080
+- Fixed an issue with namespace dropdown in Admin Console appearing blank
+  even though the URL specified namespace is correct.
+- Fixed an issue with public-root not working with static content
+  in appengine-web.xml.
+- Fixed an issue with SDK Datastore viewer not showing unindexed properties.
+- Fixed an issue with ApiProxy.getCurrentEnvironment() not having
+  com.google.appengine.runtime.default_version_hostname
+- Fixed an issue with mail service sendToAdmins() failing when using
+  multi-arg message constructor.
+- Fixed an issue with Expires header in SDK to match production behavior.
+- Fixed an issue with com.google.appengine.api.log.RequestLogs.getCombined()
+  not populating correctly in SDK.
+- Fixed an issue with runtime failing to use scope with OAuth under certain
+  conditions.
+- Fixed an issue with support for entities with large numbers of properties
+  in Admin Console Dataviewer where previously the page would fail to render.
+    http://code.google.com/p/googleappengine/issues/detail?id=937
+- Fixed an issue with multi-line string property not editing correctly
+  in Dataviewer.
+    http://code.google.com/p/googleappengine/issues/detail?id=1725
+- Fixed an issue with BigDecimal losing precision after Datastore
+  serialization.
+    http://code.google.com/p/googleappengine/issues/detail?id=1748
+- Fixed an issue where the local Memcache service leaked memory.
+    http://code.google.com/p/googleappengine/issues/detail?id=2428
+- Fixed an issue with HttpServlet.doOptions throwing SecurityException from
+  HttpServlet.getAllDeclaredMethods
+    http://code.google.com/p/googleappengine/issues/detail?id=2658
+- Fixed an issue with Paging link in Datastore viewer not working with # or &
+    http://code.google.com/p/googleappengine/issues/detail?id=3591
+- Fixed an issue with rounding errors when cropping with the local images
+  service.
+    http://code.google.com/p/googleappengine/issues/detail?id=3647
+- Fixed an issue with Dataviewer GQL stripping new lines after initial run
+  when a user paginates results.
+    http://code.google.com/p/googleappengine/issues/detail?id=4246
+- Fixed an issue where keeping a file open prevented the deletion in the local
+  Blostore service. This is a Windows only issue.
+    http://code.google.com/p/googleappengine/issues/detail?id=4744
+- Fixed an issue with LocalServiceTestHelper throwing Multiple Triggers
+  error when used in task queue.
+    http://code.google.com/p/googleappengine/issues/detail?id=4893
+- Fixed an issue with Admin Console stack trace error reporting in appcfg.
+    http://code.google.com/p/googleappengine/issues/detail?id=4920
+- Fixed an issue with Datastore viewer showing incorrect result range text
+  on first page.
+    http://code.google.com/p/googleappengine/issues/detail?id=4975
+- Fixed an issue with custom admin page display when logged into multiple
+  google accounts.
+    http://code.google.com/p/googleappengine/issues/detail?id=5117
+- Fixed an issue with the inability to carry dynamic proxy objects
+  in session.
+    http://code.google.com/p/googleappengine/issues/detail?id=5299
+- Fixed an issue with DeferredTaskServlet failing with custom context
+  classloader.
+    http://code.google.com/p/googleappengine/issues/detail?id=5451
+- Fixed an issue with Admin Console Logs < 30 minutes not being
+  available.
+    http://code.google.com/p/googleappengine/issues/detail?id=5494
+- Fixed an issue with apps that are using Mail API throwing
+  “No Provider for address type rfc822” error.
+    http://code.google.com/p/googleappengine/issues/detail?id=5769
+- Fixed an issue with AppStats failing when enabled with Backend in SDK.
+    http://code.google.com/p/googleappengine/issues/detail?id=6071
+- Fixed an issue with the SDK viewer not being able to view 1000+ entities.
+    http://code.google.com/p/googleappengine/issues/detail?id=6138
+- Fixed an issue with Viewers being able to prohibit code downloads.
+    http://code.google.com/p/googleappengine/issues/detail?id=6255
+- Fixed an issue with billing applications that are disabled.
+    http://code.google.com/p/googleappengine/issues/detail?id=6344
+- Fixed an issue with deploying to an existing version when an app
+  has 10 versions.
+    http://code.google.com/p/googleappengine/issues/detail?id=6803
+- Fixed an issue with Cron schedule failing on the 1st day of month.
+    http://code.google.com/p/googleappengine/issues/detail?id=7286
+- Fixed issue with gzip compression for application/plist content type.
+    http://code.google.com/p/googleappengine/issues/detail?id=7641
+- A note about an upcoming change: starting with the 1.7.3 release
+  of App Engine, data statistics will report statistics on property type
+  usage by indexes using the documented property type names ("Integer",
+  "Key", etc, see
+  https://developers.google.com/appengine/docs/python/datastore/stats)
+  rather than the current property representation names ("INT64",
+  "REFERENCE", etc, see http://goo.gl/db5dT). This will affect the
+  __Stat_PropertyType__, __Stat_PropertyType_Kind__,
+  __Stat_PropertyType_PropertyName_Kind__ and their per-namespace equivalents.
+  This will also affect the displayed "Breakdown by Property Type" under the
+  "Datastore Statistics" in your application's console.
 
 Version 1.7.1
 =============

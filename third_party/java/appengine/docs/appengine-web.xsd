@@ -22,6 +22,19 @@
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
+  <xs:complexType name="vm-settingsType">
+    <xs:sequence>
+      <xs:element type="ns:settingType" name="setting" maxOccurs="unbounded" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="settingType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="name" use="required"/>
+        <xs:attribute type="xs:string" name="value" use="required"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
   <xs:complexType name="asyncSessionPersistenceType">
     <xs:simpleContent>
       <xs:extension base="xs:string">
@@ -35,11 +48,15 @@
       <xs:element type="xs:string" name="application"/>
       <xs:element type="xs:string" name="version" minOccurs="0"/>
       <xs:element type="xs:string" name="source-language" minOccurs="0"/>
-      <xs:element type="xs:string" name="server" minOccurs="0"/>
-      <xs:element type="ns:server-settings-type" name="server-settings" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
+      <xs:element type="xs:string" name="module" minOccurs="0"/>
+      <xs:element type="xs:string" name="instance-class" minOccurs="0"/>
+      <xs:element type="ns:automatic-scaling-type" name="automatic-scaling" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
+      <xs:element type="ns:manual-scaling-type" name="manual-scaling" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
+      <xs:element type="ns:basic-scaling-type" name="basic-scaling" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
       <xs:element type="ns:static-filesType" name="static-files" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
       <xs:element type="ns:resource-filesType" name="resource-files" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
       <xs:element type="ns:system-propertiesType" name="system-properties" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
+      <xs:element type="ns:vm-settingsType" name="vm-settings" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
       <xs:element type="ns:env-variablesType" name="env-variables" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
       <xs:element type="xs:boolean" name="ssl-enabled" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
       <xs:element type="xs:boolean" name="sessions-enabled" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
@@ -52,8 +69,13 @@
       <xs:element type="ns:static-error-handlers" name="static-error-handlers" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
       <xs:element type="xs:boolean" name="warmup-requests-enabled" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
       <xs:element type="xs:boolean" name="threadsafe" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
+      <xs:element type="xs:string" name="auto-id-policy" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
       <xs:element type="xs:boolean" name="code-lock" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
+      <xs:element type="xs:boolean" name="vm" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
       <xs:element type="ns:pagespeedType" name="pagespeed" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
+      <xs:element type="ns:classLoaderConfigType" name="class-loader-config" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
+      <xs:element type="ns:urlStreamHandlerType" name="url-stream-handler" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
+      <xs:element type="xs:boolean" name="use-google-connector-j" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
     </xs:all>
   </xs:complexType>
   <xs:complexType name="env-variablesType">
@@ -86,17 +108,26 @@
       <xs:element type="ns:excludeType" name="exclude" maxOccurs="unbounded" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
     </xs:sequence>
   </xs:complexType>
-  <xs:complexType name="server-settings-type">
+  <xs:complexType name="automatic-scaling-type">
     <xs:all>
-      <xs:element type="xs:string" name="instances" minOccurs="0"/>
-      <xs:element type="xs:string" name="class" minOccurs="0"/>
       <xs:element type="xs:string" name="min-pending-latency" minOccurs="0"/>
       <xs:element type="xs:string" name="max-pending-latency" minOccurs="0"/>
       <xs:element type="xs:string" name="min-idle-instances" minOccurs="0"/>
       <xs:element type="xs:string" name="max-idle-instances" minOccurs="0"/>
+      <xs:element type="xs:string" name="max-concurrent-requests" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
-  
+  <xs:complexType name="manual-scaling-type">
+    <xs:all>
+      <xs:element type="xs:string" name="instances"/>
+    </xs:all>
+  </xs:complexType>
+  <xs:complexType name="basic-scaling-type">
+    <xs:all>
+      <xs:element type="xs:string" name="max-instances"/>
+      <xs:element type="xs:string" name="idle-timeout" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
   <xs:complexType name="static-filesType">
     <xs:sequence>
       <xs:element type="ns:staticIncludeType" name="include" maxOccurs="unbounded" minOccurs="0" xmlns:ns="http://appengine.google.com/ns/1.0"/>
@@ -164,4 +195,22 @@
       <xs:element type="xs:string" name="disabled-rewriter"/>
     </xs:choice>
   </xs:complexType>
+  <xs:complexType name="classLoaderConfigType">
+    <xs:sequence>
+      <xs:element type="ns:prioritySpecifierType" name="priority-specifier" maxOccurs="unbounded" minOccurs="1"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="prioritySpecifierType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="filename" use="required"/>
+        <xs:attribute type="xs:double" name="priority" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:simpleType name="urlStreamHandlerType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="urlfetch|native"/>
+    </xs:restriction>
+  </xs:simpleType>
 </xs:schema>

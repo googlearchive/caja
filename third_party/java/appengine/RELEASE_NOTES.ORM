@@ -1,6 +1,57 @@
 Release Notes for the Google App Engine ORM, a DataNucleus plugin that provides
 access to the Google App Engine Datastore via JDO and JPA.
 
+VERSION 2.1.2
+
+- Don't create List index property in child when using new storage version
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=275
+
+- Can't delete an unowned entity when schema has been migrated
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=300
+
+- NullPointerException Thrown By cacheQueryResults Method in StreamingQueryResult
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=301
+
+- Can get IndexOutOfBoundsException if supplied incomplete embedded metadata
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=304
+
+- Use of long as PK field is incomplete
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=305
+
+- Add property to allow turn off GAE/J-specific metadata validation
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=306
+
+- Mixing unowned and owned relations in a type throws exception
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=307
+
+- Version not set on elements of Collection when loaded
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=308
+
+
+VERSION 2.1.1
+
+- Entity relationship, owned or unowned, is always dependent
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=290
+
+- Allow use of simple SCO wrappers for non-relation fields
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=291
+
+- Support full range of input value conversions for use in queries
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=292
+
+- If using "NATIVE"/"AUTO" value strategy for identity, doesn't put id back on managed object at persist
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=293
+
+- Enable use of int/Integer for PK fields
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=294
+
+- BigDecimal fields are restored from database as float value
+http://code.google.com/p/googleappengine/issues/detail?id=1748
+
+- Null checks on persist of unowned List relations
+http://code.google.com/p/datanucleus-appengine/issues/detail?id=299
+
+
 VERSION 2.1.0
 
 - JDO Keys-only query counts toward Datastore Read instead of Datastore Small.

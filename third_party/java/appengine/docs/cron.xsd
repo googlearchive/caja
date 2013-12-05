@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="cronentries" type="cronentries-Type"/>
+
+  <xs:complexType name="cronentries-Type">
+    <xs:sequence>
+      <xs:element type="cron-Type" name="cron" maxOccurs="unbounded" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="cron-Type">
+    <xs:all>
+      <xs:element type="xs:string" name="url"/>
+      <xs:element type="xs:string" name="description" minOccurs="0"/>
+      <xs:element type="xs:string" name="schedule"/>
+      <xs:element type="xs:string" name="timezone" minOccurs="0"/>
+      <xs:element type="target-Type" name="target" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <xs:simpleType name="target-Type">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[a-z\d\-]{1,100}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+</xs:schema>
