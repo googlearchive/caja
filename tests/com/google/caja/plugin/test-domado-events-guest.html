@@ -1132,3 +1132,16 @@ TODO(felix8a): fix javascript url handling
     }), false);
   });
 </script>
+
+<p id="testNonTouchEvents" class="testcontainer">testNonTouchEvents</p>
+<script type="text/javascript">
+  jsunitRegister('testNonTouchEvents', function() {
+    // Check that we don't have broken touch accessors on non-touch events
+    var e = document.createEvent('Events');
+    e.initEvent(e, 'foo', false, false);
+    assertEquals('touches', undefined, e.touches);
+    assertEquals('targetTouches', undefined, e.targetTouches);
+    assertEquals('changedTouches', undefined, e.changedTouches);
+    pass();
+  });
+</script>

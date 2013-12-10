@@ -11,9 +11,21 @@
             "a DOM method getElementsByName (not yet implemented by us) which",
             "searches all name= attributes, and which is used by jQuery, which",
             "suggests we need this. Original rationale lost."
-          ] }
+          ] },
+      { "key": "*::ONTOUCHCANCEL", "type": "SCRIPT", "optional": true },
+      { "key": "*::ONTOUCHEND", "type": "SCRIPT", "optional": true },
+      { "key": "*::ONTOUCHENTER", "type": "SCRIPT", "optional": true },
+      { "key": "*::ONTOUCHLEAVE", "type": "SCRIPT", "optional": true },
+      { "key": "*::ONTOUCHMOVE", "type": "SCRIPT", "optional": true },
+      { "key": "*::ONTOUCHSTART", "type": "SCRIPT", "optional": true }
       ],
 
   "allowed": [
+      "*::ONTOUCHCANCEL",
+      "*::ONTOUCHEND",
+      "*::ONTOUCHENTER",
+      "*::ONTOUCHLEAVE",
+      "*::ONTOUCHMOVE",
+      "*::ONTOUCHSTART"
       ]
 }

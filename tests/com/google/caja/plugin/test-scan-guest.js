@@ -30,7 +30,7 @@
  *     HTMLTextAreaElement, HTMLVideoElement, HTMLButtonElement,
  *     Audio, Image, Option, XMLHttpRequest, Window, Document, Node, Element,
  *     Attr, Text, CSSStyleDeclaration, CanvasRenderingContext2D,
- *     CanvasGradient, ImageData, Location,
+ *     CanvasGradient, ImageData, Location, TouchList,
  *     ArrayBuffer, Int8Array, DataView
  * @overrides window
  */
@@ -953,6 +953,7 @@
     argsByProp('createComment', genMethod(genString));
     argsByProp('createTextNode', genMethod(genString));
     argsByProp('createDocumentFragment', genNoArgMethod);
+
     argsByProp('createEvent', freshResult(genMethod(genEventClass)));
     argsByProp('initEvent', genMethod(genEventName, genBoolean, genBoolean));
     argsByProp('initCustomEvent', genMethod(genEventName, genBoolean,
@@ -966,6 +967,17 @@
       e.initCustomEvent('foo', true, true, 1);
       return e;
     })));
+
+    // Currently not possible to fully test touch event taming because we can't
+    // synthesize touches to be examined.
+    argsByIdentity(TouchList.prototype.identifiedTouch,
+        genMethod(genSmallInteger));
+    argsByIdentity(TouchList.prototype.item,
+        genMethod(genSmallInteger));
+    // stubbing out because we can't get a TouchList
+    obtainInstance.define(TouchList, TouchList.prototype);
+    expectedAlwaysThrow.mark(Ref.is(TouchList.prototype.identifiedTouch));
+
     argsByProp('getAttribute',
         argsByProp('getAttributeNode',
         argsByProp('hasAttribute', genMethod(genString))));

@@ -516,7 +516,7 @@ var Domado = (function() {
 
     return cajaVM.def(Confidence);
   })();
-  
+
   /**
    * Explicit marker that this is a function intended to be exported that needs
    * no other wrapping. Also, remove the function's .prototype object.
@@ -815,7 +815,7 @@ var Domado = (function() {
     /**
      * Handler for a proxy which presents value properties derived from an
      * external data source.
-     * 
+     *
      * The subclass should implement .col_lookup(name) -> internalvalue,
      * .col_evaluate(internalvalue) -> value, and .col_names() -> array.
      */
@@ -869,7 +869,7 @@ var Domado = (function() {
     if (XMLHttpRequest &&
       new XMLHttpRequest().withCredentials !== undefined) {
       return XMLHttpRequest;
-    } else if (XDomainRequest) { 
+    } else if (XDomainRequest) {
       return function XDomainRequestObjectForIE() {
         var xdr = new XDomainRequest();
         xdr.onload = function () {
@@ -944,10 +944,10 @@ var Domado = (function() {
       amplify(this, function(privates) {
         var xhr = privates.feral = new xmlHttpRequestMaker();
         taming.tamesTo(xhr, this);
-        
+
         privates.async = undefined;
         privates.handler = undefined;
-        
+
         Object.preventExtensions(privates);
       });
     }
@@ -2509,26 +2509,30 @@ var Domado = (function() {
        */
       var PT = cajaVM.def({
         /**
-         * Ensure that a taming wrapper for the given underlying property is
+         * Ensure that a taming wrapper for the feral property's value is
          * memoized via the taming membrane, but only if 'memo' is true.
          *
          * @param {boolean} memo Memoize if true, construct every time if false.
-         * @param {string} feralProp feral property name to use as lookup key.
          * @param {function} tamer function(privates, feralValue) -> tamedValue
          */
-        TameMemoIf: function(memo, feralProp, tamer) {
+        TameMemoIf: function(memo, tamer) {
           assert(typeof memo === 'boolean');  // in case of bad data
           return Props.markPropMaker(function(env) {
+            var prop = env.prop;
             return {
               enumerable: true,
               get: memo ? env.amplifying(function(privates) {
-                var feral = privates.feral[feralProp];
+                var feral = privates.feral[prop];
+                if (feral !== Object(feral)) {
+                  // not an object, membrane does not apply
+                  return tamer.call(this, privates, feral);
+                }
                 if (!taming.hasTameTwin(feral)) {
                   taming.tamesTo(feral, tamer.call(this, privates, feral));
                 }
                 return taming.tame(feral);
               }) : env.amplifying(function(privates) {
-                return tamer.call(this, privates, privates.feral[feralProp]);
+                return tamer.call(this, privates, privates.feral[prop]);
               })
             };
           });
@@ -2890,7 +2894,7 @@ var Domado = (function() {
         } catch (e) {}
         return null;
       }
-      
+
       /**
        * Like tameRelatedNode but includes the window (which is an EventTarget,
        * but not a Node).
@@ -3845,7 +3849,7 @@ var Domado = (function() {
         nextSibling: PT.related,
         previousSibling: PT.related,
         parentNode: PT.related,
-        childNodes: PT.TameMemoIf(nodeListsAreLive, 'childNodes',
+        childNodes: PT.TameMemoIf(nodeListsAreLive,
             function(privates, f) {
           if (privates.policy.childrenVisible) {
             return new TameNodeList(f, defaultTameNode);
@@ -3853,7 +3857,7 @@ var Domado = (function() {
             return fakeNodeList([], 'NodeList');
           }
         }),
-        attributes: PT.TameMemoIf(namedNodeMapsAreLive, 'attributes',
+        attributes: PT.TameMemoIf(namedNodeMapsAreLive,
             function(privates, feralMap) {
           if (privates.policy.attributesVisible) {
             var feralOwnerElement = privates.feral;
@@ -4500,7 +4504,7 @@ var Domado = (function() {
       });
       if ('classList' in elementForFeatureTests) {
         Props.define(TameElement.prototype, TameNodeConf, {
-          classList: PT.TameMemoIf(true, 'classList',
+          classList: PT.TameMemoIf(true,
               function(privates, feralList) {
             var element = this;
             return new TameDOMSettableTokenList(feralList,
@@ -4589,7 +4593,7 @@ var Domado = (function() {
         tamingClassTable.registerLazy(domClass, defineElementThunk);
       }
       cajaVM.def(defineElement);
-      
+
       /**
        * For elements which have no properties at all, but we want to define in
        * in order to be explicitly complete (suppress the no-implementation
@@ -4740,7 +4744,7 @@ var Domado = (function() {
           // only as #hhhhhh, not as names.
           return colorNameTable[" " + colorString] || colorString;
         }
-        
+
         tamingClassTable.registerLazy('ImageData', function() {
           function TameImageData(imageData) {
             TameImageDataConf.confide(this, taming);
@@ -5345,7 +5349,7 @@ var Domado = (function() {
         },
         properties: function() { return {
           action: PT.filterAttr(defaultToEmptyStr, String),
-          elements: PT.TameMemoIf(false, 'elements', function(privates, f) {
+          elements: PT.TameMemoIf(false, function(privates, f) {
             // TODO(kpreid): make tameHTMLCollection live-capable
             return tameHTMLCollection(f, defaultTameNode);
           }),
@@ -5512,7 +5516,7 @@ var Domado = (function() {
             false, function (x) { return x == null ? '' : '' + x; })
         }; }
       });
-      
+
       defineElement({
         superclass: 'CajaFormField',
         domClass: 'HTMLInputElement',
@@ -5551,7 +5555,7 @@ var Domado = (function() {
         domClass: 'HTMLSelectElement',
         properties: function() { return {
           multiple: PT.rw,
-          options: PT.TameMemoIf(nodeListsAreLive, 'options',
+          options: PT.TameMemoIf(nodeListsAreLive,
               function(privates, f) {
             return new TameOptionsList(f, defaultTameNode, 'name');
           }),
@@ -5793,7 +5797,7 @@ var Domado = (function() {
         properties: function() { return {
           // TODO(kpreid): Arrange so there are preexisting functions to pass
           // into TameMemoIf rather than repeating this inline stuff.
-          cells: PT.TameMemoIf(nodeListsAreLive, 'cells',
+          cells: PT.TameMemoIf(nodeListsAreLive,
               function(privates, feralList) {
             return new TameNodeList(feralList, defaultTameNode);
           }),
@@ -5817,7 +5821,7 @@ var Domado = (function() {
       defineElement({
         domClass: 'HTMLTableSectionElement',
         properties: function() { return {
-          rows: PT.TameMemoIf(nodeListsAreLive, 'rows',
+          rows: PT.TameMemoIf(nodeListsAreLive,
               function(privates, feralList) {
             return new TameNodeList(feralList, defaultTameNode);
           }),
@@ -5839,7 +5843,7 @@ var Domado = (function() {
         superclass: 'HTMLTableSectionElement',
         domClass: 'HTMLTableElement',
         properties: function() { return {
-          tBodies: PT.TameMemoIf(nodeListsAreLive, 'tBodies',
+          tBodies: PT.TameMemoIf(nodeListsAreLive,
               function(privates, f) {
             if (privates.policy.childrenVisible) {
               return new TameNodeList(f, defaultTameNode);
@@ -5911,6 +5915,73 @@ var Domado = (function() {
         return taming.tame(event);
       }
 
+      tamingClassTable.registerLazy('Touch', function() {
+        /**
+         * Taming of touch record objects for touch events.
+         */
+        function TameTouch(feral) {
+          // Touch objects are read-only records, so we can just copy
+          this.identifier = +feral.identifier;
+          this.screenX = +feral.screenX;
+          this.screenY = +feral.screenY;
+          this.clientX = +feral.clientX;
+          this.clientY = +feral.clientY;
+          this.pageX = +feral.pageX;
+          this.pageY = +feral.pageY;
+          this.radiusX = +feral.radiusX;
+          this.radiusY = +feral.radiusY;
+          this.rotationAngle = +feral.rotationAngle;
+          this.force = +feral.force;
+          this.target = tameRelatedNode(feral.target);
+          Object.freeze(this);
+        }
+        inertCtor(TameTouch, Object);
+        return cajaVM.def(TameTouch);  // and defend its prototype
+      });
+
+      tamingClassTable.registerLazy('TouchList', function() {
+        var TameTouch = tamingClassTable.getTamingCtor('Touch');
+
+        var TameTouchListConf = new Confidence('TameTouchList');
+        /**
+         * Taming of TouchList type for touch events.
+         * These are immutable and so we do not need any NodeList-like magic.
+         */
+        function TameTouchList(feralList) {
+          var length = feralList.length;
+          this.length = length;
+          for (var i = 0; i < length; i++) {
+            var feralTouch = feralList.item(i);
+            var tamedTouch = new TameTouch(feralTouch);
+            taming.tamesTo(feralTouch, tamedTouch);
+            this[i] = tamedTouch;
+          }
+          TameTouchListConf.confide(this, taming);
+          TameTouchListConf.amplify(this, function(privates) {
+            privates.feral = feralList;
+          });
+          Object.freeze(this);
+        }
+        inertCtor(TameTouchList, Object);
+        Props.define(TameTouchList.prototype, TameTouchListConf, {
+          // TODO(kpreid): documented in MDN, but not in linked standard; get
+          // better reference for correct behavior.
+          identifiedTouch: Props.ampMethod(function(privates, id) {
+            id = +id;
+            var feralTouch = privates.feral.identifiedTouch(id);
+            if (!feralTouch) { return null; }  // TODO(kpreid): proper value?
+            if (!taming.hasTameTwin(feralTouch)) {
+              throw new Error('can\'t happen: untamed Touch object');
+            }
+            return taming.tame(feralTouch);
+          }),
+          item: Props.plainMethod(function(index) {
+            return this[+index];
+          })
+        });
+        return cajaVM.def(TameTouchList);  // and defend its prototype
+      });
+
       tamingClassTable.registerLazy('Event', function() {
         function eventVirtualizingAccessor(fn) {
           return Props.addOverride(Props.ampGetter(fn));
@@ -5972,6 +6043,20 @@ var Domado = (function() {
           }
         }
 
+        // Note: Per MDN the touch event properties are read-only, so we
+        // shouldn't be doing addOverride, but we also apply them to _all_
+        // events rather than having a TouchEvent subtype, so this is more
+        // compatible (if e.g. an application is constructing synthetic events).
+        // It also avoids putting a special case in testEventMutation.
+        var touchListProp = Props.addOverride(PT.TameMemoIf(true,
+            function(privates, feralList) {
+          if (!feralList) {  // applied to a non-TouchEvent
+            return undefined;
+          } else {
+            return new (tamingClassTable.getTamingCtor('TouchList'))(feralList);
+          }
+        }));
+
         function TameEvent(event, isSyntheticEvent) {
           assert(!!event);
           TameEventConf.confide(this, taming);
@@ -6029,6 +6114,9 @@ var Domado = (function() {
           charCode: P_e_view(function(v) { return v && Number(v); }),
           key: Props.cond('key' in featureTestKeyEvent, P_e_view(String)),
           char: Props.cond('char' in featureTestKeyEvent, P_e_view(String)),
+          touches: touchListProp,
+          targetTouches: touchListProp,
+          changedTouches: touchListProp,
           stopPropagation: Props.ampMethod(function(privates) {
             // TODO(mikesamuel): make sure event doesn't propagate to dispatched
             // events for this gadget only.
@@ -6275,7 +6363,7 @@ var Domado = (function() {
         forms: Props.ampGetter(function(privates) {
           // privates not used but we need host-exception protection and
           // authority to access 'document'
-          
+
           // TODO(kpreid): Make this a memoized live list.
           var tameForms = [];
           for (var i = 0; i < document.forms.length; i++) {
@@ -7190,7 +7278,7 @@ var Domado = (function() {
       // Install virtual UA stylesheet.
       if (!document.caja_gadgetStylesheetInstalled) (function () {
         document.caja_gadgetStylesheetInstalled = true;
-        
+
         var element = document.createElement("style");
         element.setAttribute("type", "text/css");
         element.textContent = (
@@ -7210,7 +7298,7 @@ var Domado = (function() {
           "caja-v-base,caja-v-basefont,caja-v-head,caja-v-link,caja-v-meta," +
           "caja-v-noembed,caja-v-noframes,caja-v-param,caja-v-source," +
           "caja-v-track,caja-v-title{" +
-            "display:none;" + 
+            "display:none;" +
           "}" +
 
           "caja-v-html, caja-v-body {" +
