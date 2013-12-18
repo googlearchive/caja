@@ -5276,6 +5276,25 @@ var Domado = (function() {
                   // user agent, return null and abort these steps."
                   return null;
               }
+            }),
+            toDataURL: Props.ampMethod(function(privates, opt_type, opt_arg) {
+              if (opt_type !== undefined) {
+                opt_type = String(opt_type).toLowerCase();
+              }
+              // Whitelist of types to be cautious, and because we need
+              // to sanitize the varargs
+              switch (opt_type) {
+                case 'image/png':
+                  return privates.feral.toDataURL('image/png');
+                case 'image/jpeg':
+                  return privates.feral.toDataURL('image/jpeg', +opt_arg);
+                default:
+                  console.warn('Domado: Discarding unrecognized MIME type ' +
+                      opt_type + ' for canvas.toDataURL.');
+                  /* fall through */
+                case undefined:
+                  return privates.feral.toDataURL();
+              }
             })
           }; }
         });

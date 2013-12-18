@@ -996,6 +996,10 @@
     argsByProp('getPropertyValue', genMethod(genCSSPropertyName));
     argsByProp('getContext', genMethod(G.value(undefined, null, 'bogus', '2d',
         'webgl', 'experimental-webgl')));
+    argsByProp('toDataURL', G.any(
+        genMethod(),
+        genMethod(genMediaType),
+        genMethod(genMediaType, genSmallInteger)));
     argsByProp('querySelector', genMethod(genCSSSelector));
     argsByProp('querySelectorAll', freshResult(genMethod(genCSSSelector)));
     argsByProp('getElementById', genMethod(G.value(

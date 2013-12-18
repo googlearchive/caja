@@ -37,7 +37,17 @@
     assertEquals("set canvas width", 20, canvas.width);
     assertEquals("set canvas height", 10, canvas.height);
 
-    // Getting the context
+    pass('testCanvasElement');
+  });
+</script>
+
+<p id="testCanvasGetContext" class="testcontainer">
+  Canvas getContext
+  <canvas id="testCanvasGetContext-canvas">fallback</canvas>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testCanvasGetContext', function testCanvasGetContext() {
+    var canvas = document.getElementById('testCanvasGetContext-canvas');
     expectFailure(
         function() {
           canvas.getContext();
@@ -53,12 +63,41 @@
     var context = canvas.getContext("2d");
     assertNotNull("context", context);
     assertNotUndefined("context", context);
-    assertEquals("context equals itself", context,
-       document.getElementById('testCanvasElement-canvas').getContext("2d"));
+    assertEquals("context equals itself", context, canvas.getContext("2d"));
+    pass();
+  });
+</script>
 
-    // TODO: toDataURL
+<p id="testCanvasToDataURL" class="testcontainer">
+  Canvas toDataURL
+  <!-- Zoomed in for visual inspection -->
+  <canvas id="testCanvasToDataURL-canvas"
+          width="3" height="3"
+          style="width: 30px; height: 30px;">fallback</canvas>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testCanvasToDataURL', function testCanvasToDataURL() {
+    var canvas = document.getElementById('testCanvasToDataURL-canvas');
+    var context = canvas.getContext('2d');
+    context.fillRect(1, 1, 1, 1);
 
-    pass('testCanvasElement');
+    var url = canvas.toDataURL();
+    assertTrue(url, /data:image\/png(?:;base64)?,/.test(url));
+
+    // TODO(kpreid): Once we support loading data: URIs, try writing the image
+    // back to a canvas. For now, displaying it as best we can:
+    document.getElementById('testCanvasToDataURL').appendChild(
+        document.createTextNode(url));
+
+    // Try optional arguments.
+    // Note: Assuming JPEG support which is not mandatory.
+    url = canvas.toDataURL('image/jpeg', 0.1);
+    assertTrue(url, /data:image\/jpeg(?:;base64)?,/.test(url));
+
+    // TODO(kpreid): Feature-test and test toDataURLHD and toBlob[HD].
+    // HD versions give full-resolution data
+
+    pass();
   });
 </script>
 
