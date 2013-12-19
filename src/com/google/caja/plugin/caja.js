@@ -425,7 +425,16 @@ var caja = (function () {
 
           // safe given that we use exactly one SES frame
           'FREEZE_IS_FRAME_DEPENDENT': { 'permit': true },
-          'SYNTAX_ERRORS_ARENT_ALWAYS_EARLY': { 'permit': true }
+          'SYNTAX_ERRORS_ARENT_ALWAYS_EARLY': { 'permit': true },
+
+          // Only affects code with strict nested function defs, which
+          // violates the ES5.1 recommendation stated at
+          // http://wiki.ecmascript.org/doku.php?id=conventions:recommendations_for_implementors.
+          // Thus, the NESTED_STRICT_FUNCTIONS_LEAK
+          // doesn't affect SES as long as SES remains
+          // compatible with ES5 implementations that follow that
+          // recommendation.
+          'NESTED_STRICT_FUNCTIONS_LEAK': { 'permit': true }
         };
       }
       ses['mitigateSrcGotchas'] = function() {

@@ -2853,6 +2853,41 @@ var ses;
     });
   }
 
+  /**
+   * Detects
+   * https://connect.microsoft.com/IE/feedback/details/811124/ie11-javascript-function-scoping-is-weird-with-respect-to-functions-and-try-catch
+   * in strict code.
+   *
+   * A strict nested function definition should either be a syntax
+   * error, as
+   * http://wiki.ecmascript.org/doku.php?id=conventions:recommendations_for_implementors
+   * recommends, or it should stay local to its block, as ES6
+   * specifies. Within that block, an assignment to that function's
+   * name should assign to the block-local variable defined by that
+   * function.
+   */
+  function test_NESTED_STRICT_FUNCTIONS_LEAK() {
+    try {
+      return unsafeEval(
+          '(function() {\n' +
+          '  "use strict";\n' +
+          '  var a = function good() { return false; };\n' +
+          '  try {\n' +
+          '    function a() { return true; }' +
+          '    a = function blah() {\n' +
+          '      return "Assignment skipped nested function definition";\n' +
+          '    };\n' +
+          '  } catch (x) {}\n' +
+          '  return a();\n' +
+          '})();\n');
+    } catch (err) {
+      if (err instanceof SyntaxError) {
+        return false;
+      }
+      return 'Unexpected error from strict nested function: ' + err;
+    }
+  }
+
   ////////////////////// Repairs /////////////////////
   //
   // Each repair_NAME function exists primarily to repair the problem
@@ -4525,6 +4560,18 @@ var ses;
       urls: [],  // TODO(kpreid): file bugs if appropriate
           // appears on Safari only
       sections: ['15.2.3.9', '15.2.3.12'],
+      tests: []  // hopefully will be in ES6 tests
+    },
+    {
+      id: 'NESTED_STRICT_FUNCTIONS_LEAK',
+      description: 'Strict nested functions leak from block scope',
+      test: test_NESTED_STRICT_FUNCTIONS_LEAK,
+      repair: void 0,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      canRepair: false,
+      urls: ['https://connect.microsoft.com/IE/feedback/details/811124/ie11-javascript-function-scoping-is-weird-with-respect-to-functions-and-try-catch',
+             'http://wiki.ecmascript.org/doku.php?id=conventions:recommendations_for_implementors'],
+      sections: [],
       tests: []  // hopefully will be in ES6 tests
     }
   ];

@@ -781,11 +781,11 @@ ses.startSES = function(global,
     ses.makeCompiledExpr = makeCompiledExpr;
 
     /**
-     * Compiles {@code src} as a strict expression into a function
+     * Compiles {@code exprSrc} as a strict expression into a function
      * of an {@code imports}, that when called evaluates {@code
      * exprSrc} in a virtual global environment whose {@code this} is
-     * bound to that {@code imports}, and whose free variables
-     * refer only to the properties of that {@code imports}.
+     * bound to that {@code imports}, and whose free variables refer
+     * only to the properties of that {@code imports}.
      *
      * <p>The optional {@code opt_mitigateOpts} can be used to control
      * which transformations are applied to src, if they are
