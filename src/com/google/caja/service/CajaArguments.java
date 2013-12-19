@@ -19,19 +19,6 @@ package com.google.caja.service;
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
 public enum CajaArguments {
-
-  /**
-   * The expected Caja version number of the software making the request (which
-   * is typically the client-side component of the Caja system, or some other
-   * component tightly integrated with Caja). If this version number does not
-   * match the actual version number of Caja in the currently running service,
-   * the service will unconditionally return an error response. Since the
-   * security of Caja relies on coordination between a client-side microkernel
-   * and a server-side translation, this scheme is needed to guard against a
-   * whole class of possible "version mismatch" vulnerabilities.
-   */
-  BUILD_VERSION("build-version"),
-
   /**
    * The expected MIME type of an input document that Caja is being asked to
    * process. Caja may return an error if the actual MIME type of the document
@@ -39,12 +26,6 @@ public enum CajaArguments {
    * check for clients of Caja.
    */
   INPUT_MIME_TYPE("input-mime-type"),
-
-  /**
-   * Boolean indicating whether or not the cajoler should produce HTML output
-   * as part of the JavaScript.
-   */
-  EMIT_HTML_IN_JS("emit-html-in-js"),
 
   /**
    * Name of the JSONP callback function desired in the output. See the
@@ -70,48 +51,9 @@ public enum CajaArguments {
   ALT("alt"),
 
   /**
-   * The Caja transform that is being requested. Valid values are:
-   * <ul>
-   *   <li>{@code transform=cajole} the Caja language.</li>
-   *   <li>{@code transform=innocent} the innocent code transform.</li>
-   * </ul>
-   *
-   * <p>All these transforms are applicable to {@code text/javascript} input.
-   * For {@code text/html} input, this argument is ignored and the
-   * {@code cajole} transform is always applied.
-   */
-  TRANSFORM("transform"),
-
-  /**
-   * Directives which affect the chosen Caja transformation
-   */
-  DIRECTIVE("directive"),
-
-  /**
    * The URL of the input document that Caja is being asked to process.
    */
-  URL("url"),
-
-  /**
-   * Optional content that Caja is being asked to process.
-   */
-  CONTENT("content"),
-
-  /**
-   * Renderer for the code.
-   *
-   * <p>Valid values are:
-   * <ul>
-   *   <li>{@code renderer=minimal} the default, saves space.</li>
-   *   <li>{@code renderer=pretty} pretty print for debugging.</li>
-   * </ul>
-   */
-  RENDERER("renderer"),
-
-  /**
-   * HTML ID suffix and CSS class, for early-binding.
-   */
-  ID_CLASS("id-class");
+  URL("url");
 
   private final String argKeyword;
 

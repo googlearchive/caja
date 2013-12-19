@@ -27,8 +27,6 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
 import com.google.caja.lexer.escaping.Escaping;
-import com.google.caja.reporting.BuildInfo;
-import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.LocalServer;
 import com.google.caja.util.TestFlag;
 import com.google.caja.util.ThisHostName;
@@ -52,26 +50,6 @@ public abstract class BrowserTestCase {
   private static String serverHost;
 
   protected String testBuildVersion = null;
-
-  protected final BuildInfo buildInfo = new BuildInfo() {
-    @Override public void addBuildInfo(MessageQueue mq) {
-      BuildInfo.getInstance().addBuildInfo(mq);
-    }
-    @Override public String getBuildInfo() {
-      return BuildInfo.getInstance().getBuildInfo();
-    }
-    @Override public String getBuildVersion() {
-      return (testBuildVersion != null)
-          ? testBuildVersion
-          : BuildInfo.getInstance().getBuildVersion();
-    }
-    @Override public String getBuildTimestamp() {
-      return BuildInfo.getInstance().getBuildTimestamp();
-    }
-    @Override public long getCurrentTime() {
-      return BuildInfo.getInstance().getCurrentTime();
-    }
-  };
 
   private final LocalServer localServer = new LocalServer(
       new LocalServer.ConfigureContextCallback() {

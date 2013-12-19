@@ -14,8 +14,6 @@
 
 package com.google.caja.service;
 
-import com.google.caja.reporting.BuildInfo;
-
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -26,22 +24,17 @@ import org.mortbay.jetty.handler.AbstractHandler;
 import java.io.IOException;
 
 /**
- * A executable that starts a cajoling service which proxies connections:<ul>
- *   <li>cajole any javascript
- *   <li>cajoles any gadgets
- *   <li>checks requested and retrieved mime-types
- * </ul>
+ * A executable for the proxy service.
  *
  * @author jasvir@gmail.com (Jasvir Nagra)
  */
-public class CajolingServiceMain {
+public class ProxyServletMain {
   public static void main(String[] args) throws Exception {
     // http://docs.codehaus.org/display/JETTY/Embedding+Jetty
     int port = 8887;
     Server server = new Server(port);
 
-    final CajolingServlet servlet = new CajolingServlet(new CajolingService(
-        BuildInfo.getInstance(), "http://localhost:" + port));
+    final ProxyServlet servlet = new ProxyServlet();
 
     server.setHandler(new AbstractHandler() {
       public void handle(

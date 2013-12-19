@@ -24,10 +24,7 @@ import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.ServletHolder;
 
 import com.google.caja.SomethingWidgyHappenedError;
-import com.google.caja.service.CajolingService;
-import com.google.caja.service.CajolingServlet;
-
-import com.google.caja.reporting.BuildInfo;
+import com.google.caja.service.ProxyServlet;
 
 /**
  * Encapsulates the management of a localhost Web server running on an
@@ -75,18 +72,12 @@ public class LocalServer {
     final String subdir = "/caja";
     final ContextHandler caja = new ContextHandler(subdir);
     {
-      // TODO(kpreid): deploy the already-configured war instead of manually
-      // plumbing
-      final String service = "/cajole";
+      final String service = "/proxy";
 
-      // cajoling service -- Servlet setup code gotten from
+      // fetching proxy service -- Servlet setup code gotten from
       // <http://docs.codehaus.org/display/JETTY/Embedding+Jetty> @ 2010-06-30
       Context servlets = new Context(server, "/", Context.NO_SESSIONS);
-      servlets.addServlet(
-          new ServletHolder(
-              new CajolingServlet(
-                  new CajolingService(BuildInfo.getInstance()))),
-          service);
+      servlets.addServlet(new ServletHolder(new ProxyServlet()), service);
 
       // Hook for subclass to add more servlets
       if (contextCallback != null) {

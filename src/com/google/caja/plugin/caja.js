@@ -59,9 +59,8 @@ var caja = (function () {
       // namespace but rather just the loaderFrame
       installSyncScript(rndName,
         (proxyServer ? String(proxyServer) : caja['server'])
-        + '/cajole?url=' + encodeURIComponent(url.toString())
+        + '/proxy?url=' + encodeURIComponent(url.toString())
         + '&input-mime-type=' + encodeURIComponent(mime)
-        + '&transform=PROXY'
         + '&callback=' + encodeURIComponent(rndName)
         + '&alt=json-in-script');
     };
