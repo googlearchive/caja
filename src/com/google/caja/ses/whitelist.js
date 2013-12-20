@@ -51,10 +51,10 @@ var ses;
  *     If the property is an accessor property, it is not
  *     whitelisted (as invoking an accessor might not be meaningful,
  *     yet the accessor might return a value needing taming).
- * <li>"accessor", in which case this accessor property is simply
+ * <li>"maybeAccessor", in which case this accessor property is simply
  *     whitelisted and its getter and/or setter are tamed according to
- *     inheritance. If the property is not an accessor property, it is
- *     not whitelisted.
+ *     inheritance. If the property is not an accessor property, its
+ *     value is tamed according to inheritance.
  * <li>"*", in which case this property on this object is whitelisted,
  *     as is this property as inherited by all objects that inherit
  *     from this object. The values associated with all such properties
@@ -448,7 +448,7 @@ var ses;
       name: t,  // ditto
       isView: t,
       prototype: {
-        byteLength: 'accessor',
+        byteLength: 'maybeAccessor',
         slice: t
       }
     },
@@ -457,10 +457,10 @@ var ses;
       name: t,  // ditto
       BYTES_PER_ELEMENT: t,
       prototype: {
-        buffer: 'accessor',
-        byteOffset: 'accessor',
-        byteLength: 'accessor',
-        length: 'accessor',
+        buffer: 'maybeAccessor',
+        byteOffset: 'maybeAccessor',
+        byteLength: 'maybeAccessor',
+        length: 'maybeAccessor',
         BYTES_PER_ELEMENT: t,
         set: t,
         subarray: t
@@ -478,9 +478,9 @@ var ses;
       length: t,  // does not inherit from Function.prototype on Chrome
       name: t,  // ditto
       prototype: {
-        buffer: 'accessor',
-        byteOffset: 'accessor',
-        byteLength: 'accessor',
+        buffer: 'maybeAccessor',
+        byteOffset: 'maybeAccessor',
+        byteLength: 'maybeAccessor',
         getInt8: t,
         getUint8: t,
         getInt16: t,
