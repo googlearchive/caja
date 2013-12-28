@@ -836,7 +836,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "          QuantityLiteral : 14px\n"
             + "        Operation : NONE\n"
             + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=border\n"
+                        + " ; cssPropertyPart=border::color\n"
             + "          IdentLiteral : transparent");
   }
 
@@ -1021,7 +1021,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "      Property : background\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=IDENT"
-                        + " ; cssPropertyPart=background-color\n"
+                        + " ; cssPropertyPart=background-color::color\n"
             + "          IdentLiteral : transparent\n"
             + "        Operation : NONE\n"
             + "        Term ; cssPropertyPartType=URI"
