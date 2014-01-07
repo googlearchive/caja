@@ -163,7 +163,7 @@ var ses;
      (function() {
        var FFFramePattern = (/^([^@]*)@(.*?):?(\d*)$/);
 
-       // stacktracejs.org suggests that this indicates FF. Really?
+       // stacktracejs.com suggests that this indicates FF. Really?
        function getCWStack(err) {
          var stack = err.stack;
          if (!stack) { return void 0; }

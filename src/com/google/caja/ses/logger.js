@@ -163,8 +163,8 @@ if (!ses) { ses = {}; }
       // We don't do "console.apply" because "console" is not a function
       // on IE 10 preview 2 and it has no apply method. But it is a
       // callable that Function.prototype.apply can successfully apply.
-      // This code most work on ES3 where there's no bind. When we
-      // decide support defensiveness in contexts (frames) with mutable
+      // This code must work on ES3 where there's no bind. When we
+      // decide to support defensiveness in realms with mutable
       // primordials, we will need to revisit the "call" below.
       apply.call(console[level], console, [''].concat(args));
 

@@ -51,10 +51,10 @@ var ses;
  *     If the property is an accessor property, it is not
  *     whitelisted (as invoking an accessor might not be meaningful,
  *     yet the accessor might return a value needing taming).
- * <li>"accessor", in which case this accessor property is simply
+ * <li>"maybeAccessor", in which case this accessor property is simply
  *     whitelisted and its getter and/or setter are tamed according to
- *     inheritance. If the property is not an accessor property, it is
- *     not whitelisted.
+ *     inheritance. If the property is not an accessor property, its
+ *     value is tamed according to inheritance.
  * <li>"*", in which case this property on this object is whitelisted,
  *     as is this property as inherited by all objects that inherit
  *     from this object. The values associated with all such properties

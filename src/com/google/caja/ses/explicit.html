@@ -152,6 +152,31 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
   })();
 </script>
 
+<script>
+  (function() {
+    "use strict";
+    if (!ses.ok()) {
+      return;
+    }
+
+    var src = 
+        'function foo() { throw Error("Expand me to see stack"); }\n' +
+        'function foo2() { foo(); }\n' +
+        'function foo3() { foo2(); }\n' +
+        'foo3();\n';
+
+    try {
+      cajaVM.eval(src);
+    } catch (err) {
+      // The ses.logger installed by useHTMLLogger.js uses ses.getStack
+      // to display the stack, if any, associated with the err argument.
+      ses.logger.info('Expected error to test ses.getStack API: ', err);
+      return;
+    }
+    ses.logger.error('Missing expected error');
+  }());
+</script>
+
 <script src="makeQ.js"></script>
 <script src="makeFarResourceMaker.js"></script>
 <script src="compileExprLater.js"></script>
