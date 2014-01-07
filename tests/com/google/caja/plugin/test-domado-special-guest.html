@@ -303,8 +303,8 @@
 
 
 <p>testResizing and testScrolling need a little extra content to work as
-intended. Here's a little extra content. TODO(kpreid): make this less fragile;
-use a separate test file if needed.</p>
+intended. Here's a little extra content. TODO(kpreid): make this less fragile,
+move to a separate test file.</p>
 
 <p id="testResizing" class="testcontainer">Resizing</p>
 <script type="text/javascript">
@@ -340,19 +340,19 @@ use a separate test file if needed.</p>
       return w;
     }
 
-    assertEquals('initial scrollable dimensions', '600,400', windowDims());
+    assertEquals('initial scrollable dimensions', '600,300', windowDims());
     assertEquals('initial width', 600, windowStyleWidth());
 
     window.resizeBy(0, 0);
-    assertEquals('scrollable dimensions 1', '600,400', windowDims());
+    assertEquals('scrollable dimensions 1', '600,300', windowDims());
     assertEquals('width 1', 600, windowStyleWidth());
 
-    window.resizeBy(-100, 200);
-    assertEquals('scrollable dimensions 2', '500,600', windowDims());
+    window.resizeBy(-100, 123);
+    assertEquals('scrollable dimensions 2', '500,423', windowDims());
     assertEquals('width 2', 500, windowStyleWidth());
 
-    document.defaultView.resizeTo(600, 400);
-    assertEquals('scrollable dimensions 3', '600,400', windowDims());
+    document.defaultView.resizeTo(600, 300);
+    assertEquals('scrollable dimensions 3', '600,300', windowDims());
     assertEquals('width 3', 600, windowStyleWidth());
 
     pass('testResizing');
