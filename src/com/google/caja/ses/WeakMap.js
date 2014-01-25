@@ -22,8 +22,11 @@
  * implementation where the {@code WeakMap} specification does not
  * quite conform, run <code>repairES5.js</code> first.
  *
- * <p> Even though WeakMapModule is not global, the linter thinks it
+ * <p>Even though WeakMapModule is not global, the linter thinks it
  * is, which is why it is in the overrides list below.
+ *
+ * <p>NOTE: Before using this WeakMap emulation in a non-SES
+ * environment, see the note below about hiddenRecord.
  *
  * @author Mark S. Miller
  * @requires crypto, ArrayBuffer, Uint8Array, navigator, console
@@ -310,14 +313,32 @@ var WeakMap;
       // Weak map must brute force, as explained in doc-comment above.
       return void 0;
     }
-    var gets = [];
-    var vals = [];
-    hiddenRecord = {
-      key: key,   // self pointer for quick own check above.
-      gets: gets, // get___ methods identifying weak maps
-      vals: vals  // values associated with this key in each
-                  // corresponding weak map.
-    };
+
+    // The hiddenRecord and the key point directly at each other, via
+    // the "key" and HIDDEN_NAME properties respectively. The key
+    // field is for quickly verifying that this hidden record is an
+    // own property, not a hidden record from up the prototype chain.
+    //
+    // NOTE: Because this WeakMap emulation is meant only for systems like
+    // SES where Object.prototype is frozen without any numeric
+    // properties, it is ok to use an object literal for the hiddenRecord.
+    // This has two advantages:
+    // * It is much faster in a performance critical place
+    // * It avoids relying on Object.create(null), which had been
+    //   problematic on Chrome 28.0.1480.0. See
+    //   https://code.google.com/p/google-caja/issues/detail?id=1687
+    hiddenRecord = { key: key };
+
+    // When using this WeakMap emulation on platforms where
+    // Object.prototype might not be frozen and Object.create(null) is
+    // reliable, use the following two commented out lines instead.
+    // hiddenRecord = Object.create(null);
+    // hiddenRecord.key = key;
+
+    // Please contact us if you need this to work on platforms where
+    // Object.prototype might not be frozen and
+    // Object.create(null) might not be reliable.
+
     defProp(key, HIDDEN_NAME, {
       value: hiddenRecord,
       writable: false,
@@ -378,10 +399,7 @@ var WeakMap;
     }
   }
 
-  // Right now (12/25/2012) the histogram supports the current
-  // representation. We should check this occasionally, as a true
-  // constant time representation is easy.
-  // var histogram = [];
+  var nextId = 0;
 
   var OurWeakMap = function() {
     if (!(this instanceof OurWeakMap)) {  // approximate test for new ...()
@@ -391,73 +409,87 @@ var WeakMap;
     // We are currently (12/25/2012) never encountering any prematurely
     // non-extensible keys.
     var keys = []; // brute force for prematurely non-extensible keys.
-    var vals = []; // brute force for corresponding values.
+    var values = []; // brute force for corresponding values.
+    var id = nextId++;
 
     function get___(key, opt_default) {
-      var hr = getHiddenRecord(key);
-      var i, vs;
-      if (hr) {
-        i = hr.gets.indexOf(get___);
-        vs = hr.vals;
+      var index;
+      var hiddenRecord = getHiddenRecord(key);
+      if (hiddenRecord) {
+        return id in hiddenRecord ? hiddenRecord[id] : opt_default;
       } else {
-        i = keys.indexOf(key);
-        vs = vals;
+        index = keys.indexOf(key);
+        return index >= 0 ? values[index] : opt_default;
       }
-      return (i >= 0) ? vs[i] : opt_default;
     }
 
     function has___(key) {
-      var hr = getHiddenRecord(key);
-      var i;
-      if (hr) {
-        i = hr.gets.indexOf(get___);
+      var hiddenRecord = getHiddenRecord(key);
+      if (hiddenRecord) {
+        return id in hiddenRecord;
       } else {
-        i = keys.indexOf(key);
+        return keys.indexOf(key) >= 0;
       }
-      return i >= 0;
     }
 
     function set___(key, value) {
-      var hr = getHiddenRecord(key);
-      var i;
-      if (hr) {
-        i = hr.gets.indexOf(get___);
-        if (i >= 0) {
-          hr.vals[i] = value;
-        } else {
-//          i = hr.gets.length;
-//          histogram[i] = (histogram[i] || 0) + 1;
-          hr.gets.push(get___);
-          hr.vals.push(value);
-        }
+      var index;
+      var hiddenRecord = getHiddenRecord(key);
+      if (hiddenRecord) {
+        hiddenRecord[id] = value;
       } else {
-        i = keys.indexOf(key);
-        if (i >= 0) {
-          vals[i] = value;
+        index = keys.indexOf(key);
+        if (index >= 0) {
+          values[index] = value;
         } else {
-          keys.push(key);
-          vals.push(value);
+          // Since some browsers preemptively terminate slow turns but
+          // then continue computing with presumably corrupted heap
+          // state, we here defensively get keys.length first and then
+          // use it to update both the values and keys arrays, keeping
+          // them in sync.
+          index = keys.length;
+          values[index] = value;
+          // If we crash here, values will be one longer than keys.
+          keys[index] = key;
         }
       }
+      return this;
     }
 
     function delete___(key) {
-      var hr = getHiddenRecord(key);
-      var i;
-      if (hr) {
-        i = hr.gets.indexOf(get___);
-        if (i >= 0) {
-          hr.gets.splice(i, 1);
-          hr.vals.splice(i, 1);
-        }
+      var hiddenRecord = getHiddenRecord(key);
+      var index, lastIndex;
+      if (hiddenRecord) {
+        return id in hiddenRecord && delete hiddenRecord[id];
       } else {
-        i = keys.indexOf(key);
-        if (i >= 0) {
-          keys.splice(i, 1);
-          vals.splice(i, 1);
+        index = keys.indexOf(key);
+        if (index < 0) {
+          return false;
         }
+        // Since some browsers preemptively terminate slow turns but
+        // then continue computing with potentially corrupted heap
+        // state, we here defensively get keys.length first and then use
+        // it to update both the keys and the values array, keeping
+        // them in sync. We update the two with an order of assignments,
+        // such that any prefix of these assignments will preserve the
+        // key/value correspondence, either before or after the delete.
+        // Note that this needs to work correctly when index === lastIndex.
+        lastIndex = keys.length - 1;
+        keys[index] = void 0;
+        // If we crash here, there's a void 0 in the keys array, but
+        // no operation will cause a "keys.indexOf(void 0)", since
+        // getHiddenRecord(void 0) will always throw an error first.
+        values[index] = values[lastIndex];
+        // If we crash here, values[index] cannot be found here,
+        // because keys[index] is void 0.
+        keys[index] = keys[lastIndex];
+        // If index === lastIndex and we crash here, then keys[index]
+        // is still void 0, since the aliasing killed the previous key.
+        keys.length = lastIndex;
+        // If we crash here, keys will be one shorter than values.
+        values.length = lastIndex;
+        return true;
       }
-      return true;
     }
 
     return Object.create(OurWeakMap.prototype, {
@@ -467,6 +499,7 @@ var WeakMap;
       delete___: { value: constFunc(delete___) }
     });
   };
+
   OurWeakMap.prototype = Object.create(Object.prototype, {
     get: {
       /**
@@ -497,7 +530,7 @@ var WeakMap;
        * previous association if present.
        */
       value: function set(key, value) {
-        this.set___(key, value);
+        return this.set___(key, value);
       },
       writable: true,
       configurable: true
@@ -582,6 +615,7 @@ var WeakMap;
               if (!omap) { omap = new OurWeakMap(); }
               omap.set(key, value);
             }
+            return this;
           };
         } else {
           dset = function(key, value) {
@@ -595,12 +629,14 @@ var WeakMap;
             } else {
               hmap.set(key, value);
             }
+            return this;
           };
         }
 
         function ddelete(key) {
-          hmap['delete'](key);
-          if (omap) { omap.delete___(key); }
+          var result = !!hmap['delete'](key);
+          if (omap) { return omap.delete___(key) || result; }
+          return result;
         }
 
         return Object.create(OurWeakMap.prototype, {
