@@ -59,6 +59,11 @@ public class LocalServer {
   public void start(int port) throws Exception {
     server = new Server(port);
 
+    // Increase header buffer size to allow long URLs (particularly for
+    // generic-host-page.html which puts the content into the URL).
+    // (The Server(int) constructor adds one connector internally.)
+    server.getConnectors()[0].setHeaderBufferSize(100 * 1024);
+
     final ResourceHandler cajaStatic = new ResourceHandler();
     cajaStatic.setResourceBase("./ant-war/");
 

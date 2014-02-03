@@ -31,16 +31,12 @@ caja.tamingGoogleLoader.addLoaderFactory(function(utils) {
 
     safeWindow.google.load =
         utils.frame.markFunction(function(name, opt_ver, opt_info) {
-
-          // This is our front line of defense against a malicious guest
-          // trying to break us by supplying a dumb API name like '__proto__'.
-          if (!utils.whitelistedApis.has('google.' + name)) {
-            throw 'API ' + name + ' is not whitelisted for your application';
-          }
-
-          loadWasCalled = true;
-
-          utils.loadPolicy('google.' + name, function(policy) {
+      utils.validateNameAndLoadPolicy(
+          'google.' + name,
+          function() {
+            loadWasCalled = true;
+          },
+          function(policy) {
             var guestCallback = undefined;
 
             if (opt_info) {
@@ -64,12 +60,12 @@ caja.tamingGoogleLoader.addLoaderFactory(function(utils) {
               google.load(name, policy.version, opt_info);
             }
           });
-        });
+    });
 
     safeWindow.google.setOnLoadCallback =
         utils.frame.markFunction(function(cb) {
-          if (onloads) { onloads.add(cb); }
-        });
+      if (onloads) { onloads.add(cb); }
+    });
   }
 
   function signalOnload() {

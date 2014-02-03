@@ -16,6 +16,9 @@
  * @fileoverview
  * Loader factory for Google APIs loader
  *
+ * Note that despite the name, this implements gapi.load as well as
+ * gapi.client.load, for historical reasons.
+ *
  * @author ihab.awad@gmail.com
  * @overrides caja, google, gapi, console
  */
@@ -63,31 +66,49 @@ caja.tamingGoogleLoader.addLoaderFactory(function(utils) {
       safeWindow.gapi.client = {};
     }
 
-    safeWindow.gapi.load = mf(function(name, callback) {
+    safeWindow.gapi.load = mf(function(name, optionsOrCallback) {
       name = '' + name;
-      if (name !== 'client') {
-        throw new Error('gapi.load() only accepts "client" as first argument');
-      }
-      if (!callback) {
+
+      var callback;
+      if (typeof optionsOrCallback === 'function') {
+        callback = optionsOrCallback;
+      } else if (typeof optionsOrCallback === 'object' &&
+          typeof (callback = optionsOrCallback.callback) === 'function') {
+        // read once and assigned in condition
+      } else {
         throw new Error('gapi.load() requires a callback as second argument');
       }
-      topLevelCallback.setCallback(callback);
-      gapi.load('client', function() {
-        topLevelCallback.signalLoadClient();
-      });
+
+      if (name === 'client') {
+        topLevelCallback.setCallback(callback);
+        gapi.load('client', function() {
+          topLevelCallback.signalLoadClient();
+        });
+      } else {
+        // TODO(kpreid): Kludge. Replace this with a more general mechanism
+        // when we have more information about how APIs are named.
+        if ((/\./).test(name)) {
+          // Reject dotted names as otherwise we'd permit names like
+          // "client.urlshortener" which come from gapi.client.load instead.
+          // All other malformed names will be caught by the whitelist.
+          throw new Error('API name should not contain "." characters.');
+        }
+        var fullName = name === 'picker' ? 'google.picker' : 'gapi.' + name;
+
+        utils.validateNameAndLoadPolicy(fullName, undefined, function(policy) {
+          gapi.load(name, function() {
+            utils.reapplyPolicies();
+            callback && callback.call({});
+          });
+        });
+      }
     });
 
     safeWindow.gapi.client.load = mf(function(name, version, callback) {
       var fullName = 'gapi.client.' + name;
       version = '' + version;
 
-      // This is our front line of defense against a malicious guest
-      // trying to break us by supplying a dumb API name like '__proto__'.
-      if (!utils.whitelistedApis.has(fullName)) {
-        throw 'API ' + name + ' is not whitelisted for your application';
-      }
-
-      utils.loadPolicy(fullName, function(policy) {
+      utils.validateNameAndLoadPolicy(fullName, undefined, function(policy) {
         gapi.client.load(name, version, function() {
           utils.reapplyPolicies();
           callback && callback.call({});

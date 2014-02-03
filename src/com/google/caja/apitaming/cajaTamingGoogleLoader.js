@@ -484,10 +484,21 @@ caja.tamingGoogleLoader = (function() {
     var loaders = [];
     var policyByName = tamingUtils.StringMap();
 
-    function loadPolicy(name, cb) {
+    function validateNameAndLoadPolicy(name, willLoadCallback, loadedCallback) {
+      // This is our front line of defense against a malicious guest
+      // trying to break us by supplying a dumb API name like '__proto__'.
+      if (!whitelistedApis.has(name)) {
+        throw new RangeError('API ' + name +
+            ' is not whitelisted for your application');
+      }
+
+      if (willLoadCallback) {
+        willLoadCallback();
+      }
+
       if (policyByName.has(name)) {
         window.setTimeout(
-            function() { cb(policyByName.get(name)); },
+            function() { loadedCallback(policyByName.get(name)); },
             0);
       } else {
         maybeLoadPolicyFactory(name, function() {
@@ -496,7 +507,7 @@ caja.tamingGoogleLoader = (function() {
               .call({}, frame, tamingUtils);
           mergeInto(framePolicies, policy.value);
           policyByName.set(name, policy);
-          cb(policy);
+          loadedCallback(policy);
         });
       }
     }
@@ -548,11 +559,10 @@ caja.tamingGoogleLoader = (function() {
     for (var i = 0; i < loaderFactories.length; i++) {
       loaders.push(loaderFactories[i]({
         EventListenerGroup: EventListenerGroup,
-        loadPolicy: loadPolicy,
+        validateNameAndLoadPolicy: validateNameAndLoadPolicy,
         tamingUtils: tamingUtils,
         reapplyPolicies: reapplyPolicies,
-        frame: frame,
-        whitelistedApis: whitelistedApis
+        frame: frame
       }));
     }
 
