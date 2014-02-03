@@ -1705,8 +1705,11 @@ ses.startSES = function(global,
 
   ses.logger.reportMax();
 
-  if (ses.ok(ses['severities'][ses.maxAcceptableSeverityName])) {
+  if (ses.ok()) {
     // We succeeded. Enable safe Function, eval, and compile* to work.
+    // TODO(kpreid): This separate 'dirty' flag should be replaced with
+    // a problem registered with ses._repairer, so that ses.ok() itself
+    // gives the whole answer.
     dirty = false;
     ses.logger.log('initSES succeeded.');
   } else {

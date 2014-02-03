@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Force SES to not abort mid-load so we can test as best we can.
+// This severity is too high for any use other than development.
+var ses = ses || {};
+ses.maxAcceptableSeverityName = 'NEW_SYMPTOM';
+
 var preFrozen = Object.freeze({});
 var loadSesScript = document.createElement('script');
 loadSesScript.src = '../ses/initSES.js';

@@ -28,7 +28,7 @@
   "use strict";
 
   try {
-    if (!ses.ok()) {
+    if (!ses.okToLoad()) {
       return;
     }
 

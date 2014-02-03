@@ -28,12 +28,10 @@
  * need to lie to the linter since it can't tell.
  *
  * //requires ses.mitigateSrcGotchas
- * //requires ses.acceptableProblems, ses.maxAcceptableSeverityName
- * //provides ses.statuses, ses.ok, ses.is, ses.makeDelayedTamperProof
+ * //provides ses.ok, ses.okToLoad, ses.getMaxSeverity
+ * //provides ses.is, ses.makeDelayedTamperProof
  * //provides ses.makeCallerHarmless, ses.makeArgumentsHarmless
  * //provides ses.verifyStrictFunctionBody
- * //provides ses.severities, ses.maxSeverity, ses.updateMaxSeverity
- * //provides ses.maxAcceptableSeverity
  *
  * @author Mark S. Miller
  * @requires ___global_test_function___, ___global_valueOf_function___
@@ -57,9 +55,10 @@ var ses;
  *
  * <p>On such not-quite-ES5 platforms, some elements of these
  * emulations may lose SES safety, as enumerated in the comment on
- * each kludge record in the {@code kludges} array below. The platform
- * must at least provide {@code Object.getOwnPropertyNames}, because
- * it cannot reasonably be emulated.
+ * each problem record in the {@code baseProblems} and {@code
+ * supportedProblems} array below. The platform must at least provide
+ * {@code Object.getOwnPropertyNames}, because it cannot reasonably be
+ * emulated.
  *
  * <p>This file is useful by itself, as it has no dependencies on the
  * rest of SES. It creates no new global bindings, but merely repairs
@@ -92,223 +91,44 @@ var ses;
 (function repairES5Module(global) {
   "use strict";
 
-  /**
-   * The severity levels.
-   *
-   * <dl>
-   *   <dt>MAGICAL_UNICORN</dt><dd>Unachievable magical mode used for testing.
-   *   <dt>SAFE</dt><dd>no problem.
-   *   <dt>SAFE_SPEC_VIOLATION</dt>
-   *     <dd>safe (in an integrity sense) even if unrepaired. May
-   *         still lead to inappropriate failures.</dd>
-   *   <dt>UNSAFE_SPEC_VIOLATION</dt>
-   *     <dd>a safety issue only indirectly, in that this spec
-   *         violation may lead to the corruption of assumptions made
-   *         by other security critical or defensive code.</dd>
-   *   <dt>NOT_OCAP_SAFE</dt>
-   *     <dd>a violation of object-capability rules among objects
-   *         within a coarse-grained unit of isolation.</dd>
-   *   <dt>NOT_ISOLATED</dt>
-   *     <dd>an inability to reliably sandbox even coarse-grain units
-   *         of isolation.</dd>
-   *   <dt>NEW_SYMPTOM</dt>
-   *     <dd>some test failed in a way we did not expect.</dd>
-   *   <dt>NOT_SUPPORTED</dt>
-   *     <dd>this platform cannot even support SES development in an
-   *         unsafe manner.</dd>
-   * </dl>
-   */
-  ses.severities = {
-    MAGICAL_UNICORN:       { level: -1, description: 'Testing only' },
-    SAFE:                  { level: 0, description: 'Safe' },
-    SAFE_SPEC_VIOLATION:   { level: 1, description: 'Safe spec violation' },
-    UNSAFE_SPEC_VIOLATION: { level: 3, description: 'Unsafe spec violation' },
-    NOT_OCAP_SAFE:         { level: 4, description: 'Not ocap safe' },
-    NOT_ISOLATED:          { level: 5, description: 'Not isolated' },
-    NEW_SYMPTOM:           { level: 6, description: 'New symptom' },
-    NOT_SUPPORTED:         { level: 7, description: 'Not supported' }
-  };
-
-  /**
-   * Statuses.
-   *
-   * <dl>
-   *   <dt>ALL_FINE</dt>
-   *     <dd>test passed before and after.</dd>
-   *   <dt>REPAIR_FAILED</dt>
-   *     <dd>test failed before and after repair attempt.</dd>
-   *   <dt>NOT_REPAIRED</dt>
-   *     <dd>test failed before and after, with no repair to attempt.</dd>
-   *   <dt>REPAIR_SKIPPED</dt>
-   *     <dd>test failed before and after, and ses.acceptableProblems
-   *         specified not to repair it.</dd>
-   *   <dt>REPAIRED_UNSAFELY</dt>
-   *     <dd>test failed before and passed after repair attempt, but
-   *         the repair is known to be inadequate for security, so the
-   *         real problem remains.</dd>
-   *   <dt>REPAIRED</dt>
-   *     <dd>test failed before and passed after repair attempt,
-   *         repairing the problem (canRepair was true).</dd>
-   *   <dt>ACCIDENTALLY_REPAIRED</dt>
-   *      <dd>test failed before and passed after, despite no repair
-   *          to attempt. (Must have been fixed by some other
-   *          attempted repair.)</dd>
-   *   <dt>BROKEN_BY_OTHER_ATTEMPTED_REPAIRS</dt>
-   *      <dd>test passed before and failed after, indicating that
-   *          some other attempted repair created the problem.</dd>
-   * </dl>
-   */
-  ses.statuses = {
-    ALL_FINE:                          'All fine',
-    REPAIR_FAILED:                     'Repair failed',
-    NOT_REPAIRED:                      'Not repaired',
-    REPAIR_SKIPPED:                    'Repair skipped',
-    REPAIRED_UNSAFELY:                 'Repaired unsafely',
-    REPAIRED:                          'Repaired',
-    ACCIDENTALLY_REPAIRED:             'Accidentally repaired',
-    BROKEN_BY_OTHER_ATTEMPTED_REPAIRS: 'Broken by other attempted repairs'
-  };
-
-
   var logger = ses.logger;
+  var EarlyStringMap = ses._EarlyStringMap;
 
   /**
    * As we start to repair, this will track the worst post-repair
    * severity seen so far.
+   *
+   * TODO(kpreid): Revisit this; it's a shim for the old "ses.maxSeverity"
+   * which is no longer a global property since it's now internal state of
+   * the repairer.
    */
-  ses.maxSeverity = ses.severities.SAFE;
+   ses.getMaxSeverity = function getMaxSeverity() {
+     return ses._repairer.getCurrentSeverity();
+   };
 
   /**
-   * {@code ses.maxAcceptableSeverity} is the max post-repair severity
-   * that is considered acceptable for proceeding with the SES
-   * verification-only strategy.
+   * Are we in a condition to safely operate as SES?
    *
-   * <p>Although <code>repairES5.js</code> can be used standalone for
-   * partial ES5 repairs, its primary purpose is to repair as a first
-   * stage of <code>initSES.js</code> for purposes of supporting SES
-   * security. In support of that purpose, we initialize
-   * {@code ses.maxAcceptableSeverity} to the post-repair severity
-   * level at which we should report that we are unable to adequately
-   * support SES security. By default, this is set to
-   * {@code ses.severities.SAFE_SPEC_VIOLATION}, which is the maximum
-   * severity that we believe results in no loss of SES security.
-   *
-   * <p>If {@code ses.maxAcceptableSeverityName} is already set (to a
-   * severity property name of a severity below {@code
-   * ses.NOT_SUPPORTED}), then we use that setting to initialize
-   * {@code ses.maxAcceptableSeverity} instead. For example, if we are
-   * using SES only for isolation, then we could set it to
-   * 'NOT_OCAP_SAFE', in which case repairs that are inadequate for
-   * object-capability (ocap) safety would still be judged safe for
-   * our purposes.
-   *
-   * <p>As repairs proceed, they update {@code ses.maxSeverity} to
-   * track the worst case post-repair severity seen so far. When
-   * {@code ses.ok()} is called, it return whether {@code
-   * ses.maxSeverity} is still less than or equal to
-   * {@code ses.maxAcceptableSeverity}, indicating that this platform
-   * still seems adequate for supporting SES. In the Caja context, we
-   * have the choice of using SES on those platforms which we judge to
-   * be adequately repairable, or otherwise falling back to Caja's
-   * ES5/3 translator.
-   *
-   * <p>See also {@code ses.acceptableProblems} for overriding the
-   * severity of specific known problems.
-   */
-  ses.maxAcceptableSeverityName =
-    validateSeverityName(ses.maxAcceptableSeverityName, false);
-  ses.maxAcceptableSeverity = ses.severities[ses.maxAcceptableSeverityName];
-
-  function validateSeverityName(severityName, failIfInvalid) {
-    if (severityName) {
-      var sev = ses.severities[severityName];
-      if (sev && typeof sev.level === 'number' &&
-        sev.level >= ses.severities.MAGICAL_UNICORN.level &&
-        sev.level < ses.severities.NOT_SUPPORTED.level) {
-        // do nothing
-      } else if (failIfInvalid) {
-        throw new RangeError('Bad SES severityName: ' + severityName);
-      } else {
-        logger.error('Ignoring bad severityName: ' + severityName + '.');
-        severityName = 'SAFE_SPEC_VIOLATION';
-      }
-    } else {
-      severityName = 'SAFE_SPEC_VIOLATION';
-    }
-    return severityName;
-  }
-  function lookupSeverityName(severityName, failIfInvalid) {
-    return ses.severities[validateSeverityName(severityName, failIfInvalid)];
-  }
-
-  /**
-   * An object whose enumerable keys are problem names and whose values
-   * are records containing the following boolean properties, defaulting
-   * to false if omitted:
-   * <dl>
-   *
-   * <dt>{@code permit}
-   * <dd>If this problem is not repaired, continue even if its severity
-   * would otherwise be too great (maxSeverity will be as if this
-   * problem does not exist). Use this for problems which are known
-   * to be acceptable for the particular use case of SES.
-   *
-   * <p>THIS CONFIGURATION IS POTENTIALLY EXTREMELY DANGEROUS. Ignoring
-   * problems can make SES itself insecure in subtle ways even if you
-   * do not use any of the affected features in your own code. Do not
-   * use it without full understanding of the implications.
-   *
-   * <p>TODO(kpreid): Add a flag to kludge records to indicate whether
-   * the problems may be ignored and check it here.
-   * </dd>
-   *
-   * <dt>{@code doNotRepair}
-   * <dd>Do not attempt to repair this problem.
-   * Use this for problems whose repairs have unacceptable disadvantages.
-   *
-   * <p>Observe that if {@code permit} is also false, then this means to
-   * abort rather than repairing, whereas if {@code permit} is true then
-   * this means to continue without repairing the problem even if it is
-   * repairable.
-   *
-   * </dl>
-   */
-  ses.acceptableProblems = validateAcceptableProblems(ses.acceptableProblems);
-
-  function validateAcceptableProblems(opt_problems) {
-    var validated = {};
-    if (opt_problems) {
-      for (var problem in opt_problems) {
-        // TODO(kpreid): Validate problem names.
-        var flags = opt_problems[problem];
-        if (typeof flags !== 'object') {
-          throw new Error('ses.acceptableProblems["' + problem + '"] is not' +
-              ' an object, but ' + flags);
-        }
-        var valFlags = {permit: false, doNotRepair: false};
-        for (var flag in flags) {
-          if (valFlags.hasOwnProperty(flag)) {
-            valFlags[flag] = Boolean(flags[flag]);
-          }
-        }
-        validated[problem] = valFlags;
-      }
-    }
-    return validated;
-  }
-
-  /**
-   * Once this returns false, we can give up on the SES
-   * verification-only strategy and fall back to ES5/3 translation.
+   * TODO(kpreid): This should subsume the 'dirty' flag from startSES
+   * by making that into a "problem".
    */
   ses.ok = function ok(maxSeverity) {
-    if ('string' === typeof maxSeverity) {
-      maxSeverity = lookupSeverityName(maxSeverity, true);
+    return ses._repairer.okToUse(maxSeverity);
+  };
+
+  /**
+   * Are we in a condition to continue initializing SES (as opposed to
+   * aborting)?
+   *
+   * Does not take a max severity argument because the severity during loading
+   * is pre-chosen by maxAcceptableSeverity.
+   */
+  ses.okToLoad = function okToLoad() {
+    if (arguments.length !== 0) {
+      // catch a plausible mistake
+      throw new Error('okToLoad takes no arguments');
     }
-    if (!maxSeverity) {
-      maxSeverity = ses.maxAcceptableSeverity;
-    }
-    return ses.maxSeverity.level <= maxSeverity.level;
+    return ses._repairer.okToLoad();
   };
 
   /**
@@ -318,34 +138,9 @@ var ses;
    * max to match.
    */
   ses.updateMaxSeverity = function updateMaxSeverity(severity) {
-    if (severity.level > ses.maxSeverity.level) {
-      ses.maxSeverity = severity;
-    }
+    // TODO(kpreid): Replace uses of this with new repair framework
+    return ses._repairer.updateMaxSeverity(severity);
   };
-
-  /**
-   * Several test/repair routines want string-keyed maps. Unfortunately,
-   * our exported StringMap is not yet available, and our repairs
-   * include one which breaks Object.create(null). So, an ultra-minimal,
-   * ES3-compatible implementation.
-   */
-  function EarlyStringMap() {
-    var objAsMap = {};
-    return {
-      get: function(key) {
-        return objAsMap[key + '$'];
-      },
-      set: function(key, value) {
-        objAsMap[key + '$'] = value;
-      },
-      has: function(key) {
-        return (key + '$') in objAsMap;
-      },
-      'delete': function(key) {
-        return delete objAsMap[key + '$'];
-      }
-    };
-  }
 
   //////// Prepare for "caller" and "argument" testing and repair /////////
 
@@ -360,20 +155,9 @@ var ses;
   }
 
   /**
-   * Needs to work on ES3, since repairES5.js may be run on an ES3
-   * platform.
-   *
-   * <p>Also serves as our representative strict function, by contrast
-   * to builtInMapMethod below, for testing what the "caller" and
-   * "arguments" properties of a strict function reveals.
+   * A known strict-mode function for tests to use.
    */
-  function strictMapFn(list, callback) {
-    var result = [];
-    for (var i = 0, len = list.length; i < len; i++) {
-      result.push(callback(list[i], i));
-    }
-    return result;
-  }
+  function strictFnSpecimen() {}
 
   var objToString = Object.prototype.toString;
 
@@ -627,6 +411,7 @@ var ses;
    * has had a chance to monkey patch Object.freeze if necessary, in
    * order to install hidden properties for its own use before the
    * object becomes non-extensible.
+   * TODO(kpreid): Revisit this time-of-execution commentary in new world
    */
   function rememberToTamperProof(obj) {
     needToTamperProof.push(obj);
@@ -1152,9 +937,9 @@ var ses;
    * released Safari 5 (JavaScriptCore). The Safari beta 5.0.4
    * (5533.20.27, r84622) already does implement freeze, which is why
    * this WebKit bug is listed as closed. When the released Safari has
-   * this fix, we can retire this kludge.
+   * this fix, we can retire this problem.
    *
-   * <p>This kludge is <b>not</b> safety preserving. The emulations it
+   * <p>The repair is <b>not</b> safety preserving. The emulations it
    * installs if needed do not actually provide the safety that the
    * rest of SES relies on.
    */
@@ -1181,9 +966,9 @@ var ses;
    *
    * This bug is fixed on the latest Safari beta 5.0.5 (5533.21.1,
    * r88603). When the released Safari has this fix, we can retire
-   * this kludge.
+   * this problem.
    *
-   * <p>This kludge is safety preserving.
+   * <p>The repair is safety preserving.
    */
   function test_MISSING_CALLEE_DESCRIPTOR() {
     function foo(){}
@@ -1245,7 +1030,7 @@ var ses;
   /**
    * Detects https://code.google.com/p/v8/issues/detail?id=1393
    *
-   * <p>This kludge is safety preserving.
+   * <p>The repair is safety preserving.
    */
   function test_REGEXP_TEST_EXEC_UNSAFE() {
     (/foo/).test('xfoox');
@@ -1263,9 +1048,9 @@ var ses;
    * Safari 5 (JavaScriptCore), including the current Safari beta
    * 5.0.4 (5533.20.27, r84622).
    *
-   * <p>This kludge is safety preserving. But see
+   * <p>The repair is safety preserving. But see
    * https://bugs.webkit.org/show_bug.cgi?id=26382#c25 for why this
-   * kludge cannot faithfully implement the specified semantics.
+   * repair cannot faithfully implement the specified semantics.
    *
    * <p>See also https://bugs.webkit.org/show_bug.cgi?id=42371
    */
@@ -1336,7 +1121,7 @@ var ses;
    * by the primordial mutation methods on Date.prototype, such as
    * {@code Date.prototype.setFullYear}.
    *
-   * <p>This kludge is safety preserving.
+   * <p>The repair is safety preserving.
    */
   function test_MUTABLE_DATE_PROTO() {
     try {
@@ -1366,7 +1151,7 @@ var ses;
    * mutated by the primordial mutation methods on WeakMap.prototype,
    * such as {@code WeakMap.prototype.set}.
    *
-   * <p>This kludge is safety preserving.
+   * <p>The repair is safety preserving.
    *
    * <p>TODO(erights): Update the ES spec page to reflect the current
    * agreement with Mozilla.
@@ -1398,7 +1183,7 @@ var ses;
    * Function.prototype.apply}, as inherited by original, obeying its
    * contract.
    *
-   * <p>This kludge is safety preserving but non-transparent, in that
+   * <p>The repair is safety preserving but non-transparent, in that
    * the real forEach is frozen even in the success case, since we
    * have to freeze it in order to test for this failure. We could
    * repair this non-transparency by replacing it with a transparent
@@ -1445,7 +1230,7 @@ var ses;
    * accessor property with a getter but no setter, Chrome <= 17 fails
    * with <blockquote>Uncaught TypeError: Cannot set property ident___
    * of #<Object> which has only a getter</blockquote>. So if
-   * necessary, this kludge overrides {@code Object.defineProperty} to
+   * necessary, the repair overrides {@code Object.defineProperty} to
    * always install a dummy setter in lieu of the absent one.
    *
    * <p>Since this problem seems to have gone away as of Chrome 18, it
@@ -1523,7 +1308,7 @@ var ses;
    * prevent the occurrence of this bug for any enumerable property,
    * and so we do not need to wrap propertyIsEnumerable.
    *
-   * <p>This kludge seems to be safety preserving, but the issues are
+   * <p>The repair seems to be safety preserving, but the issues are
    * delicate and not well understood.
    */
   function test_ACCESSORS_INHERIT_AS_OWN() {
@@ -1578,7 +1363,7 @@ var ses;
       // This case happens on IE10preview2. See
       // https://connect.microsoft.com/IE/feedback/details/685928/
       //   bad-this-binding-for-callback-in-string-prototype-replace
-      // TODO(erights): When this happens, the kludge.description is
+      // TODO(erights): When this happens, the problem.description is
       // wrong.
       return true;
     }
@@ -1758,13 +1543,15 @@ var ses;
    * Detects whether strict function violate caller anonymity.
    */
   function test_STRICT_CALLER_NOT_POISONED() {
-    if (!has2(strictMapFn, 'caller', 'a strict function')) { return false; }
+    if (!has2(strictFnSpecimen, 'caller', 'a strict function')) {
+      return false;
+    }
     function foo(m) { return m.caller; }
     // using Function so it'll be non-strict
     var testfn = Function('m', 'f', 'return m([m], f)[0];');
     var caller;
     try {
-      caller = testfn(strictMapFn, foo);
+      caller = testfn(strictFnSpecimen, foo);
     } catch (err) {
       if (err instanceof TypeError) { return false; }
       return 'Strict "caller" failed with: ' + err;
@@ -1780,13 +1567,15 @@ var ses;
    * Detects whether strict functions are encapsulated.
    */
   function test_STRICT_ARGUMENTS_NOT_POISONED() {
-    if (!has2(strictMapFn, 'arguments', 'a strict function')) { return false; }
+    if (!has2(strictFnSpecimen, 'arguments', 'a strict function')) {
+      return false;
+    }
     function foo(m) { return m.arguments; }
     // using Function so it'll be non-strict
     var testfn = Function('m', 'f', 'return m([m], f)[0];');
     var args;
     try {
-      args = testfn(strictMapFn, foo);
+      args = testfn(strictFnSpecimen, foo);
     } catch (err) {
       if (err instanceof TypeError) { return false; }
       return 'Strict "arguments" failed with: ' + err;
@@ -3550,7 +3339,7 @@ var ses;
   // These are tests and repairs which follow a pattern, such that it is
   // more practical to define them programmatically.
 
-  function arrayMutatorKludge(destination, prop, testArgs) {
+  function arrayMutatorProblem(destination, prop, testArgs) {
     /**
      * Tests only for likley symptoms of a seal violation or a
      * malformed array.
@@ -3645,37 +3434,7 @@ var ses;
     });
   }
 
-  ////////////////////// Kludge Records /////////////////////
-  //
-  // Each kludge record has a <dl>
-  //   <dt>description:</dt>
-  //     <dd>a string describing the problem</dd>
-  //   <dt>test:</dt>
-  //     <dd>a predicate testing for the presence of the problem</dd>
-  //   <dt>repair:</dt>
-  //     <dd>a function which attempts repair, or undefined if no
-  //         repair is attempted for this problem</dd>
-  //   <dt>preSeverity:</dt>
-  //     <dd>an enum (see below) indicating the level of severity of
-  //         this problem if unrepaired. Or, if !canRepair, then
-  //         the severity whether or not repaired.</dd>
-  //   <dt>canRepair:</dt>
-  //     <dd>a boolean indicating "if the repair exists and the test
-  //         subsequently does not detect a problem, are we now ok?"</dd>
-  //   <dt>urls:</dt>
-  //     <dd>a list of URL strings, each of which points at a page
-  //         relevant for documenting or tracking the bug in
-  //         question. These are typically into bug-threads in issue
-  //         trackers for the various browsers.</dd>
-  //   <dt>sections:</dt>
-  //     <dd>a list of strings, each of which is a relevant ES5.1
-  //         section number.</dd>
-  //   <dt>tests:</dt>
-  //     <dd>a list of strings, each of which is the name of a
-  //         relevant test262 or sputnik test case.</dd>
-  // </dl>
-  // These kludge records are the meta-data driving the testing and
-  // repairing.
+  ////////////////////// Problem Records /////////////////////
 
   var severities = ses.severities;
   var statuses = ses.statuses;
@@ -3684,7 +3443,7 @@ var ses;
    * First test whether the platform can even support our repair
    * attempts.
    */
-  var baseKludges = [
+  var baseProblems = [
     {
       id: 'MISSING_GETOWNPROPNAMES',
       description: 'Missing getOwnPropertyNames',
@@ -3710,9 +3469,9 @@ var ses;
   ];
 
   /**
-   * Run these only if baseKludges report success.
+   * Run these only if baseProblems report success.
    */
-  var supportedKludges = [
+  var supportedProblems = [
     {
       id: 'GLOBAL_LEAKS_FROM_GLOBAL_FUNCTION_CALLS',
       description: 'Global object leaks from global function calls',
@@ -4582,17 +4341,17 @@ var ses;
   // SPLICE_IGNORES_FROZEN
   // SHIFT_IGNORES_SEALED
   // SHIFT_IGNORES_FROZEN
-  arrayMutatorKludge(supportedKludges, 'unshift', ['foo']);
-  arrayMutatorKludge(supportedKludges, 'splice', [0, 0, 'foo']);
-  arrayMutatorKludge(supportedKludges, 'shift', []);
+  arrayMutatorProblem(supportedProblems, 'unshift', ['foo']);
+  arrayMutatorProblem(supportedProblems, 'splice', [0, 0, 'foo']);
+  arrayMutatorProblem(supportedProblems, 'shift', []);
   // Array.prototype.{push,pop,sort} are also subject to the problem
-  // arrayMutatorKludge handles, but are handled separately and more
+  // arrayMutatorProblem handles, but are handled separately and more
   // precisely.
 
   // Note: GLOBAL_LEAKS_FROM_ARRAY_METHODS should be LAST in the list so as
   // to run its repair last, which reduces the number of chained wrapper
   // functions resulting from repairs.
-  supportedKludges.push({
+  supportedProblems.push({
     id: 'GLOBAL_LEAKS_FROM_ARRAY_METHODS',
     description: 'Array methods as functions operate on global object',
     test: test_GLOBAL_LEAKS_FROM_ARRAY_METHODS,
@@ -4607,132 +4366,24 @@ var ses;
 
   ////////////////////// Testing, Repairing, Reporting ///////////
 
-  var aboutTo = void 0;
-
-  var defaultDisposition = { permit: false, doNotRepair: false };
-  function disposition(kludge) {
-    return ses.acceptableProblems.hasOwnProperty(kludge.id)
-        ? ses.acceptableProblems[kludge.id] : defaultDisposition;
-  }
-
-  /**
-   * Run a set of tests & repairs, and report results.
-   *
-   * <p>First run all the tests before repairing anything.
-   * Then repair all repairable failed tests.
-   * Some repair might fix multiple problems, but run each repair at most once.
-   * Then run all the tests again, in case some repairs break other tests.
-   * And finally return a list of records of results.
-   */
-  function testRepairReport(kludges) {
-    var beforeFailures = strictMapFn(kludges, function(kludge) {
-      aboutTo = ['pre test: ', kludge.description];
-      return kludge.test();
-    });
-    var repairs = [];
-    strictForEachFn(kludges, function(kludge, i) {
-      if (beforeFailures[i] && !disposition(kludge).doNotRepair) {
-        var repair = kludge.repair;
-        if (repair && repairs.lastIndexOf(repair) === -1) {
-          aboutTo = ['repair: ', kludge.description];
-          repair();
-          repairs.push(repair);
-        }
-      }
-    });
-    var afterFailures = strictMapFn(kludges, function(kludge) {
-      aboutTo = ['post test: ', kludge.description];
-      return kludge.test();
-    });
-
+  ses._repairer.addPostTestKludge(function extraRepair() {
     if (Object.isFrozen && Object.isFrozen(Array.prototype.forEach)) {
       // Need to do it anyway, to repair the sacrificial freezing we
       // needed to do to test. Once we can permanently retire this
       // test, we can also retire the redundant repair.
       repair_NEED_TO_WRAP_FOREACH();
     }
-
-    return strictMapFn(kludges, function(kludge, i) {
-      var status = statuses.ALL_FINE;
-      var postSeverity = severities.SAFE;
-      var beforeFailure = beforeFailures[i];
-      var afterFailure = afterFailures[i];
-      if (beforeFailure) { // failed before
-        if (afterFailure) { // failed after
-          if (disposition(kludge).doNotRepair) {
-            postSeverity = kludge.preSeverity;
-            status = statuses.REPAIR_SKIPPED;
-          } else if (kludge.repair) {
-            postSeverity = kludge.preSeverity;
-            status = statuses.REPAIR_FAILED;
-          } else {
-            if (!kludge.canRepair) {
-              postSeverity = kludge.preSeverity;
-            } // else no repair + canRepair -> problem isn't safety issue
-            status = statuses.NOT_REPAIRED;
-          }
-        } else { // succeeded after
-          if (kludge.repair && repairs.lastIndexOf(kludge.repair) !== -1) {
-            if (!kludge.canRepair) {
-              // repair for development, not safety
-              postSeverity = kludge.preSeverity;
-              status = statuses.REPAIRED_UNSAFELY;
-            } else {
-              status = statuses.REPAIRED;
-            }
-          } else {
-            status = statuses.ACCIDENTALLY_REPAIRED;
-          }
-        }
-      } else { // succeeded before
-        if (afterFailure) { // failed after
-          if (kludge.repair || !kludge.canRepair) {
-            postSeverity = kludge.preSeverity;
-          } // else no repair + canRepair -> problem isn't safety issue
-          status = statuses.BROKEN_BY_OTHER_ATTEMPTED_REPAIRS;
-        } else { // succeeded after
-          // nothing to see here, move along
-        }
-      }
-
-      if (typeof beforeFailure === 'string') {
-        logger.error('New Symptom: ' + beforeFailure);
-        postSeverity = severities.NEW_SYMPTOM;
-      }
-      if (typeof afterFailure === 'string') {
-        logger.error('New Symptom: ' + afterFailure);
-        postSeverity = severities.NEW_SYMPTOM;
-      }
-
-      if (postSeverity.level > severities.SAFE.level
-          && disposition(kludge).permit) {
-        logger.warn('Problem ignored by configuration (' +
-            postSeverity.description + '): ' + kludge.description);
-      } else {
-        ses.updateMaxSeverity(postSeverity);
-      }
-
-      return {
-        id:            kludge.id,
-        description:   kludge.description,
-        preSeverity:   kludge.preSeverity,
-        canRepair:     kludge.canRepair,
-        urls:          kludge.urls,
-        sections:      kludge.sections,
-        tests:         kludge.tests,
-        status:        status,
-        postSeverity:  postSeverity,
-        beforeFailure: beforeFailure,
-        afterFailure:  afterFailure
-      };
-    });
-  }
+  });
 
   try {
-    var reports = testRepairReport(baseKludges);
-    if (ses.ok()) {
-      reports.push.apply(reports, testRepairReport(supportedKludges));
+    strictForEachFn(baseProblems, ses._repairer.registerProblem);
+    ses._repairer.testAndRepair();
+    if (ses._repairer.okToLoad()) {
+      strictForEachFn(supportedProblems, ses._repairer.registerProblem);
+      ses._repairer.testAndRepair();
     }
+    
+    var reports = ses._repairer.getReports();
 
     // Made available to allow for later code reusing our diagnoses to work
     // around non-repairable problems in application-specific ways. startSES
@@ -4748,11 +4399,9 @@ var ses;
       indexedReports[report.id] = report;
     });
     ses.es5ProblemReports = indexedReports;
-
-    logger.reportRepairs(reports);
   } catch (err) {
-    ses.updateMaxSeverity(ses.severities.NOT_SUPPORTED);
-    var during = aboutTo ? '(' + aboutTo.join('') + ') ' : '';
+    ses._repairer.updateMaxSeverity(ses.severities.NOT_SUPPORTED);
+    var during = ses._repairer.wasDoing();
     logger.error('ES5 Repair ' + during + 'failed with: ', err);
   }
 
