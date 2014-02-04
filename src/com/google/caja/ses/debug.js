@@ -38,7 +38,7 @@ var ses;
 (function debugModule(global) {
    "use strict";
 
-   if (typeof ses !== 'undefined' && ses.ok && !ses.ok()) {
+   if (typeof ses !== 'undefined' && ses.okToLoad && !ses.okToLoad()) {
      // already too broken, so give up
      return;
    }

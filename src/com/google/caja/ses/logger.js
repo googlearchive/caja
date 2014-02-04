@@ -264,8 +264,8 @@ if (!ses) { ses = {}; }
    * By default, logs a report suitable for display on the console.
    */
   function defaultReportMax() {
-    if (ses.maxSeverity.level > ses.severities.SAFE.level) {
-      var maxClassification = ses.logger.classify(ses.maxSeverity);
+    if (ses.getMaxSeverity().level > ses.severities.SAFE.level) {
+      var maxClassification = ses.logger.classify(ses.getMaxSeverity());
       logger[maxClassification.consoleLevel](
         'Max Severity: ' + maxClassification.note);
     }

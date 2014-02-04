@@ -905,6 +905,7 @@ For help on building and testing Caja, see:
       <output file="${lib.caja}/ses/initSES.js"
        language="javascript" renderer="concat"/>
       <input file="${src.caja}/ses/logger.js"/>
+      <input file="${src.caja}/ses/repair-framework.js"/>
       <input file="${src.caja}/ses/repairES5.js"/>
       <input file="${src.caja}/ses/WeakMap.js"/>
       <input file="${src.caja}/ses/StringMap.js"/>
@@ -925,6 +926,7 @@ For help on building and testing Caja, see:
       <output file="${lib.caja}/ses/initSESPlus.js"
        language="javascript" renderer="concat"/>
       <input file="${src.caja}/ses/logger.js"/>
+      <input file="${src.caja}/ses/repair-framework.js"/>
       <input file="${src.caja}/ses/repairES5.js"/>
       <input file="${src.caja}/ses/WeakMap.js"/>
       <input file="${src.caja}/ses/debug.js"/>

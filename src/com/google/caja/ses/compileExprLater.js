@@ -17,7 +17,7 @@
  * "cajaVM.compileExpr", except that it returns a promise for the
  * outcome of attempting to compile the argument expression.
  *
- * //requires ses.ok, ses.securableWrapperSrc, ses.atLeastFreeVarNames,
+ * //requires ses.okToLoad, ses.securableWrapperSrc, ses.atLeastFreeVarNames,
  * //requires ses.makeCompiledExpr,
  * //provides ses.compileExprLater
  * //provides ses.redeemResolver for its own use
@@ -36,7 +36,7 @@ var ses;
 (function(global) {
    "use strict";
 
-   if (ses && !ses.ok()) { return; }
+   if (ses && !ses.okToLoad()) { return; }
 
    /**
     * This implementation works and satisfies the semantics, but

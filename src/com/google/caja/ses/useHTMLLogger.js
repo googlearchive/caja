@@ -271,8 +271,8 @@ function useHTMLLogger(reportsElement, consoleElement) {
     } else {
       maxElement.textContent = '';
     }
-    if (ses.maxSeverity.level > ses.severities.SAFE.level) {
-      var maxClassification = ses.logger.classify(ses.maxSeverity);
+    if (ses.getMaxSeverity().level > ses.severities.SAFE.level) {
+      var maxClassification = ses.logger.classify(ses.getMaxSeverity());
       maxElement.className = maxClassification.consoleLevel;
       appendText(maxElement, 'Max Severity: ' + maxClassification.note);
     }
