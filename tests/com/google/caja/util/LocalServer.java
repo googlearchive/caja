@@ -14,6 +14,8 @@
 
 package com.google.caja.util;
 
+import javax.servlet.http.HttpServletResponse;
+
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.handler.ContextHandler;
 import org.mortbay.jetty.handler.ResourceHandler;
@@ -22,6 +24,7 @@ import org.mortbay.jetty.handler.DefaultHandler;
 import org.mortbay.jetty.handler.HandlerList;
 import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.ServletHolder;
+import org.mortbay.resource.Resource;
 
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.service.ProxyServlet;
@@ -68,7 +71,18 @@ public class LocalServer {
     cajaStatic.setResourceBase("./ant-war/");
 
     // static file serving for tests
-    final ResourceHandler resource_handler = new ResourceHandler();
+    final ResourceHandler resource_handler = new ResourceHandler() {
+      @Override
+      protected void doResponseHeaders(HttpServletResponse response,
+          Resource resource, String mimeType) {
+        super.doResponseHeaders(response, resource, mimeType);
+
+        // If not disabled, IE and Chrome will refuse to execute script text
+        // which happens to occur in the URL (which applies to our
+        // generic-host-page for one).
+        response.setHeader("X-XSS-Protection", "0");
+      }
+    };
     resource_handler.setResourceBase(".");
     resource_handler.getMimeTypes().addMimeMapping(
         "ujs", "text/javascript;charset=utf-8");
