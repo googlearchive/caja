@@ -245,6 +245,12 @@ var ses;
     var acceptableProblems = {};
 
     /**
+     * Whether acceptableProblems has been used and therefore should not be
+     * modified.
+     */
+    var acceptableProblemsLocked = false;
+
+    /**
      * As we start to repair, this will track the worst *post-repair* severity
      * seen so far.
      *
@@ -308,6 +314,7 @@ var ses;
 
     var defaultDisposition = { permit: false, doNotRepair: false };
     function disposition(problem) {
+      acceptableProblemsLocked = true;
       return Object.prototype.hasOwnProperty.call(acceptableProblems,
           problem.id) ? acceptableProblems[problem.id] : defaultDisposition;
     }
@@ -335,7 +342,8 @@ var ses;
           repairsPerformed.lastIndexOf(problem.repair) !== -1;
 
         // Update yetToRepair and plannedSeverity
-        if (repairPerformed || !problem.repair) {  // repair attempted/absent
+        if (repairPerformed || !problem.repair ||
+            disposition(problem).doNotRepair) {  // repair attempted/absent
 
           if (report.postSeverity.level > severities.SAFE.level
               && disposition(problem).permit) {
@@ -452,7 +460,9 @@ var ses;
     };
 
     this.setAcceptableProblems = function(value) {
-      // TODO(kpreid): Check some condition? Do only once?
+      if (acceptableProblemsLocked) {
+        throw new Error('Too late to setAcceptableProblems.');
+      }
       acceptableProblems = value;
     };
 
@@ -469,9 +479,8 @@ var ses;
     this.getCurrentSeverity = function() {
       var severity = plannedSeverity;
       yetToRepair.forEach(function(problem) {
-        // TODO(kpreid): Fix interaction of this with acceptableProblems config
-
-        if (problem.preSeverity.level > severity.level) {
+        if (problem.preSeverity.level > severity.level &&
+            !disposition(problem).permit) {
           severity = problem.preSeverity;
         }
       });
@@ -504,6 +513,11 @@ var ses;
     // TODO(kpreid): Replace uses of this with higher level ops
     this.updateMaxSeverity = function updateMaxSeverity(severity) {
       if (severity.level > plannedSeverity.level) {
+        // This is a useful breakpoint for answering the question "why is the
+        // severity as high as it is".
+        // if (severity.level > maxAcceptableSeverity.level) {
+        //   console.info('Increasing planned severity.');
+        // }
         plannedSeverity = severity;
       }
     };

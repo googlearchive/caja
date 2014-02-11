@@ -141,6 +141,55 @@ function main() {
     jsunitPass();
   });
 
+  jsunitRegister('testAcceptableProblems', function() {
+    var repairer = new ses._Repairer();
+
+    repairer.setAcceptableProblems({
+      'DNR': { doNotRepair: true },
+      'PERMIT': { permit: true },
+      'PERMIT_DNR': { permit: true, doNotRepair: true },
+    });
+    var repaired_pd = false;
+    var repaired_d = false;
+    repairer.registerProblem({
+      id: 'PERMIT',
+      test: function() { return true; },
+      repair: undefined,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      canRepair: false,
+    });
+    repairer.registerProblem({
+      id: 'DNR',
+      test: function() { return !repaired_d; },
+      repair: function() { repaired_d = true; },
+      preSeverity: severities.SAFE_SPEC_VIOLATION,
+      canRepair: true,
+    });
+    repairer.registerProblem({
+      id: 'PERMIT_DNR',
+      test: function() { return !repaired_pd; },
+      repair: function() { repaired_pd = true; },
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      canRepair: true,
+    });
+    repairer.runTests('test without repair');
+    assertEquals('cur sev 1', severities.SAFE_SPEC_VIOLATION,
+        repairer.getCurrentSeverity());
+    assertEquals('plan sev 1', severities.SAFE_SPEC_VIOLATION,
+        repairer.getPlannedSeverity());
+    repairer.testAndRepair();
+    assertFalse('not repaired DNR', repaired_d);
+    assertFalse('not repaired permit&DNR', repaired_pd);
+    // We expect SAFE_SPEC_VIOLATION because problem 'DNR' is doNotRepair but
+    // it is not permitted, so its severity should show up.
+    assertEquals('cur sev 2', severities.SAFE_SPEC_VIOLATION,
+        repairer.getCurrentSeverity());
+    assertEquals('plan sev 2', severities.SAFE_SPEC_VIOLATION,
+        repairer.getPlannedSeverity());
+
+    jsunitPass();
+  });
+
   jsunitRegister('testRepairOutcomes', function() {
     var repairer = new ses._Repairer();
 
