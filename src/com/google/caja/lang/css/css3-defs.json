@@ -995,12 +995,14 @@
       "mediaGroups": ["visual"] },
 
     { "key": "text-overflow",
-      "signature": "clip | ellipsis",
+      "signature": "[ clip | ellipsis | <string> ]{1,2}",
       "default": null,
       "appliesTo": "*",
       "inherited": false,
       "mediaGroups": ["visual"],
-      "source": "http://www.css3.com/css-text-overflow/" },
+      "comment": "This allows firefox's extended syntax",
+      "source":
+          "https://developer.mozilla.org/en-US/docs/Web/CSS/text-overflow" },
 
     { "key": "text-shadow",
       "signature": "none | [ <shadow>, ]* <shadow>",
