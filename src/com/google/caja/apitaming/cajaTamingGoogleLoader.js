@@ -326,6 +326,14 @@ caja.tamingGoogleLoader = (function() {
     function defCtor(path, obj, policy) {
       caja.console.log(path + ' defCtor');
 
+      // Be lenient: don't fail on getting an object instead of a function. This
+      // is needed for the modular Visualization API which sometimes has stub
+      // objects instead of actual ctor functions when the ctor was in a module
+      // not loaded.
+      if (typeof obj === 'object') {
+        return;
+      }
+
       adviseFunction(obj, policy);
 
       tamingUtils.forallkeys(policy, function(name) {
