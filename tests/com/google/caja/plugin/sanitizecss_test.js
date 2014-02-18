@@ -660,3 +660,81 @@ jsunitRegister('testErrorRecovery', function testErrorRecovery() {
       'p{color:red;*zoom:1;color:blue}');
   jsunit.pass();
 });
+
+jsunitRegister('testResize', function testResize() {
+  assertSanitizedStylesheet(
+      ['.scopeClass p{',
+         'resize:both;',
+         'resize:horizontal;',
+         'resize:inherit;',
+         'resize:none;',
+         'resize:vertical;',
+       '}'
+      ].join(''),
+      ['p {',
+         'resize:invalid;',
+         'resize:both;',
+         'resize:horizontal;',
+         'resize:inherit;',
+         'resize:none;',
+         'resize:vertical;',
+       '}'
+      ].join(''));
+  jsunit.pass();
+});
+
+jsunitRegister('testBackgroundSize', function testBackgroundSize() {
+  assertSanitizedStylesheet(
+      ['.scopeClass p{',
+         'background-size:inherit;',
+         'background-size:1px;',
+         'background-size:2px , 3px;',
+         'background-size:4%;',
+         'background-size:5% 6%;',
+         'background-size:auto;',
+         'background-size:auto auto;',
+         'background-size:cover;',
+         'background-size:contain;',
+       '}'
+      ].join(''),
+      ['p {',
+         'background-size:invalid;',
+         'background-size:inherit;',
+         'background-size:1px;',
+         'background-size:2px,3px;',
+         'background-size:4%;',
+         'background-size:5% 6%;',
+         'background-size:auto;',
+         'background-size:auto auto;',
+         'background-size:cover;',
+         'background-size:contain;',
+       '}'
+      ].join(''));
+  jsunit.pass();
+});
+
+jsunitRegister('testTextOverflow', function testTextOverflow() {
+  assertSanitizedStylesheet(
+      ['.scopeClass p{',
+         'text-overflow:inherit;',
+         'text-overflow:clip;',
+         'text-overflow:ellipsis;',
+         'text-overflow:"1";',
+         'text-overflow:clip ellipsis;',
+         'text-overflow:ellipsis "2";',
+         'text-overflow:"3" "4";',
+       '}'
+      ].join(''),
+      ['p {',
+         'text-overflow:invalid;',
+         'text-overflow:inherit;',
+         'text-overflow:clip;',
+         'text-overflow:ellipsis;',
+         'text-overflow:"1";',
+         'text-overflow:clip ellipsis;',
+         'text-overflow:ellipsis "2";',
+         'text-overflow:"3" "4";',
+       '}'
+      ].join(''));
+  jsunit.pass();
+});

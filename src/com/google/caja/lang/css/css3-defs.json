@@ -907,6 +907,14 @@
       "inherited": true,
       "mediaGroups": ["visual"] },
 
+    { "key": "resize",
+      "signature": "none | both | horizontal | vertical",
+      "default": "none",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/resize" },
+
     { "key": "richness",
       "signature": "<number>",
       "default": "50",
