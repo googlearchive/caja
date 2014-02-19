@@ -10,6 +10,7 @@
     { "driver": "meta-test.js" }
   ]},
   { "label": "cajajs", "tests": [
+    { "driver": "test-success.js" },
     {
       "driver": "test-cajajs-invocation.js",
       "comment": "Including non-minified execution in automated tests",
