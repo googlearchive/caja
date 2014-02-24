@@ -16,8 +16,6 @@ package com.google.caja.parser.js;
 
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.reporting.RenderContext;
-import com.google.javascript.jscomp.jsonml.JsonML;
-
 import java.util.List;
 
 /**
@@ -57,6 +55,4 @@ public final class FinallyStmt extends AbstractStatement {
   }
 
   public boolean hasHangingConditional() { return false; }
-
-  public JsonML toJsonML() { return getBody().toJsonML(); }
 }

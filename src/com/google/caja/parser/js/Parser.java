@@ -35,8 +35,6 @@ import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Pair;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.javascript.jscomp.jsonml.JsonML;
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collections;
@@ -1564,8 +1562,6 @@ public final class Parser extends ParserBase {
     }
 
     public String typeOf() { return null; }
-
-    public JsonML toJsonML() { throw new UnsupportedOperationException(); }
   }
 
   private static void issueLintWarningsForProblematicEscapes(

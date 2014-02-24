@@ -18,9 +18,6 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
-import com.google.javascript.jscomp.jsonml.JsonML;
-import com.google.javascript.jscomp.jsonml.TagType;
-
 import java.util.List;
 
 /**
@@ -109,22 +106,4 @@ public final class Block extends AbstractStatement implements NestedScope {
   }
 
   public boolean hasHangingConditional() { return false; }
-
-  public JsonML toJsonML() {
-    return JsonMLBuilder.builder(TagType.BlockStmt, getFilePosition())
-        .addChildren(children()).build();
-  }
-
-  public JsonML toJsonMLAsProgram() {
-    JsonMLBuilder builder = JsonMLBuilder.builder(
-        TagType.Program, getFilePosition());
-    for (JsonMLCompatible child : children()) {
-      if (child instanceof DirectivePrologue && !builder.hasChildren()) {
-        ((DirectivePrologue) child).addJsonMLTo(builder);
-      } else {
-        builder.addChild(child);
-      }
-    }
-    return builder.build();
-  }
 }

@@ -22,10 +22,6 @@ import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
-import com.google.javascript.jscomp.jsonml.JsonML;
-import com.google.javascript.jscomp.jsonml.TagAttr;
-import com.google.javascript.jscomp.jsonml.TagType;
-
 import java.io.IOException;
 import java.util.List;
 
@@ -35,8 +31,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  * @see DirectivePrologue
  */
-public final class Directive extends AbstractParseTreeNode
-    implements JsonMLCompatible {
+public final class Directive extends AbstractParseTreeNode {
   private static final long serialVersionUID = 946831596035589021L;
 
   /**
@@ -112,11 +107,5 @@ public final class Directive extends AbstractParseTreeNode
   public final TokenConsumer makeRenderer(
       Appendable out, Callback<IOException> exHandler) {
     return new JsPrettyPrinter(new Concatenator(out, exHandler));
-  }
-
-  public JsonML toJsonML() {
-    return JsonMLBuilder.builder(TagType.PrologueDecl, getFilePosition())
-        .setAttribute(TagAttr.VALUE, StringLiteral.unescapeJsString(getValue()))
-        .setAttribute(TagAttr.DIRECTIVE, getDirectiveString()).build();
   }
 }

@@ -35,8 +35,7 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public abstract class ObjProperty extends AbstractParseTreeNode
-    implements JsonMLCompatible {
+public abstract class ObjProperty extends AbstractParseTreeNode {
   private static final long serialVersionUID = 3384973990326624609L;
 
   public ObjProperty(StringLiteral name, Expression value) {

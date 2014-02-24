@@ -1,4 +1,0 @@
-A parse tree representation based on
-http://code.google.com/p/es-lab/wiki/JsonMLASTFormat that allows parse
-trees to be round-tripped through closure compiler without an extra
-render and parse cycle that loses position info.

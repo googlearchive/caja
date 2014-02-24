@@ -19,9 +19,6 @@ import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Pair;
-import com.google.javascript.jscomp.jsonml.JsonML;
-import com.google.javascript.jscomp.jsonml.TagType;
-
 import java.util.List;
 
 /**
@@ -102,30 +99,5 @@ public final class Conditional extends AbstractStatement {
     // Otherwise if the else clause has a hanging conditional, then an else
     // would change the meaning.
     return ((Statement) children.get(n - 1)).hasHangingConditional();
-  }
-
-  public JsonML toJsonML() {
-    FilePosition tailPos = FilePosition.endOf(getFilePosition());
-    JsonML tail;
-    List<? extends ParseTreeNode> parts = children();
-    int k = parts.size();
-    if ((k & 1) == 0) {
-      tail = JsonMLBuilder.builder(TagType.EmptyStmt, tailPos).build();
-    } else {
-      tail = ((Statement) parts.get(--k)).toJsonML();
-    }
-    while (k != 0) {
-      Expression cond = (Expression) parts.get(k - 2);
-      Statement clause = (Statement) parts.get(k - 1);
-      FilePosition pos = k == 2 ? getFilePosition()
-          : FilePosition.span(cond.getFilePosition(), tailPos);
-      tail = JsonMLBuilder.builder(TagType.IfStmt, pos)
-          .addChild(cond)
-          .addChild(clause)
-          .addChild(tail)
-          .build();
-      k -= 2;
-    }
-    return tail;
   }
 }

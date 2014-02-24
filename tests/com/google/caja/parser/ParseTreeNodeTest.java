@@ -31,8 +31,6 @@ import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
 import com.google.common.collect.Lists;
-import com.google.javascript.jscomp.jsonml.JsonML;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -753,7 +751,6 @@ public class ParseTreeNodeTest extends CajaTestCase {
     public AlwaysMutable() { super(FilePosition.UNKNOWN, StringLiteral.class); }
     @Override public Object getValue() { return null; }
     @Override public String typeOf() { return null; }
-    @Override public JsonML toJsonML() { return null; }
     @Override public void render(RenderContext r) { /* no output */ }
     @Override public boolean makeImmutable() { return false; /* refuse! */ }
   }

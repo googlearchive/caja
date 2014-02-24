@@ -21,8 +21,6 @@ import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.RenderContext;
-import com.google.javascript.jscomp.jsonml.JsonML;
-
 import java.util.List;
 
 /**
@@ -68,11 +66,6 @@ public final class RenderedExpression extends AbstractExpression {
   @Override
   public void render(RenderContext r) {
     r.getOut().consume(value);
-  }
-
-  @Override
-  public JsonML toJsonML() {
-    throw new UnsupportedOperationException();
   }
 
   private static String render(ParseTreeNode n, boolean minify) {

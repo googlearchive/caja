@@ -16,7 +16,6 @@ package com.google.caja.parser.js;
 
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.reporting.RenderContext;
-import com.google.javascript.jscomp.jsonml.JsonML;
 
 /**
  * A placeholder that can be used in the child type parameter to
@@ -35,6 +34,4 @@ public final class NoChildren extends AbstractExpression {
     throw new SomethingWidgyHappenedError();
   }
   public String typeOf() { throw new SomethingWidgyHappenedError(); }
-
-  public JsonML toJsonML() { throw new SomethingWidgyHappenedError(); }
 }

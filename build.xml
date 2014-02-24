@@ -93,7 +93,6 @@ For help on building and testing Caja, see:
     <pathelement path="${third_party}/java/jetty/lib/jetty.jar"/>
     <pathelement path="${third_party}/java/jsdk2.1/servlet.jar"/>
     <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
-    <pathelement path="${third_party}/java/jsonml/jsonml.jar"/>
     <pathelement path="${third_party}/java/jsr305/jsr305.jar"/>
     <pathelement path="${third_party}/java/xerces/xercesImpl.jar"/>
   </path>
@@ -687,9 +686,6 @@ For help on building and testing Caja, see:
       <fileset dir="${third_party}/java/jetty/lib">
         <include name="jetty.jar"/>
         <include name="jetty-util.jar"/>
-      </fileset>
-      <fileset dir="${third_party}/java/jsonml">
-        <include name="jsonml.jar"/>
       </fileset>
       <fileset dir="${third_party}/java/xerces">
         <include name="xercesImpl.jar"/>
@@ -1302,9 +1298,6 @@ For help on building and testing Caja, see:
   <target name="PlaygroundJars" depends="dirs">
     <mkdir dir="${war}/WEB-INF" />
     <copy todir="${war}/WEB-INF/lib" flatten="true">
-      <fileset dir="${third_party}/java/jsonml">
-        <include name="jsonml.jar"/>
-      </fileset>
       <fileset dir="${third_party}/java/appengine/lib/user">
         <include name="**/*.jar" />
       </fileset>

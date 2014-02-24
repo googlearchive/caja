@@ -16,9 +16,6 @@ package com.google.caja.parser.js;
 
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.reporting.RenderContext;
-import com.google.javascript.jscomp.jsonml.JsonML;
-import com.google.javascript.jscomp.jsonml.TagType;
-
 import java.util.List;
 
 /**
@@ -54,11 +51,5 @@ public final class DefaultCaseStmt extends SwitchCase {
   @Override
   protected void renderHead(RenderContext rc) {
     rc.getOut().consume("default");
-  }
-
-  public JsonML toJsonML() {
-    return JsonMLBuilder.builder(TagType.DefaultCase, getFilePosition())
-        .addChildren(getBody().children())
-        .build();
   }
 }

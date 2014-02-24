@@ -18,8 +18,6 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
-import com.google.javascript.jscomp.jsonml.JsonML;
-
 import java.util.List;
 
 /**
@@ -71,9 +69,5 @@ public final class LabeledStmtWrapper extends LabeledStatement {
 
   public boolean hasHangingConditional() {
     return getBody().hasHangingConditional();
-  }
-
-  public JsonML toJsonML() {
-    return wrapIfLabelled(getBody().toJsonML());
   }
 }
