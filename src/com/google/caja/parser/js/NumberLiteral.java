@@ -15,10 +15,6 @@
 package com.google.caja.parser.js;
 
 import com.google.caja.lexer.FilePosition;
-import com.google.javascript.jscomp.jsonml.JsonML;
-import com.google.javascript.jscomp.jsonml.TagAttr;
-import com.google.javascript.jscomp.jsonml.TagType;
-
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
@@ -186,22 +182,4 @@ public abstract class NumberLiteral extends Literal {
   }
 
   public String typeOf() { return "number"; }
-
-  public JsonML toJsonML() {
-    FilePosition pos = getFilePosition();
-    Number value = getValue();
-    if (value instanceof Double) {
-      double d = value.doubleValue();
-      if (Double.isNaN(d) || Double.isInfinite(d)) {
-        NumberLiteral num = new IntegerLiteral(
-            FilePosition.startOf(pos), Double.isNaN(d) ? 0 : d < 0 ? -1 : 1);
-        NumberLiteral den = new IntegerLiteral(FilePosition.endOf(pos), 0);
-        return Operation.createInfix(Operator.DIVISION, num, den).toJsonML();
-      }
-    }
-    return JsonMLBuilder.builder(TagType.LiteralExpr, pos)
-        .setAttribute(TagAttr.TYPE, "number")
-        .setAttribute(TagAttr.VALUE, value)
-        .build();
-  }
 }

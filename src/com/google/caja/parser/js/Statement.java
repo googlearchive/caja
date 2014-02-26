@@ -26,7 +26,7 @@ import java.util.Map;
  *
  * @author mikesamuel@gmail.com
  */
-public interface Statement extends ParseTreeNode, JsonMLCompatible {
+public interface Statement extends ParseTreeNode {
   // TODO(mikesamuel): breaksReaching should probably take a parameter of type
   // Map<? super String, ? super BreakStmt>, and equivalently for contsReaching.
   // TODO(mikesamuel): rename breaks and continues to collectBreakTargets and

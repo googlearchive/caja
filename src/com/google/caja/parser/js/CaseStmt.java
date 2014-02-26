@@ -17,9 +17,6 @@ package com.google.caja.parser.js;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
-import com.google.javascript.jscomp.jsonml.JsonML;
-import com.google.javascript.jscomp.jsonml.TagType;
-
 import java.util.List;
 
 /**
@@ -79,11 +76,4 @@ public final class CaseStmt extends SwitchCase {
 
   @Override
   public Object getValue() { return null; }
-
-  public JsonML toJsonML() {
-    return JsonMLBuilder.builder(TagType.Case, getFilePosition())
-        .addChild(caseValue)
-        .addChildren(body.children())
-        .build();
-  }
 }

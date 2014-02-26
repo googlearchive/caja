@@ -18,9 +18,6 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
-import com.google.javascript.jscomp.jsonml.JsonML;
-import com.google.javascript.jscomp.jsonml.TagType;
-
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -106,12 +103,4 @@ public final class SwitchStmt extends LabeledStatement {
   }
 
   public boolean hasHangingConditional() { return false; }
-
-  @SuppressWarnings("unchecked")
-  public JsonML toJsonML() {
-    return wrapIfLabelled(
-        JsonMLBuilder.builder(TagType.SwitchStmt, getFilePosition())
-        .addChildren((List<? extends JsonMLCompatible>) children())
-        .build());
-  }
 }

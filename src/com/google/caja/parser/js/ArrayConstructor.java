@@ -17,8 +17,6 @@ package com.google.caja.parser.js;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.RenderContext;
-import com.google.javascript.jscomp.jsonml.JsonML;
-import com.google.javascript.jscomp.jsonml.TagType;
 
 import java.util.List;
 
@@ -80,17 +78,4 @@ public final class ArrayConstructor extends AbstractExpression {
   }
 
   public String typeOf() { return "object"; }
-
-  public JsonML toJsonML() {
-    JsonMLBuilder builder = JsonMLBuilder.builder(
-        TagType.ArrayExpr, getFilePosition());
-    for (Expression child : children()) {
-      builder.addChild(
-          child instanceof Elision
-          ? JsonMLBuilder.builder(TagType.Empty, child.getFilePosition())
-            .build()
-          : child.toJsonML());
-    }
-    return builder.build();
-  }
 }

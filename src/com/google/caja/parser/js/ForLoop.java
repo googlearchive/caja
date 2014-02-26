@@ -19,9 +19,6 @@ import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.reporting.RenderContext;
-import com.google.javascript.jscomp.jsonml.JsonML;
-import com.google.javascript.jscomp.jsonml.TagType;
-
 import java.util.List;
 
 /**
@@ -107,15 +104,5 @@ public final class ForLoop extends Loop implements NestedScope {
 
   public boolean hasHangingConditional() {
     return body.hasHangingConditional();
-  }
-
-  public JsonML toJsonML() {
-    return wrapIfLabelled(JsonMLBuilder.builder(
-        TagType.ForStmt, getFilePosition())
-        .addChild(initializer)
-        .addChild(condition)
-        .addChild(increment)
-        .addChild(body)
-        .build());
   }
 }

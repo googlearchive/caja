@@ -17,9 +17,6 @@ package com.google.caja.parser.js;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.reporting.RenderContext;
-import com.google.javascript.jscomp.jsonml.JsonML;
-import com.google.javascript.jscomp.jsonml.TagType;
-
 import java.util.List;
 
 /**
@@ -48,8 +45,4 @@ public final class Noop extends AbstractStatement {
   public boolean hasHangingConditional() { return false; }
 
   @Override public boolean isTerminal() { return true; }
-
-  public JsonML toJsonML() {
-    return JsonMLBuilder.builder(TagType.EmptyStmt, getFilePosition()).build();
-  }
 }

@@ -15,12 +15,8 @@
 package com.google.caja.parser.js;
 
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.Keyword;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
-import com.google.javascript.jscomp.jsonml.JsonML;
-import com.google.javascript.jscomp.jsonml.TagAttr;
-import com.google.javascript.jscomp.jsonml.TagType;
 
 import java.util.List;
 
@@ -84,21 +80,4 @@ public final class Reference extends AbstractExpression {
   }
 
   public String typeOf() { return null; }
-
-  public JsonML toJsonML() {
-    String name = getIdentifierName();
-    if (Keyword.THIS.toString().equals(name)) {
-      return JsonMLBuilder.builder(TagType.ThisExpr, getFilePosition()).build();
-    } else {
-      return JsonMLBuilder.builder(TagType.IdExpr, getFilePosition())
-          .setAttribute(TagAttr.NAME, name).build();
-    }
-  }
-
-  JsonML toJsonMLStr() {
-    return JsonMLBuilder.builder(TagType.LiteralExpr, getFilePosition())
-        .setAttribute(TagAttr.TYPE, "string")
-        .setAttribute(TagAttr.VALUE, getIdentifierName())
-        .build();
-  }
 }

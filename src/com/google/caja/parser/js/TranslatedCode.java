@@ -18,8 +18,6 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
-import com.google.javascript.jscomp.jsonml.JsonML;
-
 import java.util.List;
 
 /**
@@ -84,6 +82,4 @@ public final class TranslatedCode extends AbstractStatement {
   public boolean isTerminal() {
     return true;
   }
-
-  public JsonML toJsonML() { return getTranslation().toJsonML(); }
 }
