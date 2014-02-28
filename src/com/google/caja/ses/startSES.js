@@ -287,7 +287,7 @@ ses.startSES = function(global,
    * mitigate. Passing no {@code opt_mitigateOpts} performs all the
    * default mitigations. Returns a well behaved options record.
    *
-   * <p>See {@code compileExpr} for documentation of the mitigation
+   * <p>See {@code prepareExpr} for documentation of the mitigation
    * options and their effects.
    */
   function resolveOptions(opt_mitigateOpts) {
@@ -963,7 +963,7 @@ ses.startSES = function(global,
      * any valid Program.
      *
      * For documentation on {@code opt_mitigateOpts} see the
-     * corresponding parameter in compileExpr.
+     * corresponding parameter in {@code prepareExpr}.
      *
      * <p>In addition, in case the module source happens to begin with
      * a streotyped prelude of the CommonJS module system, the
