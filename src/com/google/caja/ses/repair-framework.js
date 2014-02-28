@@ -691,7 +691,7 @@ var ses;
    *
    * <p>[TODO(kpreid): Rewrite the rest of this comment to better
    * discuss repair-framework vs repairES5.]
-   * 
+   *
    * <p>Although <code>repairES5.js</code> can be used standalone for
    * partial ES5 repairs, its primary purpose is to repair as a first
    * stage of <code>initSES.js</code> for purposes of supporting SES

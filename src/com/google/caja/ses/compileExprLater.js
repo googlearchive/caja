@@ -15,10 +15,21 @@
 /**
  * @fileoverview Makes a "compileExprLater" function which acts like
  * "cajaVM.compileExpr", except that it returns a promise for the
- * outcome of attempting to compile the argument expression.
+ * outcome of attempting to compile the argument expression. There are
+ * two reasons why one might use compileExprLater rather than just
+ * using compileExpr asynchronously:
+ * <ul>
+ * <li>On some browsers (including Safari 7.0.1, which is current at
+ * the time of this writing), code loaded via script tags are given
+ * more accurate source locations in stack traces than code loaded via
+ * eval. Script tags can generally only load code asynchronously.
+ * <li>Some loading scenarios require the code to be translated
+ * first. However, translators can be large, so we may sometimes want
+ * to load them asynchronously.
+ * </ul>
  *
  * //requires ses.okToLoad, ses.securableWrapperSrc, ses.atLeastFreeVarNames,
- * //requires ses.makeCompiledExpr,
+ * //requires ses.makeCompiledExpr, ses.prepareExpr
  * //provides ses.compileExprLater
  * //provides ses.redeemResolver for its own use
  * @author Mark S. Miller
@@ -47,11 +58,6 @@ var ses;
     * feature test on the global named "document". If it is absent,
     * then we fall back to this implementation which works in any
     * standard ES5 environment.
-    *
-    * <p>Eventually, we should check whether we're in an ES5/3
-    * environment, in which case our choice for compileExprLater would
-    * be one that sends the expression back up the server to be
-    * cajoled.
     */
    function compileExprLaterFallback(exprSrc, opt_mitigateOpts) {
      // Coercing an object to a string may observably run code, so do
@@ -86,46 +92,28 @@ var ses;
     * Implements an eventual compileExpr using injected script tags
     */
    function compileLaterInScript(exprSrc, opt_mitigateOpts) {
+     var prep = ses.prepareExpr(exprSrc, opt_mitigateOpts);
 
      var result = Q.defer();
+     var resolverTicket = getResolverTicket(result.resolve);
 
-     // The portion of the pattern in compileExpr which is appropriate
-     // here as well.
-     var options = ses.resolveOptions(opt_mitigateOpts);
-     var wrapperSrc = ses.securableWrapperSrc(exprSrc);
-     var freeNames = ses.atLeastFreeVarNames(exprSrc);
+     // Freenames consist solely of identifier characters (\w|\$)+
+     // which do not need to be escaped further
+     var freeNamesList = prep.freeNames.length == 0 ? '[]' :
+         '["' + prep.freeNames.join('", "') + '"]';
+
+     var scriptSrc =
+       'ses.redeemResolver(' + resolverTicket + ')(' +
+         'Object.freeze(ses.makeCompiledExpr(' +
+           prep.wrapperSrc + ',\n' +
+           freeNamesList + ', ' +
+           JSON.stringify(prep.options) +
+         '))' +
+       ');' + prep.suffixSrc;
 
      var head = document.getElementsByTagName("head")[0];
      var script = document.createElement("script");
      head.insertBefore(script, head.lastChild);
-
-     var resolverTicket = getResolverTicket(result.resolve);
-
-     var scriptSrc = 'ses.redeemResolver(' + resolverTicket + ')(' +
-         'Object.freeze(ses.makeCompiledExpr(' + wrapperSrc + ',\n' +
-         // Freenames consist solely of identifier characters (\w|\$)+
-         // which do not need to be escaped further
-         '["' + freeNames.join('", "') + '"], ' +
-         JSON.stringify(options) + ')));';
-
-     if (options.sourceUrl === void 0) {
-       // See http://code.google.com/p/google-caja/wiki/SES#typeof_variable
-       if (typeof global.URI !== 'undefined' && URI.parse) {
-         var parsed = URI.parse(String(options.sourceUrl));
-         parsed = null === parsed ? null : parsed.toString();
-
-         // Note we could try to encode these characters or search specifically
-         // for */ as a pair of characters but since it is for debugging only
-         // choose to avoid
-         if (null !== parsed &&
-             parsed.indexOf("<") < 0 &&
-             parsed.indexOf(">") < 0 &&
-             parsed.indexOf("*") < 0) {
-           scriptSrc = '/* from ' + parsed + ' */ ' + scriptSrc;
-         }
-       }
-     }
-
      // TODO(erights): It seems that on Chrome at least, the injected
      // script actually executes synchronously *now*. Is this
      // generally true? If so, perhaps we can even make synchronous
@@ -135,12 +123,9 @@ var ses;
      script.appendChild(document.createTextNode(scriptSrc));
 
      function deleteScriptNode() { script.parentNode.removeChild(script); }
-
      Q(result.promise).then(deleteScriptNode, deleteScriptNode).end();
-
      return result.promise;
    }
-
    ses.compileExprLater = compileLaterInScript;
 
  })(this);
