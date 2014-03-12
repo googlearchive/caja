@@ -64,6 +64,7 @@
       "*::ONSUBMIT",
       "*::ONUNLOAD",
       "DETAILS::OPEN",
+      "INPUT::PATTERN",
       "INPUT::PLACEHOLDER",
       "TEXTAREA::PLACEHOLDER",
       "VIDEO::POSTER",
@@ -235,10 +236,6 @@
       { "key": "DIALOG::OPEN",
         "comment":
           "TODO(kpreid): further review (can this steal page focus/pop out?)" },
-      { "key": "INPUT::PATTERN",
-        "comment":
-          "TODO(kpreid): further review (allegedly a JS regexp; is that safe?)"
-        },
       { "key": "A::PING",
         "comment": "TODO(kpreid): introduce multiple-URI type for this" },
       { "key": "AREA::PING",
