@@ -14,4 +14,4 @@ if [ ! -e "$JAR_FILE" ]; then
     exit 1
 fi
 
-java -cp "$JAR_FILE" com.google.appengine.tools.admin.AppCfg "$@"
+java -Xmx1100m -cp "$JAR_FILE" com.google.appengine.tools.admin.AppCfg "$@"

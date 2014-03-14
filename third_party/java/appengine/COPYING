@@ -18,82 +18,82 @@ This version of the App Engine SDK is being offered to the developer community o
 
 LICENSE INFORMATION REGARDING BUNDLED THIRD-PARTY SOFTWARE
 
-The following third party software is distributed with the 
-Google App Engine SDK for Java and is provided under other 
-licenses and/or has source available from other locations. 
+The following third party software is distributed with the
+Google App Engine SDK for Java and is provided under other
+licenses and/or has source available from other locations.
 
 * Jetty
-  License: Apache License v. 2.0 
+  License: Apache License v. 2.0
   Source code availability: http://www.mortbay.org/jetty/
   Bundled in lib/appengine-tools-api.jar, impl/appengine-local-runtime.jar under org/mortbay
-    
+
 * Apache Ant
-  License: Apache License v. 2.0 
+  License: Apache License v. 2.0
   Source code availability: http://ant.apache.org/
   Bundled in lib/impl/appengine-local-runtime.jar under org/apache/tools/ant
   lib/shared/jsp/repackaged-appengine-ant-1.7.1.jar
   lib/shared/jsp/repackaged-appengine-ant-launcher-1.7.1.jar
 
 * Apache HttpComponents
-  License: Apache License v. 2.0 
+  License: Apache License v. 2.0
   Source code availability: http://hc.apache.org/
   Bundled in lib/impl/appengine-api-stubs.jar under org/apache/http
 
-* Jakarta Commons Logging 
-    License: Apache License v. 2.0 
+* Jakarta Commons Logging
+    License: Apache License v. 2.0
     Source code availability: http://commons.apache.org/logging/
     Bundled in lib/impl/appengine-api-stubs.jar under org/apache/commons/logging
     Modifications in /lib/shared/jsp/repackaged-appengine-commons-logger-1.1.1.jar at com/google/appengine/repackaged/org/apache/commons/logging
-    
-* Jakarta HTTP Client 
-    License: Apache License v. 2.0 
+
+* Jakarta HTTP Client
+    License: Apache License v. 2.0
     Source code availability: http://jakarta.apache.org/commons/httpclient/
     Bundled in lib/impl/appengine-api-stubs.jar under org/apache/commons/httpclient
 
 * Jakarta Commons Codec
-    License: Apache License v. 2.0 
+    License: Apache License v. 2.0
     Source code availability: http://commons.apache.org/codec/
     Bundled in lib/impl/appengine-api-stubs.jar under org/apache/commons/codec
 
 * Jakarta Commons EL
-    License: Apache License v. 2.0 
+    License: Apache License v. 2.0
     Source code availability: http://commons.apache.org/el/
     lib/shared/jsp/repackaged-appengine-commons-el-1.0.jar
 
 * Jakarta Jasper
-    License: Apache License v. 2.0 
+    License: Apache License v. 2.0
     Source code availability: http://tomcat.apache.org/svn.html
     lib/shared/jsp/repackaged-appengine-jasper-runtime-5.0.28.jar
     lib/shared/jsp/repackaged-appengine-jasper-compiler-5.0.28.jar
 
 * Jakarta Taglibs
-    License: Apache License v. 2.0 
+    License: Apache License v. 2.0
     Source code availability: http://jakarta.apache.org/taglibs/
     lib/tools/jsp/jakarta-standard-1.1.2.jar
     lib/tools/jsp/jakarta-jstl-1.1.2.jar
 
-* Apache Geronimo 
+* Apache Geronimo
     Certain libraries and specifications from Apache Geronimo have
     been used in this SDK. They are listed below.
-    License: Apache License v. 2.0 
+    License: Apache License v. 2.0
     Source code availability: http://geronimo.apache.org/apache-geronimo-v213-release.html
 
-  * Geronimo JavaMail 
+  * Geronimo JavaMail
       Modifications at org/apache/geronimo/mail within appengine-api.jar
 
-  * Geronimo Activation 
+  * Geronimo Activation
       Bundled in appengine-api.jar at javax/activation
 
-  * Geronimo JCache 
+  * Geronimo JCache
       Bundled in appengine-api.jar at javax/cache
-  
+
   * Geronimo Servlet Spec
       lib/shared/geronimo-servlet_2.5_spec-1.2.jar
 
   * Geronimo JSP Spec
       lib/shared/geronimo-jsp_2.1_spec-1.0.1.jar
 
-  * Geronimo JSTL Expression Language (EL) 
+  * Geronimo JSTL Expression Language (EL)
       lib/shared/geronimo-el_1.0_spec-1.0.1.jar
 
 * OpenSymphony Quartz

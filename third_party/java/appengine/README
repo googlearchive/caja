@@ -25,27 +25,27 @@ This bundle contains the following:
   bin/appcfg                    - Deploys Java apps to Google
   bin/dev_appserver             - Launches the development server
 
-  lib/user/                     - API's we provide to you to build your 
+  lib/user/                     - API's we provide to you to build your
                                   application. They should be bundled with your
                                   webapp (in WEB-INF/lib).
   lib/shared/                   - API's intrinsic to App Engine such as the
-                                  Servlet and JSP libraries. You must not 
+                                  Servlet and JSP libraries. You must not
                                   bundle these with your webapp.
-  
+
   config/                     - Configuration files
   config/sdk                    - Configuration files for the SDK tools
   config/user                   - Configuration files for your applications
-    
+
   demos/                      - Sample applications
 
 
 Dependencies
 ------------
-- Java 1.5
+- Java 1.7
 
 Writing an Application
 ----------------------
-  
+
 Google App Engine for Java web applications are based on the Java
 Servlet API.  This means that you will want to provide classes that
 extend either the javax.servlet.GenericServlet or
@@ -71,11 +71,11 @@ Running the Local Runtime Environment
 
 All executable scripts live in the bin directory of the SDK. Windows scripts
 have a ".cmd" extension, Unix and MacOSX scripts end with ".sh". The commands
-below assume you're running them from the root directory of the SDK. 
+below assume you're running them from the root directory of the SDK.
 
 To run the local development server use:
     bin\dev_appserver.cmd <your web application>
-    
+
 It will begin listening on port 8080 on the local machine.
 
 Many of the sample applications have Ant build.xml targets that start
