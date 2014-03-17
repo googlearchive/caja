@@ -785,6 +785,10 @@ ses.startSES = function(global,
     }
     ses.makeCompiledExpr = makeCompiledExpr;
 
+    // Maintain the list of mitigation options documented below in
+    // coordination with the list of mitigation options in
+    // html-emitter.js's evaluateUntrustedExternalScript.
+    // See https://code.google.com/p/google-caja/issues/detail?id=1893
     /**
      * Compiles {@code exprSrc} as a strict expression into a function
      * of an {@code imports}, that when called evaluates {@code
