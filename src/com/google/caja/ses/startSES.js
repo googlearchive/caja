@@ -22,7 +22,7 @@
  * //requires ses.verifyStrictFunctionBody
  * //optionally requires ses.mitigateSrcGotchas
  * //provides ses.startSES ses.resolveOptions, ses.securableWrapperSrc
- * //provides ses.makeCompiledExpr
+ * //provides ses.makeCompiledExpr ses.prepareExpr
  *
  * @author Mark S. Miller,
  * @author Jasvir Nagra
@@ -287,18 +287,10 @@ ses.startSES = function(global,
    * mitigate. Passing no {@code opt_mitigateOpts} performs all the
    * default mitigations. Returns a well behaved options record.
    *
-   * <p>See {@code compileExpr} for documentation of the mitigation
+   * <p>See {@code prepareExpr} for documentation of the mitigation
    * options and their effects.
    */
   function resolveOptions(opt_mitigateOpts) {
-    if (typeof opt_mitigateOpts === 'string') {
-      // TODO: transient deprecated adaptor only, since there used to
-      // be an opt_sourceUrl parameter in many of the parameter
-      // positions now accepting an opt_mitigateOpts. Once we are
-      // confident that we no longer have live clients that count on
-      // the  old behavior, remove this kludge.
-      opt_mitigateOpts = { sourceUrl: opt_mitigateOpts };
-    }
     function resolve(opt, defaultOption) {
       return (opt_mitigateOpts && opt in opt_mitigateOpts) ?
         opt_mitigateOpts[opt] : defaultOption;
@@ -339,7 +331,7 @@ ses.startSES = function(global,
    * {@code options} are assumed to already be canonicalized by {@code
    * resolveOptions} and says which mitigations to apply.
    */
-  function mitigateSrcGotchas(funcBodySrc, options) {
+  function mitigateIfPossible(funcBodySrc, options) {
     var safeError;
     if ('function' === typeof ses.mitigateSrcGotchas) {
       if (INCREMENT_IGNORES_FROZEN) {
@@ -756,6 +748,19 @@ ses.startSES = function(global,
     }
     ses.securableWrapperSrc = securableWrapperSrc;
 
+    /**
+     * See <a href="http://www.ecma-international.org/ecma-262/5.1/#sec-7.3"
+     * >EcmaScript 5 Line Terminators</a>
+     */
+    var hasLineTerminator = /[\u000A\u000D\u2028\u2029]/;
+
+    function verifyOnOneLine(text) {
+      text = ''+text;
+      if (hasLineTerminator.test(text)) {
+        throw new TypeError("Unexpected line terminator: " + text);
+      }
+      return text;
+    }
 
     /**
      * Given a wrapper function, such as the result of evaluating the
@@ -780,6 +785,10 @@ ses.startSES = function(global,
     }
     ses.makeCompiledExpr = makeCompiledExpr;
 
+    // Maintain the list of mitigation options documented below in
+    // coordination with the list of mitigation options in
+    // html-emitter.js's evaluateUntrustedExternalScript.
+    // See https://code.google.com/p/google-caja/issues/detail?id=1893
     /**
      * Compiles {@code exprSrc} as a strict expression into a function
      * of an {@code imports}, that when called evaluates {@code
@@ -832,13 +841,13 @@ ses.startSES = function(global,
      * {@code with} together with RegExp matching to intercept free
      * variable access without parsing.
      */
-    function compileExpr(exprSrc, opt_mitigateOpts) {
+    function prepareExpr(exprSrc, opt_mitigateOpts) {
       // Force exprSrc to be a string that can only parse (if at all) as
       // an expression.
       exprSrc = '(' + exprSrc + '\n)';
 
       var options = resolveOptions(opt_mitigateOpts);
-      exprSrc = mitigateSrcGotchas(exprSrc, options);
+      exprSrc = mitigateIfPossible(exprSrc, options);
 
       // This is a workaround for a bug in the escodegen renderer that
       // renders expressions as expression statements
@@ -846,9 +855,51 @@ ses.startSES = function(global,
         exprSrc = exprSrc.substr(0, exprSrc.length - 1);
       }
       var wrapperSrc = securableWrapperSrc(exprSrc);
-      var wrapper = unsafeEval(wrapperSrc);
       var freeNames = atLeastFreeVarNames(exprSrc);
-      var result = makeCompiledExpr(wrapper, freeNames, options);
+
+      var suffixSrc;
+      var sourceUrl = options.sourceUrl;
+      if (sourceUrl) {
+        sourceUrl = verifyOnOneLine(sourceUrl);
+        // Placing the sourceURL inside a line comment at the end of
+        // the evaled string, in this format, has emerged as a de
+        // facto convention for associating the source info with this
+        // evaluation. See
+        // http://updates.html5rocks.com/2013/06/sourceMappingURL-and-sourceURL-syntax-changed
+        // http://www.html5rocks.com/en/tutorials/developertools/sourcemaps/#toc-sourceurl
+        // https://developers.google.com/chrome-developer-tools/docs/javascript-debugging#breakpoints-dynamic-javascript
+
+        // TODO(erights): Should validate that the sourceURL is a
+        // valid URL of a whitelisted protocol, where that whitelist
+        // does not include "javascript:". Not doing so at this time
+        // does not itself introduce a security vulnerability, as long
+        // as the sourceURL is all on one line, since the text only
+        // appears in a JavaScript line comment. Separate hazards may
+        // appear when the alleged URL reappears in a stack trace, but
+        // it is the responsibility of that code to handle those URLs
+        // safely.
+        suffixSrc = '\n//# sourceURL=' + sourceUrl + '\n';
+      } else {
+        suffixSrc = '';
+      }
+
+      return def({
+        options: options,
+        wrapperSrc: wrapperSrc,
+        suffixSrc: suffixSrc,
+        freeNames: freeNames
+      });
+    }
+    ses.prepareExpr = prepareExpr;
+
+    /**
+     *
+     */
+    function compileExpr(exprSrc, opt_mitigateOpts) {
+      var prep = prepareExpr(exprSrc, opt_mitigateOpts);
+
+      var wrapper = unsafeEval(prep.wrapperSrc + prep.suffixSrc);
+      var result = makeCompiledExpr(wrapper, prep.freeNames, prep.options);
       return freeze(result);
     }
 
@@ -916,7 +967,7 @@ ses.startSES = function(global,
      * any valid Program.
      *
      * For documentation on {@code opt_mitigateOpts} see the
-     * corresponding parameter in compileExpr.
+     * corresponding parameter in {@code prepareExpr}.
      *
      * <p>In addition, in case the module source happens to begin with
      * a streotyped prelude of the CommonJS module system, the
@@ -951,7 +1002,7 @@ ses.startSES = function(global,
       // modSrc from eliding the rest of the wrapper.
       var exprSrc =
           '(function() {' +
-          mitigateSrcGotchas(modSrc, options) +
+          mitigateIfPossible(modSrc, options) +
           '\n}).call(this)';
       // Follow the pattern in compileExpr
       var wrapperSrc = securableWrapperSrc(exprSrc);

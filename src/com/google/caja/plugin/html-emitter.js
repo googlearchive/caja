@@ -343,6 +343,7 @@ function HtmlEmitter(makeDOMAccessible, base,
 
   function hasChild(el, name) {
     if (!el) { return false; }
+
     var child = makeDOMAccessible(el.firstChild);
     for (; child; child = makeDOMAccessible(child.nextSibling)) {
       if (child.nodeType === 1 && virtTagName(child) === name) {
@@ -595,12 +596,16 @@ function HtmlEmitter(makeDOMAccessible, base,
       var proxiedUrl = getMitigatedUrl(url);
       var mitigateOpts;
       if (proxiedUrl) {
-        // Disable mitigation
+        // Disable mitigation.
+        // Maintain this list in coordination with the list of
+        // mitigation options documented in startSES.js.
+        // See https://code.google.com/p/google-caja/issues/detail?id=1893
         mitigateOpts = {
-          parseProgram : true,
-          rewriteTopLevelVars : false,
-          rewriteTopLevelFuncs : false,
-          rewriteTypeOf : false
+          parseFunctionBody: true,
+          rewriteTopLevelVars: false,
+          rewriteTopLevelFuncs: false,
+          rewriteFunctionCalls: false,
+          rewriteTypeOf: false
         };
         url = proxiedUrl;
       } else {

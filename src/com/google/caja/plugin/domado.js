@@ -2190,7 +2190,8 @@ var Domado = (function() {
       var qsaVirtualization = cajaVM.def({
         containerClass: null,
         idSuffix: idSuffix,
-        tagPolicy: tagPolicy
+        tagPolicy: tagPolicy,
+        virtualizeAttrName: sanitizeOneAttr
       });
 
       /**

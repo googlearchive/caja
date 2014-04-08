@@ -112,6 +112,47 @@ function useHTMLLogger(reportsElement, consoleElement) {
     toggler.style.cursor = 'pointer';
   }
 
+   /**
+    * Turn a Causeway stack into a DOM rendering of a v8-like stack
+    * traceback string. Based on ses.stackString in debug.js
+    */
+   function stackDom(preParent, cwStack) {
+     var calls = cwStack.calls;
+
+     calls.forEach(function(call) {
+       var spanString = call.span.map(function(subSpan) {
+         return subSpan.join(':');
+       }).join('::');
+
+       if (spanString) { spanString = ':' + spanString; }
+
+       appendText(preParent, '  at ' + call.name + ' (');
+       var url = call.source;
+       var urlText = call.source;
+
+       if (/^(?:http|https|file):\/\//.test(url)) {
+         var googlecodeRX = (/^http:\/\/([^.]+)\.googlecode.com\/svn\/(.*)$/);
+         var urlGroups = googlecodeRX.exec(call.source);
+         if (urlGroups) {
+           url = 'https://code.google.com/p/' + urlGroups[1] +
+             '/source/browse/' + urlGroups[2];
+           var spanGroups = (/^:([0-9]+)(.*)$/).exec(spanString);
+           if (spanGroups) {
+             url += '#' + spanGroups[1];
+             urlText += ':' + spanGroups[1];
+             spanString = spanGroups[2];
+           }
+         }
+         var link = appendNew(preParent, 'a');
+         link.href = url;
+         link.textContent = urlText;
+       } else {
+         appendText(preParent, urlText);
+       }
+       appendText(preParent, spanString + ')\n');
+     });
+   };
+
   /** modeled on textAdder */
   function makeLogFunc(parent, style) {
     return function logFunc(var_args) {
@@ -119,27 +160,23 @@ function useHTMLLogger(reportsElement, consoleElement) {
       var args = slice.call(arguments, 0);
 
       // See debug.js
+      var getCWStack = ses.getCWStack;
       var getStack = ses.getStack;
 
       for (var i = 0, len = args.length; i < len; i++) {
-        // The 'p' below used to be 'span', which is better use of HTML.
-        // However, on Chrome Version 27.0.1428.0 canary we are seeing
-        // a strange bug (TODO(erights) we have yet to isolate and
-        // report) where the resulting HTMLSpanElement does not
-        // inherit from the right prototype, and therefore fails to
-        // implement appendChild. This may be related to 
-        // https://code.google.com/p/v8/issues/detail?id=2565
-        // since it occurs after Object.prototype is frozen.
-        var span = appendNew(p, 'p');
+        var span = appendNew(p, 'span');
         appendText(span, '' + args[i]);
 
-        if (getStack) {
-          var stack = getStack(args[i]);
-          if (stack) {
-            var stackNode = appendNew(p, 'pre');
-            appendText(stackNode, stack);
-            deflate(span, [stackNode], '');
-          }
+        var cwStack;
+        var stack;
+        if (getCWStack && ((cwStack = getCWStack(args[i])))) {
+          var stackNode = appendNew(p, 'pre');
+          stackDom(stackNode, cwStack);
+          deflate(span, [stackNode], '');
+        } else if (getStack && ((stack = getStack(args[i])))) {
+          var stackNode = appendNew(p, 'pre');
+          appendText(stackNode, stack);
+          deflate(span, [stackNode], '');
         }
       }
       p.className = style;

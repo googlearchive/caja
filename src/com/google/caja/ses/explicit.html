@@ -18,7 +18,7 @@
 
 <html>
 <head>
-<title>Testing SES/5</title>
+<title>Testing SES</title>
 <style type="text/css">
 .log { color: black; }
 .info { color: navy; }
@@ -153,39 +153,11 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
   })();
 </script>
 
-<script>
-  (function() {
-    "use strict";
-    if (!ses.ok()) {
-      return;
-    }
-
-    var src = 
-        'function foo() { throw Error("Expand me to see stack"); }\n' +
-        'function foo2() { foo(); }\n' +
-        'function foo3() { foo2(); }\n' +
-        'foo3();\n';
-
-    try {
-      cajaVM.eval(src);
-    } catch (err) {
-      // The ses.logger installed by useHTMLLogger.js uses ses.getStack
-      // to display the stack, if any, associated with the err argument.
-      ses.logger.info('Expected error to test ses.getStack API: ', err);
-      return;
-    }
-    ses.logger.error('Missing expected error');
-  }());
-</script>
-
 <script src="makeQ.js"></script>
-<script src="makeFarResourceMaker.js"></script>
-<script src="compileExprLater.js"></script>
 <script>
   var Q;
   (function() {
     "use strict";
-
     if (!ses.ok()) { return; }
 
     /* TODO(erights): Extract the reusable boilerplate below into a
@@ -202,6 +174,63 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
       }, millis);
     }
     Q = ses.makeQ(mySetTimeout);
+  })();
+</script>
+
+<script src="compileExprLater.js"></script>
+
+<script>
+  (function() {
+    "use strict";
+    if (!ses.ok()) { return; }
+
+    var exprSrc = 
+        '(function(){\n' +
+        '  function foo(str) {\n' +
+        '    debugger;\n' +
+        '    throw Error(str);\n' +
+        '  }\n' +
+        '  function foo2(g) { g("Expand me to see stack"); }\n' +
+        '  function foo3(f) { f(foo); }\n' +
+        '  foo3(foo2);\n' +
+        '}())';
+
+    syncEval: {
+      try {
+        cajaVM.confine(exprSrc, {}, {
+          sourceUrl: 'http://example.com/fake1.js'
+        });
+      } catch (err) {
+        // The ses.logger installed by useHTMLLogger.js uses ses.getStack
+        // to display the stack, if any, associated with the err argument.
+        ses.logger.info('Expected error to test ses.getStack API: ', err);
+        break syncEval;
+      }
+      ses.logger.error('Missing expected error');
+    }
+
+    var compiledP = ses.compileExprLater(exprSrc, { 
+      sourceUrl: 'http://example.com/fake2.js'
+    });
+    // TODO(erights): Should be 'done' once makeQ supports it.
+    Q(compiledP).fcall(cajaVM.sharedImports).then(
+      function(val) { 
+        ses.logger.error('Missing expected error: ', val); 
+      },
+      function(reason) {
+        // The ses.logger installed by useHTMLLogger.js uses ses.getStack
+        // to display the stack, if any, associated with the err argument.
+        ses.logger.info('Testing ses.getStack with compileExprLater: ', reason);
+      });
+  }());
+</script>
+
+<script src="makeFarResourceMaker.js"></script>
+
+<script>
+  (function() {
+    "use strict";
+    if (!ses.ok()) { return; }
 
     var makeTextResource = ses.makeFarResourceMaker();
 
@@ -223,7 +252,9 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
 
     var makeSimpleAMDLoaderP = Q(makeSimpleAMDLoaderSrcP).then(function(src) {
       var exprSrc = '(function() {' + src + '}).call(this)';
-      var compiledExprP = ses.compileExprLater(exprSrc, void 0, url);
+      var compiledExprP = ses.compileExprLater(exprSrc, {
+        sourceUrl: url
+      });
       return Q(compiledExprP).then(function(compiledExpr) {
         compiledExpr(imports);
         return imports.makeSimpleAMDLoader;

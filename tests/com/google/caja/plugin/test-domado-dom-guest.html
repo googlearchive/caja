@@ -876,6 +876,7 @@ document.write(
 <div id="testQuerySelector" class="testcontainer">
   <p class="testQuerySelector-ac" id="testQuerySelector-ai">a</p>
   <p class="testQuerySelector-bc" id="testQuerySelector-bi">b</p>
+  <p testQuerySelector-attr="foo">c</p>
 </div>
 <script type="text/javascript">
   // TODO(kpreid): Disable this test if host browser does not provide
@@ -902,13 +903,17 @@ document.write(
           len === 0 ? null : nodeList[0], single);
     }
 
+    var paragraphCount = 3;
+
     assertQueryResult('.testQuerySelector-ac', ['a']);
     assertQueryResult('.testQuerySelector-bc', ['b']);
     assertQueryResult('#testQuerySelector-ai', ['a']);
     assertQueryResult('#testQuerySelector-ai, #testQuerySelector-bi',
         ['a', 'b']);
-    assertQueryResult('#testQuerySelector p', ['a', 'b']);
-    assertEquals('scoped query', 2, container.querySelectorAll('p').length);
+    assertQueryResult('#testQuerySelector p', ['a', 'b', 'c']);
+    assertQueryResult('[testQuerySelector-attr]', ['c']);
+    assertEquals('scoped query', paragraphCount,
+        container.querySelectorAll('p').length);
     expectFailure(function() {
       document.querySelector(':unrecognized');
     }, 'syntax error solo', function(e) {
@@ -929,9 +934,9 @@ document.write(
 
     // test non-liveness
     var list = container.querySelectorAll('p');
-    assertEquals('length before change', 2, list.length);
+    assertEquals('length before change', paragraphCount, list.length);
     container.appendChild(document.createElement('p')).textContent = 'added';
-    assertEquals('length after change', 2, list.length);
+    assertEquals('length after change', paragraphCount, list.length);
 
     pass('testQuerySelector');
   });
