@@ -217,8 +217,8 @@ var caja = (function () {
     if (state !== UNREADY) {
       throw new Error('Caja cannot be initialized more than once');
     }
-    var onSuccess = arguments[1];
-    var onFailure = arguments[2];
+    var opt_onSuccess = arguments[1];
+    var opt_onFailure = arguments[2];
     state = PENDING;
     makeFrameGroup(config, function (frameGroup) {
       defaultFrameGroup = frameGroup;
@@ -233,13 +233,22 @@ var caja = (function () {
       state = READY;
       var detail = {};
       detail['es5Mode'] = true;  // legacy API -- non-ES5 mode is dead
-      if ("function" === typeof onSuccess) {
-        onSuccess(detail);
+      if (typeof opt_onSuccess === 'function') {
+        opt_onSuccess(detail);
       }
       whenReady(null);
     }, function(err) {
       state = UNREADY;
-      onFailure(err);
+      // Note: This pattern of handling (lack of) a failure callback is the same
+      // as makeFrameGroup's. It is duplicated here because this wrapping
+      // callback needs to exist to act whether or not the user supplied
+      // a callback.
+      if (typeof opt_onFailure === 'function') {
+        opt_onFailure(err);
+      } else {
+        // will propagate to console
+        throw err;
+      }
     });
   }
 

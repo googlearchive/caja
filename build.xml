@@ -707,7 +707,10 @@ For help on building and testing Caja, see:
     <jar destfile="${jars}/pluginc-src.jar" basedir="${src}"/>
   </target>
 
-  <target name="MinifiedJs">
+  <target name="MinifiedJs" depends="tools,pluginc">
+    <!-- depends on tools for transform taskdef and class -->
+    <!-- depends on pluginc for html4-defs.js. TODO(kpreid): separate html defs
+         build from pluginc java -->
     <transform>
       <output file="${lib}/caja.jslint.stamp"
         language="jslint"/>
@@ -1166,6 +1169,8 @@ For help on building and testing Caja, see:
         <include name="unicode.js" />
       </fileset>
       <fileset dir="${lib.caja}/plugin">
+        <include name="caja.js" />
+        <include name="caja-minified.js" />
         <include name="css-defs.js" />
         <include name="html4-defs.js" />
         <include name="domado.out.js" />
@@ -1219,17 +1224,6 @@ For help on building and testing Caja, see:
         -  server so as to be standalone. -->
       <fileset dir="${third_party}/js/jqueryjs/test/">
         <include name="core.html"/>
-      </fileset>
-
-      <!-- Needed by container-dynamic.html which references the playground
-        -  server so as to be standalone. -->
-      <fileset dir="${src.caja}">
-        <include name="log-to-console.js"/>
-        <include name="cajita-promise.js"/>
-      </fileset>
-      <fileset dir="${lib.caja}/plugin">
-        <include name="caja.js"/>
-        <include name="caja-minified.js"/>
       </fileset>
     </copy>
 
@@ -1484,19 +1478,6 @@ For help on building and testing Caja, see:
    description="Examples of hosting gadgets/modules.">
     <mkdir dir="${www}/container"/>
 
-    <transform>
-      <output
-       file="${lib.caja}/demos/container/gadget-library.out.js"
-       language="caja" onlyJsEmitted="true" debug="false"/>
-      <input file="${demos}/container/gadget-library.js"/>
-    </transform>
-    <transform>
-      <output
-       file="${lib.caja}/demos/container/gadget-trivial.out.js"
-       language="caja" onlyJsEmitted="true" debug="false"/>
-      <input file="${demos}/container/gadget-trivial.html"/>
-    </transform>
-
     <copy todir="${www}/container">
       <fileset dir="${src.caja}">
         <include name="log-to-console.js"/>
@@ -1506,9 +1487,6 @@ For help on building and testing Caja, see:
       </fileset>
       <fileset dir="${src.caja}/plugin">
         <include name="caja.js"/>
-      </fileset>
-      <fileset dir="${lib.caja}/demos/container">
-        <include name="*.out.js"/>
       </fileset>
       <fileset dir="${demos}/container">
         <include name="container-*.html"/>
