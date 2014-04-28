@@ -4607,13 +4607,16 @@ var Domado = (function() {
       defineElement({
         domClass: 'HTMLAnchorElement',
         properties: function() { return {
+          // TODO(kpreid): Implement all components-of-the-URL properties in
+          // a generic and consistently-virtualized way.
           hash: PT.filter(
             false,
             function (value) { return unsuffix(value, idSuffix, value); },
             false,
             // TODO(felix8a): add suffix if href is self
             identity),
-          href: NP_UriValuedProperty('a', 'href')
+          href: NP_UriValuedProperty('a', 'href'),
+          pathname: PT.ROView(String)
         }; }
       });
 

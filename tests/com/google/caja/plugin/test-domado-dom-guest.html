@@ -3221,11 +3221,11 @@ Test row cell
   });
 </script>
 
-<div class="testcontainer" id="testHash">
+<div class="testcontainer" id="testAnchorHash">
   <a id='test-hash' href="#foo">test a.hash and hash in a.href</a>
 </div>
 <script type="text/javascript">
-  jsunitRegister('testHash', function testHash() {
+  jsunitRegister('testAnchorHash', function testHash() {
     var a = document.getElementById('test-hash');
 
     assertEquals('#foo', a.hash);
@@ -3238,6 +3238,33 @@ Test row cell
     // setting a.hash forces a.getAttribute('href') to be a resolved url
     assertEquals(window.location + '#bar', a.getAttribute('href'));
     assertEquals(window.location + '#bar', a.href);
+
+    pass();
+  });
+</script>
+
+<div class="testcontainer" id="testAnchorPathname">
+  <a id="testAnchorPathname-a" href="http://example.invalid/path?query">
+    testAnchorPathname
+  </a>
+</div>
+<script type="text/javascript">
+  jsunitRegister('testAnchorPathname', function testHash() {
+    var a = document.getElementById('testAnchorPathname-a');
+
+    // The path of the output of the URI rewriter is "/".
+    // Seeing the rewritten URI is not actually desirable, but is consistent
+    // with other behaviors. TODO(kpreid): Look into storing the original
+    // URI.
+    assertEquals('/', a.pathname);
+
+    // Currently do not support modifying a URL since the URI policy rewrite
+    // is not reversible
+    expectFailure(function() {
+      a.pathname = '1';
+    }, 'Assignment fails', function(e) {
+      return e.name === 'TypeError';
+    });
 
     pass();
   });
