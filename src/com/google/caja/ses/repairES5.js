@@ -2676,6 +2676,30 @@ var ses;
       return 'Unexpected error from strict nested function: ' + err;
     }
   }
+  
+  /**
+   * Bug in IE versions 9 to 11 (current as of this writing):
+   * http://webreflection.blogspot.co.uk/2014/04/all-ie-objects-are-broken.html
+   *
+   * An object which is a product of Object.create(somePrototype), and which has
+   * only numeric-named properties, will in some ways appear to not have those
+   * properties.
+   */
+  function test_NUMERIC_PROPERTIES_INVISIBLE() {
+    var o1 = Object.create({}, {0: {value: 1}});  // normal
+    var o2 = Object.create({});                   // demonstrates bug
+    o2[0] = 1;
+    
+    if (o1.hasOwnProperty('0') && o1[0] === 1 &&
+        o2.hasOwnProperty('0') && o2[0] === 1) {
+      return false;
+    } else if (o1.hasOwnProperty('0') && o1[0] === 1 &&
+               !o2.hasOwnProperty('0') && o2[0] === 1) {
+      return true;
+    } else {
+      return 'Unexpected results from numeric property on created object';
+    }
+  }
 
   ////////////////////// Repairs /////////////////////
   //
@@ -3331,6 +3355,27 @@ var ses;
         return existingMethod.apply(this, arguments);
       };
       Object.defineProperty(object, name, desc);
+    });
+  }
+
+  function repair_NUMERIC_PROPERTIES_INVISIBLE() {
+    var create = Object.create;
+
+    Object.defineProperty(Object, 'create', {
+      configurable: true,
+      writable: true,  // allow other repairs to stack on
+      value: function repairedCreate(prototype, props) {
+        var o = create(prototype);
+        // By deferring the defineProperties operation, we avoid possibly
+        // conflicting with the caller-specified property names, without
+        // needing to examine props twice.
+        o.x = undefined;  // a non-numeric property name
+        delete o.x;
+        if (props !== undefined) {
+          Object.defineProperties(o, props);
+        }
+        return o;
+      }
     });
   }
 
@@ -4332,6 +4377,18 @@ var ses;
              'http://wiki.ecmascript.org/doku.php?id=conventions:recommendations_for_implementors'],
       sections: [],
       tests: []  // hopefully will be in ES6 tests
+    },
+    {
+      id: 'NUMERIC_PROPERTIES_INVISIBLE',
+      description: 'Numeric properties not reflectable on create()d objects',
+      test: test_NUMERIC_PROPERTIES_INVISIBLE,
+      repair: repair_NUMERIC_PROPERTIES_INVISIBLE,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      canRepair: true,
+      urls: ['http://webreflection.blogspot.co.uk/2014/04/all-ie-objects-are-broken.html'],
+          // TODO(kpreid): link Microsoft info page when available
+      sections: ['8.12.6'],
+      tests: []  // TODO(kpreid): contribute tests
     }
   ];
 
