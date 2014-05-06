@@ -2676,7 +2676,7 @@ var ses;
       return 'Unexpected error from strict nested function: ' + err;
     }
   }
-  
+
   /**
    * Bug in IE versions 9 to 11 (current as of this writing):
    * http://webreflection.blogspot.co.uk/2014/04/all-ie-objects-are-broken.html
@@ -2689,7 +2689,7 @@ var ses;
     var o1 = Object.create({}, {0: {value: 1}});  // normal
     var o2 = Object.create({});                   // demonstrates bug
     o2[0] = 1;
-    
+
     if (o1.hasOwnProperty('0') && o1[0] === 1 &&
         o2.hasOwnProperty('0') && o2[0] === 1) {
       return false;
@@ -3361,16 +3361,21 @@ var ses;
   function repair_NUMERIC_PROPERTIES_INVISIBLE() {
     var create = Object.create;
 
+    var tempPropName = '0';
+    var tempPropDesc = {configurable: true};
+
     Object.defineProperty(Object, 'create', {
       configurable: true,
       writable: true,  // allow other repairs to stack on
       value: function repairedCreate(prototype, props) {
         var o = create(prototype);
+        // Any property defined using a descriptor is sufficient to suppress
+        // the misbehavior.
+        Object.defineProperty(o, tempPropName, tempPropDesc);
+        delete o[tempPropName];
         // By deferring the defineProperties operation, we avoid possibly
         // conflicting with the caller-specified property names, without
         // needing to examine props twice.
-        o.x = undefined;  // a non-numeric property name
-        delete o.x;
         if (props !== undefined) {
           Object.defineProperties(o, props);
         }
