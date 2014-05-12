@@ -1268,6 +1268,8 @@
     (function() { // hide specialized locals
 
       argsByAnyFrame('ArrayBuffer', genNew(genSmallInteger));
+      argsByAnyFrame('ArrayBuffer.isView', genMethod(G.any(
+          genObject, genInstance(Int8Array))));
       argsByAnyFrame('ArrayBuffer.prototype.slice',
           freshResult(genMethod(genSmallInteger, genSmallInteger)));
       obtainInstance.define(ArrayBuffer, new ArrayBuffer(3));
