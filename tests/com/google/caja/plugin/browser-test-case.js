@@ -542,8 +542,13 @@ function createExtraImportsForTesting(frameGroup, frame) {
   standardImports.console = frame.tame(fakeConsole);
 
   standardImports.proxiesAvailableToTamingCode =
-      // Domado runs in the taming frame's real global env
-      typeof frameGroup.iframe.Proxy !== 'undefined';
+      // Domado runs in the taming frame's real global env, so test that rather
+      // than SES.
+      // test for old-style proxies, not ES6 direct proxies, because that's what
+      // Domado uses.
+      // TODO(kpreid): Need to migrate to ES6-planned proxy API
+      frameGroup.iframe.Proxy !== undefined &&
+          !!frameGroup.iframe.Proxy.create;
 
   standardImports.getUrlParam = frame.tame(frame.markFunction(getUrlParam));
   standardImports.modifyUrlParam = frame.tame(frame.markFunction(

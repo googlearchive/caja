@@ -118,7 +118,10 @@ var Domado = (function() {
     }
   }
 
-  var proxiesAvailable = typeof Proxy !== 'undefined';
+  // test for old-style proxies, not ES6 direct proxies, because that's what we
+  // used and what ES5/3 provides.
+  // TODO(kpreid): Need to migrate to ES6-planned proxy API
+  var proxiesAvailable = typeof Proxy !== 'undefined' && !!Proxy.create;
   var proxiesInterceptNumeric = proxiesAvailable && (function() {
     var handler = {
       toString: function() { return 'proxiesInterceptNumeric test handler'; },

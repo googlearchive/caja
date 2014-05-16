@@ -681,8 +681,13 @@ var ses;
     return false;
   }
 
+  // Create a new iframe and pass its 'window' object to the provided callback.
+  // If the environment is not a browser, return undefined and do not call the
+  // callback.
   function inTestFrame(callback) {
-    if (!document || !document.createElement) { return undefined; }
+    if (!(typeof document !== 'undefined' && document.createElement)) {
+      return undefined;
+    }
     var iframe = document.createElement('iframe');
     var container = document.body || document.getElementsByTagName('head')[0] ||
         document.documentElement || document;
@@ -2566,8 +2571,8 @@ var ses;
   ];
 
   function test_TYPED_ARRAYS_THROW_DOMEXCEPTION() {
-    if (global.DataView === 'undefined') { return false; }
-    if (global.DOMException === 'undefined') { return false; }
+    if (global.DataView === undefined) { return false; }
+    if (global.DOMException === undefined) { return false; }
     function subtest(f) {
       try {
         f();

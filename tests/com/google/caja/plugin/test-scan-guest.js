@@ -750,6 +750,7 @@
           }
         }));
 
+    argsByIdentity(window.Proxy, G.none);  // TODO abuse
     argsByIdentity(window.Proxy && Proxy.create, G.none);  // TODO abuse
     argsByIdentity(window.Proxy && Proxy.createFunction, G.none);  // TODO abuse
 
