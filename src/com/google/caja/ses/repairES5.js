@@ -2706,6 +2706,36 @@ var ses;
     }
   }
 
+  /**
+   * Tests for https://code.google.com/p/v8/issues/detail?id=3334
+   * which reports that setting a function's prototype with
+   * defineProperty can update its descriptor without updating the
+   * actual value when also changing writable from true to false.
+   */
+  function test_DEFINE_PROPERTY_CONFUSES_FUNC_PROTO() {
+    function bar() {}
+    var oldBarPrototype = bar.prototype;
+    Object.defineProperty(bar, 'prototype', {value: 2, writable: false});
+    var desc = Object.getOwnPropertyDescriptor(bar, 'prototype');
+    if (desc.value !== 2) {
+        return 'Unexpected descriptor from setting a function\'s ' +
+          'protptype with defineProperty: ' + JSON.stringify(desc);
+    }
+    if (bar.prototype === 2) {
+      return false;
+    } else if (typeof bar.prototype === 'object') {
+      if (bar.prototype === oldBarPrototype) {
+        return true;
+      } else {
+        return 'Unexpected prototype identity from setting a function\'s ' +
+          'prototype with defineProperty.';
+      }
+    } else {
+      return 'Unexpected result of setting a function\'s prototype ' +
+        'with defineProperty: ' + typeof bar.prototype;
+    }
+  }
+
   ////////////////////// Repairs /////////////////////
   //
   // Each repair_NAME function exists primarily to repair the problem
@@ -2724,8 +2754,9 @@ var ses;
   var isExtensible = Object.isExtensible;
 
   /*
-   * Fixes both FUNCTION_PROTOTYPE_DESCRIPTOR_LIES and
-   * DEFINING_READ_ONLY_PROTO_FAILS_SILENTLY.
+   * Fixes FUNCTION_PROTOTYPE_DESCRIPTOR_LIES,
+   * DEFINING_READ_ONLY_PROTO_FAILS_SILENTLY and
+   * DEFINE_PROPERTY_CONFUSES_FUNC_PROTO.
    */
   function repair_DEFINE_PROPERTY() {
     function repairedDefineProperty(base, name, desc) {
@@ -2736,6 +2767,7 @@ var ses;
           base.prototype = desc.value;
         } catch (err) {
           logger.warn('prototype fixup failed', err);
+          throw err;
         }
       } else if (name === '__proto__' && !isExtensible(base)) {
         throw TypeError('Cannot redefine __proto__ on a non-extensible object');
@@ -3999,6 +4031,18 @@ var ses;
       tests: [] // TODO(jasvir): Add to test262
     },
     {
+      id: 'DEFINE_PROPERTY_CONFUSES_FUNC_PROTO',
+      description: 'Setting a function\'s prototype with defineProperty ' +
+        'doesn\'t change its value',
+      test: test_DEFINE_PROPERTY_CONFUSES_FUNC_PROTO,
+      repair: repair_DEFINE_PROPERTY,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      canRepair: true,
+      urls: ['https://code.google.com/p/v8/issues/detail?id=3334'],
+      sections: [],
+      tests: []  // TODO(kpreid): contribute tests
+    },
+    {
       id: 'STRICT_EVAL_LEAKS_GLOBAL_VARS',
       description: 'Strict eval function leaks variable definitions',
       test: test_STRICT_EVAL_LEAKS_GLOBAL_VARS,
@@ -4449,7 +4493,7 @@ var ses;
       strictForEachFn(supportedProblems, ses._repairer.registerProblem);
       ses._repairer.testAndRepair();
     }
-    
+
     var reports = ses._repairer.getReports();
 
     // Made available to allow for later code reusing our diagnoses to work
