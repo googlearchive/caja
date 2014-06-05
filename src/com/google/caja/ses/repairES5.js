@@ -666,8 +666,13 @@ var ses;
     return false;
   }
 
+  // Create a new iframe and pass its 'window' object to the provided callback.
+  // If the environment is not a browser, return undefined and do not call the
+  // callback.
   function inTestFrame(callback) {
-    if (!document || !document.createElement) { return undefined; }
+    if (!(typeof document !== 'undefined' && document.createElement)) {
+      return undefined;
+    }
     var iframe = document.createElement('iframe');
     var container = document.body || document.getElementsByTagName('head')[0] ||
         document.documentElement || document;
@@ -2573,6 +2578,60 @@ var ses;
     }
   }
 
+  /**
+   * Bug in IE versions 9 to 11 (current as of this writing):
+   * http://webreflection.blogspot.co.uk/2014/04/all-ie-objects-are-broken.html
+   *
+   * An object which is a product of Object.create(somePrototype), and which has
+   * only numeric-named properties, will in some ways appear to not have those
+   * properties.
+   */
+  function test_NUMERIC_PROPERTIES_INVISIBLE() {
+    var o1 = Object.create({}, {0: {value: 1}});  // normal
+    var o2 = Object.create({});                   // demonstrates bug
+    o2[0] = 1;
+
+    if (o1.hasOwnProperty('0') && o1[0] === 1 &&
+        o2.hasOwnProperty('0') && o2[0] === 1) {
+      return false;
+    } else if (o1.hasOwnProperty('0') && o1[0] === 1 &&
+               !o2.hasOwnProperty('0') && o2[0] === 1) {
+      return true;
+    } else {
+      return 'Unexpected results from numeric property on created object';
+    }
+  }
+
+  /**
+   * Tests for https://code.google.com/p/v8/issues/detail?id=3334
+   * which reports that setting a function's prototype with
+   * defineProperty can update its descriptor without updating the
+   * actual value when also changing writable from true to false.
+   */
+  function test_DEFINE_PROPERTY_CONFUSES_FUNC_PROTO() {
+    function bar() {}
+    var oldBarPrototype = bar.prototype;
+    Object.defineProperty(bar, 'prototype', {value: 2, writable: false});
+    var desc = Object.getOwnPropertyDescriptor(bar, 'prototype');
+    if (desc.value !== 2) {
+        return 'Unexpected descriptor from setting a function\'s ' +
+          'protptype with defineProperty: ' + JSON.stringify(desc);
+    }
+    if (bar.prototype === 2) {
+      return false;
+    } else if (typeof bar.prototype === 'object') {
+      if (bar.prototype === oldBarPrototype) {
+        return true;
+      } else {
+        return 'Unexpected prototype identity from setting a function\'s ' +
+          'prototype with defineProperty.';
+      }
+    } else {
+      return 'Unexpected result of setting a function\'s prototype ' +
+        'with defineProperty: ' + typeof bar.prototype;
+    }
+  }
+
   ////////////////////// Repairs /////////////////////
   //
   // Each repair_NAME function exists primarily to repair the problem
@@ -2591,8 +2650,9 @@ var ses;
   var isExtensible = Object.isExtensible;
 
   /*
-   * Fixes both FUNCTION_PROTOTYPE_DESCRIPTOR_LIES and
-   * DEFINING_READ_ONLY_PROTO_FAILS_SILENTLY.
+   * Fixes FUNCTION_PROTOTYPE_DESCRIPTOR_LIES,
+   * DEFINING_READ_ONLY_PROTO_FAILS_SILENTLY and
+   * DEFINE_PROPERTY_CONFUSES_FUNC_PROTO.
    */
   function repair_DEFINE_PROPERTY() {
     function repairedDefineProperty(base, name, desc) {
@@ -2603,6 +2663,7 @@ var ses;
           base.prototype = desc.value;
         } catch (err) {
           logger.warn('prototype fixup failed', err);
+          throw err;
         }
       } else if (name === '__proto__' && !isExtensible(base)) {
         throw TypeError('Cannot redefine __proto__ on a non-extensible object');
@@ -3166,6 +3227,32 @@ var ses;
         return existingMethod.apply(this, arguments);
       };
       Object.defineProperty(object, name, desc);
+    });
+  }
+
+  function repair_NUMERIC_PROPERTIES_INVISIBLE() {
+    var create = Object.create;
+
+    var tempPropName = '0';
+    var tempPropDesc = {configurable: true};
+
+    Object.defineProperty(Object, 'create', {
+      configurable: true,
+      writable: true,  // allow other repairs to stack on
+      value: function repairedCreate(prototype, props) {
+        var o = create(prototype);
+        // Any property defined using a descriptor is sufficient to suppress
+        // the misbehavior.
+        Object.defineProperty(o, tempPropName, tempPropDesc);
+        delete o[tempPropName];
+        // By deferring the defineProperties operation, we avoid possibly
+        // conflicting with the caller-specified property names, without
+        // needing to examine props twice.
+        if (props !== undefined) {
+          Object.defineProperties(o, props);
+        }
+        return o;
+      }
     });
   }
 
@@ -3779,6 +3866,18 @@ var ses;
       tests: [] // TODO(jasvir): Add to test262
     },
     {
+      id: 'DEFINE_PROPERTY_CONFUSES_FUNC_PROTO',
+      description: 'Setting a function\'s prototype with defineProperty ' +
+        'doesn\'t change its value',
+      test: test_DEFINE_PROPERTY_CONFUSES_FUNC_PROTO,
+      repair: repair_DEFINE_PROPERTY,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      canRepair: true,
+      urls: ['https://code.google.com/p/v8/issues/detail?id=3334'],
+      sections: [],
+      tests: []  // TODO(kpreid): contribute tests
+    },
+    {
       id: 'STRICT_EVAL_LEAKS_GLOBAL_VARS',
       description: 'Strict eval function leaks variable definitions',
       test: test_STRICT_EVAL_LEAKS_GLOBAL_VARS,
@@ -4141,6 +4240,18 @@ var ses;
              'http://wiki.ecmascript.org/doku.php?id=conventions:recommendations_for_implementors'],
       sections: [],
       tests: []  // hopefully will be in ES6 tests
+    },
+    {
+      id: 'NUMERIC_PROPERTIES_INVISIBLE',
+      description: 'Numeric properties not reflectable on create()d objects',
+      test: test_NUMERIC_PROPERTIES_INVISIBLE,
+      repair: repair_NUMERIC_PROPERTIES_INVISIBLE,
+      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
+      canRepair: true,
+      urls: ['http://webreflection.blogspot.co.uk/2014/04/all-ie-objects-are-broken.html'],
+          // TODO(kpreid): link Microsoft info page when available
+      sections: ['8.12.6'],
+      tests: []  // TODO(kpreid): contribute tests
     }
   ];
 
@@ -4191,7 +4302,7 @@ var ses;
       strictForEachFn(supportedProblems, ses._repairer.registerProblem);
       ses._repairer.testAndRepair();
     }
-    
+
     var reports = ses._repairer.getReports();
 
     // Made available to allow for later code reusing our diagnoses to work

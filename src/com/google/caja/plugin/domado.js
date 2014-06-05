@@ -118,7 +118,10 @@ var Domado = (function() {
     }
   }
 
-  var proxiesAvailable = typeof Proxy !== 'undefined';
+  // test for old-style proxies, not ES6 direct proxies, because that's what we
+  // used and what ES5/3 provides.
+  // TODO(kpreid): Need to migrate to ES6-planned proxy API
+  var proxiesAvailable = typeof Proxy !== 'undefined' && !!Proxy.create;
   var proxiesInterceptNumeric = proxiesAvailable && (function() {
     var handler = {
       toString: function() { return 'proxiesInterceptNumeric test handler'; },
@@ -4703,13 +4706,16 @@ var Domado = (function() {
       defineElement({
         domClass: 'HTMLAnchorElement',
         properties: function() { return {
+          // TODO(kpreid): Implement all components-of-the-URL properties in
+          // a generic and consistently-virtualized way.
           hash: PT.filter(
             false,
             function (value) { return unsuffix(value, idSuffix, value); },
             false,
             // TODO(felix8a): add suffix if href is self
             identity),
-          href: NP_UriValuedProperty('a', 'href')
+          href: NP_UriValuedProperty('a', 'href'),
+          pathname: PT.ROView(String)
         }; }
       });
 

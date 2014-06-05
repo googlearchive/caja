@@ -1141,7 +1141,12 @@ ses.startSES = function(global,
       }
       constFunc(lengthGetter);
 
-      var nativeProxies = global.Proxy && (function () {
+      // test for old-style proxies, not ES6 direct proxies
+      // TODO(kpreid): Need to migrate to ES6-planned proxy API
+      var proxiesAvailable = global.Proxy !== undefined &&
+          !!global.Proxy.create;
+
+      var nativeProxies = proxiesAvailable && (function () {
         var obj = {0: 'hi'};
         var p = global.Proxy.create({
           get: function(O, P) {

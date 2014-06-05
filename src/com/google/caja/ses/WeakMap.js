@@ -240,7 +240,7 @@ var WeakMap;
     },
     preSeverity: severities.UNSAFE_SPEC_VIOLATION,
     canRepair: true,
-    urls: [],  // TODO(kpreid): File/find bug with IE 11
+    urls: ['https://connect.microsoft.com/IE/feedback/details/871401/weakmaps-drop-frozen-keys'],
     sections: [],  // TODO(kpreid): cite ES6 when published
     tests: []  // TODO(kpreid): should be in test262
   });

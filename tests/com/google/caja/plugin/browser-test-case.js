@@ -562,8 +562,12 @@ function createExtraImportsForTesting(frameGroup, frame) {
 
   standardImports.inES5Mode = inES5Mode;
   standardImports.proxiesAvailableToTamingCode = inES5Mode
-      // In ES5, Domado runs in the taming frame's real global env
-      ? typeof frameGroup.iframe.Proxy !== 'undefined'
+      // In ES5, Domado runs in the taming frame's real global env.
+      // Test for old-style proxies, not ES6 direct proxies, because that's what
+      // Domado uses.
+      // TODO(kpreid): Need to migrate to ES6-planned proxy API
+      ? frameGroup.iframe.Proxy !== undefined &&
+          !!frameGroup.iframe.Proxy.create
       // ES5/3 provides proxies always.
       : true;
 
