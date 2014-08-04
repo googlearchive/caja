@@ -50,6 +50,7 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
       isDefinedInCajaFrame: cajaFrameTracker.isDefinedInCajaFrame,
       USELESS: USELESS,
       weakMapPermitHostObjects: ses.weakMapPermitHostObjects,
+      funcLike: ses.funcLike,
       allFrames: allFrames
   });
 

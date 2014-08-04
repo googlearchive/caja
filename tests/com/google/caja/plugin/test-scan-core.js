@@ -358,7 +358,7 @@ var scanning;  // exports
     this.mark = mark;
     this.addSpecialCase = addSpecialCase;
   }
-  
+
   /**
    * Designate one or more objects, in the ways MatchingMap supports.
    */
@@ -403,7 +403,7 @@ var scanning;  // exports
       };
     }
   });
-  
+
   var Context = (function() {
     /**
      * Holds an object, information about where it came from, and information
@@ -993,7 +993,7 @@ var scanning;  // exports
       finished(problemCount, gapCount, totalDone);
     }
   }
-  
+
   scanning = Object.freeze({
     // Scanner and needed supporting components
     Scanner: Scanner,

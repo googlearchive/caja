@@ -617,6 +617,187 @@ var ses;
     return desc + ' leaked as: ' + that;
   }
 
+
+  /**
+   * Maps from standinName to an array mapping from arity to a cached
+   * makeStandin function.
+   *
+   * Maps each blacklisted standinName to 'blacklisted'.
+   */
+  var standinMakerCache = EarlyStringMap();
+  (function(){
+     /**
+      * See <a href=
+      * "https://people.mozilla.org/~jorendorff/es6-draft.html"
+      * >ES6 Draft Spec</a>. The blacklist may conservatively contain
+      * names that would actually be safe. It may not omit names that
+      * would be unsafe.
+      */
+     var blacklist = [
+       // 11.6.2.1 Keywords
+       'break', 'case', 'catch', 'class', 'const', 'continue', 'debugger',
+       'default', 'delete',
+       'do', 'else', 'export', 'extends', 'finally', 'for', 'function',
+       'if', 'import',
+       'in', 'instanceof', 'new', 'return', 'super', 'switch', 'this',
+       'throw', 'try',
+       'typeof', 'var', 'void', 'while', 'with', 'yield',
+
+       // 11.6.2.2 Future Reserved Words
+       'enum', 'await',
+       'implements', 'interface', 'package', 'private', 'protected',
+       'public', 'static',
+
+       // 11.8 Literals
+       'null', 'false', 'true',
+
+       // 12.1.1 Static Semantics: Early Errors
+       'arguments', 'eval',
+
+       // 14.5.1 Static Semantics: Early Errors
+       'let', 'constructor', 'prototype',
+
+       // names used in makeStandinSrc
+       'makeStandin', 'newF',
+
+       // The following are almost certainly safe, but blacklisting
+       // anyway just to be sure. Any of these might be unblacklisted in
+       // the futre.
+
+       // literal-like globals
+       'NaN', 'Infinity', 'undefined',
+
+       // $ is special in template strings
+       '$',
+
+       // contextually reserved or special in ES6
+       'module', 'of', 'as', 'from',
+
+       // expected to be contextually special in ES7
+       'async', 'on'
+
+       // 'get' and 'set' are contextually special in ES5, but despite
+       // that we assume they are safe.
+     ];
+
+     for (var i = 0, len = blacklist.length; i < len; i++) {
+       standinMakerCache.set(blacklist[i], 'blacklisted');
+     }
+   }());
+
+  /**
+   * Returns a makeStandin function which, given a function, returns a
+   * function which has the same call and construct behavior, but
+   * which has .length of arity, and, if known safe, a .name of
+   * standinName.
+   *
+   * The makeStandin function returned by makeStandinMaker is not
+   * generally fresh, to allow us to memoize these on standinName and
+   * arity.
+   */
+  function makeStandinMaker(standinName, arity) {
+    if (!/[a-zA-Z][a-zA-Z0-9]*/.test(standinName)) {
+      standinName = 'standin';
+    }
+    var cacheLine = standinMakerCache.get(standinName);
+    if (cacheLine === 'blacklisted') {
+      standinName = 'standin';
+      cacheLine = standinMakerCache.get(standinName);
+    }
+    if (!cacheLine) {
+      cacheLine = [];
+      standinMakerCache.set(standinName, cacheLine);
+    }
+    var result = cacheLine[arity];
+    if (!result) {
+      var args = [];
+      for (var i = 0; i < arity; i++) {
+        args.push('_' + i);
+      }
+      var makeStandinSrc = '(function makeStandin(newF) {\n' +
+        '  "use strict";\n' +
+        '  return function ' + standinName + '(' + args.join(',') + ') {\n' +
+        '    return newF.apply(this, arguments);\n' +
+        '  }\n' +
+        '})';
+      result = unsafeEval(makeStandinSrc);
+      cacheLine[arity] = result;
+    }
+    return result;
+  }
+
+  /**
+   * The function own property names that funcLike doesn't copy
+   * in a generic manner from newFunc to the returned standin.
+   */
+  var exemptFuncProps = ['name', 'length', 'caller', 'arguments'];
+
+  /**
+   * Given that newFunc represents a desired emulation of oldFunc
+   * except for its .name and .length properties, engage in best
+   * efforts to return a function like newFunc in which these
+   * remaining issues are repaired, possibly by modifying newFunc in
+   * place if possible, or possibly by wrapping it.
+   *
+   * If we instead create and return a new standin function which
+   * wraps newFunc, we also attempt to transfer any
+   * non-exemptFuncProps (see above) from newFunc to the returned
+   * standin.
+   *
+   * We assume that after this call, the caller will use whatever we
+   * return in lieu of accessing the newFunc they passed us directly,
+   * which is why we allow funcLike to either modify newFunc in place,
+   * or return a wrapper in which potentially mutable properties are
+   * copied. If this assumption is false, then a mutation to one of
+   * these properties on newFunc or the returned standin will not
+   * necessarily be reflected in the other.
+   *
+   * Note that ES5 does not specify a .name property on functions, and
+   * IE11 (as of this writing) does not implement one, so this
+   * implementation must be compatible with the absence of a .name
+   * property on functions.
+   */
+  function funcLike(newFunc, oldFunc) {
+    var name = ''+oldFunc.name;
+    var arity = +oldFunc.length;
+    // TODO(erights): On ES6 func.name starts configurable, so we
+    // should try to modify newFunc.name in place if we can.
+    // TODO(erights): On ES6 func.length starts configurable, so we
+    // should try to modify newFunc.length in place if we can.
+    if (''+newFunc.name === name && +newFunc.length === arity) {
+      return newFunc;
+    }
+
+    var makeStandin = makeStandinMaker(name, arity);
+    var standin = makeStandin(newFunc);
+
+    var pnames = Object.getOwnPropertyNames(newFunc);
+    pnames.forEach(function(pname) {
+      if (exemptFuncProps.indexOf(pname) === -1) {
+        Object.defineProperty(standin, pname,
+                              Object.getOwnPropertyDescriptor(newFunc, pname));
+      }
+    });
+
+    // The isFrozen and isSealed branches of the tests below seem
+    // redundant with !isExtensible, since frozenness and sealedness
+    // is, as of ES5, only the combination of extensibility + property
+    // attributes. We do this anyway for two reasons: Because the
+    // defineProperty loop above skips the exemptFuncProps. And in
+    // case a future ES spec has frozenness or sealedness mean
+    // something beyond merely extensibility + property attributes.
+    if (Object.isFrozen(newFunc)) {
+      Object.freeze(standin);
+    } else if (Object.isSealed(newFunc)) {
+      Object.seal(standin);
+    } else if (!Object.isExtensible(newFunc)) {
+      Object.preventExtensions(standin);
+    }
+    return standin;
+  }
+  ses.funcLike = funcLike;
+
+
   ////////////////////// Tests /////////////////////
   //
   // Each test is a function of no arguments that should not leave any
@@ -2858,7 +3039,9 @@ var ses;
         }
         return originalMethod.apply(this, arguments);
       }
-      Object.defineProperty(proto, name, { value: replacement });
+      replacement.prototype = null;
+      var w = funcLike(replacement, originalMethod);
+      Object.defineProperty(proto, name, { value: w });
     }
     return mutableProtoPatcher;
   }
@@ -3312,17 +3495,18 @@ var ses;
     protos.push(global.DataView.prototype);
     protos.forEach(function(proto) {
       Object.getOwnPropertyNames(proto).forEach(function(prop) {
+        function exceptionAdapterWrapper(var_args) {
+          try {
+            origMethod.apply(this, arguments);
+          } catch (e) {
+            if (e instanceof DOMException) {
+              throw new RangeError(e.message);
+            }
+          }
+        }
         if (/^[gs]et/.test(prop)) {
           var origMethod = proto[prop];
-          proto[prop] = function exceptionAdapterWrapper(var_args) {
-            try {
-              origMethod.apply(this, arguments);
-            } catch (e) {
-              if (e instanceof DOMException) {
-                throw new RangeError(e.message);
-              }
-            }
-          };
+          proto[prop] = funcLike(exceptionAdapterWrapper, origMethod);
         }
       });
     });
@@ -3385,12 +3569,13 @@ var ses;
         return;
       }
 
-      desc.value = function globalLeakDefenseWrapper() {
+      function globalLeakDefenseWrapper() {
         // To repair this bug it is sufficient to force the method to be called
         // using .apply(), as it only occurs if it is called as a literal
         // function, e.g. var concat = Array.prototype.concat; concat().
         return existingMethod.apply(this, arguments);
-      };
+      }
+      desc.value = funcLike(globalLeakDefenseWrapper, existingMethod);
       Object.defineProperty(object, name, desc);
     });
   }
@@ -3480,13 +3665,14 @@ var ses;
     function repair_method_IGNORES_SEALED() {
       var originalMethod = Array.prototype[prop];
       var isSealed = Object.isSealed;
+      function repairedArrayMutator(var_args) {
+        if (isSealed(this)) {
+          throw new TypeError('Cannot mutate a sealed array.');
+        }
+        return originalMethod.apply(this, arguments);
+      }
       Object.defineProperty(Array.prototype, prop, {
-        value: function repairedArrayMutator(var_args) {
-          if (isSealed(this)) {
-            throw new TypeError('Cannot mutate a sealed array.');
-          }
-          return originalMethod.apply(this, arguments);
-        },
+        value: funcLike(repairedArrayMutator, originalMethod),
         configurable: true,
         writable: true
       });

@@ -234,7 +234,7 @@ function TamingMembrane(helper, schema) {
     }
     return Object.freeze(copy);
   }
-  
+
   /**
    * Given a builtin object "o" from either side of the membrane, return a copy
    * constructed in the taming frame. Return undefined if "o" is not of a type
@@ -313,7 +313,7 @@ function TamingMembrane(helper, schema) {
     if ((f && tameByFeral.has(f)) || (t && feralByTame.has(t))) {
       var et = tameByFeral.get(f);
       var ef = feralByTame.get(t);
-      throw new TypeError('Attempt to multiply tame: ' + f + 
+      throw new TypeError('Attempt to multiply tame: ' + f +
           (ef ? ' (already ' + (ef === f ? 'same' : ef) + ')' : '') +
           ' <-> ' + t +
           (et ? ' (already ' + (et === t ? 'same' : et) + ')' : ''));
@@ -478,6 +478,7 @@ function TamingMembrane(helper, schema) {
           helper.USELESS,  // See notes on USELESS above
           copyArray(arguments, untame));
     };
+    t = helper.funcLike(t, f);
     addFunctionPropertyHandlers(f, t);
     preventExtensions(t);
     return t;
@@ -501,6 +502,7 @@ function TamingMembrane(helper, schema) {
         tamesTo(o, this);
       }
     };
+    t = helper.funcLike(t, f);
 
     if (tameByFeral.get(fPrototype)) {
       throw new TypeError(
@@ -549,27 +551,32 @@ function TamingMembrane(helper, schema) {
           untame(this),
           copyArray(arguments, untame));
     };
+    t = helper.funcLike(t, f);
     addFunctionPropertyHandlers(f, t);
     preventExtensions(t);
     return t;
   }
 
   function makePrototypeMethod(proto, func) {
-    return function(_) {
+    var m = function(_) {
       if (!inheritsFrom(this, proto)) {
         throw new TypeError('Target object not permitted: ' + this);
       }
       return func.apply(this, arguments);
     };
+    m = helper.funcLike(m, func);
+    return m;
   }
 
   function makeStrictPrototypeMethod(proto, func) {
-    return function(_) {
+    var m = function(_) {
       if ((this === proto) || !inheritsFrom(this, proto)) {
         throw new TypeError('Target object not permitted: ' + this);
       }
       return func.apply(this, arguments);
     };
+    m = helper.funcLike(m, func);
+    return m;
   }
 
   function inheritsFrom(o, proto) {
@@ -688,9 +695,11 @@ function TamingMembrane(helper, schema) {
   function untameCajaFunction(t) {
     // Untaming of *constructors* which are defined in Caja is unsupported.
     // We untame all functions defined in Caja as xo4a.
-    return function(_) {
+    var f = function(_) {
       return applyTameFunction(t, tame(this), copyArray(arguments, tame));
     };
+    f = helper.funcLike(f, t);
+    return f;
   }
 
   function untameCajaRecord(t) {
@@ -735,7 +744,7 @@ function TamingMembrane(helper, schema) {
     reTamesTo: reTamesTo,
     hasTameTwin: hasTameTwin,
     hasFeralTwin: hasFeralTwin,
-    
+
     // Any code which bypasses the membrane (e.g. in order to provide its own
     // tame twins, as Domado does) must also filter exceptions resulting from
     // control flow crossing the membrane.
