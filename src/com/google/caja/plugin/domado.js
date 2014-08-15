@@ -1301,7 +1301,7 @@ var Domado = (function() {
 
     // TODO(kpreid): This ID management should probably be handled by
     // ses-single-frame.js instead.
-    var importsToId = new WeakMap(true);
+    var importsToId = new WeakMap();
     var idToImports = [];
     var nextPluginId = 0;
     function getId(imports) {
