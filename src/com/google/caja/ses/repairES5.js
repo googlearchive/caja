@@ -2170,110 +2170,6 @@ var ses;
   }
 
   /**
-   * Detects whether calling splice on an array with a readonly
-   * property will modify that property.
-   */
-  function test_SPLICE_IGNORES_READONLY() {
-    var x = ['b', 'c'];
-    Object.defineProperty(x, 0, { writable: false, configurable: false });
-    try {
-      x.splice(0, 0, 'a');
-    } catch (e) {
-      if (x[0] === 'b') {
-        return false;
-      }
-      return 'Unexpected error splicing a readonly property: ' + x;
-    }
-    if (x[0] === 'a' && x.length == 3) { return true; }
-    return 'Unexpected behavior splicing a readonly property';
-  }
-
-  /**
-   * Detects whether calling pop on an array with a last readonly
-   * property will modify that property.
-   */
-  function test_POP_IGNORES_READONLY() {
-    var x = ['a', 'b'];
-    Object.defineProperty(x, 1, { writable: false, configurable: false });
-    try {
-      x.pop();
-    } catch (e) {
-      if (x[1] === 'b' && x.length == 2) { return false; }
-      return 'Unexpected error popping a readonly property';
-    }
-    if (!('1' in x) && x.length == 1) { return 'oops: ' + x[1]; }
-    return 'Unexpected behavior popping a readonly property';
-  }
-
-  /**
-   * Detects whether calling unshift on an array with a readonly
-   * property will modify that property.
-   */
-  function test_UNSHIFT_IGNORES_READONLY() {
-    var x = ['b', 'c'];
-    Object.defineProperty(x, 0, { writable: false, configurable: false });
-    try {
-      x.unshift('a');
-    } catch (e) {
-      if (x[0] === 'b') { return false; }
-      return 'Unexpected error unshifting a readonly property: ' + x;
-    }
-    if (x[0] === 'a' && x.length == 3) { return true; }
-    return 'Unexpected behavior unshifting a readonly property';
-  }
-
-  /**
-   * Detects whether calling shift on an array with a readonly
-   * property will modify that property.
-   */
-  function test_SHIFT_IGNORES_READONLY() {
-    var x = ['a', 'b'];
-    Object.defineProperty(x, 0, { writable: false, configurable: false });
-    try {
-      x.shift();
-    } catch (e) {
-      if (x[0] === 'a' && x.length == 2) { return false; }
-      return 'Unexpected error shifting a readonly property';
-    }
-    if (x[0] === 'b' && x.length == 1) { return true; }
-    return 'Unexpected behavior shifting a readonly property';
-  }
-
-  /**
-   * Detects whether calling reverse on an array with a readonly
-   * property will modify that property.
-   */
-  function test_REVERSE_IGNORES_READONLY() {
-    var x = ['a', 'b'];
-    Object.defineProperty(x, 0, { writable: false, configurable: false });
-    try {
-      x.reverse();
-    } catch (e) {
-      if (x[0] === 'a') { return false; }
-      return 'Unexpected error reversing an array with a readonly property';
-    }
-    if (x[0] === 'b') { return true; }
-    return 'Unexpected behavior reversing an array with a readonly property';
-  }
-
-  /**
-   * Detects whether calling sort on an array with a readonly
-   * property will modify that property.
-   */
-  function test_SORT_IGNORES_READONLY() {
-    var x = ['b', 'a'];
-    Object.defineProperty(x, 0, { writable: false, configurable: false });
-    try {
-      x.sort();
-    } catch (e) {
-      if (x[0] === 'b') { return false; }
-      return 'Unexpected error sorting a readonly property';
-    }
-    if (x[0] === 'a') { return true; }
-    return 'Unexpected behavior sorting a readonly property';
-  }
-
-  /**
    * Detects whether calling pop on a frozen array can modify the array.
    * See https://bugs.webkit.org/show_bug.cgi?id=75788
    */
@@ -3034,7 +2930,6 @@ var ses;
   var hop = Object.prototype.hasOwnProperty;
   var slice = Array.prototype.slice;
   var concat = Array.prototype.concat;
-  var splice = Array.prototype.splice;
   var getPrototypeOf = Object.getPrototypeOf;
   var unsafeDefProp = Object.defineProperty;
   var isExtensible = Object.isExtensible;
@@ -3377,45 +3272,6 @@ var ses;
         }
       });
     }
-  }
-
-  function repair_POP_IGNORES_READONLY() {
-    Object.defineProperty(Array.prototype, 'pop', {
-      value: function() {
-        var last = this.length - 1;
-        // empty???
-        var result = this[last];
-        splice.apply(this, concat.call([last, 1], []));
-        return result;
-      },
-      configurable: true,
-      writable: true
-    });
-  }
-
-  function repair_UNSHIFT_IGNORES_READONLY() {
-    Object.defineProperty(Array.prototype, 'unshift', {
-      value: function(var_args) {
-        var items = slice.call(arguments, 0);
-        splice.apply(this, concat.call([0, 0], items));
-        // return???
-      },
-      configurable: true,
-      writable: true
-    });
-  }
-
-  function repair_SHIFT_IGNORES_READONLY() {
-    Object.defineProperty(Array.prototype, 'shift', {
-      value: function() {
-        // empty???
-        var result = this[0];
-        splice.apply(this, concat.call([0, 1], []));
-        return result;
-      },
-      configurable: true,
-      writable: true
-    });
   }
 
   function repair_POP_IGNORES_FROZEN() {
@@ -4467,84 +4323,6 @@ var ses;
       canRepair: false,  // Protection is based on rewriting, not repair
       urls: ['https://code.google.com/p/v8/issues/detail?id=2779'],
       sections: ['11.4.4', '8.12.4'],
-      tests: [] // TODO(jasvir): Add to test262
-    },
-    {
-      id: 'SPLICE_IGNORES_READONLY',
-      description: 'Array.prototype.splice ignores readonly property',
-      test: test_SPLICE_IGNORES_READONLY,
-      repair: void 0,
-      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: false,
-      urls: ['https://code.google.com/p/v8/issues/detail?id=3356',
-             'https://code.google.com/p/google-caja/issues/detail?id=1931',
-             'https://code.google.com/p/v8/issues/detail?id=2615'],
-      sections: [],
-      tests: [] // TODO(jasvir): Add to test262
-    },
-    {
-      id: 'POP_IGNORES_READONLY',
-      description: 'Array.prototype.pop ignores readonly last property',
-      test: test_POP_IGNORES_READONLY,
-      repair: repair_POP_IGNORES_READONLY,
-      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: true,
-      urls: ['https://code.google.com/p/v8/issues/detail?id=3356',
-             'https://code.google.com/p/google-caja/issues/detail?id=1931',
-             'https://code.google.com/p/v8/issues/detail?id=2615'],
-      sections: [],
-      tests: [] // TODO(jasvir): Add to test262
-    },
-    {
-      id: 'UNSHIFT_IGNORES_READONLY',
-      description: 'Array.prototype.unshift ignores readonly property',
-      test: test_UNSHIFT_IGNORES_READONLY,
-      repair: repair_UNSHIFT_IGNORES_READONLY,
-      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: true,
-      urls: ['https://code.google.com/p/v8/issues/detail?id=3356',
-             'https://code.google.com/p/google-caja/issues/detail?id=1931',
-             'https://code.google.com/p/v8/issues/detail?id=2615'],
-      sections: [],
-      tests: [] // TODO(jasvir): Add to test262
-    },
-    {
-      id: 'SHIFT_IGNORES_READONLY',
-      description: 'Array.prototype.shift ignores readonly property',
-      test: test_SHIFT_IGNORES_READONLY,
-      repair: repair_SHIFT_IGNORES_READONLY,
-      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: true,
-      urls: ['https://code.google.com/p/v8/issues/detail?id=3356',
-             'https://code.google.com/p/google-caja/issues/detail?id=1931',
-             'https://code.google.com/p/v8/issues/detail?id=2615'],
-      sections: [],
-      tests: [] // TODO(jasvir): Add to test262
-    },
-    {
-      id: 'REVERSE_IGNORES_READONLY',
-      description: 'Array.prototype.reverse ignores readonly property',
-      test: test_REVERSE_IGNORES_READONLY,
-      repair: void 0,
-      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: false,
-      urls: ['https://code.google.com/p/v8/issues/detail?id=3356',
-             'https://code.google.com/p/google-caja/issues/detail?id=1931',
-             'https://code.google.com/p/v8/issues/detail?id=2615'],
-      sections: [],
-      tests: [] // TODO(jasvir): Add to test262
-    },
-    {
-      id: 'SORT_IGNORES_READONLY',
-      description: 'Array.prototype.sort ignores readonly property',
-      test: test_SORT_IGNORES_READONLY,
-      repair: void 0,
-      preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: false,
-      urls: ['https://code.google.com/p/v8/issues/detail?id=3356',
-             'https://code.google.com/p/google-caja/issues/detail?id=1931',
-             'https://code.google.com/p/v8/issues/detail?id=2615'],
-      sections: [],
       tests: [] // TODO(jasvir): Add to test262
     },
     {

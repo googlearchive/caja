@@ -160,7 +160,7 @@ var ses;
     ////////////////////////////////////////////////////////////////////////
 
     function makeSealerUnsealerPair() {
-      var boxValues = new WeakMap();
+      var boxValues = new WeakMap(true); // use key lifetime
 
       function seal(value) {
         var box = freeze({});
@@ -190,7 +190,7 @@ var ses;
     // Trademarks
     ////////////////////////////////////////////////////////////////////////
 
-    var stampers = new WeakMap();
+    var stampers = new WeakMap(true);
 
     /**
      * Internal routine for making a trademark from a table.
