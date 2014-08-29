@@ -23,7 +23,7 @@ var Q;
   "use strict";
 
   // Table of functions-which-are-promises
-  var promises = new WeakMap(true);
+  var promises = new WeakMap();
 
   function reject(reason) {
     function rejected(op, arg1, arg2, arg3) {
@@ -88,7 +88,7 @@ var Q;
     promises.set(fulfilled, true);
     return fulfilled;
   }
- 	
+
   var enqueue = (function () {
     var active = false;
     var pending = [];
@@ -109,7 +109,7 @@ var Q;
       }
     };
   }());
- 	
+
   /**
    * Enqueues a promise operation.
    *

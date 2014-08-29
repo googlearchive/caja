@@ -2987,6 +2987,37 @@ var ses;
     }
   }
 
+  function repair_UNSHIFT_IGNORES_READONLY() {
+    var baseSplice = Array.prototype.splice;
+    var baseConcat = Array.prototype.concat;
+    Object.defineProperty(Array.prototype, 'unshift', {
+      value: function(var_args) {
+        var len = +this.length;
+        var items = slice.call(arguments, 0);
+        baseSplice.apply(this, baseConcat.call([0, 0], items));
+        return len + items.length;
+      },
+      configurable: true,
+      writable: true
+    });
+  }
+
+  function repair_SHIFT_IGNORES_READONLY() {
+    var baseSplice = Array.prototype.splice;
+    Object.defineProperty(Array.prototype, 'shift', {
+      value: function() {
+        if (+this.length >= 1) {
+          var result = this[0];
+          baseSplice.call(this, 0, 1);
+          return result;
+        }
+        return void 0;
+      },
+      configurable: true,
+      writable: true
+    });
+  }
+
   function repair_POP_IGNORES_FROZEN() {
     var pop = Array.prototype.pop;
     var frozen = Object.isFrozen;
@@ -3261,9 +3292,93 @@ var ses;
   // These are tests and repairs which follow a pattern, such that it is
   // more practical to define them programmatically.
 
-  function arrayMutatorProblem(destination, prop, testArgs) {
+  function arrayPutProblem(destination,
+                           prop, testArgs, i, expected, kind, opt_repair) {
+    var pos = ['first', 'last'][i];
+    var descs = {
+      readonly: {writable: false, configurable: false},
+      non_writable: {writable: false}
+    };
+    var badness = {
+      readonly: severities.UNSAFE_SPEC_VIOLATION,
+      non_writable: severities.SAFE_SPEC_VIOLATION
+    };
+
     /**
-     * Tests only for likley symptoms of a seal violation or a
+     * Tests for an array method modifying the value of a non-writable
+     * indexed data property of an array.
+     */
+    function test_method_IGNORES_kind() {
+      var x = ['c', 'b'];
+      var val = x[i];
+      Object.defineProperty(x, i, descs[kind]);
+      try {
+        x[prop].apply(x, testArgs);
+      } catch (_) {
+        if (x[i] === val) { return false; }
+        return 'Unexpected error on ' + prop +
+          ' of a ' + kind + ' property: ' + x;
+      }
+      if (x[i] === val) {
+        // The problem is not that the PUT was ignored, but that
+        // it didn't throw, which is detected by
+        // test_method_DOESNT_THROW_kind() below.
+        return false;
+      }
+      if (x[i] === expected) { return true; }
+      return 'Unexpected behavior on ' + prop +
+        ' of a ' + kind + ' property: ' + x;
+    }
+
+    /**
+     * Tests for an array method not throwing when it tries to modify
+     * the value of a non-writable indexed data property of an array.
+     */
+    function test_method_DOESNT_THROW_kind() {
+      var x = ['c', 'b'];
+      var val = x[i];
+      Object.defineProperty(x, i, descs[kind]);
+      try {
+        x[prop].apply(x, testArgs);
+      } catch (_) {
+        return false;
+      }
+      return true;
+    }
+
+    destination.push({
+      id: (prop + '_PUT_IGNORES_' + pos + '_' + kind).toUpperCase(),
+      description: 'Array.prototype.' + prop + ' ignores ' +
+        kind + ' on ' + pos + ' property',
+      test: test_method_IGNORES_kind,
+      repair: opt_repair,
+      preSeverity: badness[kind],
+      canRepair: opt_repair !== void 0,
+      urls: ['https://code.google.com/p/v8/issues/detail?id=3356',
+             'https://code.google.com/p/google-caja/issues/detail?id=1931',
+             'https://code.google.com/p/v8/issues/detail?id=2615'],
+      sections: [],
+      tests: [] // TODO(jasvir): Add to test262
+    });
+    destination.push({
+      id: (prop + '_PUT_DOESNT_THROW_' + pos + '_' + kind).toUpperCase(),
+      description: 'Array.prototype.' + prop + ' doesn\'t throw on ' +
+        kind + ' ' + pos + ' property',
+      test: test_method_DOESNT_THROW_kind,
+      repair: opt_repair,
+      preSeverity: severities.SAFE_SPEC_VIOLATION,
+      canRepair: opt_repair !== void 0,
+      urls: ['https://code.google.com/p/v8/issues/detail?id=3356',
+             'https://code.google.com/p/google-caja/issues/detail?id=1931',
+             'https://code.google.com/p/v8/issues/detail?id=2615'],
+      sections: [],
+      tests: [] // TODO(jasvir): Add to test262
+    });
+  }
+
+  function arraySealProblem(destination, prop, testArgs) {
+    /**
+     * Tests only for likely symptoms of a seal violation or a
      * malformed array.
      *
      * <p>A sealed object can neither acquire new own properties
@@ -4255,17 +4370,96 @@ var ses;
     }
   ];
 
+  // SPLICE_PUT_IGNORES_FIRST_READONLY
+  // SPLICE_PUT_DOESNT_THROW_FIRST_READONLY
+  // SPLICE_PUT_IGNORES_FIRST_NON_WRITABLE
+  // SPLICE_PUT_DOESNT_THROW_FIRST_NON_WRITABLE
+  // SPLICE_PUT_IGNORES_LAST_READONLY
+  // SPLICE_PUT_DOESNT_THROW_LAST_READONLY
+  arrayPutProblem(supportedProblems,
+                  'splice', [0, 0, 'a'], 0, 'a', 'readonly');
+  arrayPutProblem(supportedProblems,
+                  'splice', [0, 0, 'a'], 0, 'a', 'non_writable');
+  arrayPutProblem(supportedProblems,
+                  'splice', [1, 1], 1, void 0, 'readonly');
+
+  // POP_PUT_IGNORES_LAST_READONLY
+  // POP_PUT_DOESNT_THROW_LAST_READONLY
+  arrayPutProblem(supportedProblems,
+                  'pop', [], 1, void 0, 'readonly');
+
+  // UNSHIFT_PUT_IGNORES_FIRST_READONLY
+  // UNSHIFT_PUT_DOESNT_THROW_FIRST_READONLY
+  // UNSHIFT_PUT_IGNORES_FIRST_NON_WRITABLE
+  // UNSHIFT_PUT_DOESNT_THROW_FIRST_NON_WRITABLE
+  arrayPutProblem(supportedProblems,
+                  'unshift', ['a'], 0, 'a', 'readonly',
+                  repair_UNSHIFT_IGNORES_READONLY);
+  arrayPutProblem(supportedProblems,
+                  'unshift', ['a'], 0, 'a', 'non_writable',
+                  repair_UNSHIFT_IGNORES_READONLY);
+
+  // SHIFT_PUT_IGNORES_FIRST_READONLY
+  // SHIFT_PUT_DOESNT_THROW_FIRST_READONLY
+  // SHIFT_PUT_IGNORES_FIRST_NON_WRITABLE
+  // SHIFT_PUT_DOESNT_THROW_FIRST_NON_WRITABLE
+  // SHIFT_PUT_IGNORES_LAST_READONLY
+  // SHIFT_PUT_DOESNT_THROW_LAST_READONLY
+  arrayPutProblem(supportedProblems,
+                  'shift', [], 0, 'b', 'readonly',
+                  repair_SHIFT_IGNORES_READONLY);
+  arrayPutProblem(supportedProblems,
+                  'shift', [], 0, 'b', 'non_writable',
+                  repair_SHIFT_IGNORES_READONLY);
+  arrayPutProblem(supportedProblems,
+                  'shift', [], 1, void 0, 'readonly',
+                  repair_SHIFT_IGNORES_READONLY);
+
+  // REVERSE_PUT_IGNORES_FIRST_READONLY
+  // REVERSE_PUT_DOESNT_THROW_FIRST_READONLY
+  // REVERSE_PUT_IGNORES_FIRST_NON_WRITABLE
+  // REVERSE_PUT_DOESNT_THROW_FIRST_NON_WRITABLE
+  // REVERSE_PUT_IGNORES_LAST_READONLY
+  // REVERSE_PUT_DOESNT_THROW_LAST_READONLY
+  // REVERSE_PUT_IGNORES_LAST_NON_WRITABLE
+  // REVERSE_PUT_DOESNT_THROW_LAST_NON_WRITABLE
+  arrayPutProblem(supportedProblems,
+                  'reverse', [], 0, 'b', 'readonly');
+  arrayPutProblem(supportedProblems,
+                  'reverse', [], 0, 'b', 'non_writable');
+  arrayPutProblem(supportedProblems,
+                  'reverse', [], 1, 'c', 'readonly');
+  arrayPutProblem(supportedProblems,
+                  'reverse', [], 1,  'c', 'non_writable');
+
+  // SORT_PUT_IGNORES_FIRST_READONLY
+  // SORT_PUT_DOESNT_THROW_FIRST_READONLY
+  // SORT_PUT_IGNORES_FIRST_NON_WRITABLE
+  // SORT_PUT_DOESNT_THROW_FIRST_NON_WRITABLE
+  // SORT_PUT_IGNORES_LAST_READONLY
+  // SORT_PUT_DOESNT_THROW_LAST_READONLY
+  // SORT_PUT_IGNORES_LAST_NON_WRITABLE
+  // SORT_PUT_DOESNT_THROW_LAST_NON_WRITABLE
+  arrayPutProblem(supportedProblems,
+                  'sort', [], 0, 'b', 'readonly');
+  arrayPutProblem(supportedProblems,
+                  'sort', [], 0, 'b', 'non_writable');
+  arrayPutProblem(supportedProblems,
+                  'sort', [], 1, 'c', 'readonly');
+  arrayPutProblem(supportedProblems,
+                  'sort', [], 1,  'c', 'non_writable');
+
   // UNSHIFT_IGNORES_SEALED
   // UNSHIFT_IGNORES_FROZEN
   // SPLICE_IGNORES_SEALED
   // SPLICE_IGNORES_FROZEN
   // SHIFT_IGNORES_SEALED
   // SHIFT_IGNORES_FROZEN
-  arrayMutatorProblem(supportedProblems, 'unshift', ['foo']);
-  arrayMutatorProblem(supportedProblems, 'splice', [0, 0, 'foo']);
-  arrayMutatorProblem(supportedProblems, 'shift', []);
+  arraySealProblem(supportedProblems, 'unshift', ['foo']);
+  arraySealProblem(supportedProblems, 'splice', [0, 0, 'foo']);
+  arraySealProblem(supportedProblems, 'shift', []);
   // Array.prototype.{push,pop,sort} are also subject to the problem
-  // arrayMutatorProblem handles, but are handled separately and more
+  // arraySealProblem handles, but are handled separately and more
   // precisely.
 
   // Note: GLOBAL_LEAKS_FROM_ARRAY_METHODS should be LAST in the list so as

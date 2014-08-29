@@ -1313,7 +1313,7 @@ var Domado = (function() {
     // are normally managed by es53 when it is not). TODO(kpreid): Is there a
     // more sensible place to put this management, which would be used in both
     // modes?
-    var importsToId = new WeakMap(true);
+    var importsToId = new WeakMap();
     var idToImports = [];
     var nextPluginId = 0;
 
