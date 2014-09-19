@@ -1,2 +1,3 @@
 origin
-  https://code.google.com/p/selenium/downloads/detail?name=selenium-server-standalone-2.39.0.jar
+  http://selenium-release.storage.googleapis.com/2.43/selenium-server-standalone-2.43.0.jar
+  from http://docs.seleniumhq.org/download/

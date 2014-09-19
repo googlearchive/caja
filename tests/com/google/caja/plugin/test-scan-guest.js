@@ -935,30 +935,37 @@
       }
     }));
 
-    argsByIdentity(WeakMap, annotate(
-        freshResult(genAllCall()), function(context, thrown) {
-      if (!thrown) {
-        if (inES5Mode) {  // would fail on es53
-          // known harmless implementation details leak. TODO abuse anyway
-          argsByIdentity(context.get()['delete___'],
-              argsByIdentity(context.get()['get___'],
-              argsByIdentity(context.get()['has___'],
-              argsByIdentity(context.get()['set___'],
-              argsByIdentity(context.get()['permitHostObjects___'],
-              G.none)))));
-        }
+    // Some WeakMap shim impls are prototype based, some are closure based; we
+    // deal with both, as well as the real thing.
+    var genWeakMapKey = genJSONValue;
+    function annotateWeakMapInstance(obj) {
+      // known harmless implementation details leak.
+      expectedUnfrozen.setByIdentity(obj, true);
+      if (inES5Mode) {  // would fail on es53
+        argsByIdentity(obj['permitHostObjects___'], genMethod(G.value('x')));
+        expectedAlwaysThrow.setByIdentity(obj['permitHostObjects___'], true);
+        argsByIdentity(obj['delete___'], genMethod(genWeakMapKey));
+        argsByIdentity(obj['get___'], genMethod(genWeakMapKey));
+        argsByIdentity(obj['set___'], genMethod(genWeakMapKey, genObject));
+        argsByIdentity(obj['has___'], genMethod(genWeakMapKey));
+      }
 
-        argsByIdentity(context.get()['delete'], G.none); // TODO abuse
-        argsByIdentity(context.get().get, G.none); // TODO abuse
-        argsByIdentity(context.get().set, G.none); // TODO abuse
-        argsByIdentity(context.get().has, G.none); // TODO abuse
+      argsByIdentity(obj['delete'], genMethod(genWeakMapKey));
+      argsByIdentity(obj.get, genMethod(genWeakMapKey));
+      argsByIdentity(obj.set, genMethod(genWeakMapKey, genObject));
+      argsByIdentity(obj.has, genMethod(genWeakMapKey));
+      return obj;
+    }
+    argsByIdentity(WeakMap, annotate(genAllCall(), function(context, thrown) {
+      if (!thrown) {
+        annotateWeakMapInstance(context.get());
       }
     }));
-    // some WeakMap impls are prototype based, some are closure based
-    argsByIdentity(WeakMap.prototype['delete'], G.none); // TODO abuse
-    argsByIdentity(WeakMap.prototype.get, G.none); // TODO abuse
-    argsByIdentity(WeakMap.prototype.set, G.none); // TODO abuse
-    argsByIdentity(WeakMap.prototype.has, G.none); // TODO abuse
+    obtainInstance.define(WeakMap, annotateWeakMapInstance(new WeakMap()));
+    argsByIdentity(WeakMap.prototype['delete'], genMethod(genWeakMapKey));
+    argsByIdentity(WeakMap.prototype.get, genMethod(genWeakMapKey));
+    argsByIdentity(WeakMap.prototype.set, genMethod(genWeakMapKey, genObject));
+    argsByIdentity(WeakMap.prototype.has, genMethod(genWeakMapKey));
 
     expectedAlwaysThrow.setByIdentity(
         getSetter(window, 'location'), true);
