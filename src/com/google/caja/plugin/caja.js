@@ -58,7 +58,7 @@ var caja = (function () {
       // TODO(jasvir): Make it so this does not pollute the host page
       // namespace but rather just the loaderFrame
       installSyncScript(rndName,
-        proxyServer ? String(proxyServer) : caja['server']
+        (proxyServer ? String(proxyServer) : caja['server'])
         + '/cajole?url=' + encodeURIComponent(url.toString())
         + '&input-mime-type=' + encodeURIComponent(mime)
         + '&transform=PROXY'

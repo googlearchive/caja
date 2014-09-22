@@ -750,7 +750,7 @@ For help on building and testing Caja, see:
     <!-- These and other HTML and JS files are copied verbatim -->
     <copy todir="${testlib}">
       <fileset dir="${src}" includes="**/*.html,**/*.js,**/*.css,**/*.jpg,**/*.png"/>
-      <fileset dir="${tests}" includes="**/*.html,**/*.js,**/*.css,**/*.jpg,**/*.png"/>
+      <fileset dir="${tests}" includes="**/*.html,**/*.js,**/*.css,**/*.jpg,**/*.png,**/*.ujs"/>
       <fileset dir="${src}" includes="**/apitaming/*"/>
       <fileset dir="${tests}" includes="**/apitaming/*"/>
     </copy>

@@ -167,7 +167,7 @@ public abstract class AbstractCajolingHandler implements ContentHandler {
 
     output.append(
         (jsonpCallback != null)
-            ? jsonpCallback + "(" + rendered + ");"
+            ? "/**/" + jsonpCallback + "(" + rendered + ");"
             : rendered);
     output.flush();
   }

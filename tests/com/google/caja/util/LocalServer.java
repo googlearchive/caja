@@ -87,6 +87,8 @@ public class LocalServer {
       }
     };
     resource_handler.setResourceBase(".");
+    resource_handler.getMimeTypes().addMimeMapping(
+        "ujs", "text/javascript;charset=utf-8");
 
     // caja (=playground for now) server under /caja directory
     final String subdir = "/caja";

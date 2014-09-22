@@ -187,6 +187,7 @@ public class CajolingServlet extends HttpServlet {
       resp.setContentLength(content.length);
       resp.setHeader(UMP.a, UMP.b);
       resp.setHeader("X-Content-Type-Options", "nosniff");
+      resp.setHeader("Content-Disposition", "attachment; filename=f.txt");
 
       resp.getOutputStream().write(content);
       resp.getOutputStream().close();

@@ -74,6 +74,7 @@
           "expecting them should cause it to never make progress in load() or",
           "whenReady() calls."]
     },
+    { "driver": "test-fetch-proxy.js" },
     { "driver": "test-client-uri-rewriting.js" },
     { "bare": "cajajs-bare-test.html", "mode": "both" },
     { "driver": "test-automode1.js", "mode": "es53" },
