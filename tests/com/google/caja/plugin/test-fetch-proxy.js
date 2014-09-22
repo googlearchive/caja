@@ -33,6 +33,12 @@
           console.log('Response: ' + request.responseText);
           assertEquals('response Content-Type', expectedMimeType,
               request.getResponseHeader('Content-Type').split(';')[0]);
+
+          // Rosetta Flash vuln mitigation expected
+          assertEquals('nosniff', request.getResponseHeader(
+              'X-Content-Type-Options'));
+          assertEquals('attachment; filename=f.txt', request.getResponseHeader(
+              'Content-Disposition'));
           callback(request.responseText);
         } else {
           fail('Unexpected response: ' + request.statusText);
@@ -42,7 +48,7 @@
     request.send();
   }
 
-  var JSONP_RE = /^([a-zA-Z_]+)\((\{.*\})\);$/;
+  var JSONP_RE = /^\/\*\*\/([a-zA-Z_]+)\((\{.*\})\);$/;
 
   function docURL(name) {
     return location.protocol + '//' + location.host +
