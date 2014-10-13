@@ -39,12 +39,12 @@
 </p>
 <script type="text/javascript">
   window.die = function die() {
-    window.onerror = (function (onerror) {
-      return function (message, url, line) {
-          assertEquals('died!', message);
+    window.onerror = (function (savedOnerror) {
+      return jsunitCallback(function (message, url, line) {
+          assertEquals('Uncaught Error: died!', message);
           pass('testExceptionInEventHandler');
-          window.onerror = onerror;
-        };
+          window.onerror = savedOnerror;
+        }, 'testExceptionInEventHandler');
     })(onerror);
 
     throw new Error('died!');
@@ -448,6 +448,23 @@
               500);
         }),
         200);
+  });
+</script>
+
+<p class="testcontainer" id="testTimeoutError">
+  testTimeoutError (error handling in setTimeout)
+</p>
+<script type="text/javascript">
+  jsunitRegister('testTimeoutError', function() {
+    setTimeout(function() {  // NOT a jsunitCallback, must let error out
+      var savedOnerror = window.onerror;
+      window.onerror = jsunitCallback(function(message, url, line) {
+        assertEquals('Uncaught Error: foo', message);
+        pass();
+        window.onerror = savedOnerror;
+      }, 'testTimeoutError');
+      throw new Error('foo');
+    }, 0);
   });
 </script>
 

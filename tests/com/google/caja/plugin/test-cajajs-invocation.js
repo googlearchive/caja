@@ -92,6 +92,33 @@
     }
   });
 
+  jsunitRegister('testScriptError', function testScriptError() {
+    caja.load(createDiv(), uriPolicy, jsunitCallback(function(frame) {
+      var url = 'http://caja-test-error-page.invalid';
+      var onerrorFired = 0;
+      frame.code(
+          url,
+          'text/javascript',
+          'throw new Error("toplevel error");')
+          .api({
+            onerror: frame.tame(frame.markFunction(
+                jsunitCallback(function(msg, loc, line, col, error) {
+              onerrorFired++;
+              assertEquals('Uncaught Error: toplevel error', msg);
+              assertEquals(url, loc);
+              assertEquals(-1, line);
+              assertEquals(-1, col);
+              assertEquals('[object Error]',
+                  Object.prototype.toString.call(error));
+            })))
+          })
+          .run(jsunitCallback(function(result) {
+            assertEquals(1, onerrorFired);
+            jsunitPass();
+          }));
+    }));
+  });
+
   jsunitRegister('testDefaultHeight', function testDefaultHeight() {
     var hostPageDiv = createDiv();
 

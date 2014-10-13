@@ -1420,40 +1420,49 @@ var Domado = (function() {
      * value which would be evaluated outside the sandbox.
      */
     function tameSetAndClear(target, set, clear, setName, clearName, passArg,
-        evalStrings, environment) {
+        evalStrings, environment, handleUncaughtException) {
       var ids = new WeakMap();
       function tameSet(action, delayMillis) {
         // Existing browsers treat a timeout/interval of null or undefined as a
         // noop.
-        var id;
-        if (action) {
-          if (typeof action === 'function') {
-            // OK
-          } else if (evalStrings) {
-            // Note specific ordering: coercion to string occurs at time of
-            // call, syntax errors occur async.
-            var code = '' + action;
-            action = function callbackStringWrapper() {
-              cajaVM.compileModule(code)(environment);
-            };
-          } else {
-            // Early error for usability -- we also defend below.
-            // This check is not *necessary* for security.
-            throw new TypeError(
-                setName + ' called with a ' + typeof action + '.'
-                + '  Please pass a function instead of a string of JavaScript');
-          }
-          // actionWrapper defends against:
-          //   * Passing a string-like object which gets taken as code.
-          //   * Non-standard arguments to the callback.
-          //   * Non-standard effects of callback's return value.
-          var actionWrapper = passArg
-            ? function(time) { action(+time); }  // requestAnimationFrame
-            : function() { action(); };  // setTimeout, setInterval
-          id = set(actionWrapper, delayMillis | 0);
-        } else {
-          id = undefined;
+        if (!action) {
+          return undefined;
         }
+
+        // Convert action to a function.
+        if (typeof action === 'function') {
+          // OK
+        } else if (evalStrings) {
+          // Note specific ordering: coercion to string occurs at time of
+          // call, syntax errors occur async.
+          var code = '' + action;
+          action = function callbackStringWrapper() {
+            cajaVM.compileModule(code)(environment);
+          };
+        } else {
+          // Early error for usability -- we also defend below.
+          // This check is not *necessary* for security.
+          throw new TypeError(
+              setName + ' called with a ' + typeof action + '.'
+              + '  Please pass a function instead of a string of JavaScript');
+        }
+
+        // actionWrapper defends against:
+        //   * Passing a string-like object which gets taken as code.
+        //   * Non-standard arguments to the callback.
+        //   * Non-standard effects of callback's return value.
+        function actionWrapper(arg) {
+          try {
+            if (passArg) {
+              action(+arg);  // requestAnimationFrame
+            } else {
+              action();  // setTimeout, setInterval
+            }
+          } catch (e) {
+            handleUncaughtException(e, '<setName callback>');
+          }
+        }
+        var id = set(actionWrapper, delayMillis | 0);
         var tamed = {};
         ids.set(tamed, id);
         // Freezing is not *necessary*, but it makes testing/reasoning simpler
@@ -3618,14 +3627,8 @@ var Domado = (function() {
         try {
           Function.prototype.call.call(func, thisArg, tameEventObj);
         } catch (e) {
-          try {
-            tameWindow.onerror(
-                e.message,
-                '<' + tameEventObj.type + ' handler>',  // better than nothing
-                0);
-          } catch (e2) {
-            console.error('onerror handler failed\n', e, '\n', e2);
-          }
+          domicile.handleUncaughtException(e,
+              '<' + tameEventObj.type + ' listener>');
         }
       }
 
@@ -6711,6 +6714,58 @@ var Domado = (function() {
         }
         return null;
       });
+      
+      /**
+       * Invoke the possibly guest-supplied onerror handler due to an uncaught
+       * exception. This wrapper exists to ensure consistent behavior among the
+       * many places we need "top-level" catches.
+       *
+       * handleUncaughtException attempts to never throw, even if the onerror
+       * handler is not a function, stringifying the exception throws, and so
+       * on.
+       *
+       * Usage:
+       * try {
+       *   ...guest callback of some sort, say an event handler...
+       * } catch (e) {
+       *   domicile.handleUncaughtException(e, 'event handler');
+       * }
+       *
+       * @param {Error} error
+       * @param {string} context Script source URL if available, otherwise
+       *     a user-facing explanation of what kind of top-level handler caught
+       *     this error, in angle brackets; e.g. '<event listener>' or
+       *     '<setTimeout>'.
+       */
+      domicile.handleUncaughtException =
+          cajaVM.constFunc(function(error, context) {
+        // This is an approximate implementation of
+        // https://html.spec.whatwg.org/multipage/webappapis.html#runtime-script-errors
+        // The error event object is implicit.
+        try {
+          // Call with this == tameWindow; this is intended behavior.
+          // Refs for arguments:
+          // https://html.spec.whatwg.org/multipage/webappapis.html#event-handler-attributes:onerroreventhandler
+          // https://developer.mozilla.org/en-US/docs/Web/API/GlobalEventHandlers.onerror
+          tameWindow.onerror(
+            'Uncaught ' + error,
+            context,
+            // TODO(kpreid): Once there is a standardized error stack trace
+            // interface, use it to recover more error information if we can.
+            -1,  // line number
+            -1,  // column number
+            error);
+        } catch (e) {
+          if (typeof console !== 'undefined') {
+            try {
+              console.error('Error while reporting guest script error: ', e);
+            } catch (metaError) {
+              console.error('Error while reporting error while reporting ' +
+                  'guest script error. Sorry.');
+            }
+          }
+        }
+      });
 
       // Taming of Styles:
 
@@ -6995,13 +7050,13 @@ var Domado = (function() {
             window.setTimeout,
             window.clearTimeout,
             'setTimeout', 'clearTimeout',
-            false, true, this);
+            false, true, this, domicile.handleUncaughtException);
         tameSetAndClear(
             this,
             window.setInterval,
             window.clearInterval,
             'setInterval', 'clearInterval',
-            false, true, this);
+            false, true, this, domicile.handleUncaughtException);
         if (window.requestAnimationFrame) {
           tameSetAndClear(
               this,
@@ -7009,7 +7064,7 @@ var Domado = (function() {
                   return window.requestAnimationFrame(code); },
               window.cancelAnimationFrame,
               'requestAnimationFrame', 'cancelAnimationFrame',
-              true, false, undefined);
+              true, false, undefined, domicile.handleUncaughtException);
         }
       }
       inertCtor(TameWindow, Object, 'Window');
@@ -7351,12 +7406,14 @@ var Domado = (function() {
       var domicile = windowToDomicile.get(imports);
       var node = domicile.tameNode(thisNode);
       var isUserAction = eventIsUserAction(event, window);
+      var tameEventObj = domicile.tameEvent(event);
       try {
         return dispatch(
           isUserAction, pluginId, handler,
-          [ node, domicile.tameEvent(event) ]);
+          [ node, tameEventObj ]);
       } catch (ex) {
-        imports.onerror(ex.message, 'unknown', 0);
+        domicile.handleUncaughtException(ex,
+            '<' + tameEventObj.type + ' handler>');
       }
     }
 

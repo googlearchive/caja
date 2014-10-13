@@ -239,6 +239,8 @@ function jsunitFilter(filter) {
 
 /** Run tests. */
 function jsunitRun(opt_testNames, opt_asyncEval) {
+  // TODO(kpreid): Arguments are incoherent. opt_testNames actually represents
+  // varargs, so the second argument is used as part of that AND opt_asyncEval.
   if (jsunit.alreadyRan) { return; }
   jsunit.alreadyRan = true;
 

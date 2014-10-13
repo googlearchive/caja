@@ -466,23 +466,16 @@ function HtmlEmitter(base, opt_mitigatingUrlRewriter, opt_domicile,
       // TODO(kpreid): Include error message appropriately
       domicile.fireVirtualEvent(scriptNode, 'Event', 'error');
 
-      // Dispatch to the onerror handler.
-      try {
-        // TODO(kpreid): This should probably become a full event dispatch.
-        // TODO: Should this happen inline or be dispatched out of band?
-        opt_domicile.window.onerror(
-            errorMessage,
-            // URL where error was raised.
-            // If this is an external load, then we need to use that URL,
-            // but for inline scripts we maintain the illusion by using the
-            // domicile.pseudoLocation.href which was passed here.
-            scriptBaseUri,
-            1  // Line number where error was raised.
-            // TODO: remap by inspection of the error if possible.
-            );
-      } catch (_) {
-        // Ignore problems dispatching error.
-      }
+      // TODO(kpreid): How should the virtual event on the node interact with
+      // this handling? Should they actually be the same event and cancel here?
+      opt_domicile.handleUncaughtException(
+          // TODO(kpreid): should have an Error instance here, not a string.
+          errorMessage,
+          // URL where error was raised.
+          // If this is an external load, then we need to use that URL,
+          // but for inline scripts we maintain the illusion by using the
+          // domicile.pseudoLocation.href which was passed here.
+          scriptBaseUri);
 
       return errorMessage;
     }
