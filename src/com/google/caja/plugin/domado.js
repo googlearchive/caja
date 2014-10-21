@@ -1294,7 +1294,7 @@ var Domado = (function() {
    * @return A record of functions attachDocument, dispatchEvent, and
    *     dispatchToHandler.
    */
-  return cajaVM.constFunc(function Domado_() {
+  function Domado_() {
     // Everything in this scope but not in function attachDocument() below
     // does not contain lexical references to a particular DOM instance, but
     // may have some kind of privileged access to Domado internals.
@@ -1420,7 +1420,7 @@ var Domado = (function() {
      * value which would be evaluated outside the sandbox.
      */
     function tameSetAndClear(target, set, clear, setName, clearName, passArg,
-        evalStrings, environment, handleUncaughtException) {
+        evalStrings, environment) {
       var ids = new WeakMap();
       function tameSet(action, delayMillis) {
         // Existing browsers treat a timeout/interval of null or undefined as a
@@ -1459,7 +1459,8 @@ var Domado = (function() {
               action();  // setTimeout, setInterval
             }
           } catch (e) {
-            handleUncaughtException(e, '<setName callback>');
+            Domado_.handleUncaughtException(
+                target, e, '<setName callback>');
           }
         }
         var id = set(actionWrapper, delayMillis | 0);
@@ -3627,7 +3628,7 @@ var Domado = (function() {
         try {
           Function.prototype.call.call(func, thisArg, tameEventObj);
         } catch (e) {
-          domicile.handleUncaughtException(e,
+          Domado_.handleUncaughtException(tameWindow, e,
               '<' + tameEventObj.type + ' listener>');
         }
       }
@@ -6714,58 +6715,6 @@ var Domado = (function() {
         }
         return null;
       });
-      
-      /**
-       * Invoke the possibly guest-supplied onerror handler due to an uncaught
-       * exception. This wrapper exists to ensure consistent behavior among the
-       * many places we need "top-level" catches.
-       *
-       * handleUncaughtException attempts to never throw, even if the onerror
-       * handler is not a function, stringifying the exception throws, and so
-       * on.
-       *
-       * Usage:
-       * try {
-       *   ...guest callback of some sort, say an event handler...
-       * } catch (e) {
-       *   domicile.handleUncaughtException(e, 'event handler');
-       * }
-       *
-       * @param {Error} error
-       * @param {string} context Script source URL if available, otherwise
-       *     a user-facing explanation of what kind of top-level handler caught
-       *     this error, in angle brackets; e.g. '<event listener>' or
-       *     '<setTimeout>'.
-       */
-      domicile.handleUncaughtException =
-          cajaVM.constFunc(function(error, context) {
-        // This is an approximate implementation of
-        // https://html.spec.whatwg.org/multipage/webappapis.html#runtime-script-errors
-        // The error event object is implicit.
-        try {
-          // Call with this == tameWindow; this is intended behavior.
-          // Refs for arguments:
-          // https://html.spec.whatwg.org/multipage/webappapis.html#event-handler-attributes:onerroreventhandler
-          // https://developer.mozilla.org/en-US/docs/Web/API/GlobalEventHandlers.onerror
-          tameWindow.onerror(
-            'Uncaught ' + error,
-            context,
-            // TODO(kpreid): Once there is a standardized error stack trace
-            // interface, use it to recover more error information if we can.
-            -1,  // line number
-            -1,  // column number
-            error);
-        } catch (e) {
-          if (typeof console !== 'undefined') {
-            try {
-              console.error('Error while reporting guest script error: ', e);
-            } catch (metaError) {
-              console.error('Error while reporting error while reporting ' +
-                  'guest script error. Sorry.');
-            }
-          }
-        }
-      });
 
       // Taming of Styles:
 
@@ -7050,13 +6999,13 @@ var Domado = (function() {
             window.setTimeout,
             window.clearTimeout,
             'setTimeout', 'clearTimeout',
-            false, true, this, domicile.handleUncaughtException);
+            false, true, this);
         tameSetAndClear(
             this,
             window.setInterval,
             window.clearInterval,
             'setInterval', 'clearInterval',
-            false, true, this, domicile.handleUncaughtException);
+            false, true, this);
         if (window.requestAnimationFrame) {
           tameSetAndClear(
               this,
@@ -7064,7 +7013,7 @@ var Domado = (function() {
                   return window.requestAnimationFrame(code); },
               window.cancelAnimationFrame,
               'requestAnimationFrame', 'cancelAnimationFrame',
-              true, false, undefined, domicile.handleUncaughtException);
+              true, false, undefined);
         }
       }
       inertCtor(TameWindow, Object, 'Window');
@@ -7412,7 +7361,7 @@ var Domado = (function() {
           isUserAction, pluginId, handler,
           [ node, tameEventObj ]);
       } catch (ex) {
-        domicile.handleUncaughtException(ex,
+        Domado_.handleUncaughtException(imports, ex,
             '<' + tameEventObj.type + ' handler>');
       }
     }
@@ -7479,7 +7428,64 @@ var Domado = (function() {
       plugin_dispatchToHandler: plugin_dispatchToHandler,
       getDomicileForWindow: windowToDomicile.get.bind(windowToDomicile)
     });
+  }
+  
+  /**
+   * Invoke the possibly guest-supplied onerror handler due to an uncaught
+   * exception. This wrapper exists to ensure consistent behavior among the
+   * many places we need "top-level" catches. It is not a part of the domicile
+   * object because it is used even in DOM-less guest environments, but is in
+   * this file because it is a "browser" feature rather than a "JS" feature.
+   *
+   * handleUncaughtException attempts to never throw, even if the onerror
+   * handler is not a function, stringifying the exception throws, and so
+   * on.
+   *
+   * Usage:
+   * try {
+   *   ...guest callback of some sort, say an event handler...
+   * } catch (e) {
+   *   handleUncaughtException(tameWindow, e, 'event handler');
+   * }
+   *
+   * @param {Object} globalObj Object on which to find the onerror handler.
+   * @param {Error} error
+   * @param {string} context Script source URL if available, otherwise
+   *     a user-facing explanation of what kind of top-level handler caught
+   *     this error, in angle brackets; e.g. '<event listener>' or
+   *     '<setTimeout>'.
+   */
+  Domado_.handleUncaughtException =
+      cajaVM.constFunc(function(globalObj, error, context) {
+    // This is an approximate implementation of
+    // https://html.spec.whatwg.org/multipage/webappapis.html#runtime-script-errors
+    // The error event object is implicit.
+    try {
+      // Call with this == globalObj; this is intended behavior.
+      // Refs for arguments:
+      // https://html.spec.whatwg.org/multipage/webappapis.html#event-handler-attributes:onerroreventhandler
+      // https://developer.mozilla.org/en-US/docs/Web/API/GlobalEventHandlers.onerror
+      globalObj.onerror(
+        'Uncaught ' + error,
+        context,
+        // TODO(kpreid): Once there is a standardized error stack trace
+        // interface, use it to recover more error information if we can.
+        -1,  // line number
+        -1,  // column number
+        error);
+    } catch (e) {
+      if (typeof console !== 'undefined') {
+        try {
+          console.error('Error while reporting guest script error: ', e);
+        } catch (metaError) {
+          console.error('Error while reporting error while reporting ' +
+              'guest script error. Sorry.');
+        }
+      }
+    }
   });
+  
+  return cajaVM.constFunc(Domado_);
 })();
 
 // Exports for closure compiler.

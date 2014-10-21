@@ -447,7 +447,7 @@ function HtmlEmitter(base, opt_mitigatingUrlRewriter, opt_domicile,
             // a crypto hash
             var compiledModule = compileModule(scriptInnerText, opt_mitigate);
             try {
-              compiledModule(opt_domicile.window);
+              compiledModule(domicile.window);
 
               // Success.
               domicile.fireVirtualEvent(scriptNode, 'Event', 'load');
@@ -468,7 +468,12 @@ function HtmlEmitter(base, opt_mitigatingUrlRewriter, opt_domicile,
 
       // TODO(kpreid): How should the virtual event on the node interact with
       // this handling? Should they actually be the same event and cancel here?
-      opt_domicile.handleUncaughtException(
+      //
+      // Note on window.Domado: We don't have a @requires dep here because we
+      // can run without Domado, but we know that Domado is loaded if we're in
+      // this code.
+      window.Domado.handleUncaughtException(
+          domicile.window,
           // TODO(kpreid): should have an Error instance here, not a string.
           errorMessage,
           // URL where error was raised.

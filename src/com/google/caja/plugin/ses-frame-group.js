@@ -282,7 +282,7 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
       try {
         result = compiledFunc(imports);
       } catch (e) {
-        gman.domicile.handleUncaughtException(e, gman.getUrl());
+        Domado.handleUncaughtException(imports, e, gman.getUrl());
       }
       if (opt_runDone) {
         opt_runDone(result);

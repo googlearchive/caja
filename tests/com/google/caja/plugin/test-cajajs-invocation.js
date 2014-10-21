@@ -92,8 +92,9 @@
     }
   });
 
-  jsunitRegister('testScriptError', function testScriptError() {
-    caja.load(createDiv(), uriPolicy, jsunitCallback(function(frame) {
+  function testScriptError(hasDOM) {
+    caja.load(hasDOM ? createDiv() : undefined, uriPolicy,
+        jsunitCallback(function(frame) {
       var url = 'http://caja-test-error-page.invalid';
       var onerrorFired = 0;
       frame.code(
@@ -117,7 +118,12 @@
             jsunitPass();
           }));
     }));
-  });
+  }
+  jsunitRegister('testScriptErrorWithDom', function() {
+      testScriptError(true); });
+
+  jsunitRegister('testScriptErrorWithoutDom', function() {
+      testScriptError(false); });
 
   jsunitRegister('testDefaultHeight', function testDefaultHeight() {
     var hostPageDiv = createDiv();
