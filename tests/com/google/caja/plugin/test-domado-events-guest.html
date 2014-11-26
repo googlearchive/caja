@@ -14,6 +14,18 @@
  - limitations under the License.
 -->
 
+<script type="text/javascript">
+  function installOneShotOnerror(testId, expectedMessage) {
+    var savedOnerror = window.onerror;
+    window.onerror = function(message, url, line) {
+      assertEquals(expectedMessage, message);
+      assertTrue('window == ' + this, window == this);
+      window.onerror = savedOnerror;
+      pass(testId);
+    };
+  }
+</script>
+
 <div class="clickme testcontainer" id="testEventBubble">
   testEventBubble
   <input type="checkbox">
@@ -39,14 +51,9 @@
 </p>
 <script type="text/javascript">
   window.die = function die() {
-    window.onerror = (function (savedOnerror) {
-      return jsunitCallback(function (message, url, line) {
-          assertEquals('Uncaught Error: died!', message);
-          pass('testExceptionInEventHandler');
-          window.onerror = savedOnerror;
-        }, 'testExceptionInEventHandler');
-    })(onerror);
-
+    installOneShotOnerror(
+        'testExceptionInEventHandler',
+        'Uncaught Error: died!');
     throw new Error('died!');
   };
   jsunitRegister('testExceptionInEventHandler',
@@ -457,12 +464,9 @@
 <script type="text/javascript">
   jsunitRegister('testTimeoutError', function() {
     setTimeout(function() {  // NOT a jsunitCallback, must let error out
-      var savedOnerror = window.onerror;
-      window.onerror = jsunitCallback(function(message, url, line) {
-        assertEquals('Uncaught Error: foo', message);
-        pass();
-        window.onerror = savedOnerror;
-      }, 'testTimeoutError');
+      installOneShotOnerror(
+          'testTimeoutError',
+          'Uncaught Error: foo');
       throw new Error('foo');
     }, 0);
   });
@@ -773,7 +777,6 @@ TODO(felix8a): fix javascript url handling
 <script type="text/javascript">
   jsunitRegister('testXhrAsync',
                  function testXhrAsync() {
-    var cont = document.getElementById('testXhrAsync');
     var xhr = new window.XMLHttpRequest();
     xhr.open('GET', './xhrTest.txt', true);
     var asyncFlag = 'PRE';
@@ -787,6 +790,24 @@ TODO(felix8a): fix javascript url handling
       }
       asyncFlag = event.target.readyState;
     });
+    xhr.send();
+  });
+</script>
+
+<div id="testXhrError" class="testcontainer">XHR callback errors</div>
+<script type="text/javascript">
+  jsunitRegister('testXhrError',
+                 function testXhrError() {
+    var xhr = new window.XMLHttpRequest();
+    xhr.open('GET', './xhrTest.txt', true);
+    xhr.onreadystatechange = function(event) {  // NOT a jsunitCallback
+      if (event.target.readyState === 4) {
+        installOneShotOnerror(
+            'testXhrError',
+            'Uncaught testXhrError');
+        throw 'testXhrError';
+      }
+    };
     xhr.send();
   });
 </script>

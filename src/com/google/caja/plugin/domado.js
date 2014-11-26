@@ -929,7 +929,8 @@ var Domado = (function() {
       taming,
       xmlHttpRequestMaker,
       naiveUriPolicy,
-      getBaseURL) {
+      getBaseURL,
+      onerrorTarget) {
     // See http://www.w3.org/TR/XMLHttpRequest/
 
     // TODO(ihab.awad): Improve implementation (interleaving, memory leaks)
@@ -964,7 +965,12 @@ var Domado = (function() {
           var self = this;
           privates.feral.onreadystatechange = function(event) {
             var evt = { target: self };
-            return handler.call(void 0, evt);
+            try {
+              return handler.call(void 0, evt);
+            } catch (e) {
+              Domado_.handleUncaughtException(
+                  onerrorTarget, e, '<XMLHttpRequest callback>');
+            }
           };
           // Store for later direct invocation if need be
           privates.handler = handler;
@@ -6881,7 +6887,8 @@ var Domado = (function() {
                 window.ActiveXObject,
                 window.XDomainRequest),
             naiveUriPolicy,
-            function () { return domicile.pseudoLocation.href; }));
+            function () { return domicile.pseudoLocation.href; },
+            tameWindow));
       });
 
 
