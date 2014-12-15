@@ -19,6 +19,7 @@
  * WeakMap spec. Compatible with ES5-strict or anticipated ES6.
  *
  * //requires ses.makeCallerHarmless, ses.makeArgumentsHarmless
+ * //requires ses.noFuncPoison
  * //requires ses.verifyStrictFunctionBody
  * //optionally requires ses.mitigateSrcGotchas
  * //provides ses.startSES ses.resolveOptions, ses.securableWrapperSrc
@@ -371,7 +372,7 @@ ses.startSES = function(global,
    * Obtain the ES5 singleton [[ThrowTypeError]].
    */
   function getThrowTypeError() {
-    return gopd(getThrowTypeError, "arguments").get;
+    return gopd(arguments, 'caller').get;
   }
 
 
@@ -1539,7 +1540,7 @@ ses.startSES = function(global,
     }
     var diagnostic;
 
-    if (typeof base === 'function') {
+    if (typeof base === 'function' && !ses.noFuncPoison) {
       if (name === 'caller') {
         diagnostic = ses.makeCallerHarmless(base, path);
         // We can use a severity of SAFE here since if this isn't
