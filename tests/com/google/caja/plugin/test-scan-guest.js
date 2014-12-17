@@ -552,12 +552,10 @@
     argsByAnyFrame('Function.prototype.toString',
         // TODO test invocation on Function.prototype itself
         G.tuple(G.value(THIS), G.tuple()));
-    [function guestFn(){}, window.setTimeout].forEach(function(f) {
-      expectedAlwaysThrow.setByIdentity(getGetter(f, 'arguments'), true);
-      expectedAlwaysThrow.setByIdentity(getGetter(f, 'caller'), true);
-    });
-
-
+    
+    argsByIdentity(cajaVM['[[ThrowTypeError]]'], genAllCall());
+    expectedAlwaysThrow.setByIdentity(cajaVM['[[ThrowTypeError]]'], true);
+    
     argsByIdentity(Number, genAllCall(genSmallInteger));
     argsByAnyFrame('Number.prototype.toExponential',
         genMethod(genSmallInteger));

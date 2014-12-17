@@ -25,7 +25,8 @@ import org.junit.runner.RunWith;
 @CatalogRunner.CatalogName("browser-tests.json")
 public class MainBrowserTest extends CatalogTestCase {
   /**
-   * Special case kludge for scan test which takes a long time under ES5/3.
+   * Special case kludge for scan test, which currently takes a very long time
+   * under the combination of webdriver+firefox only.
    *
    * TODO(kpreid): Either extend the catalog with timeout data or add a way
    * for the scanner to communicate it's making progress (which must be count-up
@@ -34,7 +35,7 @@ public class MainBrowserTest extends CatalogTestCase {
   @Override
   protected int waitForCompletionTimeout() {
     if (entry.getLabel().startsWith("guest-scan-")) {
-      return 100000;     // msec
+      return 800 * 1000;  // milliseconds
     } else {
       return super.waitForCompletionTimeout();
     }

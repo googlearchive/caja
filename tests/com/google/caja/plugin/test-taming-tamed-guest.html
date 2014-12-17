@@ -138,7 +138,14 @@
       Object: getTamingFrameObject('Object'),
       Function: getTamingFrameObject('cajaVM.sharedImports.Function'),
       Array: getTamingFrameObject('Array'),
-      Error: getTamingFrameObject('Error')
+      Error: getTamingFrameObject('Error'),
+      // This object just to exercise this test's self-test, because the current
+      // state of affairs is that on Firefox there are no accessors in the above
+      // primordials.
+      _selfTestDummy: Object.freeze(Object.create(null, { accessorProp: {
+          get: Object.freeze(function() { return 10; }),
+          set: Object.freeze(function(value) {})
+      }}))
     };
 
     // Sanity checks to ensure our test has run
