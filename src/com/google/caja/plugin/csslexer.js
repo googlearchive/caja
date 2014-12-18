@@ -225,9 +225,18 @@ var decodeCss;
    *    delimiters and to not otherwise contain double quotes.
    */
   lexCss = function (cssText) {
-    cssText = '' + cssText;
-    var tokens = cssText.replace(/\r\n?/g, '\n')  // Normalize CRLF & CR to LF.
-        .match(CSS_TOKEN) || [];
+    // Stringify input. Additionally, insert and remove a non-latin1 character
+    // to force Firefox 33 to switch to a wide string representation, avoiding
+    // a performance bug. This workaround should become unnecessary after
+    // Firefox 34. https://bugzilla.mozilla.org/show_bug.cgi?id=1081175
+    // https://code.google.com/p/google-caja/issues/detail?id=1941
+    cssText = ('\uffff' + cssText).replace(/^\uffff/, '');
+
+    // // Normalize CRLF & CR to LF.
+    cssText = cssText.replace(/\r\n?/g, '\n');
+
+    // Tokenize.
+    var tokens = cssText.match(CSS_TOKEN) || [];
     var j = 0;
     var last = ' ';
     for (var i = 0, n = tokens.length; i < n; ++i) {

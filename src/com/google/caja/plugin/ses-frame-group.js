@@ -348,7 +348,12 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
     }
 
     Q.when(promise, function (compiledFunc) {
-      var result = compiledFunc(imports);
+      var result = undefined;
+      try {
+        result = compiledFunc(imports);
+      } catch (e) {
+        Domado.handleUncaughtException(imports, e, gman.getUrl());
+      }
       if (opt_runDone) {
         opt_runDone(result);
       }

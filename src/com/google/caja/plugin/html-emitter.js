@@ -462,7 +462,7 @@ function HtmlEmitter(makeDOMAccessible, base,
             // a crypto hash
             var compiledModule = compileModule(scriptInnerText, opt_mitigate);
             try {
-              compiledModule(opt_domicile.window);
+              compiledModule(domicile.window);
 
               // Success.
               domicile.fireVirtualEvent(scriptNode, 'Event', 'load');
@@ -481,23 +481,21 @@ function HtmlEmitter(makeDOMAccessible, base,
       // TODO(kpreid): Include error message appropriately
       domicile.fireVirtualEvent(scriptNode, 'Event', 'error');
 
-      // Dispatch to the onerror handler.
-      try {
-        // TODO(kpreid): This should probably become a full event dispatch.
-        // TODO: Should this happen inline or be dispatched out of band?
-        opt_domicile.window.onerror(
-            errorMessage,
-            // URL where error was raised.
-            // If this is an external load, then we need to use that URL,
-            // but for inline scripts we maintain the illusion by using the
-            // domicile.pseudoLocation.href which was passed here.
-            scriptBaseUri,
-            1  // Line number where error was raised.
-            // TODO: remap by inspection of the error if possible.
-            );
-      } catch (_) {
-        // Ignore problems dispatching error.
-      }
+      // TODO(kpreid): How should the virtual event on the node interact with
+      // this handling? Should they actually be the same event and cancel here?
+      //
+      // Note on window.Domado: We don't have a @requires dep here because we
+      // can run without Domado, but we know that Domado is loaded if we're in
+      // this code.
+      window.Domado.handleUncaughtException(
+          domicile.window,
+          // TODO(kpreid): should have an Error instance here, not a string.
+          errorMessage,
+          // URL where error was raised.
+          // If this is an external load, then we need to use that URL,
+          // but for inline scripts we maintain the illusion by using the
+          // domicile.pseudoLocation.href which was passed here.
+          scriptBaseUri);
 
       return errorMessage;
     }

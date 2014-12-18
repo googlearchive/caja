@@ -99,6 +99,41 @@
     }
   });
 
+  function testScriptError(hasDOM) {
+    caja.load(hasDOM ? createDiv() : undefined, uriPolicy,
+        jsunitCallback(function(frame) {
+      var url = 'http://caja-test-error-page.invalid';
+      var onerrorFired = 0;
+      frame.code(
+          url,
+          'text/javascript',
+          'throw new Error("toplevel error");')
+          .api({
+            onerror: frame.tame(frame.markFunction(
+                jsunitCallback(function(msg, loc, line, col, error) {
+              onerrorFired++;
+              assertEquals('Uncaught Error: toplevel error', msg);
+              assertEquals(url, loc);
+              assertEquals(-1, line);
+              assertEquals(-1, col);
+              assertEquals('[object Error]',
+                  Object.prototype.toString.call(error));
+            })))
+          })
+          .run(jsunitCallback(function(result) {
+            assertEquals(1, onerrorFired);
+            jsunitPass();
+          }));
+    }));
+  }
+  // Should in principle be working in ES5/3 mode too, but this is probably a
+  // wontfix.
+  jsunitRegisterIf(inES5Mode, 'testScriptErrorWithDom', function() {
+      testScriptError(true); });
+
+  jsunitRegisterIf(inES5Mode, 'testScriptErrorWithoutDom', function() {
+      testScriptError(false); });
+
   jsunitRegister('testDefaultHeight', function testDefaultHeight() {
     var hostPageDiv = createDiv();
 

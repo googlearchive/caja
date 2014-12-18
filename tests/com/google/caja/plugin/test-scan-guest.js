@@ -572,16 +572,21 @@
     argsByAnyFrame('Function.prototype.toString',
         // TODO test invocation on Function.prototype itself
         G.tuple(G.value(THIS), G.tuple()));
-    [function guestFn(){}, window.setTimeout].forEach(function(f) {
-      if (!inES5Mode) {
+
+    if (!inES5Mode) {
+      [function guestFn(){}, window.setTimeout].forEach(function(f) {
         // Function.prototype() is necessarily broken in ES5/3
         var proto = Object.getPrototypeOf(f);
         expectedAlwaysThrow.setByIdentity(proto, true);
-      }
-      expectedAlwaysThrow.setByIdentity(getGetter(f, 'arguments'), true);
-      expectedAlwaysThrow.setByIdentity(getGetter(f, 'caller'), true);
-    });
 
+        // [[ThrowTypeError]] has multiple variants in ES5/3
+        expectedAlwaysThrow.setByIdentity(getGetter(f, 'arguments'), true);
+        expectedAlwaysThrow.setByIdentity(getGetter(f, 'caller'), true);
+      });
+    } else {
+      argsByIdentity(cajaVM['[[ThrowTypeError]]'], genAllCall());
+      expectedAlwaysThrow.setByIdentity(cajaVM['[[ThrowTypeError]]'], true);
+    }
 
     argsByIdentity(Number, genAllCall(genSmallInteger));
     argsByAnyFrame('Number.prototype.toExponential',

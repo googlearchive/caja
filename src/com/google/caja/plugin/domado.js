@@ -938,7 +938,8 @@ var Domado = (function() {
       rulebreaker,
       xmlHttpRequestMaker,
       naiveUriPolicy,
-      getBaseURL) {
+      getBaseURL,
+      onerrorTarget) {
     // See http://www.w3.org/TR/XMLHttpRequest/
 
     // TODO(ihab.awad): Improve implementation (interleaving, memory leaks)
@@ -974,7 +975,12 @@ var Domado = (function() {
           var self = this;
           privates.feral.onreadystatechange = function(event) {
             var evt = { target: self };
-            return handler.call(void 0, evt);
+            try {
+              return handler.call(void 0, evt);
+            } catch (e) {
+              Domado_.handleUncaughtException(
+                  onerrorTarget, e, '<XMLHttpRequest callback>');
+            }
           };
           // Store for later direct invocation if need be
           privates.handler = handler;
@@ -1304,7 +1310,7 @@ var Domado = (function() {
    * @return A record of functions attachDocument, dispatchEvent, and
    *     dispatchToHandler.
    */
-  return cajaVM.constFunc(function Domado_(opt_rulebreaker) {
+  function Domado_(opt_rulebreaker) {
     // Everything in this scope but not in function attachDocument() below
     // does not contain lexical references to a particular DOM instance, but
     // may have some kind of privileged access to Domado internals.
@@ -1467,35 +1473,45 @@ var Domado = (function() {
       function tameSet(action, delayMillis) {
         // Existing browsers treat a timeout/interval of null or undefined as a
         // noop.
-        var id;
-        if (action) {
-          if (typeof action === 'function') {
-            // OK
-          } else if (evalStrings && cajaVM.compileModule) {
-            // Note specific ordering: coercion to string occurs at time of
-            // call, syntax errors occur async.
-            var code = '' + action;
-            action = function callbackStringWrapper() {
-              cajaVM.compileModule(code)(environment);
-            };
-          } else {
-            // Early error for usability -- we also defend below.
-            // This check is not *necessary* for security.
-            throw new TypeError(
-                setName + ' called with a ' + typeof action + '.'
-                + '  Please pass a function instead of a string of JavaScript');
-          }
-          // actionWrapper defends against:
-          //   * Passing a string-like object which gets taken as code.
-          //   * Non-standard arguments to the callback.
-          //   * Non-standard effects of callback's return value.
-          var actionWrapper = passArg
-            ? function(time) { action(+time); }  // requestAnimationFrame
-            : function() { action(); };  // setTimeout, setInterval
-          id = set(actionWrapper, delayMillis | 0);
-        } else {
-          id = undefined;
+        if (!action) {
+          return undefined;
         }
+
+        // Convert action to a function.
+        if (typeof action === 'function') {
+          // OK
+        } else if (evalStrings && cajaVM.compileModule) {
+          // Note specific ordering: coercion to string occurs at time of
+          // call, syntax errors occur async.
+          var code = '' + action;
+          action = function callbackStringWrapper() {
+            cajaVM.compileModule(code)(environment);
+          };
+        } else {
+          // Early error for usability -- we also defend below.
+          // This check is not *necessary* for security.
+          throw new TypeError(
+              setName + ' called with a ' + typeof action + '.'
+              + '  Please pass a function instead of a string of JavaScript');
+        }
+
+        // actionWrapper defends against:
+        //   * Passing a string-like object which gets taken as code.
+        //   * Non-standard arguments to the callback.
+        //   * Non-standard effects of callback's return value.
+        function actionWrapper(arg) {
+          try {
+            if (passArg) {
+              action(+arg);  // requestAnimationFrame
+            } else {
+              action();  // setTimeout, setInterval
+            }
+          } catch (e) {
+            Domado_.handleUncaughtException(
+                target, e, '<setName callback>');
+          }
+        }
+        var id = set(actionWrapper, delayMillis | 0);
         var tamed = {};
         ids.set(tamed, id);
         // Freezing is not *necessary*, but it makes testing/reasoning simpler
@@ -3708,14 +3724,8 @@ var Domado = (function() {
         try {
           Function.prototype.call.call(func, thisArg, tameEventObj);
         } catch (e) {
-          try {
-            tameWindow.onerror(
-                e.message,
-                '<' + tameEventObj.type + ' handler>',  // better than nothing
-                0);
-          } catch (e2) {
-            console.error('onerror handler failed\n', e, '\n', e2);
-          }
+          Domado_.handleUncaughtException(tameWindow, e,
+              '<' + tameEventObj.type + ' listener>');
         }
       }
 
@@ -7040,7 +7050,8 @@ var Domado = (function() {
                 makeFunctionAccessible(window.ActiveXObject),
                 makeFunctionAccessible(window.XDomainRequest)),
             naiveUriPolicy,
-            function () { return domicile.pseudoLocation.href; }));
+            function () { return domicile.pseudoLocation.href; },
+            tameWindow));
       });
 
 
@@ -7522,12 +7533,14 @@ var Domado = (function() {
       var domicile = windowToDomicile.get(imports);
       var node = domicile.tameNode(thisNode);
       var isUserAction = eventIsUserAction(event, window);
+      var tameEventObj = domicile.tameEvent(event);
       try {
         return dispatch(
           isUserAction, pluginId, handler,
-          [ node, domicile.tameEvent(event), node ].slice(0, argCount + 1));
+          [ node, tameEventObj, node ].slice(0, argCount + 1));
       } catch (ex) {
-        imports.onerror(ex.message, 'unknown', 0);
+        Domado_.handleUncaughtException(imports, ex,
+            '<' + tameEventObj.type + ' handler>');
       }
     }
 
@@ -7593,7 +7606,64 @@ var Domado = (function() {
       plugin_dispatchToHandler: plugin_dispatchToHandler,
       getDomicileForWindow: windowToDomicile.get.bind(windowToDomicile)
     });
+  }
+  
+  /**
+   * Invoke the possibly guest-supplied onerror handler due to an uncaught
+   * exception. This wrapper exists to ensure consistent behavior among the
+   * many places we need "top-level" catches. It is not a part of the domicile
+   * object because it is used even in DOM-less guest environments, but is in
+   * this file because it is a "browser" feature rather than a "JS" feature.
+   *
+   * handleUncaughtException attempts to never throw, even if the onerror
+   * handler is not a function, stringifying the exception throws, and so
+   * on.
+   *
+   * Usage:
+   * try {
+   *   ...guest callback of some sort, say an event handler...
+   * } catch (e) {
+   *   handleUncaughtException(tameWindow, e, 'event handler');
+   * }
+   *
+   * @param {Object} globalObj Object on which to find the onerror handler.
+   * @param {Error} error
+   * @param {string} context Script source URL if available, otherwise
+   *     a user-facing explanation of what kind of top-level handler caught
+   *     this error, in angle brackets; e.g. '<event listener>' or
+   *     '<setTimeout>'.
+   */
+  Domado_.handleUncaughtException =
+      cajaVM.constFunc(function(globalObj, error, context) {
+    // This is an approximate implementation of
+    // https://html.spec.whatwg.org/multipage/webappapis.html#runtime-script-errors
+    // The error event object is implicit.
+    try {
+      // Call with this == globalObj; this is intended behavior.
+      // Refs for arguments:
+      // https://html.spec.whatwg.org/multipage/webappapis.html#event-handler-attributes:onerroreventhandler
+      // https://developer.mozilla.org/en-US/docs/Web/API/GlobalEventHandlers.onerror
+      globalObj.onerror(
+        'Uncaught ' + error,
+        context,
+        // TODO(kpreid): Once there is a standardized error stack trace
+        // interface, use it to recover more error information if we can.
+        -1,  // line number
+        -1,  // column number
+        error);
+    } catch (e) {
+      if (typeof console !== 'undefined') {
+        try {
+          console.error('Error while reporting guest script error: ', e);
+        } catch (metaError) {
+          console.error('Error while reporting error while reporting ' +
+              'guest script error. Sorry.');
+        }
+      }
+    }
   });
+  
+  return cajaVM.constFunc(Domado_);
 })();
 
 // Exports for closure compiler.
