@@ -4029,7 +4029,7 @@ var ses;
       canRepair: false,
       urls: [],
       sections: ['15.2.3.4'],
-      tests: ['15.2.3.4-0-1']
+      tests: ['test/built-ins/Object/getOwnPropertyNames/15.2.3.4-0-1.js']
     },
     {
       id: 'PROTO_SETTER_UNGETTABLE',
@@ -4057,7 +4057,7 @@ var ses;
       canRepair: false,  // Not repairable without rewriting
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=64250'],
       sections: ['10.2.1.2', '10.2.1.2.6'],
-      tests: ['10.4.3-1-8gs']
+      tests: ['test/language/function-code/10.4.3-1-8gs.js']
     },
     {
       id: 'GLOBAL_LEAKS_FROM_ANON_FUNCTION_CALLS',
@@ -4068,7 +4068,7 @@ var ses;
       canRepair: false,
       urls: [],
       sections: ['10.4.3'],
-      tests: ['S10.4.3_A1']
+      tests: ['test/language/function-code/S10.4.3_A1.js']
     },
     {
       id: 'GLOBAL_LEAKS_FROM_STRICT_THIS',
@@ -4079,7 +4079,8 @@ var ses;
       canRepair: false,  // Not repairable without rewriting
       urls: [],
       sections: ['10.4.3'],
-      tests: ['10.4.3-1-8gs', '10.4.3-1-8-s']
+      tests: ['test/language/function-code/10.4.3-1-8gs.js',
+              'test/language/function-code/10.4.3-1-8-s.js']
     },
     {
       id: 'GLOBAL_LEAKS_FROM_BUILTINS',
@@ -4095,7 +4096,7 @@ var ses;
              'https://connect.microsoft.com/IE/feedback/details/' +
                '685430/global-object-leaks-from-built-in-methods'],
       sections: ['15.2.4.4'],
-      tests: ['S15.2.4.4_A14']
+      tests: ['test/built-ins/Object/prototype/valueOf/S15.2.4.4_A14.js']
     },
     {
       id: 'GLOBAL_LEAKS_FROM_GLOBALLY_CALLED_BUILTINS',
@@ -4107,7 +4108,7 @@ var ses;
           // so it's not worth creating a repair for this bug.
       urls: [],
       sections: ['10.2.1.2', '10.2.1.2.6', '15.2.4.4'],
-      tests: ['S15.2.4.4_A15']
+      tests: ['test/built-ins/Object/prototype/valueOf/S15.2.4.4_A15.js']
     },
     {
       id: 'MISSING_FREEZE_ETC',
@@ -4118,7 +4119,7 @@ var ses;
       canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=55736'],
       sections: ['15.2.3.9'],
-      tests: ['15.2.3.9-0-1']
+      tests: ['test/built-ins/Object/freeze/15.2.3.9-0-1.js']
     },
     {
       id: 'FUNCTION_PROTOTYPE_DESCRIPTOR_LIES',
@@ -4130,7 +4131,7 @@ var ses;
       urls: ['https://code.google.com/p/v8/issues/detail?id=1530',
              'https://code.google.com/p/v8/issues/detail?id=1570'],
       sections: ['15.2.3.3', '15.2.3.6', '15.3.5.2'],
-      tests: ['S15.3.3.1_A4']
+      tests: ['test/built-ins/Function/prototype/S15.3.3.1_A4.js']
     },
     {
       id: 'MISSING_CALLEE_DESCRIPTOR',
@@ -4141,7 +4142,7 @@ var ses;
       canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=55537'],
       sections: ['15.2.3.4'],
-      tests: ['S15.2.3.4_A1_T1']
+      tests: ['test/built-ins/Object/getOwnPropertyNames/S15.2.3.4_A1_T1.js']
     },
     {
       id: 'STRICT_DELETE_RETURNS_FALSE',
@@ -4154,7 +4155,7 @@ var ses;
                '685432/strict-delete-sometimes-returns-false-' +
                'rather-than-throwing'],
       sections: ['11.4.1'],
-      tests: ['S11.4.1_A5']
+      tests: ['test/language/expressions/delete/S11.4.1_A5.js']
     },
     {
       id: 'REGEXP_CANT_BE_NEUTERED',
@@ -4171,7 +4172,7 @@ var ses;
                '685439/non-deletable-regexp-statics-are-a-global-' +
                'communication-channel'],
       sections: ['11.4.1'],
-      tests: ['S11.4.1_A5']
+      tests: ['test/language/expressions/delete/S11.4.1_A5.js']
     },
     {
       id: 'REGEXP_TEST_EXEC_UNSAFE',
@@ -4185,7 +4186,7 @@ var ses;
              'https://bugzilla.mozilla.org/show_bug.cgi?id=635017',
              'https://code.google.com/p/google-caja/issues/detail?id=528'],
       sections: ['15.10.6.2'],
-      tests: ['S15.10.6.2_A12']
+      tests: ['test/built-ins/RegExp/prototype/exec/S15.10.6.2_A12.js']
     },
     {
       id: 'MISSING_BIND',
@@ -4197,7 +4198,7 @@ var ses;
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=26382',
              'https://bugs.webkit.org/show_bug.cgi?id=42371'],
       sections: ['15.3.4.5'],
-      tests: ['S15.3.4.5_A3']
+      tests: ['test/built-ins/Function/prototype/bind/S15.3.4.5_A3.js']
     },
     {
       id: 'BIND_CALLS_APPLY',
@@ -4209,7 +4210,7 @@ var ses;
       urls: ['https://code.google.com/p/v8/issues/detail?id=892',
              'https://code.google.com/p/v8/issues/detail?id=828'],
       sections: ['15.3.4.5.1'],
-      tests: ['S15.3.4.5_A4']
+      tests: ['test/built-ins/Function/prototype/bind/S15.3.4.5_A4.js']
     },
     {
       id: 'BIND_CANT_CURRY_NEW',
@@ -4220,7 +4221,7 @@ var ses;
       canRepair: false,  // JS-based repair essentially impossible
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=26382#c29'],
       sections: ['15.3.4.5.2'],
-      tests: ['S15.3.4.5_A5']
+      tests: ['test/built-ins/Function/prototype/bind/S15.3.4.5_A5.js']
     },
     {
       id: 'MUTABLE_DATE_PROTO',
@@ -4315,7 +4316,8 @@ var ses;
       canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://code.google.com/p/v8/issues/detail?id=1447'],
       sections: ['15.4.4.18'],
-      tests: ['S15.4.4.18_A1', 'S15.4.4.18_A2']
+      tests: ['test/built-ins/Array/prototype/forEach/S15.4.4.18_A1.js',
+              'test/built-ins/Array/prototype/forEach/S15.4.4.18_A2.js']
     },
     {
       id: 'FOREACH_COERCES_THISOBJ',
@@ -4352,7 +4354,7 @@ var ses;
              'https://code.google.com/p/v8/issues/detail?id=1651',
              'https://code.google.com/p/google-caja/issues/detail?id=1401'],
       sections: ['15.2.3.6'],
-      tests: ['S15.2.3.6_A1']
+      tests: ['test/built-ins/Object/defineProperty/S15.2.3.6_A1.js']
     },
     {
       id: 'ACCESSORS_INHERIT_AS_OWN',
@@ -4363,7 +4365,7 @@ var ses;
       canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=637994'],
       sections: ['8.6.1', '15.2.3.6'],
-      tests: ['S15.2.3.6_A2']
+      tests: ['test/built-ins/Object/defineProperty/S15.2.3.6_A2.js']
     },
     {
       id: 'SORT_LEAKS_GLOBAL',
@@ -4374,7 +4376,7 @@ var ses;
       canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://code.google.com/p/v8/issues/detail?id=1360'],
       sections: ['15.4.4.11'],
-      tests: ['S15.4.4.11_A8']
+      tests: ['test/built-ins/Array/prototype/sort/S15.4.4.11_A8.js']
     },
     {
       id: 'REPLACE_LEAKS_GLOBAL',
@@ -4388,7 +4390,7 @@ var ses;
                '685928/bad-this-binding-for-callback-in-string-' +
                'prototype-replace'],
       sections: ['15.5.4.11'],
-      tests: ['S15.5.4.11_A12']
+      tests: ['test/built-ins/String/prototype/replace/S15.5.4.11_A12.js']
     },
     {
       id: 'CANT_GOPD_CALLER',
@@ -4400,7 +4402,7 @@ var ses;
       urls: ['https://connect.microsoft.com/IE/feedback/details/' +
                '685436/getownpropertydescriptor-on-strict-caller-throws'],
       sections: ['15.2.3.3', '13.2', '13.2.3'],
-      tests: ['S13.2_A6_T1']
+      tests: ['test/language/statements/function/S13.2_A6_T1.js']
     },
     {
       id: 'CANT_HASOWNPROPERTY_CALLER',
@@ -4411,7 +4413,7 @@ var ses;
       canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=63398#c3'],
       sections: ['15.2.4.5', '13.2', '13.2.3'],
-      tests: ['S13.2_A7_T1']
+      tests: ['test/language/statements/function/S13.2_A7_T1.js']
     },
     {
       id: 'CANT_IN_CALLER',
@@ -4422,7 +4424,7 @@ var ses;
       canRepair: false,
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=63398'],
       sections: ['11.8.7', '13.2', '13.2.3'],
-      tests: ['S13.2_A8_T1']
+      tests: ['test/language/statements/function/S13.2_A8_T1.js']
     },
     {
       id: 'CANT_IN_ARGUMENTS',
@@ -4433,7 +4435,7 @@ var ses;
       canRepair: false,
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=63398'],
       sections: ['11.8.7', '13.2', '13.2.3'],
-      tests: ['S13.2_A8_T2']
+      tests: ['test/language/statements/function/S13.2_A8_T2.js']
     },
     {
       id: 'STRICT_CALLER_NOT_POISONED',
@@ -4444,7 +4446,7 @@ var ses;
       canRepair: false,
       urls: [],
       sections: ['13.2'],
-      tests: ['S13.2.3_A1']
+      tests: ['test/language/statements/function/S13.2.3_A1.js']
     },
     {
       id: 'STRICT_ARGUMENTS_NOT_POISONED',
@@ -4455,7 +4457,7 @@ var ses;
       canRepair: false,
       urls: [],
       sections: ['13.2'],
-      tests: ['S13.2.3_A1']
+      tests: ['test/language/statements/function/S13.2.3_A1.js']
     },
     {
       id: 'BUILTIN_LEAKS_CALLER',
@@ -4470,7 +4472,7 @@ var ses;
              'http://wiki.ecmascript.org/doku.php?id=' +
                'conventions:make_non-standard_properties_configurable'],
       sections: [],
-      tests: ['Sbp_A10_T1']
+      tests: ['https://github.com/tc39/test262/blob/b752d2fdde2d3a49619735ed3713f6c287667c6d/test/suite/bestPractice/Sbp_A10_T1.js']
     },
     {
       id: 'BUILTIN_LEAKS_ARGUMENTS',
@@ -4485,7 +4487,7 @@ var ses;
              'http://wiki.ecmascript.org/doku.php?id=' +
                'conventions:make_non-standard_properties_configurable'],
       sections: [],
-      tests: ['Sbp_A10_T2']
+      tests: ['https://github.com/tc39/test262/blob/b752d2fdde2d3a49619735ed3713f6c287667c6d/test/suite/bestPractice/Sbp_A10_T2.js']
     },
     {
       id: 'BOUND_FUNCTION_LEAKS_CALLER',
@@ -4497,7 +4499,8 @@ var ses;
       urls: ['https://code.google.com/p/v8/issues/detail?id=893',
              'https://bugs.webkit.org/show_bug.cgi?id=63398'],
       sections: ['15.3.4.5'],
-      tests: ['S13.2.3_A1', 'S15.3.4.5_A1']
+      tests: ['test/language/statements/function/S13.2.3_A1.js',
+              'test/built-ins/Function/prototype/bind/S15.3.4.5_A1.js']
     },
     {
       id: 'BOUND_FUNCTION_LEAKS_ARGUMENTS',
@@ -4509,7 +4512,8 @@ var ses;
       urls: ['https://code.google.com/p/v8/issues/detail?id=893',
              'https://bugs.webkit.org/show_bug.cgi?id=63398'],
       sections: ['15.3.4.5'],
-      tests: ['S13.2.3_A1', 'S15.3.4.5_A2']
+      tests: ['test/language/statements/function/S13.2.3_A1.js', 
+              'test/built-ins/Function/prototype/bind/S15.3.4.5_A2.js']
     },
     {
       id: 'DELETED_BUILTINS_IN_OWN_NAMES',
@@ -4543,7 +4547,7 @@ var ses;
       urls: ['https://code.google.com/p/v8/issues/detail?id=621',
              'https://code.google.com/p/v8/issues/detail?id=1310'],
       sections: ['15.12.2'],
-      tests: ['S15.12.2_A1']
+      tests: ['test/built-ins/JSON/parse/S15.12.2_A1.js']
     },
     {
       id: 'PROTO_NOT_FROZEN',
@@ -4556,7 +4560,7 @@ var ses;
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=65832',
              'https://bugs.webkit.org/show_bug.cgi?id=78438'],
       sections: ['8.6.2'],
-      tests: ['S8.6.2_A8']
+      tests: ['test/language/types/object/S8.6.2_A8.js']
     },
     {
       id: 'PROTO_REDEFINABLE',
@@ -4568,7 +4572,7 @@ var ses;
           // so it's not worth creating a repair for this bug.
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=65832'],
       sections: ['8.6.2'],
-      tests: ['S8.6.2_A8']
+      tests: ['test/language/types/object/S8.6.2_A8.js']
     },
     {
       id: 'DEFINING_READ_ONLY_PROTO_FAILS_SILENTLY',
@@ -4603,7 +4607,7 @@ var ses;
           // so it's not worth creating a repair for this bug.
       urls: ['https://code.google.com/p/v8/issues/detail?id=1624'],
       sections: ['10.4.2.1'],
-      tests: ['S10.4.2.1_A1']
+      tests: ['test/language/eval-code/S10.4.2.1_A1.js']
     },
     {
       id: 'STRICT_EVAL_LEAKS_GLOBAL_FUNCS',
@@ -4615,7 +4619,7 @@ var ses;
           // so it's not worth creating a repair for this bug.
       urls: ['https://code.google.com/p/v8/issues/detail?id=1624'],
       sections: ['10.4.2.1'],
-      tests: ['S10.4.2.1_A1']
+      tests: ['test/language/eval-code/S10.4.2.1_A1.js']
     },
     {
       id: 'EVAL_BREAKS_MASKING',
@@ -4638,7 +4642,7 @@ var ses;
       canRepair: true,
       urls: ['https://code.google.com/p/v8/issues/detail?id=1645'],
       sections: ['15.1.2.2'],
-      tests: ['S15.1.2.2_A5.1_T1']
+      tests: ['test/built-ins/parseInt/S15.1.2.2_A5.1_T1.js']
     },
     {
       id: 'STRICT_E4X_LITERALS_ALLOWED',
@@ -4667,7 +4671,7 @@ var ses;
              'http://wiki.ecmascript.org/doku.php?id=strawman:' +
                'fixing_override_mistake'],
       sections: ['8.12.4'],
-      tests: ['15.2.3.6-4-405']
+      tests: ['test/built-ins/Object/defineProperty/15.2.3.6-4-405.js']
     },
     {
       id: 'INCREMENT_IGNORES_FROZEN',
@@ -4839,7 +4843,7 @@ var ses;
              'https://bugzilla.mozilla.org/show_bug.cgi?id=732669'],
              // Opera DSK-358415
       sections: ['10.4.3'],
-      tests: ['10.4.3-1-59-s']
+      tests: ['test/language/function-code/10.4.3-1-59-s.js']
     },
     {
       id: 'NON_STRICT_GETTER_DOESNT_BOX',
@@ -4852,7 +4856,7 @@ var ses;
              'https://code.google.com/p/v8/issues/detail?id=1977',
              'https://bugzilla.mozilla.org/show_bug.cgi?id=732669'],
       sections: ['10.4.3'],
-      tests: ['10.4.3-1-59-s']
+      tests: ['test/language/function-code/10.4.3-1-59-s.js']
     },
     {
       id: 'NONCONFIGURABLE_OWN_PROTO',
