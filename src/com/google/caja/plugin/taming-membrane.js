@@ -168,25 +168,30 @@ function TamingMembrane(helper, schema) {
    */
   function copyTreatedImmutable(o) {
     var t = void 0;
+    // Object.prototype.toString is spoofable (as of ES6). Therefore, each
+    // branch of this switch must assume that o is not necessarily of the type
+    // and defend against that. However, we consider it acceptable for a
+    // spoofing object to be copied as one of what it was spoofing, or to cause
+    // an error.
     switch (Object.prototype.toString.call(o)) {
       case '[object Boolean]':
-        t = new Boolean(o.valueOf());
+        t = new Boolean(!!o.valueOf());
         break;
       case '[object Date]':
-        t = new Date(o.valueOf());
+        t = new Date(+o.valueOf());
         break;
       case '[object Number]':
-        t = new Number(o.valueOf());
+        t = new Number(+o.valueOf());
         break;
       case '[object RegExp]':
         t = new RegExp(
-            o.source,
+            '' + o.source,
             (o.global ? 'g' : '') +
             (o.ignoreCase ? 'i' : '') +
             (o.multiline ? 'm' : ''));
         break;
       case '[object String]':
-        t = new String(o.valueOf());
+        t = new String('' + o.valueOf());
         break;
       case '[object Error]':
       case '[object DOMException]':
@@ -236,6 +241,27 @@ function TamingMembrane(helper, schema) {
   }
 
   /**
+   * Helper function; return a copy of a typed array object without depending on
+   * the typed array constructor to do it.
+   *
+   * This is needed, or at least reasonable caution, because typed array
+   * constructors have overloads that will share an ArrayBuffer with the
+   * provided value, rather than copying. In current specification and
+   * implementation it does not appear to be possible to create an object which
+   * exploits this, but we don't wish to rely on that invariant.
+   */
+  function copyTArray(ctor, o) {
+    // Get a copy of the relevant portion of the underlying buffer in a way
+    // which has no overloads and guarantees a copy.
+    var byteOffset = +o.byteOffset;
+    var byteLength = +o.byteLength;
+    var buffer = ArrayBuffer.prototype.slice.call(
+        o.buffer, o.byteOffset, o.byteOffset + o.byteLength);
+    
+    return new ctor(buffer);
+  }
+
+  /**
    * Given a builtin object "o" from either side of the membrane, return a copy
    * constructed in the taming frame. Return undefined if "o" is not of a type
    * handled here. Note that we only call this function if we know that "o" is
@@ -251,21 +277,28 @@ function TamingMembrane(helper, schema) {
       return copyArray(o, recursor);
     } else {
       var t = undefined;
+      // Object.prototype.toString is spoofable (as of ES6). Therefore, each
+      // branch of this switch must assume that o is not necessarily of the type
+      // and defend against that. However, we consider it acceptable for a
+      // spoofing object to be copied as one of what it was spoofing, or to
+      // cause an error.
       switch (Object.prototype.toString.call(o)) {
         // Note that these typed array tamings break any buffer sharing, but
         // that's in line with our general policy of copying.
         case '[object ArrayBuffer]':
+          // ArrayBuffer.prototype.slice will always copy or throw TypeError
           t = ArrayBuffer.prototype.slice.call(o, 0);
           break;
-        case '[object Int8Array]': t = new Int8Array(o); break;
-        case '[object Uint8Array]': t = new Uint8Array(o); break;
-        case '[object Uint8ClampedArray]': t = new Uint8ClampedArray(o); break;
-        case '[object Int16Array]': t = new Int16Array(o); break;
-        case '[object Uint16Array]': t = new Uint16Array(o); break;
-        case '[object Int32Array]': t = new Int32Array(o); break;
-        case '[object Uint32Array]': t = new Uint32Array(o); break;
-        case '[object Float32Array]': t = new Float32Array(o); break;
-        case '[object Float64Array]': t = new Float64Array(o); break;
+        case '[object Int8Array]': t = copyTArray(Int8Array, o); break;
+        case '[object Uint8Array]': t = copyTArray(Uint8Array, o); break;
+        case '[object Uint8ClampedArray]':
+            t = copyTArray(Uint8ClampedArray, o); break;
+        case '[object Int16Array]': t = copyTArray(Int16Array, o); break;
+        case '[object Uint16Array]': t = copyTArray(Uint16Array, o); break;
+        case '[object Int32Array]': t = copyTArray(Int32Array, o); break;
+        case '[object Uint32Array]': t = copyTArray(Uint32Array, o); break;
+        case '[object Float32Array]': t = copyTArray(Float32Array, o); break;
+        case '[object Float64Array]': t = copyTArray(Float64Array, o); break;
         case '[object DataView]':
           t = new DataView(recursor(o.buffer), o.byteOffset, o.byteLength);
           break;
