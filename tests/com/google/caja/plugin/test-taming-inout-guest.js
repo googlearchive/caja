@@ -100,18 +100,18 @@ jsunitRegister('testGuestPureFunctions',
     };
     tamedApi.tamedHostPureFunction('a(getFeralTestObject());', func);
     assertTrue(called);
-  });
+  }());
   // 'this' is tamed en route to guest
   (function() {
     var called = false;
     var rec = {};
     var func = function() {
       assertEquals(rec, this);
-      assertTrue(called);
+      called = true;
     };
     tamedApi.tamedHostPureFunction('b.call(a);', rec, func);
     assertTrue(called);
-  });
+  }());
   // Return value is un-tamed en route to host
   (function() {
     var called = false;
@@ -122,7 +122,7 @@ jsunitRegister('testGuestPureFunctions',
     tamedApi.tamedHostPureFunction(
         'assertEquals(getFeralTestObject(), a());', func);
     assertTrue(called);
-  });
+  }());
   pass('testGuestPureFunctions');
 });
 

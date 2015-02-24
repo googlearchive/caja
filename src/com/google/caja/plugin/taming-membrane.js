@@ -102,25 +102,30 @@ function TamingMembrane(privilegedAccess, schema) {
   // know that "o" is *not* a primitive.
   function copyBuiltin(o) {
     var t = void 0;
+    // Object.prototype.toString is spoofable (as of ES6). Therefore, each
+    // branch of this switch must assume that o is not necessarily of the type
+    // and defend against that. However, we consider it acceptable for a
+    // spoofing object to be copied as one of what it was spoofing, or to cause
+    // an error.
     switch (Object.prototype.toString.call(o)) {
       case '[object Boolean]':
-        t = new Boolean(privilegedAccess.getValueOf(o));
+        t = new Boolean(!!privilegedAccess.getValueOf(o));
         break;
       case '[object Date]':
-        t = new Date(privilegedAccess.getValueOf(o));
+        t = new Date(+privilegedAccess.getValueOf(o));
         break;
       case '[object Number]':
-        t = new Number(privilegedAccess.getValueOf(o));
+        t = new Number(+privilegedAccess.getValueOf(o));
         break;
       case '[object RegExp]':
         t = new RegExp(
-            privilegedAccess.getProperty(o, 'source'),
+            '' + privilegedAccess.getProperty(o, 'source'),
             (privilegedAccess.getProperty(o, 'global') ? 'g' : '') +
             (privilegedAccess.getProperty(o, 'ignoreCase') ? 'i' : '') +
             (privilegedAccess.getProperty(o, 'multiline') ? 'm' : ''));
         break;
       case '[object String]':
-        t = new String(privilegedAccess.getValueOf(o));
+        t = new String('' + privilegedAccess.getValueOf(o));
         break;
       case '[object Error]':
       case '[object DOMException]':

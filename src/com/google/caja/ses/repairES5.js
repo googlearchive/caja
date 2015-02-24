@@ -158,8 +158,6 @@ var ses;
    */
   function strictFnSpecimen() {}
 
-  var objToString = Object.prototype.toString;
-
   /**
    * Sample map early, to obtain a representative built-in for testing.
    *
@@ -470,6 +468,153 @@ var ses;
     return tamperProof;
   };
 
+
+  ////////////////////// Brand testing /////////////////////
+
+  /**
+   * Note that, as of ES5, Object.prototype.toString.call(foo) (for
+   * the original Object.prototype.toString and original
+   * Function.prototype.call) was a reliable branding mechanism for
+   * distinguishing the built-in types. This is no longer true of ES6
+   * once untrusted code runs in that realm, and so should no longer
+   * be used for that purpose. See makeBrandTester and the brands it
+   * makes.
+   */
+  var objToString = Object.prototype.toString;
+
+  /**
+   * For reliably testing that a specimen is an exotic object of some
+   * built-in exotic type.
+   *
+   * <p>The exotic type should be those objects normally made by
+   * ctor. methodName must be the name of a method on ctor.prototype
+   * that, when applied to an exotic object of this exotic type as
+   * this-value, with the provided args list, will return without
+   * error, but when applied to any other object as this-value will
+   * throw an error. opt_example, if provided, must be an example of
+   * such an exotic object that can be used for internal sanity
+   * checking before returning a brandTester.
+   *
+   * <p>Uses Allen's trick from
+   * https://esdiscuss.org/topic/tostringtag-spoofing-for-null-and-undefined#content-59
+   * for brand testing that will remain reliable in ES6. 
+   * However, testing reveals that, on FF 35.0.1, a proxy on an exotic
+   * object X will pass this brand test when X will. This is fixed as of
+   * FF Nightly 38.0a1.
+   *
+   * <p>Returns a brandTester function such that, if brandTester(specimen)
+   * returns true, this is a reliable indicator that specimen actually
+   * is an exotic object of that type.
+   *
+   * <p>As a convenience, ctor may be undefined, in which
+   * case we assume that there are no exotic objects of that kind. In
+   * this case, the returned brandTester always says false.
+   */
+  function makeBrandTester(ctor, methodName, args, opt_example) {
+    if (ctor === void 0) {
+      // If there is no built-in ctor, then we assume there cannot
+      // be any objects that are genuinely of that brand.
+      return function absentCtorBrandTester(specimen) { return false; };
+    }
+    var originalMethod = ctor.prototype[methodName];
+    function brandTester(specimen) {
+      if (specimen !== Object(specimen)) { return false; }
+      try {
+        originalMethod.apply(specimen, args);
+        return true;
+      } catch (_) {
+        return false;
+      }
+    };
+    // a bit of sanity checking before proceeding
+    var counterExamples = [null, void 0, true, 1, 'x', {}];
+    if (opt_example !== void 0) {
+      counterExamples.push({valueOf: function() { return opt_example; }});
+      counterExamples.push(Object.create(opt_example));
+    }
+    strictForEachFn(counterExamples, function(v, i) {
+      if (brandTester(v)) {
+        logger.error('Brand test ' + i + ' for ' + ctor + ' passed: ' + v);
+        ses._repairer.updateMaxSeverity(ses.severities.NOT_SUPPORTED);
+      }
+    });
+    if (opt_example !== void 0 && typeof global.Proxy === 'function') {
+      // We treat the Proxy counter-example more gently for two reasons:
+      // * The test fails as of FF 35.0.1, which, as of this writing,
+      //   Caja must still support.
+      // * It currently does not cause an insecurity for us, since we
+      //   do not yet whitelist Proxy. We might use it internally (see
+      //   startSES.js) but we do not yet make it available to any
+      //   code running within SES.
+      // See https://bugzilla.mozilla.org/show_bug.cgi?id=1133249
+      // TODO(erights): Add a test for this to test262
+      // TODO(erights): Extract all these self-tests into tests
+      // performed within the repair framework.
+      // TODO(erights): Add a self-test that will catch any
+      // whitelisting of Proxy while this is still an issue.
+      var proxy = new global.Proxy(opt_example, {});
+      if (brandTester(proxy)) {
+        logger.warn('Brand test of proxy for ' + ctor + ' passed: ' + proxy);
+        ses._repairer.updateMaxSeverity(ses.severities.SAFE_SPEC_VIOLATION);
+      }
+    }
+    if (opt_example !== void 0 && !brandTester(opt_example)) {
+      logger.error('Brand test for ' + ctor + ' failed: ' + opt_example);
+      ses._repairer.updateMaxSeverity(ses.severities.NOT_SUPPORTED);
+    }
+    return brandTester;
+  }
+
+  /**
+   * A reliable brand test for whether specimen has a [[Class]] of
+   * "Date", or, in ES6 terminology, whether it has a [[DateValue]]
+   * internal slot.
+   */
+  var isBuiltinDate = makeBrandTester(
+      Date, 'getDay', [], new Date());
+
+  /**
+   * A reliable brand test for whether specimen has a [[Class]] of
+   * "Number", or, in ES6 terminology, whether it has a [[NumberData]]
+   * internal slot.
+   */
+  var isBuiltinNumberObject = makeBrandTester(
+      Number, 'toString', [], new Number(3));
+
+  /**
+   * A reliable brand test for whether specimen has a [[Class]] of
+   * "Boolean", or, in ES6 terminology, whether it has a [[BooleanData]]
+   * internal slot.
+   */
+  var isBuiltinBooleanObject = makeBrandTester(
+      Boolean, 'toString', [], new Boolean(true));
+
+  /**
+   * A reliable brand test for whether specimen has a [[Class]] of
+   * "String", or, in ES6 terminology, whether it has a [[StringData]]
+   * internal slot.
+   */
+  var isBuiltinStringObject = makeBrandTester(
+      String, 'toString', [], new String('y'));
+
+  /**
+   * A reliable brand test for whether specimen has a [[Class]] of
+   * "RegExp", or, in ES6 terminology, whether it has a [[RegExpMatcher]]
+   * internal slot.
+   */
+  var isBuiltinRegExp = makeBrandTester(
+      RegExp, 'exec', ['x'], /x/);
+
+  /**
+   * A reliable brand test for whether specimen has a [[WeakMapData]]
+   * internal slot.
+   */
+  var isBuiltinWeakMap = makeBrandTester(
+      global.WeakMap, 'get', [{}], global.WeakMap ? new WeakMap() : void 0);
+
+
+  ///////////////////////////////////////////
+
   /**
    * Fails if {@code funcBodySrc} does not parse as a strict
    * FunctionBody.
@@ -648,6 +793,9 @@ var ses;
   function testGlobalLeak(desc, that) {
     if (that === void 0) { return false; }
     if (that === global) { return true; }
+    // objToString use here ok, because it only determines the quality
+    // of diagnostic issued, and anyway runs only during SES
+    // initialization before objToString could be spoofed.
     if (objToString.call(that) === '[object Window]') { return true; }
     return desc + ' leaked as: ' + that;
   }
@@ -1134,9 +1282,8 @@ var ses;
       return 'Curries construction failed with: ' + err;
     }
     if (typeof d === 'string') { return true; } // Opera
-    var str = objToString.call(d);
-    if (str === '[object Date]') { return false; }
-    return 'Unexpected ' + str + ': ' + d;
+    if (isBuiltinDate(d)) { return false; }
+    return 'Unexpected alleged Date: ' + d;
   }
 
   /**
@@ -1199,6 +1346,50 @@ var ses;
   }
 
   /**
+   * As of ES6, for all the builtin constructors (except Function)
+   * that make a particular type of exotic object, that
+   * constructor.prototype must be a plain object rather than that
+   * kind of exotic object. As of this writing, at least Chrome, FF,
+   * Safari, Opera, and IE11 violate this.
+   */
+  function test_NUMBER_PROTO_IS_NUMBER() {
+    return isBuiltinNumberObject(Number.prototype);
+  }
+
+  /**
+   * As of ES6, for all the builtin constructors (except Function)
+   * that make a particular type of exotic object, that
+   * constructor.prototype must be a plain object rather than that
+   * kind of exotic object. As of this writing, at least Chrome, FF,
+   * Safari, Opera, and IE11 violate this.
+   */
+  function test_BOOLEAN_PROTO_IS_BOOLEAN() {
+    return isBuiltinBooleanObject(Boolean.prototype);
+  }
+
+  /**
+   * As of ES6, for all the builtin constructors (except Function)
+   * that make a particular type of exotic object, that
+   * constructor.prototype must be a plain object rather than that
+   * kind of exotic object. As of this writing, at least Chrome, FF,
+   * Safari, Opera, and IE11 violate this.
+   */
+  function test_STRING_PROTO_IS_STRING() {
+    return isBuiltinStringObject(String.prototype);
+  }
+
+  /**
+   * As of ES6, for all the builtin constructors (except Function)
+   * that make a particular type of exotic object, that
+   * constructor.prototype must be a plain object rather than that
+   * kind of exotic object. As of this writing, at least Chrome, FF,
+   * Safari, Opera, and IE11 violate this.
+   */
+  function test_REGEXP_PROTO_IS_REGEXP() {
+    return isBuiltinRegExp(RegExp.prototype);
+  }
+
+  /**
    * Detects https://code.google.com/p/v8/issues/detail?id=1447
    *
    * <p>This bug is fixed as of V8 r8258 bleeding-edge, but is not yet
@@ -1256,19 +1447,9 @@ var ses;
    * <p>Sometimes, when trying to freeze an object containing an
    * accessor property with a getter but no setter, Chrome <= 17 fails
    * with <blockquote>Uncaught TypeError: Cannot set property ident___
-   * of #<Object> which has only a getter</blockquote>. So if
-   * necessary, the repair overrides {@code Object.defineProperty} to
-   * always install a dummy setter in lieu of the absent one.
-   *
-   * <p>Since this problem seems to have gone away as of Chrome 18, it
-   * is no longer as important to isolate and report it.
-   *
-   * <p>TODO(erights): We should also override {@code
-   * Object.getOwnPropertyDescriptor} to hide the presence of the
-   * dummy setter, and instead report an absent setter.
+   * of #<Object> which has only a getter</blockquote>.
    */
   function test_NEEDS_DUMMY_SETTER() {
-    if (NEEDS_DUMMY_SETTER_repaired) { return false; }
     if (typeof navigator === 'undefined') { return false; }
     var ChromeMajorVersionPattern = (/Chrome\/(\d*)\./);
     var match = ChromeMajorVersionPattern.exec(navigator.userAgent);
@@ -1276,9 +1457,6 @@ var ses;
     var ver = +match[1];
     return ver <= 17;
   }
-  /** we use this variable only because we haven't yet isolated a test
-   * for the problem. */
-  var NEEDS_DUMMY_SETTER_repaired = false;
 
   /**
    * Detects https://code.google.com/p/chromium/issues/detail?id=94666
@@ -2793,29 +2971,29 @@ var ses;
   /**
    * Return a function suitable for using as a forEach argument on a
    * list of method names, where that function will monkey patch each
-   * of these names methods on {@code constr.prototype} so that they
-   * can't be called on a {@code constr.prototype} itself even across
+   * of these names methods on {@code ctor.prototype} so that they
+   * can't be called on a {@code ctor.prototype} itself even across
    * frames.
    *
-   * <p>This only works when {@code constr} corresponds to an internal
-   * [[Class]] property whose value is {@code classString}. To test
-   * for {@code constr.prototype} cross-frame, we observe that for all
-   * objects of this [[Class]], only the prototypes directly inherit
-   * from an object that does not have this [[Class]].
+   * <p>This only works when {@code ctor} is the constructor of
+   * objects that are supposed to pass hasBrand, and
+   * ctor.prototype inappropriately also passes the hasBrand. To
+   * test for {@code ctor.prototype} cross-frame, we observe that
+   * for all objects that do pass the hasBrand, only the
+   * ctor.prototype objects directly inherit from an object that
+   * does not pass this hasBrand.
    */
-  function makeMutableProtoPatcher(constr, classString) {
-    var proto = constr.prototype;
-    var baseToString = objToString.call(proto);
-    if (baseToString !== '[object ' + classString + ']') {
-      throw new TypeError('unexpected: ' + baseToString);
+  function makeMutableProtoPatcher(ctor, hasBrand) {
+    var proto = ctor.prototype;
+    if (!hasBrand(proto)) {
+      throw new TypeError('unexpected: ' + proto);
     }
     var grandProto = getPrototypeOf(proto);
-    var grandBaseToString = objToString.call(grandProto);
-    if (grandBaseToString === '[object ' + classString + ']') {
-      throw new TypeError('malformed inheritance: ' + classString);
+    if (hasBrand(grandProto)) {
+      throw new TypeError('malformed inheritance: ' + ctor);
     }
     if (grandProto !== Object.prototype) {
-      logger.log('unexpected inheritance: ' + classString);
+      logger.log('unexpected inheritance: ' + ctor);
     }
     function mutableProtoPatcher(name) {
       if (!hop.call(proto, name)) { return; }
@@ -2830,16 +3008,15 @@ var ses;
           // succeed, since, for example, a non-Date can still inherit
           // from Date.prototype. However, in such cases, the built-in
           // method application will fail on its own without our help.
-          if (objToString.call(parent) !== baseToString) {
-            // As above, === baseToString does not necessarily mean
-            // success, but the built-in failure again would not need
-            // our help.
-            var thisToString = objToString.call(this);
-            if (thisToString === baseToString) {
+          if (!hasBrand(parent)) {
+            // As above, hasBrand(parent) being true does not
+            // necessarily mean success, but the built-in failure
+            // again would not need our help.
+            if (hasBrand(this)) {
               throw new TypeError('May not mutate internal state of a ' +
-                                  classString + '.prototype');
+                                  ctor + '.prototype');
             } else {
-              throw new TypeError('Unexpected: ' + thisToString);
+              throw new TypeError('Unexpected: ' + this);
             }
           }
         }
@@ -2868,13 +3045,14 @@ var ses;
      'setSeconds',
      'setUTCSeconds',
      'setMilliseconds',
-     'setUTCMilliseconds'].forEach(makeMutableProtoPatcher(Date, 'Date'));
+     'setUTCMilliseconds'].forEach(
+         makeMutableProtoPatcher(Date, isBuiltinDate));
   }
 
   function repair_MUTABLE_WEAKMAP_PROTO() {
     // Note: coordinate this list with maintanence of whitelist.js
     ['set',
-     'delete'].forEach(makeMutableProtoPatcher(WeakMap, 'WeakMap'));
+     'delete'].forEach(makeMutableProtoPatcher(WeakMap, isBuiltinWeakMap));
   }
 
   function repair_NEED_TO_WRAP_FOREACH() {
@@ -2887,7 +3065,7 @@ var ses;
         }
         var O = Object(this);
         var len = O.length >>> 0;
-        if (objToString.call(callback) !== '[object Function]') {
+        if (typeof callback !== 'function') {
           throw new TypeError(callback + ' is not a function');
         }
         T = thisArg;
@@ -2902,66 +3080,6 @@ var ses;
         }
       }
     });
-  }
-
-
-  function repair_NEEDS_DUMMY_SETTER() {
-    var defProp = Object.defineProperty;
-    var gopd = Object.getOwnPropertyDescriptor;
-
-    function dummySetter(newValue) {
-      throw new TypeError('no setter for assigning: ' + newValue);
-    }
-    dummySetter.prototype = null;
-    rememberToTamperProof(dummySetter);
-
-    defProp(Object, 'defineProperty', {
-      value: function setSetterDefProp(base, name, desc) {
-        if (typeof desc.get === 'function' && desc.set === void 0) {
-          var oldDesc = gopd(base, name);
-          if (oldDesc) {
-            var testBase = {};
-            defProp(testBase, name, oldDesc);
-            defProp(testBase, name, desc);
-            desc = gopd(testBase, name);
-            if (desc.set === void 0) { desc.set = dummySetter; }
-          } else {
-            if (objToString.call(base) === '[object HTMLFormElement]') {
-              // This repair was triggering bug
-              // https://code.google.com/p/chromium/issues/detail?id=94666
-              // on Chrome, causing
-              // https://code.google.com/p/google-caja/issues/detail?id=1401
-              // so if base is an HTMLFormElement we skip this
-              // fix. Since this repair and this situation are both
-              // Chrome only, it is ok that we're conditioning this on
-              // the unspecified [[Class]] value of base.
-              //
-              // To avoid the further bug identified at Comment 2
-              // https://code.google.com/p/chromium/issues/detail?id=94666#c2
-              // We also have to reconstruct the requested desc so that
-              // the setter is absent. This is why we additionally
-              // condition this special case on the absence of an own
-              // name property on base.
-              var desc2 = { get: desc.get };
-              if ('enumerable' in desc) {
-                desc2.enumerable = desc.enumerable;
-              }
-              if ('configurable' in desc) {
-                desc2.configurable = desc.configurable;
-              }
-              var result = defProp(base, name, desc2);
-              var newDesc = gopd(base, name);
-              if (newDesc.get === desc.get) {
-                return result;
-              }
-            }
-            desc.set = dummySetter;
-          }
-        }
-        return defProp(base, name, desc);
-      }
-    });
-    NEEDS_DUMMY_SETTER_repaired = true;
   }
 
   function repair_JSON_PARSE_PROTO_CONFUSION() {
@@ -3278,28 +3396,6 @@ var ses;
     global.WeakMap = undefined;
   }
 
-  function repair_ERRORS_HAVE_INVISIBLE_PROPERTIES() {
-    var baseGOPN = Object.getOwnPropertyNames;
-    var baseGOPD = Object.getOwnPropertyDescriptor;
-    var errorPattern = /^\[object [\w$]*Error\]$/;
-
-    function touch(name) {
-      // the forEach will invoke this function with this === the error instance
-      baseGOPD(this, name);
-    }
-
-    Object.defineProperty(Object, 'getOwnPropertyNames', {
-      writable: true,  // allow other repairs to stack on
-      value: function repairedErrorInvisGOPN(object) {
-        // Note: not adequate in future ES6 world (TODO(erights): explain why)
-        if (errorPattern.test(objToString.call(object))) {
-          errorInstanceKnownInvisibleList.forEach(touch, object);
-        }
-        return baseGOPN(object);
-      }
-    });
-  }
-
   /**
    * Note that this repair does not repair the Function constructor
    * itself at this stage. Rather, it repairs ses.verifyStrictFunctionBody,
@@ -3581,7 +3677,7 @@ var ses;
       canRepair: false,
       urls: [],
       sections: ['15.2.3.4'],
-      tests: ['15.2.3.4-0-1']
+      tests: ['test/built-ins/Object/getOwnPropertyNames/15.2.3.4-0-1.js']
     },
     {
       id: 'PROTO_SETTER_UNGETTABLE',
@@ -3609,7 +3705,7 @@ var ses;
       canRepair: false,  // Not repairable without rewriting
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=64250'],
       sections: ['10.2.1.2', '10.2.1.2.6'],
-      tests: ['10.4.3-1-8gs']
+      tests: ['test/language/function-code/10.4.3-1-8gs.js']
     },
     {
       id: 'GLOBAL_LEAKS_FROM_ANON_FUNCTION_CALLS',
@@ -3620,7 +3716,7 @@ var ses;
       canRepair: false,
       urls: [],
       sections: ['10.4.3'],
-      tests: ['S10.4.3_A1']
+      tests: ['test/language/function-code/S10.4.3_A1.js']
     },
     {
       id: 'GLOBAL_LEAKS_FROM_STRICT_THIS',
@@ -3631,7 +3727,8 @@ var ses;
       canRepair: false,  // Not repairable without rewriting
       urls: [],
       sections: ['10.4.3'],
-      tests: ['10.4.3-1-8gs', '10.4.3-1-8-s']
+      tests: ['test/language/function-code/10.4.3-1-8gs.js',
+              'test/language/function-code/10.4.3-1-8-s.js']
     },
     {
       id: 'GLOBAL_LEAKS_FROM_BUILTINS',
@@ -3647,7 +3744,7 @@ var ses;
              'https://connect.microsoft.com/IE/feedback/details/' +
                '685430/global-object-leaks-from-built-in-methods'],
       sections: ['15.2.4.4'],
-      tests: ['S15.2.4.4_A14']
+      tests: ['test/built-ins/Object/prototype/valueOf/S15.2.4.4_A14.js']
     },
     {
       id: 'GLOBAL_LEAKS_FROM_GLOBALLY_CALLED_BUILTINS',
@@ -3659,7 +3756,7 @@ var ses;
           // so it's not worth creating a repair for this bug.
       urls: [],
       sections: ['10.2.1.2', '10.2.1.2.6', '15.2.4.4'],
-      tests: ['S15.2.4.4_A15']
+      tests: ['test/built-ins/Object/prototype/valueOf/S15.2.4.4_A15.js']
     },
     {
       id: 'MISSING_FREEZE_ETC',
@@ -3670,7 +3767,7 @@ var ses;
       canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=55736'],
       sections: ['15.2.3.9'],
-      tests: ['15.2.3.9-0-1']
+      tests: ['test/built-ins/Object/freeze/15.2.3.9-0-1.js']
     },
     {
       id: 'FUNCTION_PROTOTYPE_DESCRIPTOR_LIES',
@@ -3682,7 +3779,7 @@ var ses;
       urls: ['https://code.google.com/p/v8/issues/detail?id=1530',
              'https://code.google.com/p/v8/issues/detail?id=1570'],
       sections: ['15.2.3.3', '15.2.3.6', '15.3.5.2'],
-      tests: ['S15.3.3.1_A4']
+      tests: ['test/built-ins/Function/prototype/S15.3.3.1_A4.js']
     },
     {
       id: 'MISSING_CALLEE_DESCRIPTOR',
@@ -3693,7 +3790,7 @@ var ses;
       canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=55537'],
       sections: ['15.2.3.4'],
-      tests: ['S15.2.3.4_A1_T1']
+      tests: ['test/built-ins/Object/getOwnPropertyNames/S15.2.3.4_A1_T1.js']
     },
     {
       id: 'STRICT_DELETE_RETURNS_FALSE',
@@ -3706,7 +3803,7 @@ var ses;
                '685432/strict-delete-sometimes-returns-false-' +
                'rather-than-throwing'],
       sections: ['11.4.1'],
-      tests: ['S11.4.1_A5']
+      tests: ['test/language/expressions/delete/S11.4.1_A5.js']
     },
     {
       id: 'REGEXP_CANT_BE_NEUTERED',
@@ -3723,7 +3820,7 @@ var ses;
                '685439/non-deletable-regexp-statics-are-a-global-' +
                'communication-channel'],
       sections: ['11.4.1'],
-      tests: ['S11.4.1_A5']
+      tests: ['test/language/expressions/delete/S11.4.1_A5.js']
     },
     {
       id: 'REGEXP_TEST_EXEC_UNSAFE',
@@ -3737,7 +3834,7 @@ var ses;
              'https://bugzilla.mozilla.org/show_bug.cgi?id=635017',
              'https://code.google.com/p/google-caja/issues/detail?id=528'],
       sections: ['15.10.6.2'],
-      tests: ['S15.10.6.2_A12']
+      tests: ['test/built-ins/RegExp/prototype/exec/S15.10.6.2_A12.js']
     },
     {
       id: 'MISSING_BIND',
@@ -3749,7 +3846,7 @@ var ses;
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=26382',
              'https://bugs.webkit.org/show_bug.cgi?id=42371'],
       sections: ['15.3.4.5'],
-      tests: ['S15.3.4.5_A3']
+      tests: ['test/built-ins/Function/prototype/bind/S15.3.4.5_A3.js']
     },
     {
       id: 'BIND_CALLS_APPLY',
@@ -3761,7 +3858,7 @@ var ses;
       urls: ['https://code.google.com/p/v8/issues/detail?id=892',
              'https://code.google.com/p/v8/issues/detail?id=828'],
       sections: ['15.3.4.5.1'],
-      tests: ['S15.3.4.5_A4']
+      tests: ['test/built-ins/Function/prototype/bind/S15.3.4.5_A4.js']
     },
     {
       id: 'BIND_CANT_CURRY_NEW',
@@ -3772,7 +3869,7 @@ var ses;
       canRepair: false,  // JS-based repair essentially impossible
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=26382#c29'],
       sections: ['15.3.4.5.2'],
-      tests: ['S15.3.4.5_A5']
+      tests: ['test/built-ins/Function/prototype/bind/S15.3.4.5_A5.js']
     },
     {
       id: 'MUTABLE_DATE_PROTO',
@@ -3781,7 +3878,12 @@ var ses;
       repair: repair_MUTABLE_DATE_PROTO,
       preSeverity: severities.NOT_OCAP_SAFE,
       canRepair: true,
-      urls: ['https://code.google.com/p/google-caja/issues/detail?id=1362'],
+      urls: ['https://code.google.com/p/google-caja/issues/detail?id=1362',
+             'https://bugzilla.mozilla.org/show_bug.cgi?id=797686',
+             'https://bugzilla.mozilla.org/show_bug.cgi?id=861219',
+             'https://code.google.com/p/v8/issues/detail?id=3890',
+             'https://bugs.webkit.org/show_bug.cgi?id=141610',
+             'https://connect.microsoft.com/IE/feedbackdetail/view/1131123/for-many-x-x-prototype-is-an-x-when-it-must-be-a-plain-object'],
       sections: ['15.9.5'],
       tests: []
     },
@@ -3792,7 +3894,64 @@ var ses;
       repair: repair_MUTABLE_WEAKMAP_PROTO,
       preSeverity: severities.NOT_OCAP_SAFE,
       canRepair: true,
-      urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=656828'],
+      urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=656828',
+             'https://bugzilla.mozilla.org/show_bug.cgi?id=797686'],
+      sections: [],
+      tests: []
+    },
+    {
+      id: 'NUMBER_PROTO_IS_NUMBER',
+      description: 'Number.prototype should be a plain object',
+      test: test_NUMBER_PROTO_IS_NUMBER,
+      repair: void 0,
+      preSeverity: severities.SAFE_SPEC_VIOLATION,
+      canRepair: false,
+      urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=797686',
+             'https://code.google.com/p/v8/issues/detail?id=3890',
+             'https://bugs.webkit.org/show_bug.cgi?id=141610',
+             'https://connect.microsoft.com/IE/feedbackdetail/view/1131123/for-many-x-x-prototype-is-an-x-when-it-must-be-a-plain-object'],
+      sections: [],
+      tests: []
+    },
+    {
+      id: 'BOOLEAN_PROTO_IS_BOOLEAN',
+      description: 'Boolean.prototype should be a plain object',
+      test: test_BOOLEAN_PROTO_IS_BOOLEAN,
+      repair: void 0,
+      preSeverity: severities.SAFE_SPEC_VIOLATION,
+      canRepair: false,
+      urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=797686',
+             'https://code.google.com/p/v8/issues/detail?id=3890',
+             'https://bugs.webkit.org/show_bug.cgi?id=141610',
+             'https://connect.microsoft.com/IE/feedbackdetail/view/1131123/for-many-x-x-prototype-is-an-x-when-it-must-be-a-plain-object'],
+      sections: [],
+      tests: []
+    },
+    {
+      id: 'STRING_PROTO_IS_STRING',
+      description: 'String.prototype should be a plain object',
+      test: test_STRING_PROTO_IS_STRING,
+      repair: void 0,
+      preSeverity: severities.SAFE_SPEC_VIOLATION,
+      canRepair: false,
+      urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=797686',
+             'https://code.google.com/p/v8/issues/detail?id=3890',
+             'https://bugs.webkit.org/show_bug.cgi?id=141610',
+             'https://connect.microsoft.com/IE/feedbackdetail/view/1131123/for-many-x-x-prototype-is-an-x-when-it-must-be-a-plain-object'],
+      sections: [],
+      tests: []
+    },
+    {
+      id: 'REGEXP_PROTO_IS_REGEXP',
+      description: 'RegExp.prototype should be a plain object',
+      test: test_REGEXP_PROTO_IS_REGEXP,
+      repair: void 0,
+      preSeverity: severities.SAFE_SPEC_VIOLATION,
+      canRepair: false,
+      urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=797686',
+             'https://code.google.com/p/v8/issues/detail?id=3890',
+             'https://bugs.webkit.org/show_bug.cgi?id=141610',
+             'https://connect.microsoft.com/IE/feedbackdetail/view/1131123/for-many-x-x-prototype-is-an-x-when-it-must-be-a-plain-object'],
       sections: [],
       tests: []
     },
@@ -3805,7 +3964,8 @@ var ses;
       canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://code.google.com/p/v8/issues/detail?id=1447'],
       sections: ['15.4.4.18'],
-      tests: ['S15.4.4.18_A1', 'S15.4.4.18_A2']
+      tests: ['test/built-ins/Array/prototype/forEach/S15.4.4.18_A1.js',
+              'test/built-ins/Array/prototype/forEach/S15.4.4.18_A2.js']
     },
     {
       id: 'FOREACH_COERCES_THISOBJ',
@@ -3824,10 +3984,10 @@ var ses;
       id: 'NEEDS_DUMMY_SETTER',
       description: 'Workaround undiagnosed need for dummy setter',
       test: test_NEEDS_DUMMY_SETTER,
-      repair: repair_NEEDS_DUMMY_SETTER,
+      repair: void 0,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
-      canRepair: true,
-      urls: [],
+      canRepair: false,  // Long-dead bug, not worth keeping old repair around
+      urls: ['https://code.google.com/p/chromium/issues/detail?id=94666'],
       sections: [],
       tests: []
     },
@@ -3842,7 +4002,7 @@ var ses;
              'https://code.google.com/p/v8/issues/detail?id=1651',
              'https://code.google.com/p/google-caja/issues/detail?id=1401'],
       sections: ['15.2.3.6'],
-      tests: ['S15.2.3.6_A1']
+      tests: ['test/built-ins/Object/defineProperty/S15.2.3.6_A1.js']
     },
     {
       id: 'ACCESSORS_INHERIT_AS_OWN',
@@ -3853,7 +4013,7 @@ var ses;
       canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=637994'],
       sections: ['8.6.1', '15.2.3.6'],
-      tests: ['S15.2.3.6_A2']
+      tests: ['test/built-ins/Object/defineProperty/S15.2.3.6_A2.js']
     },
     {
       id: 'SORT_LEAKS_GLOBAL',
@@ -3864,7 +4024,7 @@ var ses;
       canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://code.google.com/p/v8/issues/detail?id=1360'],
       sections: ['15.4.4.11'],
-      tests: ['S15.4.4.11_A8']
+      tests: ['test/built-ins/Array/prototype/sort/S15.4.4.11_A8.js']
     },
     {
       id: 'REPLACE_LEAKS_GLOBAL',
@@ -3878,7 +4038,7 @@ var ses;
                '685928/bad-this-binding-for-callback-in-string-' +
                'prototype-replace'],
       sections: ['15.5.4.11'],
-      tests: ['S15.5.4.11_A12']
+      tests: ['test/built-ins/String/prototype/replace/S15.5.4.11_A12.js']
     },
     {
       id: 'CANT_GOPD_CALLER',
@@ -3890,7 +4050,7 @@ var ses;
       urls: ['https://connect.microsoft.com/IE/feedback/details/' +
                '685436/getownpropertydescriptor-on-strict-caller-throws'],
       sections: ['15.2.3.3', '13.2', '13.2.3'],
-      tests: ['S13.2_A6_T1']
+      tests: ['test/language/statements/function/S13.2_A6_T1.js']
     },
     {
       id: 'CANT_HASOWNPROPERTY_CALLER',
@@ -3901,7 +4061,7 @@ var ses;
       canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=63398#c3'],
       sections: ['15.2.4.5', '13.2', '13.2.3'],
-      tests: ['S13.2_A7_T1']
+      tests: ['test/language/statements/function/S13.2_A7_T1.js']
     },
     {
       id: 'CANT_IN_CALLER',
@@ -3912,7 +4072,7 @@ var ses;
       canRepair: false,
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=63398'],
       sections: ['11.8.7', '13.2', '13.2.3'],
-      tests: ['S13.2_A8_T1']
+      tests: ['test/language/statements/function/S13.2_A8_T1.js']
     },
     {
       id: 'CANT_IN_ARGUMENTS',
@@ -3923,7 +4083,7 @@ var ses;
       canRepair: false,
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=63398'],
       sections: ['11.8.7', '13.2', '13.2.3'],
-      tests: ['S13.2_A8_T2']
+      tests: ['test/language/statements/function/S13.2_A8_T2.js']
     },
     {
       id: 'STRICT_CALLER_NOT_POISONED',
@@ -3934,7 +4094,7 @@ var ses;
       canRepair: false,
       urls: [],
       sections: ['13.2'],
-      tests: ['S13.2.3_A1']
+      tests: ['test/language/statements/function/S13.2.3_A1.js']
     },
     {
       id: 'STRICT_ARGUMENTS_NOT_POISONED',
@@ -3945,7 +4105,7 @@ var ses;
       canRepair: false,
       urls: [],
       sections: ['13.2'],
-      tests: ['S13.2.3_A1']
+      tests: ['test/language/statements/function/S13.2.3_A1.js']
     },
     {
       id: 'BUILTIN_LEAKS_CALLER',
@@ -3960,7 +4120,7 @@ var ses;
              'http://wiki.ecmascript.org/doku.php?id=' +
                'conventions:make_non-standard_properties_configurable'],
       sections: [],
-      tests: ['Sbp_A10_T1']
+      tests: ['https://github.com/tc39/test262/blob/b752d2fdde2d3a49619735ed3713f6c287667c6d/test/suite/bestPractice/Sbp_A10_T1.js']
     },
     {
       id: 'BUILTIN_LEAKS_ARGUMENTS',
@@ -3975,7 +4135,7 @@ var ses;
              'http://wiki.ecmascript.org/doku.php?id=' +
                'conventions:make_non-standard_properties_configurable'],
       sections: [],
-      tests: ['Sbp_A10_T2']
+      tests: ['https://github.com/tc39/test262/blob/b752d2fdde2d3a49619735ed3713f6c287667c6d/test/suite/bestPractice/Sbp_A10_T2.js']
     },
     {
       id: 'BOUND_FUNCTION_LEAKS_CALLER',
@@ -3987,7 +4147,8 @@ var ses;
       urls: ['https://code.google.com/p/v8/issues/detail?id=893',
              'https://bugs.webkit.org/show_bug.cgi?id=63398'],
       sections: ['15.3.4.5'],
-      tests: ['S13.2.3_A1', 'S15.3.4.5_A1']
+      tests: ['test/language/statements/function/S13.2.3_A1.js',
+              'test/built-ins/Function/prototype/bind/S15.3.4.5_A1.js']
     },
     {
       id: 'BOUND_FUNCTION_LEAKS_ARGUMENTS',
@@ -3999,7 +4160,8 @@ var ses;
       urls: ['https://code.google.com/p/v8/issues/detail?id=893',
              'https://bugs.webkit.org/show_bug.cgi?id=63398'],
       sections: ['15.3.4.5'],
-      tests: ['S13.2.3_A1', 'S15.3.4.5_A2']
+      tests: ['test/language/statements/function/S13.2.3_A1.js', 
+              'test/built-ins/Function/prototype/bind/S15.3.4.5_A2.js']
     },
     {
       id: 'DELETED_BUILTINS_IN_OWN_NAMES',
@@ -4033,7 +4195,7 @@ var ses;
       urls: ['https://code.google.com/p/v8/issues/detail?id=621',
              'https://code.google.com/p/v8/issues/detail?id=1310'],
       sections: ['15.12.2'],
-      tests: ['S15.12.2_A1']
+      tests: ['test/built-ins/JSON/parse/S15.12.2_A1.js']
     },
     {
       id: 'PROTO_NOT_FROZEN',
@@ -4046,7 +4208,7 @@ var ses;
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=65832',
              'https://bugs.webkit.org/show_bug.cgi?id=78438'],
       sections: ['8.6.2'],
-      tests: ['S8.6.2_A8']
+      tests: ['test/language/types/object/S8.6.2_A8.js']
     },
     {
       id: 'PROTO_REDEFINABLE',
@@ -4058,7 +4220,7 @@ var ses;
           // so it's not worth creating a repair for this bug.
       urls: ['https://bugs.webkit.org/show_bug.cgi?id=65832'],
       sections: ['8.6.2'],
-      tests: ['S8.6.2_A8']
+      tests: ['test/language/types/object/S8.6.2_A8.js']
     },
     {
       id: 'DEFINING_READ_ONLY_PROTO_FAILS_SILENTLY',
@@ -4093,7 +4255,7 @@ var ses;
           // so it's not worth creating a repair for this bug.
       urls: ['https://code.google.com/p/v8/issues/detail?id=1624'],
       sections: ['10.4.2.1'],
-      tests: ['S10.4.2.1_A1']
+      tests: ['test/language/eval-code/S10.4.2.1_A1.js']
     },
     {
       id: 'STRICT_EVAL_LEAKS_GLOBAL_FUNCS',
@@ -4105,7 +4267,7 @@ var ses;
           // so it's not worth creating a repair for this bug.
       urls: ['https://code.google.com/p/v8/issues/detail?id=1624'],
       sections: ['10.4.2.1'],
-      tests: ['S10.4.2.1_A1']
+      tests: ['test/language/eval-code/S10.4.2.1_A1.js']
     },
     {
       id: 'EVAL_BREAKS_MASKING',
@@ -4128,7 +4290,7 @@ var ses;
       canRepair: true,
       urls: ['https://code.google.com/p/v8/issues/detail?id=1645'],
       sections: ['15.1.2.2'],
-      tests: ['S15.1.2.2_A5.1_T1']
+      tests: ['test/built-ins/parseInt/S15.1.2.2_A5.1_T1.js']
     },
     {
       id: 'STRICT_E4X_LITERALS_ALLOWED',
@@ -4157,7 +4319,7 @@ var ses;
              'http://wiki.ecmascript.org/doku.php?id=strawman:' +
                'fixing_override_mistake'],
       sections: ['8.12.4'],
-      tests: ['15.2.3.6-4-405']
+      tests: ['test/built-ins/Object/defineProperty/15.2.3.6-4-405.js']
     },
     {
       id: 'INCREMENT_IGNORES_FROZEN',
@@ -4307,9 +4469,9 @@ var ses;
       id: 'ERRORS_HAVE_INVISIBLE_PROPERTIES',
       description: 'Error instances have invisible properties',
       test: test_ERRORS_HAVE_INVISIBLE_PROPERTIES,
-      repair: repair_ERRORS_HAVE_INVISIBLE_PROPERTIES,
+      repair: void 0,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
-      canRepair: true,
+      canRepair: false,  // Long-dead bug, not worth keeping old repair around
       urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=726477',
              'https://bugzilla.mozilla.org/show_bug.cgi?id=724768'],
       sections: [],
@@ -4329,7 +4491,7 @@ var ses;
              'https://bugzilla.mozilla.org/show_bug.cgi?id=732669'],
              // Opera DSK-358415
       sections: ['10.4.3'],
-      tests: ['10.4.3-1-59-s']
+      tests: ['test/language/function-code/10.4.3-1-59-s.js']
     },
     {
       id: 'NON_STRICT_GETTER_DOESNT_BOX',
@@ -4342,7 +4504,7 @@ var ses;
              'https://code.google.com/p/v8/issues/detail?id=1977',
              'https://bugzilla.mozilla.org/show_bug.cgi?id=732669'],
       sections: ['10.4.3'],
-      tests: ['10.4.3-1-59-s']
+      tests: ['test/language/function-code/10.4.3-1-59-s.js']
     },
     {
       id: 'NONCONFIGURABLE_OWN_PROTO',

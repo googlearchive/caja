@@ -191,42 +191,20 @@ function useHTMLLogger(reportsElement, consoleElement) {
     error: makeLogFunc(consoleElement, 'error')
   };
 
-  var TestIDPattern = /^(Sbp|S)?([\d\.]*)/;
+  var StartsWithTestSlash = /^test\//;
+  var HasURIScheme = /^[-+.\w]+:/;
 
   /**
    *
    */
   function linkToTest(test) {
-    var match = TestIDPattern.exec(test);
-    if (match) {
-      var parts = match[2].split('.');
-      var result = 'http://hg.ecmascript.org/tests/test262/file/' +
-        'c84161250e66/' + // TODO(erights): How do I get the tip automatically?
-        'test/suite/';
-      if (match[1] === void 0) {
-        result += 'chapter';
-      } else if (match[1] === 'S') {
-        result += 'ch';
-      } else if (match[1] === 'Sbp') {
-        result += 'bestPractice';
-      }
-      var len = parts.length;
-      if (len === 0) {
-        result += '/';
-      } else {
-        result += (parts[0].length === 1 ? '0' : '') + parts[0] + '/';
-        for (var i = 1; i < len; i++) {
-          result += parts.slice(0, i+1).join('.') + '/';
-        }
-      }
-      result += test + '.js';
-      return result;
+    if (StartsWithTestSlash.test(test)) {
+      return 'https://github.com/tc39/test262/blob/master/' + test;
+    } else if (HasURIScheme.test(test)) {
+      return test;
+    } else {
+      return 'data:,Failed%20to%20resolve%20' + test;
     }
-
-    var site = test.charAt(0) === 'S' ?
-      '+site%3Acode.google.com' : '+site%3Aes5conform.svn.codeplex.com';
-    return 'http://www.google.com/search?btnI=&q=' +
-      encodeURIComponent(test) + site;
   }
 
   /**
@@ -281,7 +259,7 @@ function useHTMLLogger(reportsElement, consoleElement) {
         var linkElement = appendNew(linksBlock, 'p');
         if (i === 0) { appendText(linkElement, 'See '); }
         var link = appendNew(linkElement, 'a');
-        link.href = 'http://es5.github.com/#x' + encodeURIComponent(section);
+        link.href = 'https://es5.github.io/#x' + encodeURIComponent(section);
         link.target = '_blank';
         appendText(link, 'Section ' + section);
       });
@@ -292,7 +270,7 @@ function useHTMLLogger(reportsElement, consoleElement) {
         var link = appendNew(linkElement, 'a');
         link.href = linkToTest(test);
         link.target = '_blank';
-        appendText(link, 'Test ' + test);
+        appendText(link, test);
       });
     });
 
