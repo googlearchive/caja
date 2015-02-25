@@ -225,6 +225,19 @@
         parse: ON_ALL,
         stringify: ON_ALL
       },
+      
+      // Features only supported on SES
+      ArrayBuffer: ON_SES,
+      DataView: ON_SES,
+      Float32Array: ON_SES,
+      Float64Array: ON_SES,
+      Int8Array: ON_SES,
+      Int16Array: ON_SES,
+      Int32Array: ON_SES,
+      Uint8Array: ON_SES,
+      Uint8ClampedArray: ON_SES,
+      Uint16Array: ON_SES,
+      Uint32Array: ON_SES,
 
       cajaVM: {
         // evaluation operations -- not supported in ES5/3

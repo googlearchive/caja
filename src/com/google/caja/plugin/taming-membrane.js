@@ -15,7 +15,9 @@
 /**
  * Generic taming membrane implementation.
  *
- * @requires WeakMap
+ * @requires WeakMap, ArrayBuffer, Int8Array, Uint8Array, Uint8ClampedArray,
+ *    Int16Array, Uint16Array, Int32Array, Uint32Array, Float32Array,
+ *    Float64Array, DataView
  * @overrides window
  * @provides TamingMembrane
  */
@@ -96,11 +98,18 @@ function TamingMembrane(privilegedAccess, schema) {
     }
   }
 
-  // Given a builtin object "o" provided by either a guest or host frame,
-  // return a copy constructed in the taming frame. Return undefined if
-  // "o" is not a builtin object. Note that we only call this function if we
-  // know that "o" is *not* a primitive.
-  function copyBuiltin(o) {
+  /**
+   * Given a builtin object "o" from either side of the membrane, return a copy
+   * constructed in the taming frame. Return undefined if "o" is not of a type
+   * handled here. Note that we only call this function if we know that "o" is
+   * *not* a primitive.
+   *
+   * This function handles only objects which we copy exactly once and reuse
+   * the copy (via tamesTo()) if the same object is met again. For objects which
+   * we copy every  time they are passed across the membrane, see
+   * copyTreatedMutable below.
+   */
+  function copyTreatedImmutable(o) {
     var t = void 0;
     // Object.prototype.toString is spoofable (as of ES6). Therefore, each
     // branch of this switch must assume that o is not necessarily of the type
@@ -161,8 +170,77 @@ function TamingMembrane(privilegedAccess, schema) {
             t.name = '' + name;
             break;
         }
+        break;
     }
     return t;
+  }
+
+  /**
+   * Helper function; return a copy of a typed array object without depending on
+   * the typed array constructor to do it.
+   *
+   * This is needed, or at least reasonable caution, because typed array
+   * constructors have overloads that will share an ArrayBuffer with the
+   * provided value, rather than copying. In current specification and
+   * implementation it does not appear to be possible to create an object which
+   * exploits this, but we don't wish to rely on that invariant.
+   */
+  function copyTArray(ctor, o) {
+    // Get a copy of the relevant portion of the underlying buffer in a way
+    // which has no overloads and guarantees a copy.
+    var byteOffset = +o.byteOffset;
+    var byteLength = +o.byteLength;
+    var buffer = ArrayBuffer.prototype.slice.call(
+        o.buffer, o.byteOffset, o.byteOffset + o.byteLength);
+    
+    return new ctor(buffer);
+  }
+
+  /**
+   * Given a builtin object "o" from either side of the membrane, return a copy
+   * constructed in the taming frame. Return undefined if "o" is not of a type
+   * handled here. Note that we only call this function if we know that "o" is
+   * *not* a primitive.
+   *
+   * This function handles only objects which should be copied every time they
+   * are passed across the membrane. For objects which we wish to copy at most
+   * once, see copyTreatedImmutable above.
+   */
+  function copyTreatedMutable(o, recursor) {
+    {  // dummy block for minimum difference with trunk
+      var t = undefined;
+      // Object.prototype.toString is spoofable (as of ES6). Therefore, each
+      // branch of this switch must assume that o is not necessarily of the type
+      // and defend against that. However, we consider it acceptable for a
+      // spoofing object to be copied as one of what it was spoofing, or to
+      // cause an error.
+      switch (Object.prototype.toString.call(o)) {
+        // Note that these typed array tamings break any buffer sharing, but
+        // that's in line with our general policy of copying.
+        //
+        // Note that we do not use privilegedAccess operations here, but that
+        // is okay because ES5/3 does not support typed arrays and so this code
+        // will never be reached.
+        case '[object ArrayBuffer]':
+          // ArrayBuffer.prototype.slice will always copy or throw TypeError
+          t = ArrayBuffer.prototype.slice.call(o, 0);
+          break;
+          case '[object Int8Array]': t = copyTArray(Int8Array, o); break;
+          case '[object Uint8Array]': t = copyTArray(Uint8Array, o); break;
+          case '[object Uint8ClampedArray]':
+              t = copyTArray(Uint8ClampedArray, o); break;
+          case '[object Int16Array]': t = copyTArray(Int16Array, o); break;
+          case '[object Uint16Array]': t = copyTArray(Uint16Array, o); break;
+          case '[object Int32Array]': t = copyTArray(Int32Array, o); break;
+          case '[object Uint32Array]': t = copyTArray(Uint32Array, o); break;
+          case '[object Float32Array]': t = copyTArray(Float32Array, o); break;
+          case '[object Float64Array]': t = copyTArray(Float64Array, o); break;
+        case '[object DataView]':
+          t = new DataView(recursor(o.buffer), o.byteOffset, o.byteLength);
+          break;
+      }
+      return t;
+    }
   }
 
   // This is a last resort for passing a safe "demilitarized zone" exception
@@ -204,7 +282,7 @@ function TamingMembrane(privilegedAccess, schema) {
     if ((f && tameByFeral.has(f)) || (t && feralByTame.has(t))) {
       var et = tameByFeral.get(f);
       var ef = feralByTame.get(t);
-      throw new TypeError('Attempt to multiply tame: ' + f + 
+      throw new TypeError('Attempt to multiply tame: ' + f +
           (ef ? ' (already ' + (ef === f ? 'same' : ef) + ')' : '') +
           ' <-> ' + t +
           (et ? ' (already ' + (et === t ? 'same' : et) + ')' : ''));
@@ -266,23 +344,25 @@ function TamingMembrane(privilegedAccess, schema) {
       // Primitive value; tames to self
       return f;
     }
-    var ftype = typeof f;
+    var t = tameByFeral.get(f);
+    if (t) { return t; }
     if (Array.isArray(f)) {
       // No tamesTo(...) for arrays; we copy across the membrane
       return tameArray(f);
     }
-    var t = tameByFeral.get(f);
-    if (t) { return t; }
     if (feralByTame.has(f)) {
       throw new TypeError('Tame object found on feral side of taming membrane: '
           + f + '. The membrane has previously been compromised.');
     }
+    var ftype = typeof f;
     if (ftype === 'object') {
+      t = copyTreatedMutable(f, tame);  // after type test to avoid toxic fns
+      if (t) { return t; }
       var ctor = privilegedAccess.directConstructor(f);
       if (ctor === privilegedAccess.BASE_OBJECT_CONSTRUCTOR) {
         t = preventExtensions(tameRecord(f));
       } else {
-        t = copyBuiltin(f);
+        t = copyTreatedImmutable(f);
         if (t === void 0) {
           if (ctor === void 0) {
             throw new TypeError('Cannot determine ctor of: ' + f);
@@ -565,12 +645,9 @@ function TamingMembrane(privilegedAccess, schema) {
       // Primitive value; untames to self
       return t;
     }
-    var ttype = typeof t;
-    if (Array.isArray(t)) {
-      // No tamesTo(...) for arrays; we copy across the membrane
-      return untameArray(t);
-    }
     var f = feralByTame.get(t);
+    if (f) { return f; }
+    f = copyTreatedMutable(t, untame);
     if (f) { return f; }
     if (tameByFeral.has(t)) {
       throw new TypeError('Feral object found on tame side of taming membrane: '
@@ -579,12 +656,17 @@ function TamingMembrane(privilegedAccess, schema) {
     if (!privilegedAccess.isDefinedInCajaFrame(t)) {
       throw new TypeError('Host object leaked without being tamed');
     }
+    if (Array.isArray(t)) {
+      // No tamesTo(...) for arrays; we copy across the membrane
+      return untameArray(t);
+    }
+    var ttype = typeof t;
     if (ttype === 'object') {
       var ctor = privilegedAccess.directConstructor(t);
       if (ctor === privilegedAccess.BASE_OBJECT_CONSTRUCTOR) {
         f = untameCajaRecord(t);
       } else {
-        f = copyBuiltin(t);
+        f = copyTreatedImmutable(t);
         if (f === void 0) {
           throw new TypeError(
               'Untaming of guest constructed objects unsupported: ' + t);
@@ -660,7 +742,7 @@ function TamingMembrane(privilegedAccess, schema) {
     reTamesTo: reTamesTo,
     hasTameTwin: hasTameTwin,
     hasFeralTwin: hasFeralTwin,
-    
+
     // Any code which bypasses the membrane (e.g. in order to provide its own
     // tame twins, as Domado does) must also filter exceptions resulting from
     // control flow crossing the membrane.

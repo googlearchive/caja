@@ -175,6 +175,57 @@ jsunitRegister('testGuestConstructedObjectMethods',
   pass('testGuestConstructedObjectMethods');
 });
 
+jsunitRegisterIf(
+    typeof ArrayBuffer !== 'undefined',
+    'testGuestTypedArrays',
+    function testGuestTypedArrays() {
+  // Note: We haven't written a corresponding guest-to-host test, because the
+  // handling of typed arrays is fully symmetric (copyUnmemoized) and has no
+  // reason to behave differently.
+
+  var buf = new Uint8Array([1, 2, 3]).buffer;
+  tamedApi.tamedHostPureFunction(
+      'assertTrue("value " + a, a instanceof frame.imports.ArrayBuffer);', buf);
+  tamedApi.tamedHostPureFunction(
+      'assertEquals("buffer length", 3, a.byteLength);', buf);
+  tamedApi.tamedHostPureFunction(
+      'assertEquals("buffer element", 2, new Uint8Array(a)[1]);', buf);
+
+  // Testing array type and also specifically the lack of buffer sharing.
+  var a = new Uint8Array([1, 2, 3]);
+  var b = new Uint8Array(a.buffer);
+  tamedApi.tamedHostPureFunction(
+      'assertTrue("array " + a, a instanceof frame.imports.Uint8Array);', a, b);
+  tamedApi.tamedHostPureFunction(
+      'assertNotEquals("array buffer", a.buffer, b.buffer);', a, b);
+  tamedApi.tamedHostPureFunction('a[0] = 99;', a);
+  // no persistent mutation and sharing
+  tamedApi.tamedHostPureFunction(
+      'assertEquals("not mutated", 2, a[0] + b[0]);', a, b);
+  assertEquals('guest not mutated', 1, a[0]);
+
+  // DataView
+  var array = new Uint8Array([0, 0, 0, 1, 0, 1]);
+  var vbuf = array.buffer;
+  var view = new DataView(vbuf, 1, 4);
+  tamedApi.tamedHostPureFunction(
+    'assertTrue("view: " + a, a instanceof frame.imports.DataView);',
+    view, vbuf);
+  tamedApi.tamedHostPureFunction(
+    'assertNotEquals("equality", a.buffer, b);', view, vbuf);
+  tamedApi.tamedHostPureFunction('assertEquals("bo", 1, a.byteOffset);', view);
+  tamedApi.tamedHostPureFunction('assertEquals("bl", 4, a.byteLength);', view);
+  tamedApi.tamedHostPureFunction(
+    'assertEquals("value", 256, a.getUint32(0));', view);
+  tamedApi.tamedHostPureFunction(
+    'a.setUint32(0, 10);', view);
+  assertEquals('mutation check 1', 1, array[3]);
+  assertEquals('mutation check 2', 0, array[4]);
+
+  pass('testGuestTypedArrays');
+});
+
+
 jsunitRegister('testMembraneViolation',
                function testMembraneViolation() {
   expectFailure(function() {
