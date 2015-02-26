@@ -519,9 +519,18 @@ public abstract class Operation extends AbstractExpression {
       case 1: folded = foldUnaryOp(); break;
       case 2: folded = foldBinaryOp(); break;
       case 3: folded = foldTernaryOp(); break;
-      default: return this;
+      default: folded = this;
     }
     if (isFn && isFnSpecialForm(folded) && !isFnSpecialForm(this)) {
+      if (is(this, Operator.COMMA)) {
+        List<? extends Expression> operands = children();
+        Expression left = operands.get(0);
+        Expression right = operands.get(1);
+        if (right == folded
+            && left instanceof IntegerLiteral && left.getValue().equals(0L)) {
+          return this;
+        }
+      }
       FilePosition pos = getFilePosition();
       folded = Operation.create(
           pos, Operator.COMMA,
@@ -739,7 +748,7 @@ public abstract class Operation extends AbstractExpression {
         }
       }
     } else if (is(fn, Operator.MEMBER_ACCESS)
-        && fn.children().get(0) instanceof StringLiteral) {
+               && fn.children().get(0) instanceof StringLiteral) {
       StringLiteral sl = (StringLiteral) fn.children().get(0);
       String methodName = ((Reference) fn.children().get(1))
           .getIdentifierName();

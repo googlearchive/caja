@@ -188,14 +188,19 @@ public class StatementSimplifier {
         return new ReturnStmt(rs.getFilePosition(), optReturnValue);
       }
       return rs;
+    } else if (n instanceof Expression) {
+      // We need to recurse into it to find function constructor bodies,
+      // and we want to fold the result, but we don't want to fold recursively
+      // with isFn=false, so we separate the recursion through the expression
+      // for statements out.
+      return optimizeEmbeddedExpressions((Expression) n, false);
     } else {
       List<? extends ParseTreeNode> children = n.children();
       int nChildren = children.size();
       List<ParseTreeNode> newChildren = null;
       boolean childNeedsBlock = (
-          n instanceof FunctionConstructor || n instanceof TryStmt
-          || n instanceof CatchStmt || n instanceof FinallyStmt
-          || n instanceof SwitchCase);
+          n instanceof TryStmt || n instanceof CatchStmt
+          || n instanceof FinallyStmt || n instanceof SwitchCase);
       for (int i = 0; i < nChildren; ++i) {
         ParseTreeNode child = children.get(i);
         ParseTreeNode newChild = optimize(child, childNeedsBlock);
@@ -262,8 +267,39 @@ public class StatementSimplifier {
         n = ParseTreeNodes.newNodeInstance(
             n.getClass(), n.getFilePosition(), n.getValue(), newChildren);
       }
-      return n instanceof Expression ? ((Expression) n).fold(false) : n;
+      return n;
     }
+  }
+
+  private Expression optimizeEmbeddedExpressions(Expression e, boolean isFn) {
+    List<? extends ParseTreeNode> children = e.children();
+    int nChildren = children.size();
+    List<ParseTreeNode> newChildren = null;
+    for (int i = 0; i < nChildren; ++i) {
+      ParseTreeNode child = children.get(i);
+      ParseTreeNode newChild;
+      if (child instanceof Expression) {
+        boolean childIsFn = i == 0 && Operation.is(e, Operator.FUNCTION_CALL);
+        newChild = optimizeEmbeddedExpressions((Expression) child, childIsFn);
+      } else if (child instanceof Statement) {
+        newChild = optimize(child, e instanceof FunctionConstructor);
+      } else {
+        newChild = child;
+      }
+      if (child != newChild) {
+        if (newChildren == null) {
+          newChildren = Lists.newArrayListWithCapacity(nChildren);
+        }
+        newChildren.addAll(children.subList(newChildren.size(), i));
+        newChildren.add(newChild);
+      }
+    }
+    if (newChildren != null) {
+      newChildren.addAll(children.subList(newChildren.size(), nChildren));
+      e = (Expression) ParseTreeNodes.newNodeInstance(
+          e.getClass(), e.getFilePosition(), e.getValue(), newChildren);
+    }
+    return e.fold(isFn);
   }
 
   /**
@@ -592,7 +628,7 @@ public class StatementSimplifier {
       }
     }
     // TODO(mikesamuel): if c is simple and not a global reference, optimize
-    // out he common head as well.
+    // out the common head as well.
     CommaCommonalities opt = commaCommonalities(x, y);
     if (opt != null) {
       // Both reduced sides can't be null since we checked above whether
