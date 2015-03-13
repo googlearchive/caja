@@ -33,6 +33,8 @@
  * //provides ses.makeCallerHarmless, ses.makeArgumentsHarmless
  * //provides ses.noFuncPoison
  * //provides ses.verifyStrictFunctionBody
+ * //provides ses.getUndeniables, ses.earlyUndeniables
+ * //provides ses.getAnonIntrinsics
  *
  * @author Mark S. Miller
  * @requires ___global_test_function___, ___global_valueOf_function___
@@ -200,16 +202,16 @@ var ses;
    * 'arguments' on functions as special.
    */
   var noFuncPoison =
-     Function.prototype.hasOwnProperty('caller') &&
-     Function.prototype.hasOwnProperty('arguments') &&
-     !strictFnSpecimen.hasOwnProperty('caller') &&
-     !strictFnSpecimen.hasOwnProperty('arguments') &&
-     !builtInMapMethod.hasOwnProperty('caller') &&
-     !builtInMapMethod.hasOwnProperty('arguments') &&
-     delete Function.prototype.caller &&
-     delete Function.prototype.arguments &&
-     !Function.prototype.hasOwnProperty('caller') &&
-     !Function.prototype.hasOwnProperty('arguments');
+      Function.prototype.hasOwnProperty('caller') &&
+      Function.prototype.hasOwnProperty('arguments') &&
+      !strictFnSpecimen.hasOwnProperty('caller') &&
+      !strictFnSpecimen.hasOwnProperty('arguments') &&
+      !builtInMapMethod.hasOwnProperty('caller') &&
+      !builtInMapMethod.hasOwnProperty('arguments') &&
+      delete Function.prototype.caller &&
+      delete Function.prototype.arguments &&
+      !Function.prototype.hasOwnProperty('caller') &&
+      !Function.prototype.hasOwnProperty('arguments');
   ses.noFuncPoison = noFuncPoison;
 
 
@@ -276,6 +278,14 @@ var ses;
   var simpleTamperProofOk = false;
 
   /**
+   * preemptThaw is only set to something other than a noop function
+   * when repairing THROWING_THAWS_FROZEN_OBJECT. It is made visible
+   * here because tamperProof needs to call it before it virtualizes
+   * data properties into accessor properties.
+   */
+  var preemptThaw = function(obj) {};
+
+  /**
    * "makeTamperProof()" returns a "tamperProof(obj, opt_pushNext)"
    * function that acts like "Object.freeze(obj)", except that, if obj
    * is a <i>prototypical</i> object (defined below), it ensures that
@@ -331,7 +341,6 @@ var ses;
     // but before any untrusted code runs in this frame.
     var gopd = Object.getOwnPropertyDescriptor;
     var gopn = Object.getOwnPropertyNames;
-    var getProtoOf = Object.getPrototypeOf;
     var freeze = Object.freeze;
     var isFrozen = Object.isFrozen;
     var defProp = Object.defineProperty;
@@ -379,6 +388,7 @@ var ses;
           func.prototype === obj &&
           !isFrozen(obj)) {
         var pushNext = opt_pushNext || function(v) {};
+        preemptThaw(obj);
         forEachNonPoisonOwn(obj, function(name) {
           var value;
           function getter() {
@@ -499,7 +509,7 @@ var ses;
    *
    * <p>Uses Allen's trick from
    * https://esdiscuss.org/topic/tostringtag-spoofing-for-null-and-undefined#content-59
-   * for brand testing that will remain reliable in ES6. 
+   * for brand testing that will remain reliable in ES6.
    * However, testing reveals that, on FF 35.0.1, a proxy on an exotic
    * object X will pass this brand test when X will. This is fixed as of
    * FF Nightly 38.0a1.
@@ -615,7 +625,239 @@ var ses;
       global.WeakMap, 'get', [{}], global.WeakMap ? new WeakMap() : void 0);
 
 
-  ///////////////////////////////////////////
+  //////////////// Undeniables and Intrinsics //////////////
+
+
+  /**
+   * A known strict function which returns its arguments object.
+   */
+  function strictArguments() { return arguments; }
+
+  /**
+   * A known sloppy function which returns its arguments object.
+   *
+   * Defined using Function so it'll be sloppy (not strict and not
+   * builtin).
+   */
+  var sloppyArguments = Function('return arguments;');
+
+  /**
+   * If present, a known strict generator function which yields its
+   * arguments object.
+   *
+   * <p>TODO: once all supported browsers implement ES6 generators, we
+   * can drop the "try"s below, drop the check for old Mozilla
+   * generator syntax, and treat strictArgumentsGenerator as
+   * unconditional in the test of the code.
+   */
+  var strictArgumentsGenerator = void 0;
+  try {
+    // ES6 syntax
+    strictArgumentsGenerator =
+        eval('(function*() { "use strict"; yield arguments; })');
+  } catch (ex) {
+    if (!(ex instanceof SyntaxError)) { throw ex; }
+    try {
+      // Old Firefox syntax
+      strictArgumentsGenerator =
+          eval('(function() { "use strict"; yield arguments; })');
+    } catch (ex2) {
+      if (!(ex2 instanceof SyntaxError)) { throw ex2; }
+    }
+  }
+
+  /**
+   * The undeniables are the primordial objects which are ambiently
+   * reachable via compositions of strict syntax, primitive wrapping
+   * (new Object(x)), and prototype navigation (the equivalent of
+   * Object.getPrototypeOf(x) or x.__proto__). Although we could in
+   * theory monkey patch primitive wrapping or prototype navigation,
+   * we won't. Hence, without parsing, the following are undeniable no
+   * matter what <i>other</i> monkey patching we do to the primordial
+   * environment.
+   */
+  function getUndeniables() {
+    var gopd = Object.getOwnPropertyDescriptor;
+    var getProto = Object.getPrototypeOf;
+
+    // The first element of each undeniableTuple is a string used to
+    // name the undeniable object for reporting purposes. It has no
+    // other programmatic use.
+    //
+    // The second element of each undeniableTuple should be the
+    // undeniable itself.
+    //
+    // The optional third element of the undeniableTuple, if present,
+    // should be an example of syntax, rather than use of a monkey
+    // patchable API, evaluating to a value from which the undeniable
+    // object in the second element can be reached by only the
+    // following steps:
+    // If the value is primitve, convert to an Object wrapper.
+    // Is the resulting object either the undeniable object, or does
+    // it inherit directly from the undeniable object?
+
+    var undeniableTuples = [
+        ['Object.prototype', Object.prototype, {}],
+        ['Function.prototype', Function.prototype, function(){}],
+        ['Array.prototype', Array.prototype, []],
+        ['RegExp.prototype', RegExp.prototype, /x/],
+        ['Boolean.prototype', Boolean.prototype, true],
+        ['Number.prototype', Number.prototype, 1],
+        ['String.prototype', String.prototype, 'x'],
+    ];
+    var result = {};
+
+    // Get the ES6 %Generator% intrinsic, if present.
+    // It is undeniable because individual generator functions inherit
+    // from it.
+    (function() {
+      // See http://people.mozilla.org/~jorendorff/figure-2.png
+      // i.e., Figure 2 of section 25.2 "Generator Functions" of the
+      // ES6 spec.
+      // https://people.mozilla.org/~jorendorff/es6-draft.html#sec-generatorfunction-objects
+      if (!strictArgumentsGenerator) { return; }
+      var Generator = getProto(strictArgumentsGenerator);
+      undeniableTuples.push(['%Generator%', Generator,
+                             strictArgumentsGenerator]);
+      strictArgumentsGenerator = strictArgumentsGenerator;
+    }());
+
+    strictForEachFn(undeniableTuples, function(tuple) {
+      var name = tuple[0];
+      var undeniable = tuple[1];
+      var start = tuple[2];
+      result[name] = undeniable;
+      if (start === void 0) { return; }
+      start = Object(start);
+      if (undeniable === start) { return; }
+      if (undeniable === getProto(start)) { return; }
+      throw new Error('Unexpected undeniable: ' + undeniable);
+    });
+
+    return result;
+  }
+  ses.getUndeniables = getUndeniables;
+
+  // For consistency checking, once we've done all our whitelist
+  // processing and monkey patching, we will call getUndeniables again
+  // and check that the undeniables are the same.
+  ses.earlyUndeniables = getUndeniables();
+
+
+  /**
+   * Get the intrinsics not otherwise reachable by named own property
+   * traversal. See
+   * https://people.mozilla.org/~jorendorff/es6-draft.html#sec-well-known-intrinsic-objects
+   * and the instrinsics section of whitelist.js
+   *
+   * <p>Unlike getUndeniables(), the result of getAnonIntrinsics()
+   * does depend on the current state of the primordials, so we must
+   * run this again after all other relevant monkey patching is done,
+   * in order to properly initialize cajaVM.intrinsics
+   */
+  function getAnonIntrinsics() {
+    var gopd = Object.getOwnPropertyDescriptor;
+    var getProto = Object.getPrototypeOf;
+    var result = {};
+
+    // If there are still other ThrowTypeError objects left after
+    // noFuncPoison-ing, this should be caught by
+    // test_THROWTYPEERROR_NOT_UNIQUE below, so we assume here that
+    // this is the only surviving ThrowTypeError intrinsic.
+    result.ThrowTypeError = gopd(arguments, 'caller').get;
+
+    // Get the ES6 %ArrayIteratorPrototype%, %StringIteratorPrototype%,
+    // and %IteratorPrototype% intrinsics, if present.
+
+    // TODO %MapIteratorPrototype%, %SetIteratorPrototype%
+    // It is currently safe to omit %MapIteratorPrototype% and
+    // %SetIteratorPrototype% since we do not yet whitelist Map and
+    // Set.
+    (function() {
+      var iteratorSym = global.Symbol && global.Symbol.iterator ||
+            "@@iterator"; // used instead of a symbol on FF35
+      if ([][iteratorSym]) {
+        var arrayIter = [][iteratorSym]();
+        var ArrayIteratorPrototype = getProto(arrayIter);
+        result.ArrayIteratorPrototype = ArrayIteratorPrototype;
+        var arrayIterProtoBase = getProto(ArrayIteratorPrototype);
+        if (arrayIterProtoBase !== Object.prototype) {
+          if (getProto(arrayIterProtoBase) !== Object.prototype) {
+            throw new Error(
+                '%IteratorPrototype%.__proto__ was not Object.prototype');
+          }
+          result.IteratorPrototype = arrayIterProtoBase;
+        }
+      }
+      if (''[iteratorSym]) {
+        var stringIter = ''[iteratorSym]();
+        var StringIteratorPrototype = getProto(stringIter);
+        result.StringIteratorPrototype = StringIteratorPrototype;
+        var stringIterProtoBase = getProto(StringIteratorPrototype);
+        if (stringIterProtoBase !== Object.prototype) {
+          if (!result.IteratorPrototype) {
+            if (getProto(stringIterProtoBase) !== Object.prototype) {
+              throw new Error(
+                  '%IteratorPrototype%.__proto__ was not Object.prototype');
+            }
+            result.IteratorPrototype = stringIterProtoBase;
+          } else {
+            if (result.IteratorPrototype !== stringIterProtoBase) {
+              throw new Error('unexpected %StringIteratorPrototype%.__proto__');
+            }
+          }
+        }
+      }
+    }());
+
+    // Get the ES6 %GeneratorFunction% intrinsic, if present.
+    (function() {
+      var Generator = ses.earlyUndeniables['%Generator%'];
+      if (!Generator || Generator === Function.prototype) { return; }
+      if (getProto(Generator) !== Function.prototype) {
+        throw new Error('Generator.__proto__ was not Function.prototype');
+      }
+      var GeneratorFunction = Generator.constructor;
+      if (GeneratorFunction === Function) { return; }
+      if (getProto(GeneratorFunction) !== Function) {
+        throw new Error('GeneratorFunction.__proto__ was not Function');
+      }
+      result.GeneratorFunction = GeneratorFunction;
+      var genProtoBase = getProto(Generator.prototype);
+      if (genProtoBase !== result.IteratorPrototype &&
+          genProtoBase !== Object.prototype) {
+        throw new Error('Unexpected Generator.prototype.__proto__');
+      }
+    }());
+
+    // Get the ES6 %TypedArray% intrinsic, if present.
+    (function() {
+      if (!global.Float32Array) { return; }
+      var TypedArray = getProto(global.Float32Array);
+      if (TypedArray === Function.prototype) { return; }
+      if (getProto(TypedArray) !== Function.prototype) {
+        // http://bespin.cz/~ondras/html/classv8_1_1ArrayBufferView.html
+        // has me worried that someone might make such an intermediate
+        // object visible.
+        throw new Error('TypedArray.__proto__ was not Function.prototype');
+      }
+      result.TypedArray = TypedArray;
+    }());
+
+    for (var name in result) {
+      if (result[name] === void 0) {
+        throw new Error('Malformed intrinsic: ' + name);
+      }
+    }
+
+    return result;
+  }
+  ses.getAnonIntrinsics = getAnonIntrinsics;
+
+  var unsafeIntrinsics = getAnonIntrinsics();
+
+
+  //////////////////////////////////////////////////////////
 
   /**
    * Fails if {@code funcBodySrc} does not parse as a strict
@@ -2860,44 +3102,45 @@ var ses;
       desc.enumerable + ', value: ' + desc.value;
   }
 
-  function getThrowTypeError() {
-    return Object.getOwnPropertyDescriptor(arguments, 'caller').get;
-  }
-
   /**
-   * A known strict function which returns its arguments object.
-   */
-  function strictArguments() { return arguments; }
-
-  /**
-   * A known sloppy function which returns its arguments object.
-   *
-   * Defined using Function so it'll be sloppy (not strict and not
-   * builtin).
-   */
-  var sloppyArguments = Function('return arguments;');
-
-  /**
-   * [[ThrowTypeError]] is not unique (even after whatever cleanup was
-   * already done during the noPoison testing above).
+   * %ThrowTypeError% is not unique (even after whatever cleanup was
+   * already done during the noFuncPoison testing above).
    */
   function test_THROWTYPEERROR_NOT_UNIQUE() {
-    var tte = getThrowTypeError();
+    var tte = unsafeIntrinsics.ThrowTypeError;
     if (typeof tte !== 'function') {
-      return 'Unexpected [[ThrowTypeError]]: ' + tte;
+      return 'Unexpected %ThrowTypeError%: ' + tte;
     }
     var others = [];
-    strictForEachFn([
+    var sourcesOfTTE = [
       [Function.prototype, 'Function.prototype', ['caller', 'arguments']],
       [builtInMapMethod, 'builtin function', ['caller', 'arguments']],
       [strictArguments, 'strict function', ['caller', 'arguments']],
       [sloppyArguments, 'sloppy function', ['caller', 'arguments']],
       [strictArguments(), 'strict arguments', ['caller', 'callee']],
       [sloppyArguments(), 'sloppy arguments', ['caller', 'callee']]
-    ], function(triple) {
-      var base = triple[0];
-      var where = triple[1];
-      var names = triple[2];
+    ];
+    if (strictArgumentsGenerator) {
+      var strictGeneratedArgs = strictArgumentsGenerator().next().value;
+      sourcesOfTTE.push(
+        [strictArgumentsGenerator, 'strict generator', ['caller', 'arguments']],
+        [strictGeneratedArgs, 'strict generated arguments',
+         ['caller', 'callee']]);
+    }
+    var Generator = ses.earlyUndeniables['%Generator%'];
+    if (Generator) {
+      sourcesOfTTE.push([Generator, '%Generator%', ['caller', 'arguments']]);
+    }
+    var GeneratorFunction = unsafeIntrinsics.GeneratorFunction;
+    if (GeneratorFunction) {
+      sourcesOfTTE.push([GeneratorFunction, '%GeneratorFunction%',
+                    ['caller', 'arguments']]);
+    }
+
+    strictForEachFn(sourcesOfTTE, function(sourceOfTTE) {
+      var base = sourceOfTTE[0];
+      var where = sourceOfTTE[1];
+      var names = sourceOfTTE[2];
       strictForEachFn(names, function(name) {
         var desc = Object.getOwnPropertyDescriptor(base, name);
         if (!desc) { return; }
@@ -2909,26 +3152,26 @@ var ses;
       });
     });
     if (others.length === 0) { return false; }
-    return 'Multiple [[ThrowTypeError]]s: ' + others.join(', ');
+    return 'Multiple %ThrowTypeError%s: ' + others.join(', ');
   }
 
   /**
-   * [[ThrowTypeError]] is extensible or has modifiable properties.
+   * %ThrowTypeError% is extensible or has modifiable properties.
    */
   function test_THROWTYPEERROR_UNFROZEN() {
-    return !Object.isFrozen(getThrowTypeError());
+    return !Object.isFrozen(unsafeIntrinsics.ThrowTypeError);
   }
 
   /**
-   * [[ThrowTypeError]] has properties which the spec gives to other function
-   * objects but not [[ThrowTypeError]].
+   * %ThrowTypeError% has properties which the spec gives to other function
+   * objects but not %ThrowTypeError%.
    *
    * We don't check for arbitrary properties because they might be extensions
    * for all function objects, which we don't particularly want to complain
    * about (and will delete via whitelisting).
    */
   function test_THROWTYPEERROR_PROPERTIES() {
-    var tte = getThrowTypeError();
+    var tte = unsafeIntrinsics.ThrowTypeError;
     return !!Object.getOwnPropertyDescriptor(tte, 'prototype') ||
         !!Object.getOwnPropertyDescriptor(tte, 'arguments') ||
         !!Object.getOwnPropertyDescriptor(tte, 'caller');
@@ -3185,6 +3428,248 @@ var ses;
       return 'Unexpected result of setting a function\'s prototype ' +
         'with defineProperty: ' + typeof bar.prototype;
     }
+  }
+
+  /**
+   * In ES6, the constructor property of the %Generator% intrinsic
+   * initially points at the unsafe %GeneratorFunction% intrinsic. This
+   * property is supposed to have attributes
+   * { [[Writable]]: false, [[Enumerable]]: false, [[Configurable]]: true }
+   * Prior to 2/19/2015, on v8 it had attributes
+   * { [[Writable]]: false, [[Enumerable]]: false, [[Configurable]]: false }
+   * making it impossible to change the property's value.
+   *
+   * <p>Since the original %GeneratorFunction% intrinsic, like the
+   * global Function constructor, accepts a function body which it
+   * executes in the global scope, it would be reachable by any
+   * generator. Without parsing, we would not be able to prevent
+   * the following expression
+   * <pre>
+   * (function*(){}).constructor('yield window;')().next().value
+   * </pre>
+   * from providing the genuine global window object of that realm.
+   */
+  function test_GENERATORFUNCTION_CANNOT_BE_DENIED() {
+    var gopd = Object.getOwnPropertyDescriptor;
+    var getProto = Object.getPrototypeOf;
+
+    var UnsafeGeneratorFunction = unsafeIntrinsics.GeneratorFunction;
+    if (!UnsafeGeneratorFunction) { return false; }
+    var Generator = ses.earlyUndeniables['%Generator%'];
+    if (!(Generator &&
+          Generator.constructor === UnsafeGeneratorFunction &&
+          UnsafeGeneratorFunction.prototype === Generator &&
+          getProto(UnsafeGeneratorFunction) === UnsafeFunction &&
+          getProto(Generator) === Function.prototype)) {
+      return 'Unexpected primordial Generator arrangement';
+    }
+    var desc = gopd(Generator, 'constructor');
+    return desc.writable === false && desc.configurable === false;
+  }
+
+  /**
+   * ES6 introduces a new "import" special form syntax, which imports
+   * access to modules that we cannot currently control. Therefore, if
+   * we cannot prevent use of the "import" syntax, we lose
+   * isolation. Fortunately, the "import" syntax can only legally
+   * occur with modules, not within the text that the original eval,
+   * Function, or %GeneratorFunction% would accept. Since untrusted
+   * code enters a SES environment only through these, we should be
+   * safe.
+   *
+   * <p>This test checks that this assumption indeed holds for the
+   * current platform.
+   */
+  function test_IMPORT_CAN_BE_EVALLED() {
+    // From Table 40 at
+    // https://people.mozilla.org/~jorendorff/es6-draft.html#sec-source-text-module-records
+    // The following test will actually attempt to eval the following
+    // strings, so it is important that there not be strings here that
+    // can do damage if this eval succeeds during SES
+    // initialization. This is before any untrusted code runs in this
+    // realm, so we assume that no module named __noModWithThisName__
+    // is yet importable.
+    var importExamples = [
+        'import v from "__noModWithThisName__";',
+        'import * as ns from "__noModWithThisName__";',
+        'import {x} from "__noModWithThisName__";',
+        'import {x as v} from "__noModWithThisName__";',
+        'import "__noModWithThisName__";'];
+    var evallers = [unsafeEval, UnsafeFunction];
+    if (unsafeIntrinsics.GeneratorFunction) {
+      evallers.push(unsafeIntrinsics.GeneratorFunction);
+    }
+    for (var i = 0; i < importExamples.length; i++) {
+      for (var j = 0; j < evallers.length; j++) {
+        try {
+          evallers[j](importExamples[i]);
+          return true;
+        } catch (ex) {
+          if (!(ex instanceof SyntaxError)) {
+            return 'unexpected "' + importExamples[i] + '" failure: ' + ex;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Detects https://bugs.webkit.org/show_bug.cgi?id=141865
+   *
+   * <p>On Safari 7.0.5 (9537.77.4), the getter of the
+   * Object.prototype.__proto__ property, if applied to undefined,
+   * acts like a sloppy function would, coercing the undefined to the
+   * global object and returning the global object's [[Prototype]].
+   */
+  function test_UNDERBAR_PROTO_GETTER_USES_GLOBAL() {
+    var gopd = Object.getOwnPropertyDescriptor;
+    var getProto = Object.getPrototypeOf;
+
+    var desc = gopd(Object.prototype, '__proto__');
+    if (!desc) { return false; }
+    var getter = desc.get;
+    if (!getter) { return false; }
+    var globalProto = void 0;
+    try {
+      globalProto = getter();
+    } catch (ex) {
+      if (ex instanceof TypeError && globalProto === void 0) {
+          return false;
+      }
+      return 'unexpected error: ' + ex;
+    }
+    if (getProto(global) === globalProto) { return true; }
+    return 'unexpected global.__proto__: ' + globalProto;
+  }
+
+  /**
+   * Detects https://bugs.webkit.org/show_bug.cgi?id=141865
+   *
+   * <p>On Safari 7.0.5 (9537.77.4), the setter of the
+   * Object.prototype.__proto__ property, if applied to undefined,
+   * acts like a sloppy function would, coercing the undefined to the
+   * global object and setting its [[Prototype]].
+   */
+  function test_UNDERBAR_PROTO_SETTER_USES_GLOBAL() {
+    var gopd = Object.getOwnPropertyDescriptor;
+    var getProto = Object.getPrototypeOf;
+
+    var desc = gopd(Object.prototype, '__proto__');
+    if (!desc) { return false; }
+    var setter = desc.set;
+    if (!setter) { return false; }
+    var globalProto = getProto(global);
+    // Just insert an intermediate object into the prototype chain of the
+    // global object, so this realm is left in a usable state.
+    var splicedProto = Object.create(globalProto);
+    try {
+      setter(splicedProto);
+    } catch (ex) {
+      if (ex instanceof TypeError && getProto(global) === globalProto) {
+        return false;
+      }
+      return 'unexpected error: ' + ex;
+    }
+    if (getProto(global) === splicedProto) { return true; }
+    return 'unexpected global.__proto__: ' + getProto(global);
+  }
+
+  /**
+   * Detects https://bugs.webkit.org/show_bug.cgi?id=141878
+   *
+   * <p>On Safari 7.0.5 (9537.77.4), throwing a frozen object results
+   * in it becoming unfrozen and  several properties being added to
+   * it: 'line', 'column', 'sourceURL' (not always), and 'stack'. The
+   * big security hole is due to 'stack', which is added as a
+   * writable configurable property. Although initialized to a string,
+   * one can assign an arbitrary object to it, opening a capability
+   * leak.
+   */
+  function test_THROWING_THAWS_FROZEN_OBJECT() {
+    var o = Object.freeze([1, 2]);
+    if (!Object.isFrozen(o)) {
+      return 'Unexpected spontaneous thaw';
+    }
+    var oldNames = Object.getOwnPropertyNames(o);
+    try {
+      throw o;
+    } catch (e) {
+      if (e !== o) {
+        return 'What was thrown is not what was caught';
+      }
+      if (Object.isFrozen(e)) {
+        // In the bug we're testing for, Object.isFrozen(e) is false,
+        // which is dealt with below this if-statement.
+        // If Object.isFrozen(e) is true, presumably this platform
+        // does not have the bug. Before concluding that we're safe
+        // from this bug (returning false) the rest of this case does
+        // a bit of sanity checking to make sure that other symptoms
+        // of this bug are absent.
+        var newNames = Object.getOwnPropertyNames(o);
+        if (oldNames.length !== newNames.length) {
+          return 'Throwing changed properties to: ' + newNames;
+        }
+        return false;
+      }
+      var oldStack = e.stack;
+      var capLeak = {};
+      try {
+        e.stack = capLeak;
+      } catch (err) {
+        if (e.stack === oldStack) {
+          throw 'Unexpected failure to leak: ' + err;
+        }
+      }
+      if (e.stack === capLeak) { return true; }
+    }
+    return 'Unexpected result of throwing frozen object';
+  }
+
+
+  /**
+   * Tests for https://bugzilla.mozilla.org/show_bug.cgi?id=1125389
+   * which is a Firefox specific bug that enables one to extend
+   * objects that were supposedly made non-extensible.
+   */
+  function test_NON_EXTENSIBLES_EXTENSIBLE() {
+    var someVar = 33;
+    var a = void 0;
+    function Obj() {
+      this.x = 0;
+      Object.preventExtensions(this);
+    }
+    var i = 0;
+    function test() {
+      var A = new Obj();
+      a = A;
+      while (i < 2000) {
+        i++;
+        if (Object.isExtensible(A)) {
+          return;
+        }
+      }
+      A.length1 = someVar;
+    }
+    try {
+      test();
+    } catch (e) {
+      if (e instanceof TypeError && i === 2000) {
+        return false;
+      } else {
+        return 'Unexpected error: ' + e;
+      }
+    }
+    try {
+      a.randomProperty = someVar;
+      a.length1 = someVar;
+    } catch (e2) {
+      return 'Extending failed: ' + e2;
+    }
+    if (a.randomProperty !== someVar || a.length1 !== someVar) {
+      return 'Did not extend correctly: ' + a;
+    }
+    return true;
   }
 
   ////////////////////// Repairs /////////////////////
@@ -3821,6 +4306,209 @@ var ses;
           Object.defineProperties(o, props);
         }
         return o;
+      }
+    });
+  }
+
+  /**
+   * Repairs both getter and setter. If either are vulnerable, I don't
+   * care if the other seemed to pass the test. Better to make them
+   * both safe.
+   */
+  function repair_UNDERBAR_PROTO_accessors_USE_GLOBAL() {
+    var gopd = Object.getOwnPropertyDescriptor;
+
+    var oldDesc = gopd(Object.prototype, '__proto__');
+    var oldGetter = oldDesc.get;
+    var oldSetter = oldDesc.set;
+    function newGetter() {
+      if (this === null || this === void 0) {
+        throw new TypeError('Cannot convert null or undefined to object');
+      } else {
+        return oldGetter.call(this);
+      }
+    }
+    function newSetter(newProto) {
+      if (this === null || this === void 0) {
+        throw new TypeError('Cannot convert null or undefined to object');
+      } else {
+        oldSetter.call(this, newProto);
+      }
+    }
+    Object.defineProperty(Object.prototype, '__proto__', {
+      get: oldGetter ? newGetter : void 0,
+      set: oldSetter ? newSetter : void 0
+    });
+  }
+
+  /**
+   * Repairs Safari-only bug
+   * https://bugs.webkit.org/show_bug.cgi?id=141878 by preemptively
+   * adding the 'line', 'column', 'sourceUrl', and 'stack' properties
+   * to any objects that are about to become non-extensible. When
+   * these are already present, then the Safari bug does not add them.
+   */
+  function repair_THROWING_THAWS_FROZEN_OBJECT() {
+    var defProp = Object.defineProperty;
+
+    /**
+     * Preemptively add to obj, if necessary, the properties that
+     * Safari would add on throwing/catching the object.
+     */
+    preemptThaw = function(obj) {
+      strictForEachFn(['line', 'column', 'sourceUrl', 'stack'],
+                      function(name) {
+        if (!hop.call(obj, name)) {
+          try {
+            // First try adding it ourselves to prevent the side
+            // channel that would happen when the throw and catch of
+            // obj below would add values according to its calling
+            // stack.
+            defProp(obj, name, {
+              value: void 0, // so naive feature tests will still fail
+              writable: false,
+              enumerable: false, // so it is invisible to ES3 iteration
+              configurable: true // so tamperProof can turn the data
+                                 // property into an accessor, to cope
+                                 // with the override mistake
+            });
+          } catch (ignoredErr) {}
+        }
+      });
+      // If the object was already non-extensible somehow, then the
+      // above defProp may have failed to add the property. So this
+      // throw-catch adds whatever remaining properties this bug would
+      // add. In this case, there may be a side channel, revealing
+      // information about the caller of preemptThaw. But at least it
+      // happens now, when it is less dangerous, before the monkey
+      // patched freeze, seal, or preventExtensions returns.
+      try { throw obj; } catch (_) {}
+    }
+
+    var oldFreeze = Object.freeze;
+    defProp(Object, 'freeze', {
+      value: function antithawFreeze(obj) {
+        preemptThaw(obj);
+        return oldFreeze(obj);
+      }
+    });
+
+    var oldSeal = Object.seal;
+    defProp(Object, 'seal', {
+      value: function antithawSeal(obj) {
+        preemptThaw(obj);
+        return oldSeal(obj);
+      }
+    });
+
+    var oldPreventExtensions = Object.preventExtensions;
+    defProp(Object, 'preventExtensions', {
+      value: function antithawPreventExtensions(obj) {
+        preemptThaw(obj);
+        return oldPreventExtensions(obj);
+      }
+    });
+  }
+
+  /**
+   * According to
+   * https://bugzilla.mozilla.org/show_bug.cgi?id=1125389#c28 comment 28
+   * <blockquote>
+   *   <blockquote>
+   *      [...] is there anything that content script could do to prevent
+   *      this bug from occurring?
+   *   </blockquote>
+   *     [...] If the object which preventExtensions is called on has
+   *     any properties which are non-configurable or non-writable
+   *     then the bug won't impact anything (so calling seal() or
+   *     freeze() on an object with at least one property shouldn't be
+   *     able to trigger this bug)
+   * </blockquote>
+   *
+   * <p>WeakMap.js, if it needs to install a WeakMap emulation, does
+   * so by adding a hidden own property to objects at the time they
+   * would be made non-extensible, by monkey patching those functions
+   * that would make them non-extensible. It also monkey patches those
+   * functions that would reveal non-enumerable own properties, so
+   * that they don't reveal this hidden property.
+   *
+   * <p>Were both this repair and the WeakMap emulation of more long
+   * term interest, we should find a way to reuse this monkey patching
+   * logic, so the same monkey patching could serve both purposes. As
+   * it is, this repair becomes unneeded as of FF36, as the underlying
+   * problem is fixed there, so we expediently that part of
+   * WeakMap.js's logic without worrying about reusable
+   * abstractions. Unlike the WeakMap fix, here, the hidden property
+   * need not be unguessage, but only resistent to accidental
+   * collision. If the WeakMap installation repair happens on top of
+   * this one, they should compose fine.
+   */
+  function repair_NON_EXTENSIBLES_EXTENSIBLE() {
+    var gopn = Object.getOwnPropertyNames;
+    var defProp = Object.defineProperty;
+    var isExtensible = Object.isExtensible;
+
+    var DUMMY_NAME = '___j9d04gcuzydmfgvi___';
+
+    function isNotDummyName(name) { return name !== DUMMY_NAME; }
+
+    // For all calls to Object.defineProperty (defProp) to redefine an
+    // existing property, keep in mind that omitting some attributes,
+    // like writable:, enumerable:, or configurable:, means that the
+    // current setting of these attributes should be preseved, rather
+    // than defaulting to false.
+
+    // Note that the use of .filter as an array instance method below
+    // only works in SES under the immutable primordials
+    // assumption. For example, it would not work in CES (Confined
+    // EcmaScript).
+
+    defProp(Object, 'getOwnPropertyNames', {
+      value: function nonDummyGetOwnPropertyNames(obj) {
+        return gopn(obj).filter(isNotDummyName);
+      }
+    });
+    if ('getPropertyNames' in Object) {
+      var originalGetPropertyNames = Object.getPropertyNames;
+      defProp(Object, 'getPropertyNames', {
+        value: function nonDummyGetPropertyNames(obj) {
+          return originalGetPropertyNames(obj).filter(isNotDummyName);
+        }
+      });
+    }
+
+    function addDummyProperty(obj) {
+      if (obj !== Object(obj)) { return; }
+      if (!Object.isExtensible(obj)) { return; }
+      defProp(obj, DUMMY_NAME, {
+        value: 'DUMMY',
+        writable: false,
+        enumerable: false,
+        configurable: false
+      });
+    }
+
+    var oldFreeze = Object.freeze;
+    defProp(Object, 'freeze', {
+      value: function bogosifyingFreeze(obj) {
+        addDummyProperty(obj);
+        return oldFreeze(obj);
+      }
+    });
+
+    var oldSeal = Object.seal;
+    defProp(Object, 'seal', {
+      value: function bogosifyingSeal(obj) {
+        addDummyProperty(obj);
+        return oldSeal(obj);
+      }
+    });
+
+    var oldPreventExtensions = Object.preventExtensions;
+    defProp(Object, 'preventExtensions', {
+      value: function bogosifyingPreventExtensions(obj) {
+        addDummyProperty(obj);
+        return oldPreventExtensions(obj);
       }
     });
   }
@@ -4512,7 +5200,7 @@ var ses;
       urls: ['https://code.google.com/p/v8/issues/detail?id=893',
              'https://bugs.webkit.org/show_bug.cgi?id=63398'],
       sections: ['15.3.4.5'],
-      tests: ['test/language/statements/function/S13.2.3_A1.js', 
+      tests: ['test/language/statements/function/S13.2.3_A1.js',
               'test/built-ins/Function/prototype/bind/S15.3.4.5_A2.js']
     },
     {
@@ -4895,7 +5583,7 @@ var ses;
     },
     {
       id: 'THROWTYPEERROR_NOT_UNIQUE',
-      description: '[[ThrowTypeError]] is not unique',
+      description: '%ThrowTypeError% is not unique',
       test: test_THROWTYPEERROR_NOT_UNIQUE,
       repair: void 0,
       preSeverity: severities.UNSAFE_SPEC_VIOLATION,
@@ -4906,7 +5594,7 @@ var ses;
     },
     {
       id: 'THROWTYPEERROR_UNFROZEN',
-      description: '[[ThrowTypeError]] is not frozen',
+      description: '%ThrowTypeError% is not frozen',
       test: test_THROWTYPEERROR_UNFROZEN,
       repair: void 0,
       preSeverity: severities.SAFE_SPEC_VIOLATION,  // Note: Safe only because
@@ -4921,7 +5609,7 @@ var ses;
     },
     {
       id: 'THROWTYPEERROR_PROPERTIES',
-      description: '[[ThrowTypeError]] has normal function properties',
+      description: '%ThrowTypeError% has normal function properties',
       test: test_THROWTYPEERROR_PROPERTIES,
       repair: void 0,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
@@ -5009,6 +5697,77 @@ var ses;
           // TODO(kpreid): link Microsoft info page when available
       sections: ['8.12.6'],
       tests: []  // TODO(kpreid): contribute tests
+    },
+    {
+      id: 'GENERATORFUNCTION_CANNOT_BE_DENIED',
+      description: 'Cannot deny access to unsafe %GeneratorFunction%',
+      test: test_GENERATORFUNCTION_CANNOT_BE_DENIED,
+      repair: void 0,
+      preSeverity: severities.NOT_ISOLATED,
+      canRepair: false,
+      urls: ['https://code.google.com/p/google-caja/issues/detail?id=1953',
+             'https://code.google.com/p/v8/issues/detail?id=3902',
+             'https://code.google.com/p/chromium/issues/detail?id=460145',
+             'https://people.mozilla.org/~jorendorff/es6-draft.html#sec-generatorfunction.prototype.constructor'],
+      sections: [],
+      tests: []
+    },
+    {
+      id: 'IMPORT_CAN_BE_EVALLED',
+      description: 'Import statement evaluates outside module source text',
+      test: test_IMPORT_CAN_BE_EVALLED,
+      repair: void 0,
+      preSeverity: severities.NOT_ISOLATED,
+      canRepair: false,
+      urls: [],
+      sections: [],
+      tests: []
+    },
+    {
+      id: 'UNDERBAR_PROTO_GETTER_USES_GLOBAL',
+      description: 'The getter of __proto__ coerces "this" to global',
+      test: test_UNDERBAR_PROTO_GETTER_USES_GLOBAL,
+      repair: repair_UNDERBAR_PROTO_accessors_USE_GLOBAL,
+      preSeverity: severities.NOT_ISOLATED,
+      canRepair: true,
+      urls: ['https://bugs.webkit.org/show_bug.cgi?id=141865'],
+      sections: [],
+      tests: []
+    },
+    {
+      id: 'UNDERBAR_PROTO_SETTER_USES_GLOBAL',
+      description: 'The setter of __proto__ coerces "this" to global',
+      test: test_UNDERBAR_PROTO_SETTER_USES_GLOBAL,
+      repair: repair_UNDERBAR_PROTO_accessors_USE_GLOBAL,
+      preSeverity: severities.NOT_ISOLATED,
+      canRepair: true,
+      urls: ['https://bugs.webkit.org/show_bug.cgi?id=141865'],
+      sections: [],
+      tests: []
+    },
+    {
+      id: 'THROWING_THAWS_FROZEN_OBJECT',
+      description: 'Throwing a frozen object opens a capability leak',
+      test: test_THROWING_THAWS_FROZEN_OBJECT,
+      repair: repair_THROWING_THAWS_FROZEN_OBJECT,
+      preSeverity: severities.NOT_ISOLATED,
+      canRepair: true,
+      urls: ['https://bugs.webkit.org/show_bug.cgi?id=141871',
+             'https://bugs.webkit.org/show_bug.cgi?id=141878'],
+      sections: [],
+      tests: []
+    },
+    {
+      id: 'NON_EXTENSIBLES_EXTENSIBLE',
+      description: 'Non-extensible objects can be extended',
+      test: test_NON_EXTENSIBLES_EXTENSIBLE,
+      repair: repair_NON_EXTENSIBLES_EXTENSIBLE,
+      preSeverity: severities.NOT_ISOLATED,
+      canRepair: true,
+      urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=1125389',
+             'https://code.google.com/p/google-caja/issues/detail?id=1954'],
+      sections: [],
+      tests: []
     }
   ];
 

@@ -21,6 +21,8 @@
  * //requires ses.makeCallerHarmless, ses.makeArgumentsHarmless
  * //requires ses.noFuncPoison
  * //requires ses.verifyStrictFunctionBody
+ * //requires ses.getUndeniables, ses.earlyUndeniables
+ * //requires ses.getAnonIntrinsics
  * //optionally requires ses.mitigateSrcGotchas
  * //provides ses.startSES ses.resolveOptions, ses.securableWrapperSrc
  * //provides ses.makeCompiledExpr ses.prepareExpr
@@ -165,21 +167,21 @@ var cajaVM;
  *        TODO(erights): Currently, the code has only been tested when
  *        {@code global} is the global object of <i>this</i>
  *        frame. The code should be made to work for cross-frame use.
- * @param whitelist ::Record(Permit) where Permit = true | "*" |
- *        Record(Permit).  Describes the subset of naming
- *        paths starting from {@code sharedImports} that should be
- *        accessible. The <i>accessible primordials</i> are all values
- *        found by navigating these paths starting from {@code
- *        sharedImports}. All non-whitelisted properties of accessible
- *        primordials are deleted, and then {@code sharedImports}
- *        and all accessible primordials are frozen with the
- *        whitelisted properties frozen as data properties.
- *        TODO(erights): fix the code and documentation to also
- *        support confined-ES5, suitable for confining potentially
- *        offensive code but not supporting defensive code, where we
- *        skip this last freezing step. With confined-ES5, each frame
- *        is considered a separate protection domain rather that each
- *        individual object.
+ * @param whitelist ::Record(Permit) where 
+ *        Permit = true | false | "*" | "maybeAccessor" | Record(Permit).
+ *        Describes the subset of naming paths starting from {@code
+ *        sharedImports} that should be accessible. The <i>accessible
+ *        primordials</i> are all values found by navigating these
+ *        paths starting from {@code sharedImports}. All
+ *        non-whitelisted properties of accessible primordials are
+ *        deleted, and then {@code sharedImports} and all accessible
+ *        primordials are frozen with the whitelisted properties
+ *        frozen as data properties.  TODO(erights): fix the code and
+ *        documentation to also support confined-ES5, suitable for
+ *        confining potentially offensive code but not supporting
+ *        defensive code, where we skip this last freezing step. With
+ *        confined-ES5, each frame is considered a separate protection
+ *        domain rather that each individual object.
  * @param limitSrcCharset ::F([string])
  *        Given the sourceText for a strict Program, return a record with an
  *        'error' field if it is not in the limited character set that SES
@@ -367,14 +369,6 @@ ses.startSES = function(global,
     func.prototype = null;
     return freeze(func);
   }
-
-  /**
-   * Obtain the ES5 singleton [[ThrowTypeError]].
-   */
-  function getThrowTypeError() {
-    return gopd(arguments, 'caller').get;
-  }
-
 
   function fail(str) {
     debugger;
@@ -1015,32 +1009,97 @@ ses.startSES = function(global,
       return freeze(moduleMaker);
     }
 
-    /**
-     * A safe form of the {@code Function} constructor, which
-     * constructs strict functions that can only refer freely to the
-     * {@code sharedImports}.
-     *
-     * <p>The returned function is strict whether or not it declares
-     * itself to be.
-     */
-    function FakeFunction(var_args) {
-      var params = [].slice.call(arguments, 0);
-      var body = ses.verifyStrictFunctionBody(params.pop() || '');
+    // This block replaces the original Function constructor, and the
+    // original %GeneratorFunction% instrinsic if present, with safe
+    // replacements that preserve SES confinement. After this block is
+    // done, the originals should no longer be reachable.
+    (function() {
+      var unsafeIntrinsics = ses.getAnonIntrinsics();
 
-      // Although the individual params may not be strings, the params
-      // array is reliably a fresh array, so under the SES (not CES)
-      // assumptions of unmodified primordials, this calls the reliable
-      // Array.prototype.join which guarantees that its result is a string.
-      params = params.join(',');
+      /**
+       * A safe form of the {@code Function} constructor, which
+       * constructs strict functions that can only refer freely to the
+       * {@code sharedImports}.
+       *
+       * <p>The returned function is strict whether or not it declares
+       * itself to be.
+       */
+      function FakeFunction(var_args) {
+        var params = [].slice.call(arguments, 0);
+        var body = ses.verifyStrictFunctionBody(params.pop() || '');
+ 
+        // Although the individual params may not be strings, the params
+        // array is reliably a fresh array, so under the SES (not CES)
+        // assumptions of unmodified primordials, this calls the reliable
+        // Array.prototype.join which guarantees that its result is a string.
+        params = params.join(',');
+ 
+        // Note the EOL after body to prevent a trailing line comment in
+        // body from eliding the rest of the wrapper.
+        var exprSrc = '(function(' + params + '\n){' + body + '\n})';
+        return compileExpr(exprSrc)(sharedImports);
+      }
+      FakeFunction.prototype = UnsafeFunction.prototype;
+      FakeFunction.prototype.constructor = FakeFunction;
+      global.Function = FakeFunction;
 
-      // Note the EOL after body to prevent a trailing line comment in
-      // body from eliding the rest of the wrapper.
-      var exprSrc = '(function(' + params + '\n){' + body + '\n})';
-      return compileExpr(exprSrc)(sharedImports);
-    }
-    FakeFunction.prototype = UnsafeFunction.prototype;
-    FakeFunction.prototype.constructor = FakeFunction;
-    global.Function = FakeFunction;
+
+      function FakeGeneratorFunction(var_args) {
+        var params = [].slice.call(arguments, 0);
+        var body = ses.verifyStrictFunctionBody(params.pop() || '');
+        params = params.join(',');
+
+        var exprSrc = '(function*(' + params + '\n){' + body + '\n})';
+        return compileExpr(exprSrc)(sharedImports);
+      }
+      var UnsafeGeneratorFunction = unsafeIntrinsics.GeneratorFunction;
+      if (UnsafeGeneratorFunction) {
+        var Generator = ses.earlyUndeniables['%Generator%'];
+        if (!(Generator &&
+              Generator.constructor === UnsafeGeneratorFunction &&
+              UnsafeGeneratorFunction.prototype === Generator &&
+              getProto(UnsafeGeneratorFunction) === UnsafeFunction &&
+              getProto(Generator) === Function.prototype)) {
+          throw new Error('Unexpected primordial Generator arrangement');
+        }
+        FakeGeneratorFunction.prototype = Generator;
+        FakeGeneratorFunction.__proto__ = FakeFunction;
+        if (getProto(FakeGeneratorFunction) !== FakeFunction) {
+          throw Error('Failed to set FakeGeneratorFunction.__proto__');
+        }
+        try {
+          // According to section 25.2.3.1 of the ES6 / ES2015 spec,
+          // the generator.constructor property should have attributes
+          // writable: false, configurable: true, so we need to change
+          // it with defProp rather than assignment. Recall that when
+          // defProp-ing an existing property, all unspecified
+          // attributes preserve their existing setting.
+          defProp(Generator, 'constructor', { value: FakeGeneratorFunction });
+        } catch (ex) {
+          try {
+            Generator.constructor = FakeGeneratorFunction;
+          } catch (ex2) {
+            // TODO: report
+          }
+          // TODO: report
+        }
+        if (Generator.constructor !== FakeGeneratorFunction) {
+          // TODO: define logger and reportItem earlier, so we can use
+          // them here.
+          ses.updateMaxSeverity(ses.severities.NOT_ISOLATED);
+          if (Generator.constructor === UnsafeGeneratorFunction) {
+            ses.logger.error(
+                'Cannot deny access to unsafe %GeneratorFunction%');
+          } else {
+            throw new Error('Unexpected %Generator%.constructor: ' +
+                            Generator.constructor);
+          }
+        }
+      }
+      // The next time we ses.getAnonIntrinsics(), the result should be
+      // safe intrinsics.
+    }());
+
 
     /**
      * A safe form of the indirect {@code eval} function, which
@@ -1334,6 +1393,7 @@ ses.startSES = function(global,
       }
     })();
 
+
     global.cajaVM = { // don't freeze here
       // Note that properties defined on cajaVM must also be added to
       // whitelist.js, or they will be deleted.
@@ -1365,7 +1425,7 @@ ses.startSES = function(global,
       compileModule: constFunc(compileModule),
       // compileProgram: compileProgram, // Cannot be implemented in ES5.1.
       eval: fakeEval,               // don't freeze here
-      Function: FakeFunction,       // don't freeze here,
+      Function: global.Function,       // don't freeze here,
 
       sharedImports: sharedImports, // don't freeze here
       makeImports: constFunc(makeImports),
@@ -1378,12 +1438,22 @@ ses.startSES = function(global,
       //es5ProblemReports: ses.es5ProblemReports
     };
 
-    // Inserted here to make this ES5 singleton object controllable by our
-    // whitelist, not to make it part of our public API.
-    defProp(cajaVM, '[[ThrowTypeError]]', {
-      enumerable: false,
-      value: getThrowTypeError()
-    });
+    if (ses.es5ProblemReports.GENERATORFUNCTION_CANNOT_BE_DENIED.afterFailure) {
+      global.cajaVM.anonIntrinsics = {};
+    } else {
+      // Here we make available by name those intrinsics which would
+      // otherwise be accessible, but are not otherwise accessible by
+      // a naming path, starting from available roots, traversing
+      // through named own properties. See instrinsics in whitelist.js
+      // for a complete list of those intrinsics that might eventually
+      // show up here.
+      //
+      // The Object.freeze here ensures that if
+      // ses.getAnonIntrinsics() returns intrinsics not listed in
+      // the whitelist, then clean will fail rather than silently
+      // removing them.
+      global.cajaVM.anonIntrinsics = Object.freeze(ses.getAnonIntrinsics());
+    }
 
     var extensionsRecord = extensions();
     gopn(extensionsRecord).forEach(function (p) {
@@ -1472,9 +1542,9 @@ ses.startSES = function(global,
    *
    * We initialize the whiteTable only so that {@code getPermit} can
    * process "*" inheritance using the whitelist, by walking actual
-   * superclass chains.
+   * inheritance chains.
    */
-  var whitelistSymbols = [true, '*', 'maybeAccessor'];
+  var whitelistSymbols = [true, false, '*', 'maybeAccessor'];
   var whiteTable = new WeakMap();
   function register(value, permit) {
     if (value !== Object(value)) { return; }
@@ -1484,8 +1554,7 @@ ses.startSES = function(global,
       }
       return;
     }
-    var oldPermit = whiteTable.get(value);
-    if (oldPermit) {
+    if (whiteTable.has(value)) {
       fail('primordial reachable through multiple paths');
     }
     whiteTable.set(value, permit);
@@ -1506,7 +1575,7 @@ ses.startSES = function(global,
    * {@code base} object, and if so, with what Permit?
    *
    * <p>If it should be permitted, return the Permit (where Permit =
-   * true | "accessor" | "*" | Record(Permit)), all of which are
+   * true | "maybeAccessor" | "*" | Record(Permit)), all of which are
    * truthy. If it should not be permitted, return false.
    */
   function getPermit(base, name) {
@@ -1660,12 +1729,22 @@ ses.startSES = function(global,
   }
 
   /**
-   * Assumes all super objects are otherwise accessible and so will be
-   * independently cleaned.
+   * Removes all non-whitelisted properties found by recursively and
+   * reflectively walking own property chains.
+   *
+   * <p>Inherited properties are not checked, because we require that
+   * inherited-from objects are otherwise reachable by this traversal.
    */
   function clean(value, prefix) {
     if (value !== Object(value)) { return; }
     if (cleaning.get(value)) { return; }
+
+    var proto = getProto(value);
+    if (proto !== null && !whiteTable.has(proto)) {
+      reportItemProblem(rootReports, ses.severities.NOT_ISOLATED,
+                        'unexpected intrinsic', prefix + '.__proto__');
+    }
+
     cleaning.set(value, true);
     gopn(value).forEach(function(name) {
       var path = prefix + (prefix ? '.' : '') + name;
@@ -1712,33 +1791,41 @@ ses.startSES = function(global,
   // (identifying the actually frozen objects) if that doesn't cost too much.
   ses._primordialsHaveBeenFrozen = true;
 
-  // The following objects are ambiently available via language constructs, and
-  // therefore if we did not clean and defend them we have a problem. This is
-  // defense against mistakes in modifying the whitelist, not against browser
-  // bugs.
-  [
-    ['sharedImports', sharedImports],
-    ['[[ThrowTypeError]]', getThrowTypeError()],  // function literals
-    ['Array.prototype', Array.prototype],  // [], gOPN etc.
-    ['Boolean.prototype', Boolean.prototype],  // false, true
-    ['Function.prototype', Function.prototype],  // function(){}
-    ['Number.prototype', Number.prototype],  // 1, 2
-    ['Object.prototype', Object.prototype],  // {}, gOPD
-    ['RegExp.prototype', RegExp.prototype],  // /.../
-    ['String.prototype', String.prototype]  // "..."
-    // TODO(kpreid): Is this list complete?
-  ].forEach(function(record) {
-    var name = record[0];
-    var root = record[1];
-    if (!cleaning.has(root)) {
+  (function() {
+    // These objects are ambiently available via language
+    // constructs, and therefore if we did not clean and defend them
+    // we have a problem. This is defense against mistakes in
+    // modifying the whitelist, not against browser bugs.
+    var undeniables = ses.getUndeniables();
+
+    // This will catch if the result of cleaning somehow changed the
+    // result of gathering undeniables, which, because they are
+    // undeniable, should have been invariant across all those
+    // cleaning steps.
+    var undeniableNames = Object.keys(undeniables);
+    if (undeniableNames.length !== Object.keys(ses.earlyUndeniables).length) {
+      // By first ensuring that the number of undeniables is the same,
+      // the following test cannot names in earlyUndeniables that are
+      // absent from undeniables.
       reportItemProblem(rootReports, ses.severities.NOT_ISOLATED,
-          'Not cleaned', name);
+          'Number of undeniables changed');
     }
-    if (!Object.isFrozen(root)) {
-      reportItemProblem(rootReports, ses.severities.NOT_ISOLATED,
-          'Not frozen', name);
-    }
-  });
+    undeniableNames.forEach(function(name) {
+      var undeniable = undeniables[name];
+      if (undeniable !== ses.earlyUndeniables[name]) {
+        reportItemProblem(rootReports, ses.severities.NOT_ISOLATED,
+            'Undeniable "' + name + '" changed');
+      }
+      if (!cleaning.has(undeniable)) {
+        reportItemProblem(rootReports, ses.severities.NOT_ISOLATED,
+            'Not cleaned', name);
+      }
+      if (!Object.isFrozen(undeniable)) {
+        reportItemProblem(rootReports, ses.severities.NOT_ISOLATED,
+            'Not frozen', name);
+      }
+    });
+  }());
 
   logReports(propertyReports);
   logReports(rootReports);

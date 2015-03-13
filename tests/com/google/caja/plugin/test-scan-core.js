@@ -240,7 +240,11 @@ var scanning;  // exports
       }
       return instances.get(ctor);
     }
-    obtainInstance.define = instances.set.bind(instances);
+    obtainInstance.define = function(ctor, instance) {
+      if (ctor !== undefined) {  // allow not-implemented-in-this-browser
+        instances.set(ctor, instance);
+      }
+    };
     return obtainInstance;
   }
 

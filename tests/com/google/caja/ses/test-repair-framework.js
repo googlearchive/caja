@@ -41,12 +41,12 @@ function main() {
     assertTrue('initial default', repairer.okToUse());
     assertTrue('initial safe',    repairer.okToUse(severities.SAFE));
     assertTrue('initial bad',     repairer.okToUse(severities.NOT_ISOLATED));
-  
+
     repairer.updateMaxSeverity(severities.SAFE_SPEC_VIOLATION);
     assertTrue( 'ssv default', repairer.okToUse());
     assertFalse('ssv safe',    repairer.okToUse(severities.SAFE));
     assertTrue( 'ssv bad',     repairer.okToUse(severities.NOT_ISOLATED));
-  
+
     repairer.updateMaxSeverity(severities.SAFE);  // should have no effect
     assertTrue ('noop default', repairer.okToUse());
     assertFalse('noop safe',    repairer.okToUse(severities.SAFE));
@@ -79,7 +79,7 @@ function main() {
     expectFailure(function() {
       repairer.registerProblem({ id: 'DUP', test: function(){} });
     }, 'duplicate', function(e) { return /\bduplicate\b/.test(e); });
-    
+
     jsunitPass();
   });
 
@@ -241,7 +241,7 @@ function main() {
       canRepair: true
     });
     repairer.registerProblem({
-      id: 'TEST_ACCIDENTALLY_REPAIRED',
+      id: 'TEST_SYMPTOM_INTERMITTENT',
       test: function() { return !called_repair_TEST_REPAIRED; },  // not ours!
       repair: void 0,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
@@ -301,8 +301,9 @@ function main() {
         severities.SAFE_SPEC_VIOLATION);
     assertReport(table.TEST_REPAIRED,
         statuses.REPAIRED, true, false, severities.SAFE);
-    assertReport(table.TEST_ACCIDENTALLY_REPAIRED,
-        statuses.ACCIDENTALLY_REPAIRED, true, false, severities.SAFE);
+    assertReport(table.TEST_SYMPTOM_INTERMITTENT,
+        statuses.SYMPTOM_INTERMITTENT, true, false,
+        severities.SAFE_SPEC_VIOLATION);
     assertReport(table.TEST_BROKEN_BY_OTHER_ATTEMPTED_REPAIRS,
         statuses.BROKEN_BY_OTHER_ATTEMPTED_REPAIRS, false, true,
         severities.SAFE_SPEC_VIOLATION);
