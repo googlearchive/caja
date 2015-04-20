@@ -67,9 +67,15 @@ var ses;
  *     of these is tamed as if with true, so that the value of the
  *     property is further tamed according to what other objects it
  *     inherits from.
+ * <li>false, which suppression permission inherited via "*".
  * </ul>
  *
- * The members of the whitelist are either
+ * <p>TODO: We want to do for constructor: something weaker than '*',
+ * but rather more like what we do for [[Prototype]] links, which is
+ * that it is whitelisted only if it points as an object which is
+ * otherwise reachable by a whitelisted path.
+ *
+ * <p>The members of the whitelist are either
  * <ul>
  * <li>(uncommented) defined by the ES5.1 normative standard text,
  * <li>(questionable) provides a source of non-determinism, in
@@ -105,9 +111,46 @@ var ses;
   var TypedArrayWhitelist;  // defined and used below
   ses.whitelist = {
     cajaVM: {                        // Caja support
-      // This object is present here only to make it itself processed by the
-      // whitelist, not to make it accessible by this path.
-      '[[ThrowTypeError]]': t,
+      // The accessible intrinsics which are not reachable by own
+      // property name traversal are listed here so that they are
+      // processed by the whitelist, although this also makes them
+      // accessible by this path.  See
+      // https://people.mozilla.org/~jorendorff/es6-draft.html#sec-well-known-intrinsic-objects
+      // Of these, ThrowTypeError is the only one from ES5. All the
+      // rest were introduced in ES6.
+      anonIntrinsics: {
+        ThrowTypeError: {},
+        IteratorPrototype: {
+          constructor: false  // suppress inherited '*'
+        },
+        ArrayIteratorPrototype: {},
+        StringIteratorPrototype: {},
+        // TODO MapIteratorPrototype: {},
+        // TODO SetIteratorPrototype: {},
+        GeneratorFunction: {
+          prototype: {
+            prototype: {
+              next: t,
+              'return': t,
+              'throw': t
+            }
+          }
+        },
+        TypedArray: TypedArrayWhitelist = {
+          length: '*',  // does not inherit from Function.prototype on Chrome
+          name: '*',  // ditto
+          BYTES_PER_ELEMENT: '*',
+          prototype: {
+            buffer: 'maybeAccessor',
+            byteOffset: 'maybeAccessor',
+            byteLength: 'maybeAccessor',
+            length: 'maybeAccessor',
+            BYTES_PER_ELEMENT: '*',
+            set: '*',
+            subarray: '*'
+          }
+        }
+      },
 
       log: t,
       tamperProof: t,
@@ -198,6 +241,17 @@ var ses;
         __defineSetter__: t,
         __lookupGetter__: t,
         __lookupSetter__: t,
+
+        // There are only here to support repair_THROWING_THAWS_FROZEN_OBJECT,
+        // which repairs Safari-only bug
+        // https://bugs.webkit.org/show_bug.cgi?id=141878 by
+        // preemptively adding these properties to any objects that
+        // are about to become non-extensible. When these are already
+        // present, then the Safari bug does not add them.
+        line: '*',
+        column: '*',
+        sourceUrl: '*',
+        stack: '*',
 
         constructor: '*',
         toString: '*',
@@ -451,6 +505,10 @@ var ses;
       parse: t,
       stringify: t
     },
+
+
+    ///////////////// Standard Starting in ES6 //////////////////
+
     ArrayBuffer: {                   // Khronos Typed Arrays spec; ops are safe
       length: t,  // does not inherit from Function.prototype on Chrome
       name: t,  // ditto
@@ -460,20 +518,7 @@ var ses;
         slice: t
       }
     },
-    Int8Array: TypedArrayWhitelist = {  // Typed Arrays spec
-      length: t,  // does not inherit from Function.prototype on Chrome
-      name: t,  // ditto
-      BYTES_PER_ELEMENT: t,
-      prototype: {
-        buffer: 'maybeAccessor',
-        byteOffset: 'maybeAccessor',
-        byteLength: 'maybeAccessor',
-        length: 'maybeAccessor',
-        BYTES_PER_ELEMENT: t,
-        set: t,
-        subarray: t
-      }
-    },
+    Int8Array: TypedArrayWhitelist,
     Uint8Array: TypedArrayWhitelist,
     Uint8ClampedArray: TypedArrayWhitelist,
     Int16Array: TypedArrayWhitelist,

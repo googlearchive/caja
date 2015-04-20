@@ -320,6 +320,17 @@ var WeakMap;
           name.substr(name.length - 3) === '___');
     }
 
+    // For all calls to Object.defineProperty (defProp) to redefine an
+    // existing property, keep in mind that omitting some attributes,
+    // like writable:, enumerable:, or configurable:, means that the
+    // current setting of these attributes should be preseved, rather
+    // than defaulting to false.
+
+    // Note that the use of .filter as an array instance method below
+    // only works in SES under the immutable primordials
+    // assumption. For example, it would not work in CES (Confined
+    // EcmaScript).
+
     /**
      * Monkey patch getOwnPropertyNames to avoid revealing the
      * HIDDEN_NAME.

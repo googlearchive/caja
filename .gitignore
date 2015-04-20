@@ -1,4 +1,4 @@
-/.appspot-change
+/.appspot-change*
 /.classpath
 /.project
 /.settings
@@ -18,3 +18,4 @@
 /ant-www
 /gwt-unitCache
 /war
+/junit*.properties

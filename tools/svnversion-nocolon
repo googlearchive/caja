@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
 
-# A wrapper around 'svnversion' that removes the colons
-# and lowercases (appengine restrictions)
-svnversion | sed s/:/_/g | tr 'A-Z' 'a-z'
+# The output of this command must be valid as an App Engine version string.
+git describe --always | tr 'A-Z' 'a-z'

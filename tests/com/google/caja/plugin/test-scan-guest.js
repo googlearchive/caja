@@ -386,7 +386,7 @@
     var genFreshElement = G.apply(function() {
       return document.createElement('fresh-element');
     });
-    
+
     var ArrayLike = cajaVM.makeArrayLike(largestSmallInteger);
 
     function isArrayLikeCtor(o) {
@@ -564,6 +564,7 @@
     if (!inES5Mode) {
       expectedAlwaysThrow.mark(RefAnyFrame('Function'));  // no eval
     }
+
     argsByAnyFrame('Function.prototype', genAllCall());
     argsByIdentity(dummyFunction, genCall());
     argsByAnyFrame('Function.prototype.apply', genMethod(genObject, genArray));
@@ -589,9 +590,55 @@
         expectedAlwaysThrow.setByIdentity(getGetter(f, 'arguments'), true);
         expectedAlwaysThrow.setByIdentity(getGetter(f, 'caller'), true);
       });
-    } else {
-      argsByIdentity(cajaVM['[[ThrowTypeError]]'], genAllCall());
-      expectedAlwaysThrow.setByIdentity(cajaVM['[[ThrowTypeError]]'], true);
+    }
+
+    // ES6 Generators
+    if (cajaVM.anonIntrinsics && cajaVM.anonIntrinsics.GeneratorFunction) {
+      functionArgs.set(RefAnyFrame('cajaVM.anonIntrinsics.GeneratorFunction'),
+          genAllCall);
+      expectedAlwaysThrow.set(
+          RefAnyFrame('cajaVM.anonIntrinsics.GeneratorFunction'),
+          true);  // SES disables constructor
+      functionArgs.set(
+          RefAnyFrame('cajaVM.anonIntrinsics.GeneratorFunction.prototype'),
+          genAllCall);
+      expectedAlwaysThrow.set(
+          RefAnyFrame('cajaVM.anonIntrinsics.GeneratorFunction.prototype'),
+          true);  // the prototype of function*s is not callable
+
+      // Using evalInTamingFrame because SES mitigated eval will reject
+      // generator syntax when it parses. TODO(kpreid): use cajaVM.eval once we
+      // fully support generators.
+      var aGeneratorFunction = directAccess.evalInGuestFrame(
+          '(function*() { "use strict"; ' + 
+          'while (true) { try { yield 1; } catch (e) {} } })');
+      var aGenerator = aGeneratorFunction();
+      aGenerator.next();  // so .throw() will be caught
+      obtainInstance.define(cajaVM.anonIntrinsics.GeneratorFunction,
+          aGeneratorFunction);
+      obtainInstance.define(cajaVM.anonIntrinsics.GeneratorFunction.prototype,
+          aGenerator);
+      
+      var generatorIteratorPrototype =
+          cajaVM.anonIntrinsics.GeneratorFunction.prototype.prototype;
+      
+      // TODO(kpreid): Would be nice to be able to say "these methods on any
+      // subtype of Iterator".
+      functionArgs.set(
+          Ref.all(
+              Ref.is(generatorIteratorPrototype.next),
+              Ref.is(generatorIteratorPrototype['return']),
+              Ref.is(generatorIteratorPrototype['throw'])),
+          // fresh because it returns { value: ..., done: ... }
+          freshResult(G.any(
+              genMethod(G.value('foo')), genMethod())));
+    }
+
+    if (inES5Mode) {
+      argsByIdentity(cajaVM.anonIntrinsics.ThrowTypeError, genAllCall());
+      expectedAlwaysThrow.setByIdentity(
+          cajaVM.anonIntrinsics.ThrowTypeError, true);
+      // TODO test other intrinsics like %TypedArray%
     }
 
     argsByIdentity(Number, genAllCall(genSmallInteger));
@@ -656,7 +703,7 @@
 
     argsByAnyFrame('String', genAllCall(genString));
     argsByAnyFrame('String.fromCharCode', genMethod(genSmallInteger));
-    ['big', 'blink', 'bold', 'fixed', 'italics', 'small', 'strong', 'strike',
+    ['big', 'blink', 'bold', 'fixed', 'italics', 'small', 'strike',
         'sub', 'sup'].forEach(function(name) {
       argsByAnyFrame('String.prototype.' + name, genNoArgMethod);
     });
@@ -1401,6 +1448,10 @@
       setupTypedArray('Uint32Array', true);
       setupTypedArray('Float32Array', false);
       setupTypedArray('Float64Array', true);
+
+      obtainInstance.define(cajaVM.anonIntrinsics.TypedArray, new Int8Array(3));
+      argsByIdentity(cajaVM.anonIntrinsics.TypedArray, genAllCall());
+      expectedAlwaysThrow.setByIdentity(cajaVM.anonIntrinsics.TypedArray, true);
 
       argsByAnyFrame('DataView', genNew(
           genInstance(ArrayBuffer), genSmallInteger, genSmallInteger));

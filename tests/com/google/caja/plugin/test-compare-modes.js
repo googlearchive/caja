@@ -253,6 +253,7 @@
         copyToImports: ON_SES,
 
         // SES-specific details
+        anonIntrinsics: ON_SES,
         es5ProblemReports: ON_SES, // TODO(kpreid): Add to ES5/3 for known
             // deviations from spec?
 

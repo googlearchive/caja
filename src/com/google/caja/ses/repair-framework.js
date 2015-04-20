@@ -90,10 +90,12 @@ var ses;
    *   <dt>REPAIRED</dt>
    *     <dd>test failed before and passed after repair attempt,
    *         repairing the problem (canRepair was true).</dd>
-   *   <dt>ACCIDENTALLY_REPAIRED</dt>
+   *   <dt>SYMPTOM_INTERMITTENT</dt>
    *      <dd>test failed before and passed after, despite no repair
-   *          to attempt. (Must have been fixed by some other
-   *          attempted repair.)</dd>
+   *          to attempt. Success was either intermittent or triggered
+   *          by some other attempted repair. Since we don't know why
+   *          it now seems to work, we must conservatively
+   *          assume that the underlying problem remains.</dd>
    *   <dt>BROKEN_BY_OTHER_ATTEMPTED_REPAIRS</dt>
    *      <dd>test passed before and failed after, indicating that
    *          some other attempted repair created the problem.</dd>
@@ -106,7 +108,7 @@ var ses;
     REPAIR_SKIPPED:                    'Repair skipped',
     REPAIRED_UNSAFELY:                 'Repaired unsafely',
     REPAIRED:                          'Repaired',
-    ACCIDENTALLY_REPAIRED:             'Accidentally repaired',
+    SYMPTOM_INTERMITTENT:              'Symptom intermittent',
     BROKEN_BY_OTHER_ATTEMPTED_REPAIRS: 'Broken by other attempted repairs'
   };
 
@@ -400,7 +402,8 @@ var ses;
               status = statuses.REPAIRED;
             }
           } else {
-            status = statuses.ACCIDENTALLY_REPAIRED;
+            postSeverity = problem.preSeverity;
+            status = statuses.SYMPTOM_INTERMITTENT;
           }
         }
       } else { // succeeded before

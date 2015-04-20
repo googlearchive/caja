@@ -24,7 +24,7 @@
     caja.initialize(
         {
           cajaServer: '/caja',
-          debug: true,
+          debug: !minifiedMode,
           maxAcceptableSeverity: 'NO_KNOWN_EXPLOIT_SPEC_VIOLATION'
         },
         function() {},

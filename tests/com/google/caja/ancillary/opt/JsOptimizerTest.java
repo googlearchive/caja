@@ -84,6 +84,26 @@ public class JsOptimizerTest extends CajaTestCase {
                       + "else return boo(); }());")));
   }
 
+  public final void testThisNotUnintentionallyPassed1() throws Exception {
+    // Test that 0 is not preserved when not necessary as in the two
+    // similar tests below.
+    assertOptimized(
+        js(fromString("var x = a.b")),
+        js(fromString("var x = (0,a.b)")));
+  }
+
+  public final void testThisNotUnintentionallyPassed2() throws Exception {
+    assertOptimized(
+        js(fromString("x=(0,a.b)()")),  // Does not pass a.b as this
+        js(fromString("x = (1,a.b)()")));
+  }
+
+  public final void testThisNotUnintentionallyPassed3() throws Exception {
+    assertOptimized(
+        js(fromString("var x=(0,a.b)()")),  // Does not pass a.b as this
+        js(fromString("var x = (1,a.b)()")));
+  }
+
   public final void testIssue1348() throws Exception {
     String input = Join.join(
         "\n",
