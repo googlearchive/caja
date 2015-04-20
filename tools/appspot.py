@@ -79,6 +79,7 @@ class ChangeList(object):
     args = []
     args.extend(['--oauth2'])
     args.extend(['--server', server])
+    args.extend(['--rev', '@{u}'])  # diff against this branch's upstream
     if self.issue:
       args.extend(['--issue', str(self.issue)])
     if self.title:
@@ -479,17 +480,12 @@ def main():
       private=params.get('--private'))
 
   # Figure out where the CL lives on disk
-  client_root = os.path.abspath(os.curdir)
-  while True:
-    client_root_parent = os.path.dirname(client_root)
-    if not client_root_parent or client_root_parent == client_root: break
-    if not os.path.isdir(os.path.join(client_root_parent, '.svn')):
-      break
-    client_root = client_root_parent
-  if not os.path.isdir(os.path.join(client_root, '.svn')):
+  client_root = subprocess.Popen(
+    ['git', 'rev-parse', '--show-toplevel'],
+    stdout=subprocess.PIPE).communicate()[0].strip()
+  if not os.path.isdir(client_root):
     print >>sys.stderr, (
-        'Cannot locate client root.\n'
-        'No directory named google-caja on %s') % os.path.abspath(os.curdir)
+        'No Git repository found for %s') % os.path.abspath(os.curdir)
     sys.exit(-1)
   cl_file_path = make_cl_file_path(client_root)
 
