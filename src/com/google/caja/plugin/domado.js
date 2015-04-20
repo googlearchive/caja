@@ -3544,7 +3544,7 @@ var Domado = (function() {
       }
       registerArrayLikeClass(TameDOMTokenList);
       Props.define(TameDOMTokenList.prototype, TokenListConf, {
-        length: PT.ro,
+        // length: PT.ro,  // handled by ArrayLike
         item: Props.ampMethod(function(privates, i) {
           var ftoken = privates.feral.item(i);
           return ftoken === null ? null : privates.getT(ftoken);
