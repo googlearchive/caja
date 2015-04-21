@@ -97,6 +97,9 @@ var ses;
   var logger = ses.logger;
   var EarlyStringMap = ses._EarlyStringMap;
 
+  var severities = ses.severities;
+  var statuses = ses.statuses;
+
   /**
    * As we start to repair, this will track the worst post-repair
    * severity seen so far.
@@ -547,7 +550,7 @@ var ses;
     strictForEachFn(counterExamples, function(v, i) {
       if (brandTester(v)) {
         logger.error('Brand test ' + i + ' for ' + ctor + ' passed: ' + v);
-        ses._repairer.updateMaxSeverity(ses.severities.NOT_SUPPORTED);
+        ses._repairer.updateMaxSeverity(severities.NOT_SUPPORTED);
       }
     });
     if (opt_example !== void 0 && typeof global.Proxy === 'function') {
@@ -567,12 +570,12 @@ var ses;
       var proxy = new global.Proxy(opt_example, {});
       if (brandTester(proxy)) {
         logger.warn('Brand test of proxy for ' + ctor + ' passed: ' + proxy);
-        ses._repairer.updateMaxSeverity(ses.severities.SAFE_SPEC_VIOLATION);
+        ses._repairer.updateMaxSeverity(severities.SAFE_SPEC_VIOLATION);
       }
     }
     if (opt_example !== void 0 && !brandTester(opt_example)) {
       logger.error('Brand test for ' + ctor + ' failed: ' + opt_example);
-      ses._repairer.updateMaxSeverity(ses.severities.NOT_SUPPORTED);
+      ses._repairer.updateMaxSeverity(severities.NOT_SUPPORTED);
     }
     return brandTester;
   }
@@ -1290,14 +1293,32 @@ var ses;
     return false;
   }
 
-  // Create a new iframe and pass its 'window' object to the provided callback.
-  // If the environment is not a browser, return undefined and do not call the
-  // callback.
+  /**
+   * Create a new iframe and pass its 'window' object to the provided
+   * callback.  If the environment is not a browser, return undefined
+   * and do not call the callback.
+   *
+   * <p>inTestFrame assumes we are in a browser environment iff there
+   * is a non-undefined document with a truthy createElement
+   * property. If so, it creates an iframe, makes it a child somewhere
+   * of the current document, calls the callback, passing that
+   * iframe's window, and then removes the iframe.
+   *
+   * <p>A typical callback (e.g., _optForeignForIn) will then create a
+   * function within that other frame, to be used later to test
+   * cross-frame operations. However, on IE10 on Windows, this iframe
+   * removal may then prevent that created function from running at
+   * that later time, with a "Error: Can't execute code from a freed
+   * script" error.
+   */
   function inTestFrame(callback) {
     if (!(typeof document !== 'undefined' && document.createElement)) {
       return undefined;
     }
     var iframe = document.createElement('iframe');
+    // Four choices for where to put the iframe seems like a lot. How
+    // many of these have been, or even can be, tested? Can we kill
+    // the ones we cannot test?
     var container = document.body || document.getElementsByTagName('head')[0] ||
         document.documentElement || document;
     container.appendChild(iframe);
@@ -3672,6 +3693,53 @@ var ses;
     return true;
   }
 
+
+  /**
+   * _optForeignForIn, if non-undefined, is a function of one parameter
+   * in a foreign frame that does a do-nothing for/in on that
+   * parameter. Used for detecting
+   * https://code.google.com/p/google-caja/issues/detail?id=1962 ,
+   * i.e., whether cross-frame for/in relies on the
+   * non-standard %IteratorPrototype%.next method being present.
+   *
+   * <p>Exported so that startSES can test whether whitelisting
+   * %IteratorPrototype%.next "fixes" the problem.
+   *
+   * <p>When run in a non-browser environment, _optForeignForIn is
+   * undefined.
+   */
+  ses._optForeignForIn = inTestFrame(function(window) {
+    return window.Function('o', '"use strict"; for (var x in o) {}');
+  });
+
+  function test_CROSS_FRAME_FOR_IN_NEEDS_INHERITED_NEXT() {
+    var getProto = Object.getPrototypeOf;
+
+    if (!ses._optForeignForIn) { return false; }
+    var nextless = inTestFrame(function(window) {
+      var iterSym = window.Symbol && window.Symbol.iterator;
+      if (!iterSym) { return void 0; }
+      var arrayIter = (new window.Array())[iterSym]();
+      var iterProto = getProto(getProto(arrayIter));
+      if (!(iterProto.hasOwnProperty('next'))) { return void 0; }
+      delete iterProto.next;
+      return window.eval('"use strict"; ({});');
+    });
+    if (!nextless) { return false; }
+    try {
+      ses._optForeignForIn(nextless);
+    } catch (err) {
+      // Cannot easily instanceof Error, since it is a cross-frame
+      // error. No reliable brand test for Error anyway.
+      if (err.name === 'TypeError' && 'message' in err) {
+        return true;
+      }
+      return 'Unexpected error: ' + err;
+    }
+    return false;
+  }
+
+
   ////////////////////// Repairs /////////////////////
   //
   // Each repair_NAME function exists primarily to repair the problem
@@ -4699,9 +4767,6 @@ var ses;
   }
 
   ////////////////////// Problem Records /////////////////////
-
-  var severities = ses.severities;
-  var statuses = ses.statuses;
 
   /**
    * First test whether the platform can even support our repair
@@ -5768,6 +5833,18 @@ var ses;
              'https://code.google.com/p/google-caja/issues/detail?id=1954'],
       sections: [],
       tests: []
+    },
+    {
+      id: 'CROSS_FRAME_FOR_IN_NEEDS_INHERITED_NEXT',
+      description: 'Cross-frame for/in needs non-standard inherited .next',
+      test: test_CROSS_FRAME_FOR_IN_NEEDS_INHERITED_NEXT,
+      repair: void 0,
+      preSeverity: severities.SAFE_SPEC_VIOLATION,
+      canRepair: false,
+      urls: ['https://code.google.com/p/google-caja/issues/detail?id=1962',
+             'https://bugzilla.mozilla.org/show_bug.cgi?id=1152550'],
+      sections: [],
+      tests: []
     }
   ];
 
@@ -5915,7 +5992,7 @@ var ses;
     });
     ses.es5ProblemReports = indexedReports;
   } catch (err) {
-    ses._repairer.updateMaxSeverity(ses.severities.NOT_SUPPORTED);
+    ses._repairer.updateMaxSeverity(severities.NOT_SUPPORTED);
     var during = ses._repairer.wasDoing();
     logger.error('ES5 Repair ' + during + 'failed with: ', err);
   }

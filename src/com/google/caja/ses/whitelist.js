@@ -109,6 +109,12 @@ var ses;
 
   var t = true;
   var TypedArrayWhitelist;  // defined and used below
+
+  // Note that, on browsers suffering from
+  // CROSS_FRAME_FOR_IN_NEEDS_INHERITED_NEXT, startSES does an
+  // imperative update of the whitelist, but should be ok.  Please
+  // maintain this note together with corresponding notes in
+  // startSES.js where whitelist is updated and where it first read.
   ses.whitelist = {
     cajaVM: {                        // Caja support
       // The accessible intrinsics which are not reachable by own
@@ -122,17 +128,34 @@ var ses;
         ThrowTypeError: {},
         IteratorPrototype: {
           constructor: false  // suppress inherited '*'
+          // Note that startSES may add a "next: '*'" here, depending on
+          // CROSS_FRAME_FOR_IN_NEEDS_INHERITED_NEXT
         },
         ArrayIteratorPrototype: {},
         StringIteratorPrototype: {},
         // TODO MapIteratorPrototype: {},
         // TODO SetIteratorPrototype: {},
+
+        // The %GeneratorFunction% intrinsic is the constructor of
+        // generator functions, so %GeneratorFunction%.prototype is
+        // the %Generator% intrinsic, which all generator functions
+        // inherit from. A generator function is effectively the
+        // constructor of its generator instances, so, for each
+        // generator function (e.g., "g1" on the diagram at
+        // http://people.mozilla.org/~jorendorff/figure-2.png )
+        // its .prototype is a prototype that its instances inherit
+        // from. Paralleling this structure, %Generator%.prototype,
+        // i.e., %GeneratorFunction%.prototype.prototype, is the
+        // object that all these generator function prototypes inherit
+        // from. The .next, .return and .throw that generator
+        // instances respond to are actually the builtin methods they
+        // inherit from this object.
         GeneratorFunction: {
           prototype: {
             prototype: {
-              next: t,
-              'return': t,
-              'throw': t
+              next: '*',
+              'return': '*',
+              'throw': '*'
             }
           }
         },
