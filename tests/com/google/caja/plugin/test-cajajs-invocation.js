@@ -558,6 +558,17 @@
       }, 0);
     });
 
+    jsunitRegister('testImplQuestions', function testImplQuestions() {
+      // Wait for default frame group because we're using it via caja.*.
+      caja.whenReady(function testImplQuestions_inner() {
+        assertEquals('isES53', false, frameGroup.isES53());
+        assertEquals('isES53', false, caja.isES53());
+        assertEquals('isSES', true, frameGroup.isSES());
+        assertEquals('isSES', true, caja.isSES());
+        jsunitPass('testImplQuestions');
+      });
+    });
+
     readyToTest();
     jsunitRun();
   });

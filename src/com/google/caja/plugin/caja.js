@@ -143,6 +143,10 @@ var caja = (function () {
     'makeDefensibleObject___': premature,
     'makeDefensibleFunction___': premature,
 
+    // Introspection
+    'isES53': premature,
+    'isSES': premature,
+
     // Esoteric functions
     'initFeralFrame': initFeralFrame,
     'makeFrameGroup': makeFrameGroup,

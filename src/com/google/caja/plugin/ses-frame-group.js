@@ -101,6 +101,13 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
     USELESS: USELESS,
     iframe: window.frameElement,
 
+    // For clients which need to know details/quirks.
+    // These are functions so that the caja.js "premature" mechanism works.
+    // These are individual questions so that it can be expanded to cover
+    // unforeseen future cases ("almost like", "none of the above").
+    isES53: function() { return false; },
+    isSES: function() { return true; },
+
     Q: Q,
 
     makeES5Frame: makeES5Frame,
