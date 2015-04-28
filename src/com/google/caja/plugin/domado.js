@@ -1065,7 +1065,7 @@ var Domado = (function() {
               String(opt_password));
           break;
         default:
-          throw 'XMLHttpRequest cannot accept ' + arguments.length +
+          throw 'XMLHttpRequest cannot accept ' + (arguments.length - 1) +
               ' arguments';
           break;
         }
