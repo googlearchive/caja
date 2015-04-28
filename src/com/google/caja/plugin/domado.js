@@ -1016,6 +1016,14 @@ var Domado = (function() {
         return (result === undefined || result === null) ?
           result : String(result);
       }),
+      withCredentials: Props.ampAccessor(
+        function(privates) {
+          return Boolean(privates.feral.withCredentials);
+        },
+        function(privates, withCredentials) {
+          privates.feral.withCredentials = Boolean(withCredentials);
+        }
+      ),
       open: Props.ampMethod(function(
           privates, method, URL, opt_async, opt_userName, opt_password) {
         method = String(method);
