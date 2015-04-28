@@ -1036,7 +1036,7 @@ var Domado = (function() {
         if ('string' !== typeof safeUri) {
           throw 'URI violates security policy';
         }
-        switch (arguments.length) {
+        switch (arguments.length - 1) {
         case 2:
           privates.async = true;
           privates.feral.open(method, safeUri);
