@@ -506,6 +506,15 @@ var ses;
         message: '*'
       }
     },
+    // In ES6 the *Error "subclasses" of Error inherit from Error,
+    // since constructor inheritance generally mirrors prototype
+    // inheritance. As explained at
+    // https://code.google.com/p/google-caja/issues/detail?id=1963 ,
+    // debug.js hides away the Error constructor itself, and so needs
+    // to rewire these "subclass" constructors. Until we have a more
+    // general mechanism, please maintain this list of whitelisted
+    // subclasses in sync with the list in debug.js of subclasses to
+    // be rewired.
     EvalError: {
       prototype: t
     },
