@@ -246,7 +246,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    * {@code g.new___(as)}                 is the tamed version of {@code g}
    *                                      used for constructing an object of
    *                                      class {@code g}.
-   * {@code g.ok___ === true}             means g is non-toxic.
+   * {@code g.ok___ === g}                means g is non-toxic.
    *
    * Since creating function instances is a common pattern and reading
    * properties of a function instance is not, we defer whitelisting the
@@ -718,7 +718,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    * whitelisted properties of {@code this}).
    */
   function markFunc(fn, name) {
-    if (fn.ok___) { return fn; }
+    if (fn.ok___ === fn) { return fn; }
     if (!isFunction(fn)) {
       notFunction(fn);
     }
@@ -728,7 +728,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
          'or not from this frame.\n' + fn.f___);
     }
     fn.f___ = fn.apply;
-    fn.ok___ = true;
+    fn.ok___ = fn;
     fn.new___ = fn;
     // Anonymous functions get a 'name' that is the empty string
     fn.name___ = ((name === '' || name === void 0)
@@ -2741,7 +2741,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    * Throws an exception if the value is an unmarked function.
    */
   function asFirstClass(value) {
-    if (isFunction(value) && !value.ok___) {
+    if (isFunction(value) && !(value.ok___ === value)) {
       if (value === Function.prototype) {
         throw new Error('Cannot invoke Function.prototype.');
       }
@@ -3259,7 +3259,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         } else {
           // inline isFunction(val)
           if (classProp.call(val) === '[object Function]') {
-            val.ok___ = true;
+            val.ok___ = val;
           }
         }
       }
@@ -3525,7 +3525,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       }
       markFunc(funcBound);
       funcBound.f___ = funcBound.apply;
-      funcBound.ok___ = true;
+      funcBound.ok___ = funcBound;
       // 15.3.5.2
       if (!rawDelete(funcBound, 'prototype')) {
         funcBound.prototype = null;
@@ -4954,7 +4954,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       if (!descMap) {
         throw new TypeError('Unable to fix the proxy.');
       }
-      var isSafeFunc = isFunction(proxy) && proxy.ok___;
+      var isSafeFunc = isFunction(proxy) && proxy.ok___ === proxy;
       var constructTrap = proxy.new___;
       var i;
       for (i in proxy) {
