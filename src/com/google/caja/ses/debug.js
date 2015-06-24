@@ -67,6 +67,20 @@ var ses;
    FakeError.prototype = UnsafeError.prototype;
    FakeError.prototype.constructor = FakeError;
 
+   // This object should not actually be exposed. It is exposed specifically
+   // because some applications want to do things like setting
+   // Error.stackTraceLimit. In the future, this will be replaced with a better-
+   // designed API.
+   //
+   // Applications should make sure that they do not reveal this object to
+   // any unprivileged code, and be prepared to cope with its absence in future
+   // versions.
+   //
+   // Some history:
+   // https://github.com/google/caja/issues/1516
+   // https://groups.google.com/forum/#!topic/google-caja-discuss/46_j5Rb6cTc
+   ses.UnsafeError = Error;
+
    Error = FakeError;
 
    // Even though this section of code must preserve a security
