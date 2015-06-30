@@ -4265,7 +4265,7 @@ var ses;
       // happens now, when it is less dangerous, before the monkey
       // patched freeze, seal, or preventExtensions returns.
       try { throw obj; } catch (_) {}
-    }
+    };
 
     var oldFreeze = Object.freeze;
     defProp(Object, 'freeze', {

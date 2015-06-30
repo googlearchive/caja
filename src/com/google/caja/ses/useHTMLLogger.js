@@ -112,46 +112,59 @@ function useHTMLLogger(reportsElement, consoleElement) {
     toggler.style.cursor = 'pointer';
   }
 
-   /**
-    * Turn a Causeway stack into a DOM rendering of a v8-like stack
-    * traceback string. Based on ses.stackString in debug.js
-    */
-   function stackDom(preParent, cwStack) {
-     var calls = cwStack.calls;
+  var CODE_GOOGLE_RX = /^http:\/\/([^.]+)\.googlecode.com\/svn\/(.*)$/;
+  var RAWGIT_RX = /^https:\/\/rawgit.com\/(.*)\/master\/(.*)$/;
 
-     calls.forEach(function(call) {
-       var spanString = call.span.map(function(subSpan) {
-         return subSpan.join(':');
-       }).join('::');
+  /**
+   * Turn a Causeway stack into a DOM rendering of a v8-like stack
+   * traceback string. Based on ses.stackString in debug.js
+   */
+  function stackDom(preParent, cwStack) {
+    var calls = cwStack.calls;
 
-       if (spanString) { spanString = ':' + spanString; }
+    calls.forEach(function(call) {
+      var spanString = call.span.map(function(subSpan) {
+        return subSpan.join(':');
+      }).join('::');
 
-       appendText(preParent, '  at ' + call.name + ' (');
-       var url = call.source;
-       var urlText = call.source;
+      if (spanString) { spanString = ':' + spanString; }
 
-       if (/^(?:http|https|file):\/\//.test(url)) {
-         var googlecodeRX = (/^http:\/\/([^.]+)\.googlecode.com\/svn\/(.*)$/);
-         var urlGroups = googlecodeRX.exec(call.source);
-         if (urlGroups) {
-           url = 'https://code.google.com/p/' + urlGroups[1] +
-             '/source/browse/' + urlGroups[2];
-           var spanGroups = (/^:([0-9]+)(.*)$/).exec(spanString);
-           if (spanGroups) {
-             url += '#' + spanGroups[1];
-             urlText += ':' + spanGroups[1];
-             spanString = spanGroups[2];
-           }
-         }
-         var link = appendNew(preParent, 'a');
-         link.href = url;
-         link.textContent = urlText;
-       } else {
-         appendText(preParent, urlText);
-       }
-       appendText(preParent, spanString + ')\n');
-     });
-   };
+      appendText(preParent, '  at ' + call.name + ' (');
+      var url = call.source;
+      var urlText = call.source;
+
+      if (/^(?:http|https|file):\/\//.test(url)) {
+        var urlGroups;
+        if ((urlGroups = CODE_GOOGLE_RX.exec(call.source))) {
+          url = 'https://code.google.com/p/' + urlGroups[1] +
+            '/source/browse/' + urlGroups[2];
+          var spanGroups = (/^:([0-9]+)(.*)$/).exec(spanString);
+          if (spanGroups) {
+            url += '#' + spanGroups[1];
+            urlText += ':' + spanGroups[1];
+            spanString = spanGroups[2];
+          }
+        } else if ((urlGroups = RAWGIT_RX.exec(call.source))) {
+          url = 'https://github.com/' + urlGroups[1] +
+            '/blob/master/' + urlGroups[2];
+          var spanGroups = (/^:([0-9]+)(.*)$/).exec(spanString);
+          if (spanGroups) {
+            url += '#L' + spanGroups[1];
+            urlText += ':' + spanGroups[1];
+            spanString = spanGroups[2];
+          }
+        }
+        
+        var link = appendNew(preParent, 'a');
+        link.href = url;
+        link.target = '_blank';
+        link.textContent = urlText;
+      } else {
+        appendText(preParent, urlText);
+      }
+      appendText(preParent, spanString + ')\n');
+    });
+  };
 
   /** modeled on textAdder */
   function makeLogFunc(parent, style) {

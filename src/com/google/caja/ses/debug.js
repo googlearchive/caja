@@ -25,7 +25,13 @@
  * WeakMap is available, but before startSES.js. initSESPlus.js includes
  * this. initSES.js does not.
  *
- * //provides ses.UnsafeError,
+ * <p>TODO(erights): Explore alternatives to using "instanceof Error"
+ * within this file.  Using "instanceof" makes this fail when used
+ * inter-realm. In ES6 no good inter-realm brand check seems
+ * possible. But even intra-realm, "instanceof" is not a brand check
+ * so there would be no loss of integrity in switching to some other
+ * heuristic.
+ *
  * //provides ses.getCWStack ses.stackString ses.getStack
  * @author Mark S. Miller
  * @requires WeakMap, this
@@ -55,14 +61,49 @@ var ses;
     * debugging operations, unless explicitly turned off below.
     */
    var UnsafeError = Error;
-   ses.UnsafeError = Error;
    function FakeError(message) {
      return UnsafeError(message);
    }
    FakeError.prototype = UnsafeError.prototype;
    FakeError.prototype.constructor = FakeError;
 
+   // This object should not actually be exposed. It is exposed specifically
+   // because some applications want to do things like setting
+   // Error.stackTraceLimit. In the future, this will be replaced with a better-
+   // designed API.
+   //
+   // Applications should make sure that they do not reveal this object to
+   // any unprivileged code, and be prepared to cope with its absence in future
+   // versions.
+   //
+   // Some history:
+   // https://github.com/google/caja/issues/1516
+   // https://groups.google.com/forum/#!topic/google-caja-discuss/46_j5Rb6cTc
+   ses.UnsafeError = Error;
+
    Error = FakeError;
+
+   // Even though this section of code must preserve a security
+   // invariant, this file as a whole is optional, and SES must remain
+   // secure if it is omitted. If this file is omitted, then the
+   // original Error constructor as a whole remains in place, and the
+   // whitelist-based cleaning mechanism in startSES.js will remove
+   // everything that would have made it unsafe. It is only if we
+   // attempt to hide the original Error constructor where the
+   // whitelisting mechanism won't find it, as the code above does,
+   // that we must ensure that it really is unreachable, as the code
+   // below does.
+   //
+   // TODO(erights): We need a more general mechanism for this kind of
+   // cleanup. One that covers this case and the UnsafeFunction case
+   // in startSES.js. In the meantime, please ensure this list remains
+   // in sync with the *Error "subclasses" of Error in whitelist.js.
+   [EvalError, RangeError, ReferenceError, SyntaxError, TypeError, URIError
+   ].forEach(function(err) {
+     if (Object.getPrototypeOf(err) === UnsafeError) {
+       Object.setPrototypeOf(err, FakeError);
+     }
+   });
 
    /**
     * Should be a function of an argument object (normally an error
@@ -76,6 +117,14 @@ var ses;
     * should assign something useful to getCWStack.
     */
    ses.getCWStack = function uselessGetCWStack(err) { return void 0; };
+
+   // FF40 Nightly has moved the magic stack property to a
+   // not-very-magic getter on Error.prototype. This enables us to
+   // prevent unprivileged access to stack information.
+   var primStackDesc = 
+       Object.getOwnPropertyDescriptor(Error.prototype, 'stack');
+   var primStackGetter = (primStackDesc && primStackDesc.get) ||
+       function legacyPrimStackGetter() { return this.stack; };
 
    if ('captureStackTrace' in UnsafeError) {
      (function() {
@@ -195,8 +244,13 @@ var ses;
        // group be the source URL if any, the second by the line
        // number if any, and the third be the column number if any.
 
-       // Seen on FF Nightly 30 for execution in evaled strings
-       var FFEvalLineColPatterns = (/^(?:.*?) line \d+ > eval():(\d+):(\d+)$/);
+       // Seen on FF Nightly 30 for execution in evaled strings.
+       // The current Causeway format is not sufficiently expressive
+       // to represent the useful information here and (TODO(erights))
+       // needs to be enhanced. In the meantime, this pattern captures
+       // the outer source position and ignores the inner one.
+       var FFEvalLineColPatterns = 
+             (/^(.*?) line (\d+) > (?:[^:]*):(?:\d+):(?:\d+)$/);
        // If the source position ends in either one or two
        // colon-digit-sequence suffixes, then the first of these are
        // the line number, and the second, if present, is the column
@@ -208,13 +262,21 @@ var ses;
        var lineColPatterns = [FFEvalLineColPatterns, MainLineColPattern];
 
        function getCWStack(err) {
-         if (!(err instanceof Error)) { return void 0; }
-         var stack = err.stack;
-         if (!stack) { return void 0; }
+         var stack = void 0;
+         try {
+           stack = primStackGetter.call(err);
+         } catch (_) {
+           // There's no known good inter-realm brand check for
+           // whether something is an error object. Instead, we simply
+           // handle the failure of stack-getting magic as another way
+           // to not get any stack information.
+         }
+         if (typeof stack !== 'string' || stack === '') { return void 0; }
          var lines = stack.split('\n');
          if (/^\w*Error:/.test(lines[0])) {
            lines = lines.slice(1);
          }
+         lines = lines.filter(function(line) { return line !== ''; });
          var frames = lines.map(function(line) {
            var name = line.trim();
            var source = '?';
@@ -308,8 +370,8 @@ var ses;
        result = ses.stackString(cwStack);
      } else {
        if (err instanceof Error &&
-           'stack' in err &&
-           typeof (result = err.stack) === 'string') {
+           typeof (result = primStackGetter.call(err)) === 'string' &&
+           result !== '') {
          // already in result
        } else {
          return void 0;
