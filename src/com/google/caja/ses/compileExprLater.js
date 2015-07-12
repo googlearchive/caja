@@ -13,24 +13,28 @@
 // limitations under the License.
 
 /**
- * @fileoverview Makes a "compileExprLater" function which acts like
+ * @fileoverview Makes a "ses.compileExprLater" function which acts like
  * "cajaVM.compileExpr", except that it returns a promise for the
- * outcome of attempting to compile the argument expression. There are
- * two reasons why one might use compileExprLater rather than just
- * using compileExpr asynchronously:
+ * outcome of attempting to compile the argument expression. 
+ * Likewise, makes a "ses.confineLater" as an eventual analog of
+ * "cajaVM.confine".
+ *
+ * <p>There are two reasons why one might use compileExprLater rather
+ * than just using compileExpr asynchronously:
+ *
  * <ul>
  * <li>On some browsers (including Safari 7.0.1, which is current at
- * the time of this writing), code loaded via script tags are given
- * more accurate source locations in stack traces than code loaded via
- * eval. Script tags can generally only load code asynchronously.
+ *     the time of this writing), code loaded via script tags are given
+ *     more accurate source locations in stack traces than code loaded via
+ *     eval. Script tags can generally only load code asynchronously.
  * <li>Some loading scenarios require the code to be translated
- * first. However, translators can be large, so we may sometimes want
- * to load them asynchronously.
+ *     first. However, translators can be large, so we may sometimes want
+ *     to load them asynchronously.
  * </ul>
  *
  * //requires ses.okToLoad, ses.securableWrapperSrc, ses.atLeastFreeVarNames,
  * //requires ses.makeCompiledExpr, ses.prepareExpr
- * //provides ses.compileExprLater
+ * //provides ses.compileExprLater, ses.confineLater
  * //provides ses.redeemResolver for its own use
  * @author Mark S. Miller
  * @overrides ses
@@ -66,11 +70,6 @@ var ses;
 
      return Q(cajaVM).send('compileExpr',
                            exprSrc, opt_mitigateOpts);
-   }
-
-   if (typeof document === 'undefined') {
-     ses.compileExprLater = compileExprLaterFallback;
-     return;
    }
 
    var resolvers = [];
@@ -126,6 +125,31 @@ var ses;
      Q(result.promise).then(deleteScriptNode, deleteScriptNode).end();
      return result.promise;
    }
-   ses.compileExprLater = compileLaterInScript;
+
+   if (typeof document === 'undefined') {
+     ses.compileExprLater = compileExprLaterFallback;
+   } else {
+     ses.compileExprLater = compileLaterInScript;
+   }
+
+   /**
+    * Implements an eventual confine using compileExprLater
+    */
+   function confineLater(exprSrc, opt_endowments, opt_mitigateOpts) {
+     // not necessary, since we only use it once below with a callee
+     // which is itself safe. But we coerce to a string anyway to be
+     // more robust against future refactorings.
+     exprSrc = ''+exprSrc;
+
+     var imports = cajaVM.makeImports();
+     if (opt_endowments) {
+       cajaVM.copyToImports(imports, opt_endowments);
+     }
+     cajaVM.def(imports);
+     var compiledP = ses.compileExprLater(exprSrc, opt_mitigateOpts);
+     return Q(compiledP).fcall(imports);
+   }
+
+   ses.confineLater = confineLater;
 
  })(this);
