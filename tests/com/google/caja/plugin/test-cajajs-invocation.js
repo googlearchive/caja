@@ -340,10 +340,10 @@
       'var xhr = new XMLHttpRequest();' +
       'try {' +
       '  xhr.open("GET", "' + location.protocol + '//' + location.host +
-          '/nonexistent");' +
+          '/nonexistent", false);' +  // Note sync XHR so test can be sync.
       '} catch (e) { r("" + e); }' +
       'xhr.onreadystatechange = function() {' +
-      '  r(xhr.readyState + xhr.responseText);' +
+      '  r(xhr.readyState + " " + xhr.status);' +
       '};' +
       'xhr.send();' +
       '</script>';
@@ -388,7 +388,7 @@
           assertStringContains('http://fake2.url/foo', div.innerHTML);
           // TODO(kpreid): verify script did not load, as expected
           // XHR is independent of fetcher
-          assertEquals('init,4<html>\n', String(xhrRes).substr(0, 13));
+          assertEquals('init,4 404', String(xhrRes).substr(0, 13));
           jsunitPass('testBuilderApiNetNoFetch');
         }));
     }));

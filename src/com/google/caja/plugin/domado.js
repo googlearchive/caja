@@ -951,6 +951,7 @@ var Domado = (function() {
 
         privates.async = undefined;
         privates.handler = undefined;
+        privates.nativeCompleteEventSeen = false;
 
         Object.preventExtensions(privates);
       });
@@ -964,6 +965,11 @@ var Domado = (function() {
           // to DOM events.
           var self = this;
           privates.feral.onreadystatechange = function(event) {
+            if (privates.feral.readyState === 4) {
+              // Detect whether this event was fired. See open() for how this
+              // is used.
+              privates.nativeCompleteEventSeen = true;
+            }
             var evt = { target: self };
             try {
               return handler.call(void 0, evt);
@@ -1020,6 +1026,13 @@ var Domado = (function() {
           privates, method, URL, opt_async, opt_userName, opt_password) {
         method = String(method);
         URL = URI.utils.resolve(getBaseURL(), String(URL));
+        // Sanitizing these optionals up front; but note that we switch on
+        // arguments.length below, so this does not mean that opt_async
+        // defaults to false.
+        opt_async = Boolean(opt_async);
+        opt_userName = String(opt_userName);
+        opt_password = String(opt_password);
+
         // The XHR interface does not tell us the MIME type in advance, so we
         // must assume the broadest possible.
         var safeUri = uriRewrite(
@@ -1036,28 +1049,27 @@ var Domado = (function() {
         if ('string' !== typeof safeUri) {
           throw 'URI violates security policy';
         }
-        switch (arguments.length) {
+        switch (arguments.length - 1) {
         case 2:
           privates.async = true;
           privates.feral.open(method, safeUri);
           break;
         case 3:
           privates.async = opt_async;
-          privates.feral.open(method, safeUri, Boolean(opt_async));
+          privates.feral.open(method, safeUri, opt_async);
           break;
         case 4:
           privates.async = opt_async;
           privates.feral.open(
-              method, safeUri, Boolean(opt_async), String(opt_userName));
+              method, safeUri, opt_async, opt_userName);
           break;
         case 5:
           privates.async = opt_async;
           privates.feral.open(
-              method, safeUri, Boolean(opt_async), String(opt_userName),
-              String(opt_password));
+              method, safeUri, opt_async, opt_userName, opt_password);
           break;
         default:
-          throw 'XMLHttpRequest cannot accept ' + arguments.length +
+          throw 'XMLHttpRequest cannot accept ' + (arguments.length - 1) +
               ' arguments';
           break;
         }
@@ -1066,6 +1078,8 @@ var Domado = (function() {
         privates.feral.setRequestHeader(String(label), String(value));
       }),
       send: Props.ampMethod(function(privates, opt_data) {
+        privates.nativeCompleteEventSeen = false;
+
         if (arguments.length === 0) {
           // TODO(ihab.awad): send()-ing an empty string because send() with no
           // args does not work on FF3, others?
@@ -1080,12 +1094,10 @@ var Domado = (function() {
         // Firefox does not call the 'onreadystatechange' handler in
         // the case of a synchronous XHR. We simulate this behavior by
         // calling the handler explicitly.
-        if (privates.feral.overrideMimeType) {
-          // This is Firefox
-          if (!privates.async && privates.handler) {
-            var evt = { target: this };
-            privates.handler.call(void 0, evt);
-          }
+        if (!privates.async && !privates.nativeCompleteEventSeen &&
+            privates.handler) {
+          var evt = { target: this };
+          privates.handler.call(void 0, evt);
         }
       }),
       abort: Props.ampMethod(function(privates) {

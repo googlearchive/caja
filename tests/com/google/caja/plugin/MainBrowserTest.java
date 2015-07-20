@@ -36,6 +36,8 @@ public class MainBrowserTest extends CatalogTestCase {
   protected int waitForCompletionTimeout() {
     if (entry.getLabel().startsWith("guest-scan-")) {
       return 800 * 1000;  // milliseconds
+    } else if (entry.getLabel().startsWith("preliminary-meta-")) {
+      return 30 * 1000;
     } else {
       return super.waitForCompletionTimeout();
     }
