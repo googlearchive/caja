@@ -305,33 +305,27 @@ ses.startSES = function(global,
    * options and their effects.
    */
   function resolveOptions(opt_mitigateOpts) {
+    if (opt_mitigateOpts === void 0 || opt_mitigateOpts === null) {
+      opt_mitigateOpts = {};
+    }
+
     function resolve(opt, defaultOption) {
-      return (opt_mitigateOpts && opt in opt_mitigateOpts) ?
-        opt_mitigateOpts[opt] : defaultOption;
+      return opt in opt_mitigateOpts ? opt_mitigateOpts[opt] : defaultOption;
     }
+
     var options = {};
-    if (opt_mitigateOpts === undefined || opt_mitigateOpts === null) {
-      options.maskReferenceError = true;
-      options.parseFunctionBody = true;
-      options.sourceUrl = void 0;
 
-      options.rewriteTopLevelVars = true;
-      options.rewriteTopLevelFuncs = true;
-      options.rewriteFunctionCalls = true;
-      options.rewriteTypeOf = false;
-      options.forceParseAndRender = false;
-    } else {
-      options.maskReferenceError = resolve('maskReferenceError', true);
-      options.parseFunctionBody = resolve('parseFunctionBody', false);
-      options.sourceUrl = resolve('sourceUrl', void 0);
+    options.maskReferenceError = resolve('maskReferenceError', true);
+    options.parseFunctionBody = resolve('parseFunctionBody', false);
+    options.sourceUrl = resolve('sourceUrl', void 0);
 
-      options.rewriteTopLevelVars = resolve('rewriteTopLevelVars', true);
-      options.rewriteTopLevelFuncs = resolve('rewriteTopLevelFuncs', true);
-      options.rewriteFunctionCalls = resolve('rewriteFunctionCalls', true);
-      options.rewriteTypeOf = resolve('rewriteTypeOf',
-                                      !options.maskReferenceError);
-      options.forceParseAndRender = resolve('forceParseAndRender', false);
-    }
+    options.rewriteTopLevelVars = resolve('rewriteTopLevelVars', true);
+    options.rewriteTopLevelFuncs = resolve('rewriteTopLevelFuncs', true);
+    options.rewriteFunctionCalls = resolve('rewriteFunctionCalls', true);
+    options.rewriteTypeOf = resolve('rewriteTypeOf',
+                                    !options.maskReferenceError);
+    options.forceParseAndRender = resolve('forceParseAndRender', false);
+
     return options;
   }
   ses.resolveOptions = resolveOptions;
