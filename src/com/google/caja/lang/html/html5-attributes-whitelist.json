@@ -64,6 +64,7 @@
       "*::ONSUBMIT",
       "*::ONUNLOAD",
       "DETAILS::OPEN",
+      "METER::OPTIMUM",
       "INPUT::PATTERN",
       "INPUT::PLACEHOLDER",
       "TEXTAREA::PLACEHOLDER",
