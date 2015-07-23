@@ -163,6 +163,8 @@ var ses;
           length: '*',  // does not inherit from Function.prototype on Chrome
           name: '*',  // ditto
           BYTES_PER_ELEMENT: '*',
+          from: t,
+          of: t,
           prototype: {
             buffer: 'maybeAccessor',
             byteOffset: 'maybeAccessor',
