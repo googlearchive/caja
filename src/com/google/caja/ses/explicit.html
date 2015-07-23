@@ -184,21 +184,34 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
     "use strict";
     if (!ses.ok()) { return; }
 
+    var evalOnlySrc =
+      'function evalOnly(str) {\n' +
+      '  debugger;\n' +
+      '  throw Error(str);\n' +
+      '}\n';
+    var fakeUrlSrc =
+      'function fakeUrl(g) {\n' +
+      '  g("Expand me to see stack");\n' +
+      '}\n';
+    var nestedSrc =
+      'cajaVM.confine(\n' +
+      '  "function nested(f) {\\n" + \n' +
+      '  "  f(evalOnly);\\n" + \n' +
+      '  "}\\n", {evalOnly: evalOnly})';
     var exprSrc =
-        '(function(){\n' +
-        '  function foo(str) {\n' +
-        '    debugger;\n' +
-        '    throw Error(str);\n' +
-        '  }\n' +
-        '  function foo2(g) { g("Expand me to see stack"); }\n' +
-        '  function foo3(f) { f(foo); }\n' +
-        '  foo3(foo2);\n' +
-        '}())';
+      '(function dataUrl(){\n' +
+      '  nested(fakeUrl);\n' +
+      '}())';
 
     syncEval: {
+      var cevalOnly = cajaVM.confine(evalOnlySrc);
+      var cfakeUrl = cajaVM.confine(fakeUrlSrc, void 0, {
+        sourceUrl: 'http://example.com/fake1.js'
+      });
+      var cnested = cajaVM.confine(nestedSrc, {evalOnly: cevalOnly});
       try {
-        cajaVM.confine(exprSrc, {}, {
-          sourceUrl: 'http://example.com/fake1.js'
+        cajaVM.confine(exprSrc, {fakeUrl: cfakeUrl, nested: cnested}, {
+          sourceUrl: 'data:,' + encodeURIComponent(exprSrc)
         });
       } catch (err) {
         // The ses.logger installed by useHTMLLogger.js uses ses.getStack
@@ -209,19 +222,31 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
       ses.logger.error('Missing expected error');
     }
 
-    var compiledP = ses.compileExprLater(exprSrc, {
+    var eevalOnlyP = ses.confineLater(evalOnlySrc);
+    var efakeUrlP = ses.confineLater(fakeUrlSrc, void 0, {
       sourceUrl: 'http://example.com/fake2.js'
     });
-    // TODO(erights): Should be 'done' once makeQ supports it.
-    Q(compiledP).fcall(cajaVM.sharedImports).then(
-      function(val) {
-        ses.logger.error('Missing expected error: ', val);
-      },
-      function(reason) {
-        // The ses.logger installed by useHTMLLogger.js uses ses.getStack
-        // to display the stack, if any, associated with the err argument.
-        ses.logger.info('Testing ses.getStack with compileExprLater: ', reason);
+    var enestedP = Q(eevalOnlyP).then(function(eevalOnly) {
+      return ses.confineLater(nestedSrc, {evalOnly: eevalOnly});
+    });
+    var doneP = Q.all([efakeUrlP, enestedP]).then(function(efooPair) {
+      var efakeUrl = efooPair[0];
+      var enested = efooPair[1];
+      return ses.confineLater(exprSrc, {
+        fakeUrl: efakeUrl, 
+        nested: enested
+      }, {
+        sourceUrl: 'data:,' + encodeURIComponent(exprSrc)
       });
+    });
+    // TODO(erights): Should be 'done' once makeQ supports it.
+    Q(doneP).then(function(val) {
+      ses.logger.error('Missing expected error: ', val);
+    }, function(reason) {
+      // The ses.logger installed by useHTMLLogger.js uses ses.getStack
+      // to display the stack, if any, associated with the err argument.
+      ses.logger.info('Testing ses.getStack with compileExprLater: ', reason);
+    });
   }());
 </script>
 
@@ -245,10 +270,11 @@ The <script src="useHTMLLogger.js"> and the inline script above advises
     var imports = cajaVM.makeImports();
     cajaVM.copyToImports(imports, {
       Q: Q,
-      compileExprLater: ses.compileExprLater
+      compileExprLater: ses.compileExprLater,
+      confineLater: ses.confineLater
     });
-    // NOTE: do not cajaVM.def(imports) for evaluating the
-    // simple AMD loader.
+    // NOTE: Unlike confineLater, do not cajaVM.def(imports) for
+    // evaluating the simple AMD loader.
 
     var makeSimpleAMDLoaderP = Q(makeSimpleAMDLoaderSrcP).then(function(src) {
       var exprSrc = '(function() {' + src + '}).call(this)';

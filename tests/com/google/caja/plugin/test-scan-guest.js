@@ -632,6 +632,8 @@
           // fresh because it returns { value: ..., done: ... }
           freshResult(G.any(
               genMethod(G.value('foo')), genMethod())));
+      expectedAlwaysThrow.set(
+          Ref.is(generatorIteratorPrototype['throw']), true);
     }
 
     if (inES5Mode) {
@@ -1419,12 +1421,18 @@
             genNumbers(2))));
       function setupTypedArray(name, doAllCalls) {
         var ref = RefAnyFrame(name);
-        var ctor = window[name];
+        var ctor = simpleEval(window, name);
 
         functionArgs.set(ref, freshResult(doAllCalls
             ? typedArrayCall
             : genAllCall(G.value(0))));
-        obtainInstance.define(ctor, new ctor(3));
+        if (name === 'cajaVM.anonIntrinsics.TypedArray') {
+          if (ctor) {  // some browsers don't implement it yet
+            obtainInstance.define(ctor, new Int8Array(3));
+          }
+        } else {
+          obtainInstance.define(ctor, new ctor(3));
+        }
 
         argsByAnyFrame(name + '.prototype.set', doAllCalls
             ? G.any(
@@ -1435,10 +1443,34 @@
             doAllCalls
               ? genMethod(genSmallInteger, genSmallInteger)
               : genMethod(G.value(1), G.value(2))));
+        
+        function genTACtorMethod() {
+          // .from and .of are on %TypedArray% but need to be called with
+          // this = a subclass ctor.
+          var thisArg = ctor === cajaVM.anonIntrinsics.TypedArray
+              ? Int8Array : ctor;
+          return G.tuple(G.value(thisArg), G.tuple.apply(undefined, arguments));
+        }
+        
+        argsByAnyFrame(name + '.from', freshResult(
+          doAllCalls
+            ? genTACtorMethod(genArray, G.value(dummyFunction, null))
+            : genTACtorMethod(G.value([]), G.value(dummyFunction))));
+              
+        argsByAnyFrame(name + '.of', freshResult(
+          doAllCalls
+            ? genTACtorMethod(genJSONValue)
+            : genTACtorMethod(G.value(1))));
       }
       // To save on scan time, we only fully exercise some of the array types
       // (chosen for coverage of different cases: 1-byte, clamped, endianness,
       // floats).
+      // TODO(kpreid): Once all implementations are conformant with ES 2015,
+      // we only need to look at the intrinsic for most things, not each
+      // subtype.
+      if (cajaVM.anonIntrinsics && cajaVM.anonIntrinsics.TypedArray) {
+        setupTypedArray('cajaVM.anonIntrinsics.TypedArray', true);
+      }
       setupTypedArray('Int8Array', true);
       setupTypedArray('Uint8Array', false);
       setupTypedArray('Uint8ClampedArray', true);

@@ -771,17 +771,27 @@ TODO(felix8a): fix javascript url handling
     assertEquals('The quick brown fox', xhr.responseText);
 
     // Check that a synchronous XHR invokes its callback in ready state 4
+    var statesSeen = [];
     var responseText;
     xhr = new window.XMLHttpRequest();
     // Note we specify test id since we get preempted by xhr.send()
     xhr.onreadystatechange = jsunitCallback(
         function onreadystatechangecb() {
-          if (xhr.readyState == 4) { responseText = xhr.responseText; }
+          statesSeen.push(xhr.readyState);
+          if (xhr.readyState == 4) {
+            responseText = xhr.responseText;
+          }
         },
         'testXhrSync');
     xhr.open('GET', './xhrTest.txt', false);
+    // May or may not get a state 1 callback.
+    assertContains('' + statesSeen, ['', '1']);
+    statesSeen = [];
+
     console.log('About to do sync xhr.send() - may get preempted');
     xhr.send();
+
+    assertEquals('4', '' + statesSeen);
     assertEquals('The quick brown fox', responseText);
 
     pass('testXhrSync');
