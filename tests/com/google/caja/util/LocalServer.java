@@ -14,17 +14,20 @@
 
 package com.google.caja.util;
 
+import java.net.InetSocketAddress;
+
 import javax.servlet.http.HttpServletResponse;
 
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.handler.ContextHandler;
-import org.mortbay.jetty.handler.ResourceHandler;
-import org.mortbay.jetty.Handler;
-import org.mortbay.jetty.handler.DefaultHandler;
-import org.mortbay.jetty.handler.HandlerList;
-import org.mortbay.jetty.servlet.Context;
-import org.mortbay.jetty.servlet.ServletHolder;
-import org.mortbay.resource.Resource;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.handler.ContextHandler;
+import org.eclipse.jetty.server.handler.DefaultHandler;
+import org.eclipse.jetty.server.handler.HandlerList;
+import org.eclipse.jetty.server.handler.ResourceHandler;
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.util.resource.Resource;
 
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.service.CajolingService;
@@ -41,7 +44,7 @@ public class LocalServer {
   private Server server;
 
   public interface ConfigureContextCallback {
-    void configureContext(Context ctx);
+    void configureContext(ServletContextHandler ctx);
   }
 
   public LocalServer(ConfigureContextCallback contextCallback) {
@@ -62,13 +65,13 @@ public class LocalServer {
    * Start a local web server listening at the given TCP port.  port==0 will
    * choose an arbitrary unused port.
    */
-  public void start(int port) throws Exception {
-    server = new Server(port);
+  public void start(String host, int port) throws Exception {
+    server = new Server(new InetSocketAddress(host, port));
 
     // Increase header buffer size to allow long URLs (particularly for
     // generic-host-page.html which puts the content into the URL).
     // (The Server(int) constructor adds one connector internally.)
-    server.getConnectors()[0].setHeaderBufferSize(100 * 1024);
+    server.getConnectors()[0].setRequestHeaderSize(100 * 1024);
 
     final ResourceHandler cajaStatic = new ResourceHandler();
     cajaStatic.setResourceBase("./ant-war/");
@@ -99,12 +102,14 @@ public class LocalServer {
       final String service = "/cajole";
 
       // cajoling service -- Servlet setup code gotten from
-      // <http://docs.codehaus.org/display/JETTY/Embedding+Jetty> @ 2010-06-30
-      Context servlets = new Context(server, "/", Context.NO_SESSIONS);
+      // <http://docs.codehaus.org/display/JETTY/Embedding+Jetty> @ 2010-06-30 &
+      // <http://wiki.eclipse.org/Jetty/Tutorial/Embedding_Jetty> @ 2015-07-27
+      ServletContextHandler servlets = new ServletContextHandler(
+        server, "/", ServletContextHandler.NO_SESSIONS);
       servlets.addServlet(
           new ServletHolder(
               new CajolingServlet(
-                  new CajolingService(BuildInfo.getInstance()))),
+                  new CajolingService(BuildInfo.getInstance()))), 
           service);
 
       // Hook for subclass to add more servlets

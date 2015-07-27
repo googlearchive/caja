@@ -20,8 +20,9 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.handler.AbstractHandler;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import java.io.IOException;
 
@@ -45,8 +46,8 @@ public class CajolingServiceMain {
 
     server.setHandler(new AbstractHandler() {
       public void handle(
-          String target, HttpServletRequest req, HttpServletResponse resp,
-          int dispatch)
+          String target, Request baseRequest, HttpServletRequest req,
+          HttpServletResponse resp)
           throws ServletException {
         try {
           servlet.service(req, resp);

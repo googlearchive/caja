@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.net.URLDecoder;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
@@ -33,11 +34,18 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import javax.servlet.AsyncContext;
+import javax.servlet.DispatcherType;
 import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletInputStream;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.servlet.http.Part;
 
 /**
  * @author jasvir@google.com (Jasvir Nagra)
@@ -188,7 +196,7 @@ public final class TestHttpServletRequest implements HttpServletRequest {
     throw new UnsupportedOperationException();
   }
 
-  public Enumeration<?> getHeaders(String arg0) {
+  public Enumeration<String> getHeaders(String arg0) {
     throw new UnsupportedOperationException();
   }
 
@@ -212,8 +220,8 @@ public final class TestHttpServletRequest implements HttpServletRequest {
     throw new UnsupportedOperationException();
   }
 
-  public Map<String, List<String>> getParameterMap() {
-    return Collections.unmodifiableMap(params);
+  public Map<String, String[]> getParameterMap() {
+    throw new UnsupportedOperationException();
   }
 
   public RequestDispatcher getRequestDispatcher(String arg0) {
@@ -232,6 +240,14 @@ public final class TestHttpServletRequest implements HttpServletRequest {
     throw new UnsupportedOperationException();
   }
 
+  public Part getPart(String arg0) {
+    throw new UnsupportedOperationException();
+  }
+
+  public Collection<Part> getParts() {
+    throw new UnsupportedOperationException();
+  }
+
   private static <T> Enumeration<T> enumeration(final Iterator<T> it) {
     return new Enumeration<T>() {
       public boolean hasMoreElements() { return it.hasNext(); }
@@ -243,4 +259,37 @@ public final class TestHttpServletRequest implements HttpServletRequest {
   public String getLocalName() { throw new UnsupportedOperationException(); }
   public int getLocalPort() { throw new UnsupportedOperationException(); }
   public int getRemotePort() { throw new UnsupportedOperationException(); }
+
+  public ServletContext getServletContext() {
+    throw new UnsupportedOperationException();
+  }
+
+  public void logout() { throw new UnsupportedOperationException(); }
+  public void login(String arg0, String arg1) {
+    throw new UnsupportedOperationException();
+  }
+  public boolean authenticate(HttpServletResponse response) {
+    throw new UnsupportedOperationException();
+  }
+
+  public DispatcherType getDispatcherType() {
+    return DispatcherType.REQUEST;
+  }
+
+  public AsyncContext startAsync() {
+    throw new UnsupportedOperationException();
+  }
+  public AsyncContext startAsync(
+      ServletRequest request, ServletResponse response) {
+    throw new UnsupportedOperationException();
+  }
+  public boolean isAsyncSupported() {
+    return false;
+  }
+  public boolean isAsyncStarted() {
+    return false;
+  }
+  public AsyncContext getAsyncContext() {
+    throw new IllegalStateException();
+  }
 }

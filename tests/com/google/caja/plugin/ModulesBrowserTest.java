@@ -15,8 +15,8 @@
 package com.google.caja.plugin;
 
 import org.junit.Test;
-import org.mortbay.jetty.servlet.Context;
-import org.mortbay.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 
 /**
  * @author ihab.awad@gmail.com
@@ -29,7 +29,7 @@ public class ModulesBrowserTest extends BrowserTestCase {
   }
 
   @Override
-  protected void addServlets(Context servlets) {
+  protected void addServlets(ServletContextHandler servlets) {
     servlets.addServlet(
         new ServletHolder(new JsonTestServlet()),
        "/jsonTest");
