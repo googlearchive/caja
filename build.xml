@@ -89,9 +89,14 @@ For help on building and testing Caja, see:
     <pathelement path="${third_party}/java/jakarta_commons/commons-io-1.4.jar"/>
     <pathelement path="${third_party}/java/javamail/mail.jar"/>
     <pathelement path="${third_party}/java/jchardet/chardet.jar"/>
+    <pathelement path="${third_party}/java/jetty/lib/jetty-continuation.jar"/>
+    <pathelement path="${third_party}/java/jetty/lib/jetty-http.jar"/>
+    <pathelement path="${third_party}/java/jetty/lib/jetty-io.jar"/>
+    <pathelement path="${third_party}/java/jetty/lib/jetty-security.jar"/>
+    <pathelement path="${third_party}/java/jetty/lib/jetty-server.jar"/>
+    <pathelement path="${third_party}/java/jetty/lib/jetty-servlet.jar"/>
     <pathelement path="${third_party}/java/jetty/lib/jetty-util.jar"/>
-    <pathelement path="${third_party}/java/jetty/lib/jetty.jar"/>
-    <pathelement path="${third_party}/java/jsdk2.1/servlet.jar"/>
+    <pathelement path="${third_party}/java/jetty/lib/servlet-api-3.0.jar"/>
     <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
     <pathelement path="${third_party}/java/jsr305/jsr305.jar"/>
     <pathelement path="${third_party}/java/xerces/xercesImpl.jar"/>
@@ -116,8 +121,8 @@ For help on building and testing Caja, see:
     <pathelement path="${third_party}/java/junit/hamcrest-core.jar"/>
     <pathelement path="${third_party}/java/junit/junit.jar"/>
     <pathelement path="${third_party}/java/rhino/js.jar"/>
+    <path refid="classpath.main"/> <!-- must be above other javax.servlet -->
     <pathelement path="${third_party}/java/webdriver/selenium-standalone.jar"/>
-    <path refid="classpath.main"/>
     <path refid="classpath.gwt"/>
   </path>
 
@@ -680,12 +685,15 @@ For help on building and testing Caja, see:
       <fileset dir="${third_party}/java/json_simple">
         <include name="json_simple.jar"/>
       </fileset>
-      <fileset dir="${third_party}/java/jsdk2.1">
-        <include name="servlet.jar"/>
-      </fileset>
       <fileset dir="${third_party}/java/jetty/lib">
-        <include name="jetty.jar"/>
+        <include name="jetty-continuation.jar"/>
+        <include name="jetty-http.jar"/>
+        <include name="jetty-io.jar"/>
+        <include name="jetty-security.jar"/>
+        <include name="jetty-server.jar"/>
+        <include name="jetty-servlet.jar"/>
         <include name="jetty-util.jar"/>
+        <include name="servlet-api-3.0.jar"/>
       </fileset>
       <fileset dir="${third_party}/java/xerces">
         <include name="xercesImpl.jar"/>
@@ -906,7 +914,7 @@ For help on building and testing Caja, see:
     </replace>
 
     <depend closure="yes" destdir="${testlib}" srcdir="${tests}" />
-    <javac destdir="${testlib}" debug="true" target="1.5" source="1.5">
+    <javac destdir="${testlib}" debug="true" target="1.7" source="1.7">
       <src path="${tests}"/>
       <!-- TODO(felix8a): delete sourcepath when orphans cleaned up -->
       <sourcepath path="${src}:${tests}"/>

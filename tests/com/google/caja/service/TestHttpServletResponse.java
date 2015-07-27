@@ -25,6 +25,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
@@ -65,6 +66,9 @@ public final class TestHttpServletResponse implements HttpServletResponse {
     getWriter().write("ERROR");
   }
   public void sendRedirect(String arg0) {
+    throw new UnsupportedOperationException();
+  }
+  public Collection<String> getHeaderNames() {
     throw new UnsupportedOperationException();
   }
   public void setDateHeader(String arg0, long arg1) {
@@ -177,4 +181,11 @@ public final class TestHttpServletResponse implements HttpServletResponse {
   }
 
   public Map<String, String> getHeaders() { return headers; }
+  
+  public String getHeader(String arg0) {
+    throw new UnsupportedOperationException();
+  }
+  public Collection<String> getHeaders(String arg0) {
+    throw new UnsupportedOperationException();
+  }
 }

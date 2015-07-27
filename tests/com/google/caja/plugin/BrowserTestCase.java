@@ -21,7 +21,7 @@ import java.util.List;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.mortbay.jetty.servlet.Context;
+import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -53,7 +53,7 @@ public abstract class BrowserTestCase {
 
   private final LocalServer localServer = new LocalServer(
       new LocalServer.ConfigureContextCallback() {
-        @Override public void configureContext(Context ctx) {
+        @Override public void configureContext(ServletContextHandler ctx) {
           addServlets(ctx);
         }
       });
@@ -95,7 +95,7 @@ public abstract class BrowserTestCase {
       return;
     }
     serverPort = TestFlag.SERVER_PORT.getInt(8000);
-    localServer.start(serverPort);
+    localServer.start("127.0.0.1", serverPort);
     String url = testUrl("test-index.html");
     if (TestFlag.DEBUG_BROWSER.truthy()) {
       wdh.begin().get(url);
@@ -116,7 +116,7 @@ public abstract class BrowserTestCase {
     String result = "";
     boolean passed = false;
     try {
-      localServer.start(serverPort);
+      localServer.start("127.0.0.1", serverPort);
 
       String url = testUrl(name);
       if (params != null && 0 < params.length) {
@@ -299,7 +299,7 @@ public abstract class BrowserTestCase {
    *
    * @param servlets a Jetty Context to which servlets can be added.
    */
-  protected void addServlets(Context servlets) {
+  protected void addServlets(ServletContextHandler servlets) {
     // Adds none but may be overridden.
   }
 
