@@ -1555,10 +1555,31 @@ var ses;
       );
     } finally {
       saved.forEach(function(record) {
-        if (record[1]) {
-          Object.defineProperty(global, record[0], record[1]);
+        var name = record[0];
+        var oldDesc = record[1];
+        if (oldDesc) {
+          var newDesc = Object.getOwnPropertyDescriptor(global, name);
+          if (!is(oldDesc.value, newDesc.value) ||
+              oldDesc.writable !== newDesc.writable ||
+              oldDesc.get !== newDesc.get ||
+              oldDesc.set !== newDesc.set ||
+              oldDesc.enumerable !== newDesc.enumerable) {
+            // See the comments on freezeGlobalProp in startSES.js for
+            // why we delete oldDesc.configurable. Given that we do,
+            // the following two lines of code should succeed even if
+            // the condition above is false. Thus, the condition
+            // should not be needed. However, when running the Caja
+            // regression tests, the testOk test tries to define a
+            // global property to itself, which fails on FF 39 for
+            // undiagnosed reasons. 
+            //
+            // TODO(erights): Diagnose why testOk on FF 39 fails if we
+            // do the following lines unconditionally, and report.
+            delete oldDesc.configurable;
+            Object.defineProperty(global, name, oldDesc);
+          }
         } else {
-          delete global[record[0]];
+          delete global[name];
         }
       });
     }

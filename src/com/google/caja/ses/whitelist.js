@@ -493,13 +493,15 @@ var ses;
       prototype: {
         exec: t,
         test: t,
-        source: '*',
-        global: '*',
-        ignoreCase: '*',
-        multiline: '*',
+        source: 'maybeAccessor',
+        global: 'maybeAccessor',
+        ignoreCase: 'maybeAccessor',
+        multiline: 'maybeAccessor',
+        flags: 'maybeAccessor',
+        unicode: 'maybeAccessor',
         lastIndex: '*',
         options: '*',                // non-std
-        sticky: '*'                  // non-std
+        sticky: 'maybeAccessor'      // non-std
       }
     },
     Error: {
