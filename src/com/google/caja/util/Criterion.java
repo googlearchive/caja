@@ -35,7 +35,7 @@ public interface Criterion<T> {
 
     private static final Criterion<?> OPTIMIST_SINGLETON =
       new Criterion<Object>() {
-        public boolean accept(Object _) {
+        public boolean accept(Object x) {
           return true;
         }
         @Override
@@ -44,7 +44,7 @@ public interface Criterion<T> {
 
     private static final Criterion<?> PESSIMIST_SINGLETON =
       new Criterion<Object>() {
-        public boolean accept(Object _) {
+        public boolean accept(Object x) {
           return false;
         }
         @Override

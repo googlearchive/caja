@@ -429,7 +429,7 @@ public class Linter implements BuildCommand {
       // Keep track of uses of global variables so that we can check
       // @provides and @requires later.
       if (dscope == null) {
-        if (!undeclaredGlobals.contains(symbolName)) {
+        if (!undeclaredGlobals.contains(symbolName) && !isTypedef(use.ref)) {
           mq.addMessage(
               MessageType.UNDEFINED_SYMBOL, use.ref.node.getFilePosition(),
               MessagePart.Factory.valueOf(symbolName));
@@ -507,8 +507,9 @@ public class Linter implements BuildCommand {
     // Complain about lack of side-effects
     for (AncestorChain<ExpressionStmt> es : buckets.get(ExpressionStmt.class)) {
       if (shouldBeEvaluatedForValue(es.node.getExpression())
-          && !isCommaOperatorInForLoop(es) && !isForEachLoopKey(es)) {
-        mq.addMessage(MessageType.NO_SIDE_EFFECT, es.node.getFilePosition());
+          && !isCommaOperatorInForLoop(es) && !isForEachLoopKey(es)
+	  && !isTypedef(es)) {
+	mq.addMessage(MessageType.NO_SIDE_EFFECT, es.node.getFilePosition());
       }
     }
   }
@@ -793,5 +794,35 @@ public class Linter implements BuildCommand {
         checkGlobalsDefined(globalScope, inner, documentedGlobals, mq);
       }
     }
+  }
+
+  private static boolean isDottedIdentifier(Expression e) {
+    if (e instanceof Reference) {
+      return true;
+    }
+    if (Operation.is(e, Operator.MEMBER_ACCESS)) {
+      return isDottedIdentifier(((Operation) e).children().get(0));
+    }
+    return false;
+  }
+
+  private static boolean isTypedef(AncestorChain<?> chain) {
+    if (chain.node instanceof ExpressionStmt) {
+      ExpressionStmt es = chain.cast(ExpressionStmt.class).node;
+      if (isDottedIdentifier(es.getExpression())) {
+	List<Token<?>> comments = es.getComments();
+	int nComments = comments.size();
+	if (nComments != 0) {
+	  String lastCommentText = comments.get(nComments - 1).text;
+	  if (lastCommentText.contains("@typedef")) {
+	    return true;
+	  }
+	}
+      }
+      return false;
+    } else if (chain.node instanceof Expression) {
+      return chain.parent != null && isTypedef(chain.parent);
+    }
+    return false;
   }
 }
