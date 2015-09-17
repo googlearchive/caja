@@ -508,8 +508,8 @@ public class Linter implements BuildCommand {
     for (AncestorChain<ExpressionStmt> es : buckets.get(ExpressionStmt.class)) {
       if (shouldBeEvaluatedForValue(es.node.getExpression())
           && !isCommaOperatorInForLoop(es) && !isForEachLoopKey(es)
-	  && !isTypedef(es)) {
-	mq.addMessage(MessageType.NO_SIDE_EFFECT, es.node.getFilePosition());
+          && !isTypedef(es)) {
+        mq.addMessage(MessageType.NO_SIDE_EFFECT, es.node.getFilePosition());
       }
     }
   }
@@ -810,14 +810,14 @@ public class Linter implements BuildCommand {
     if (chain.node instanceof ExpressionStmt) {
       ExpressionStmt es = chain.cast(ExpressionStmt.class).node;
       if (isDottedIdentifier(es.getExpression())) {
-	List<Token<?>> comments = es.getComments();
-	int nComments = comments.size();
-	if (nComments != 0) {
-	  String lastCommentText = comments.get(nComments - 1).text;
-	  if (lastCommentText.contains("@typedef")) {
-	    return true;
-	  }
-	}
+        List<Token<?>> comments = es.getComments();
+        int nComments = comments.size();
+        if (nComments != 0) {
+          String lastCommentText = comments.get(nComments - 1).text;
+          if (lastCommentText.contains("@typedef")) {
+            return true;
+          }
+        }
       }
       return false;
     } else if (chain.node instanceof Expression) {
