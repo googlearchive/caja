@@ -63,7 +63,7 @@ var html = (function(html4) {
     'lt': '<',
     'gt': '>',
     'amp': '&',
-    'nbsp': '\240',
+    'nbsp': '\u00A0',
     'quot': '"',
     'apos': '\''
   };
