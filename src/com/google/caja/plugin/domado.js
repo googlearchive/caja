@@ -5392,7 +5392,7 @@ var Domado = (function() {
           // TODO(kpreid): Review whether this and .elements are doing the best
           // they can WRT liveness.
           Object.defineProperty(this, "length", {
-            value: privates.feral.length
+            value: +privates.feral.length
           });
         },
         properties: function() { return {
@@ -5440,7 +5440,7 @@ var Domado = (function() {
         properties: function() { return {
           align: Props.ampAccessor(
             function(privates) {
-              return privates.feral.align;
+              return String(privates.feral.align);
             },
             function(privates, alignment) {
               privates.policy.requireEditable();
@@ -5454,7 +5454,7 @@ var Domado = (function() {
           ),
           frameBorder: Props.ampAccessor(
             function(privates) {
-              return privates.feral.frameBorder;
+              return String(privates.feral.frameBorder);
             },
             function(privates, border) {
               privates.policy.requireEditable();
@@ -5641,7 +5641,7 @@ var Domado = (function() {
           defaultMuted: Props.ampAccessor(
             // TODO: express this generically
             function(privates) {
-              return privates.feral.defaultMuted;
+              return !!privates.feral.defaultMuted;
             },
             function(privates, value) {
               if (value) {
