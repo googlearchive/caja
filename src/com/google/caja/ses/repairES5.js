@@ -27,14 +27,18 @@
  * create it, use it, and delete it all within this module. But we
  * need to lie to the linter since it can't tell.
  *
- * //requires ses.mitigateSrcGotchas
- * //provides ses.ok, ses.okToLoad, ses.getMaxSeverity
+ * //requires ses.logger, ses._EarlyStringMap,
+ * //requires ses.severities, ses.statuses, ses._repairer
+ * //optionally requires ses.mitigateSrcGotchas, ses._primordialsHaveBeenFrozen
+ * //provides ses.ok, ses.okToLoad, ses.getMaxSeverity, ses.updateMaxSeverity
  * //provides ses.is, ses.makeDelayedTamperProof
+ * //provides ses.isInBrowser, ses._optForeignForIn
  * //provides ses.makeCallerHarmless, ses.makeArgumentsHarmless
  * //provides ses.noFuncPoison
  * //provides ses.verifyStrictFunctionBody
  * //provides ses.getUndeniables, ses.earlyUndeniables
  * //provides ses.getAnonIntrinsics
+ * //provides ses.funcLike, ses.kludge_test_FREEZING_BREAKS_PROTOTYPES
  *
  * @author Mark S. Miller
  * @requires ___global_test_function___, ___global_valueOf_function___
@@ -1112,15 +1116,29 @@ var ses;
   }
 
   /**
+   * Do we seem to be in a browser environment?
+   *
+   * <p>Currently, we assume we are in a browser environment iff there
+   * is a non-undefined <code>document</code> and
+   * <code>document.createElement</code> is callable. We may use
+   * better evidence in the future.
+   */
+  function isInBrowser() {
+    return typeof document !== 'undefined' &&
+      typeof document.createElement === 'function';
+  }
+  ses.isInBrowser = isInBrowser;
+
+  /**
    * Create a new iframe and pass its 'window' object to the provided
    * callback.  If the environment is not a browser, return undefined
    * and do not call the callback.
    *
-   * <p>inTestFrame assumes we are in a browser environment iff there
-   * is a non-undefined document with a truthy createElement
-   * property. If so, it creates an iframe, makes it a child somewhere
-   * of the current document, calls the callback, passing that
-   * iframe's window, and then removes the iframe.
+   * <p>inTestFrame assumes we are in a browser according to
+   * <code>isInBrowser</code> above. If so, it creates an iframe,
+   * makes it a child somewhere of the current document, calls the
+   * callback, passing that iframe's window, and then removes the
+   * iframe.
    *
    * <p>A typical callback (e.g., _optForeignForIn) will then create a
    * function within that other frame, to be used later to test
@@ -1130,7 +1148,7 @@ var ses;
    * script" error.
    */
   function inTestFrame(callback) {
-    if (!(typeof document !== 'undefined' && document.createElement)) {
+    if (!isInBrowser()) {
       return undefined;
     }
     var iframe = document.createElement('iframe');
@@ -1373,10 +1391,31 @@ var ses;
       );
     } finally {
       saved.forEach(function(record) {
-        if (record[1]) {
-          Object.defineProperty(global, record[0], record[1]);
+        var name = record[0];
+        var oldDesc = record[1];
+        if (oldDesc) {
+          var newDesc = Object.getOwnPropertyDescriptor(global, name);
+          if (!is(oldDesc.value, newDesc.value) ||
+              oldDesc.writable !== newDesc.writable ||
+              oldDesc.get !== newDesc.get ||
+              oldDesc.set !== newDesc.set ||
+              oldDesc.enumerable !== newDesc.enumerable) {
+            // See the comments on freezeGlobalProp in startSES.js for
+            // why we delete oldDesc.configurable. Given that we do,
+            // the following two lines of code should succeed even if
+            // the condition above is false. Thus, the condition
+            // should not be needed. However, when running the Caja
+            // regression tests, the testOk test tries to define a
+            // global property to itself, which fails on FF 39 for
+            // undiagnosed reasons. 
+            //
+            // TODO(erights): Diagnose why testOk on FF 39 fails if we
+            // do the following lines unconditionally, and report.
+            delete oldDesc.configurable;
+            Object.defineProperty(global, name, oldDesc);
+          }
         } else {
-          delete global[record[0]];
+          delete global[name];
         }
       });
     }
@@ -1742,9 +1781,7 @@ var ses;
   function test_FORM_GETTERS_DISAPPEAR() {
     function getter() { return 'gotten'; }
 
-    if (typeof document === 'undefined' ||
-       typeof document.createElement !== 'function') {
-      // likely not a browser environment
+    if (!isInBrowser()) {
       return false;
     }
     var f = document.createElement('form');

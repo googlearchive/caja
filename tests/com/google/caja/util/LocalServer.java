@@ -109,7 +109,7 @@ public class LocalServer {
       servlets.addServlet(
           new ServletHolder(
               new CajolingServlet(
-                  new CajolingService(BuildInfo.getInstance()))), 
+                  new CajolingService(BuildInfo.getInstance()))),
           service);
 
       // Hook for subclass to add more servlets

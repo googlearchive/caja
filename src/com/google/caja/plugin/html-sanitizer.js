@@ -36,6 +36,29 @@
 // The Turkish i seems to be a non-issue, but abort in case it is.
 if ('I'.toLowerCase() !== 'i') { throw 'I/i problem'; }
 
+
+/**
+ * Contains types related to sanitizer policies.
+ * \@namespace
+ */
+var defs = {};
+
+/**
+ * A decision about what to do with a tag.
+ * @typedef {{ 'attribs': ?Array.<string>, 'tagName': ?string }}
+ */
+defs.TagPolicyDecision;
+
+/**
+ * A function that takes a tag name (canonical) and an array of attributes
+ * and decides what to do, returning null to indicate the tag should be dropped
+ * entirely from the output.
+ *
+ * @typedef {function(string, Array.<string>): ?defs.TagPolicyDecision}
+ */
+defs.TagPolicy;
+
+
 /**
  * \@namespace
  */
@@ -63,7 +86,7 @@ var html = (function(html4) {
     'AMP': '&',
     'quot': '"',
     'apos': '\'',
-    'nbsp': '\240'
+    'nbsp': '\u00A0'
   };
 
   // Patterns for types of entity/character reference names.
@@ -649,7 +672,7 @@ var html = (function(html4) {
 
   /**
    * Returns a function that strips unsafe tags and attributes from html.
-   * @param {function(string, Array.<string>): ?Array.<string>} tagPolicy
+   * @param {defs.TagPolicy} tagPolicy
    *     A function that takes (tagName, attribs[]), where tagName is a key in
    *     html4.ELEMENTS and attribs is an array of alternating attribute names
    *     and values.  It should return a record (as follows), or null to delete
@@ -992,7 +1015,7 @@ var html = (function(html4) {
    * @param {function(?string): ?string} opt_nmTokenPolicy A transform to apply
    *     to attributes containing HTML names, element IDs, and space-separated
    *     lists of classes.  If not given, such attributes are left unchanged.
-   * @return {function(string, Array.<?string>)} A tagPolicy suitable for
+   * @return {defs.TagPolicy} A tagPolicy suitable for
    *     passing to html.sanitize.
    */
   function makeTagPolicy(
