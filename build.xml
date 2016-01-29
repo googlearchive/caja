@@ -1334,7 +1334,7 @@ For help on building and testing Caja, see:
       </fileset>
     </copy>
     <depend closure="yes" destdir="${war}/WEB-INF/classes" srcdir="${src}" />
-    <javac destdir="${war}/WEB-INF/classes" debug="true">
+    <javac destdir="${war}/WEB-INF/classes" debug="true" target="1.7" source="1.7">
       <src path="${src}"/>
       <classpath refid="classpath.main"/>
       <classpath refid="classpath.gwt"/>
@@ -1342,7 +1342,7 @@ For help on building and testing Caja, see:
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
     <depend closure="yes" destdir="${lib}" srcdir="${src}" />
-    <javac destdir="${lib}" debug="true">
+    <javac destdir="${lib}" debug="true" target="1.7" source="1.7">
       <src path="${src}"/>
       <classpath refid="classpath.main"/>
       <classpath refid="classpath.gwt"/>
