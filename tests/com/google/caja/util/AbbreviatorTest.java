@@ -17,6 +17,7 @@ package com.google.caja.util;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 
 import junit.framework.TestCase;
 
@@ -30,7 +31,7 @@ public class AbbreviatorTest extends TestCase {
 
   public final void testAbbreviator() {
     Abbreviator a = new Abbreviator(
-        new HashSet<String>(Arrays.asList(
+        new LinkedHashSet<String>(Arrays.asList(
             "/a/b/c", "/a/d/e", "/a/d/f", "/a/g/h/c",
             "/h/i", "/h/j/", "/", "/c", "/d", "x", "")),
        "/");
@@ -48,10 +49,24 @@ public class AbbreviatorTest extends TestCase {
     assertEquals("/notpresent", a.unambiguousAbbreviationFor("/notpresent"));
   }
 
-  public final void testSetContainsSuffixOfOtherMember() {
+  public final void testSetContainsSuffixOfOtherMember_Ordering1() {
+    // Using order-preserving LinkedHashSet to test specific insertion ordering.
     Abbreviator a = new Abbreviator(
-        new HashSet<String>(Arrays.asList(
+        new LinkedHashSet<String>(Arrays.asList(
             "foo:bar/z", "foo:foo:baz/z", "foo:baz/z", "foo:bar:far/z")),
+       ":");
+    assertEquals("bar/z", a.unambiguousAbbreviationFor("foo:bar/z"));
+    assertEquals("foo:baz/z", a.unambiguousAbbreviationFor("foo:baz/z"));
+    assertEquals(
+        "foo:foo:baz/z", a.unambiguousAbbreviationFor("foo:foo:baz/z"));
+    assertEquals("far/z", a.unambiguousAbbreviationFor("foo:bar:far/z"));
+  }
+
+  public final void testSetContainsSuffixOfOtherMember_Ordering2() {
+    // Using order-preserving LinkedHashSet to test specific insertion ordering.
+    Abbreviator a = new Abbreviator(
+        new LinkedHashSet<String>(Arrays.asList(
+            "foo:bar/z", "foo:baz/z", "foo:foo:baz/z", "foo:bar:far/z")),
        ":");
     assertEquals("bar/z", a.unambiguousAbbreviationFor("foo:bar/z"));
     assertEquals("foo:baz/z", a.unambiguousAbbreviationFor("foo:baz/z"));
