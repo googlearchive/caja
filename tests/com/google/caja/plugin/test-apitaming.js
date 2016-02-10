@@ -15,6 +15,9 @@
 /**
  * @fileoverview Google API taming tests.
  *
+ * This file tests the taming framework, not the taming of specific Google APIs.
+ * For those tests, see tests/com/google/caja/apitaming.
+ *
  * @author ihab.awad@gmail.com
  * @requires caja, jsunitRun, readyToTest, basicCajaConfig
  */
@@ -24,6 +27,7 @@
 // A dummy "Google API" for testing
 
 (function() {
+  "use strict";
 
   // Miscellaneous functions
   function getValue(a) { return 'foo' + a; }
@@ -58,7 +62,6 @@
       }
     },
     load: function(name, opt_version, opt_info) {
-      value = 'load' + name;
       window.setTimeout(opt_info.callback, 0);
     }
   };
@@ -69,6 +72,7 @@
 // Insert taming framework scripts
 
 (function() {
+  "use strict";
   function loadScript(url, cb) {
     var s = document.createElement('script');
     s.setAttribute('src', url);
@@ -88,6 +92,7 @@
 // Tests
 
 function runtests() {
+  "use strict";
 
   caja.initialize(basicCajaConfig);
 
