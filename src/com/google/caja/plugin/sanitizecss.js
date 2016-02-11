@@ -388,7 +388,7 @@ var sanitizeMediaQuery = undefined;
    * @param {{
    *     containerClass: ?string,
    *     idSuffix: string,
-   *     tagPolicy: function(string, Array.<string>): ?Array.<string>,
+   *     tagPolicy: defs.TagPolicy,
    *     virtualizeAttrName: ?function(string, string): ?string
    *   }} virtualization An object like <pre<{
    *   containerClass: class name prepended to all selectors to scope them (if
@@ -794,7 +794,7 @@ var sanitizeMediaQuery = undefined;
      * @param {{
      *     containerClass: ?string,
      *     idSuffix: string,
-     *     tagPolicy: function(string, Array.<string>): ?Array.<string>,
+     *     tagPolicy: defs.TagPolicy,
      *     virtualizeAttrName: ?function(string, string): ?string
      *   }} virtualization An object like <pre<{
      *   containerClass: class name prepended to all selectors to scope them (if

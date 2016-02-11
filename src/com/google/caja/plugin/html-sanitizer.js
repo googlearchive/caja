@@ -30,12 +30,14 @@
  * @author jasvir@gmail.com
  * \@requires html4, URI
  * \@overrides window
- * \@provides html, html_sanitize
+ * \@provides html, html_sanitize, defs
  */
 
 // The Turkish i seems to be a non-issue, but abort in case it is.
 if ('I'.toLowerCase() !== 'i') { throw 'I/i problem'; }
 
+// TODO(kpreid): Refactor so there is no global introduced by these type
+// definitions.
 
 /**
  * Contains types related to sanitizer policies.
