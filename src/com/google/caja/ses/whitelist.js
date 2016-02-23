@@ -72,7 +72,7 @@ var ses;
  *
  * <p>TODO: We want to do for constructor: something weaker than '*',
  * but rather more like what we do for [[Prototype]] links, which is
- * that it is whitelisted only if it points as an object which is
+ * that it is whitelisted only if it points at an object which is
  * otherwise reachable by a whitelisted path.
  *
  * <p>The members of the whitelist are either
@@ -110,11 +110,6 @@ var ses;
   var t = true;
   var TypedArrayWhitelist;  // defined and used below
 
-  // Note that, on browsers suffering from
-  // CROSS_FRAME_FOR_IN_NEEDS_INHERITED_NEXT, startSES does an
-  // imperative update of the whitelist, but should be ok.  Please
-  // maintain this note together with corresponding notes in
-  // startSES.js where whitelist is updated and where it first read.
   ses.whitelist = {
     cajaVM: {                        // Caja support
       // The accessible intrinsics which are not reachable by own
@@ -127,9 +122,15 @@ var ses;
       anonIntrinsics: {
         ThrowTypeError: {},
         IteratorPrototype: {
-          constructor: false  // suppress inherited '*'
-          // Note that startSES may add a "next: '*'" here, depending on
-          // CROSS_FRAME_FOR_IN_NEEDS_INHERITED_NEXT
+          // Technically, for SES-on-ES5, we should not need to
+          // whitelist 'next'. However, browsers are accidentally
+          // relying on it
+          // https://bugs.chromium.org/p/v8/issues/detail?id=4769#
+          // https://bugs.webkit.org/show_bug.cgi?id=154475
+          // and we will be whitelisting it as we transition to ES6
+          // anyway, so we unconditionally whitelist it now.
+          next: '*',
+          constructor: false
         },
         ArrayIteratorPrototype: {},
         StringIteratorPrototype: {},
