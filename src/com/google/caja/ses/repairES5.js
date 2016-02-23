@@ -1589,7 +1589,7 @@ var ses;
             // should not be needed. However, when running the Caja
             // regression tests, the testOk test tries to define a
             // global property to itself, which fails on FF 39 for
-            // undiagnosed reasons. 
+            // undiagnosed reasons.
             //
             // TODO(erights): Diagnose why testOk on FF 39 fails if we
             // do the following lines unconditionally, and report.
@@ -1845,44 +1845,33 @@ var ses;
   }
 
   /**
-   * As of ES6, for all the builtin constructors (except Function)
-   * that make a particular type of exotic object, that
-   * constructor.prototype must be a plain object rather than that
-   * kind of exotic object. As of this writing, at least Chrome, FF,
-   * Safari, Opera, and IE11 violate this.
+   * As of ES6, for all the builtin constructors that make a
+   * particular type of exotic object, except Function, Array, Number,
+   * Boolean, and String, that constructor.prototype must be a plain
+   * object rather than that kind of exotic object.
    */
-  function test_NUMBER_PROTO_IS_NUMBER() {
-    return isBuiltinNumberObject(Number.prototype);
+  function test_DATE_PROTO_IS_DATE() {
+    return isBuiltinDate(Date.prototype);
   }
 
   /**
-   * As of ES6, for all the builtin constructors (except Function)
+   * As of ES6, for all the builtin constructors except
+   * (except Function, Array, Number, Boolean, and String),
    * that make a particular type of exotic object, that
    * constructor.prototype must be a plain object rather than that
-   * kind of exotic object. As of this writing, at least Chrome, FF,
-   * Safari, Opera, and IE11 violate this.
+   * kind of exotic object.
    */
-  function test_BOOLEAN_PROTO_IS_BOOLEAN() {
-    return isBuiltinBooleanObject(Boolean.prototype);
+  function test_WEAKMAP_PROTO_IS_WEAKMAP() {
+    if (typeof WeakMap !== 'function') { return false; }
+    return isBuiltinWeakMap(WeakMap.prototype);
   }
 
   /**
-   * As of ES6, for all the builtin constructors (except Function)
+   * As of ES6, for all the builtin constructors except
+   * (except Function, Array, Number, Boolean, and String),
    * that make a particular type of exotic object, that
    * constructor.prototype must be a plain object rather than that
-   * kind of exotic object. As of this writing, at least Chrome, FF,
-   * Safari, Opera, and IE11 violate this.
-   */
-  function test_STRING_PROTO_IS_STRING() {
-    return isBuiltinStringObject(String.prototype);
-  }
-
-  /**
-   * As of ES6, for all the builtin constructors (except Function)
-   * that make a particular type of exotic object, that
-   * constructor.prototype must be a plain object rather than that
-   * kind of exotic object. As of this writing, at least Chrome, FF,
-   * Safari, Opera, and IE11 violate this.
+   * kind of exotic object.
    */
   function test_REGEXP_PROTO_IS_REGEXP() {
     return isBuiltinRegExp(RegExp.prototype);
@@ -4996,9 +4985,9 @@ var ses;
       tests: []
     },
     {
-      id: 'NUMBER_PROTO_IS_NUMBER',
-      description: 'Number.prototype should be a plain object',
-      test: test_NUMBER_PROTO_IS_NUMBER,
+      id: 'DATE_PROTO_IS_DATE',
+      description: 'Date.prototype should be a plain object',
+      test: test_DATE_PROTO_IS_DATE,
       repair: void 0,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
       canRepair: false,
@@ -5010,23 +4999,9 @@ var ses;
       tests: []
     },
     {
-      id: 'BOOLEAN_PROTO_IS_BOOLEAN',
-      description: 'Boolean.prototype should be a plain object',
-      test: test_BOOLEAN_PROTO_IS_BOOLEAN,
-      repair: void 0,
-      preSeverity: severities.SAFE_SPEC_VIOLATION,
-      canRepair: false,
-      urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=797686',
-             'https://code.google.com/p/v8/issues/detail?id=3890',
-             'https://bugs.webkit.org/show_bug.cgi?id=141610',
-             'https://connect.microsoft.com/IE/feedbackdetail/view/1131123/for-many-x-x-prototype-is-an-x-when-it-must-be-a-plain-object'],
-      sections: [],
-      tests: []
-    },
-    {
-      id: 'STRING_PROTO_IS_STRING',
-      description: 'String.prototype should be a plain object',
-      test: test_STRING_PROTO_IS_STRING,
+      id: 'WEAKMAP_PROTO_IS_WEAKMAP',
+      description: 'WeakMap.prototype should be a plain object',
+      test: test_WEAKMAP_PROTO_IS_WEAKMAP,
       repair: void 0,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
       canRepair: false,
