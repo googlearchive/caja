@@ -32,7 +32,7 @@
  * //optionally requires ses.mitigateSrcGotchas, ses._primordialsHaveBeenFrozen
  * //provides ses.ok, ses.okToLoad, ses.getMaxSeverity, ses.updateMaxSeverity
  * //provides ses.is, ses.makeDelayedTamperProof
- * //provides ses.isInBrowser, ses._optForeignForIn
+ * //provides ses.isInBrowser
  * //provides ses.makeCallerHarmless, ses.makeArgumentsHarmless
  * //provides ses.noFuncPoison
  * //provides ses.verifyStrictFunctionBody
@@ -1140,7 +1140,7 @@ var ses;
    * callback, passing that iframe's window, and then removes the
    * iframe.
    *
-   * <p>A typical callback (e.g., _optForeignForIn) will then create a
+   * <p>A typical callback will then create a
    * function within that other frame, to be used later to test
    * cross-frame operations. However, on IE10 on Windows, this iframe
    * removal may then prevent that created function from running at
@@ -1407,7 +1407,7 @@ var ses;
             // should not be needed. However, when running the Caja
             // regression tests, the testOk test tries to define a
             // global property to itself, which fails on FF 39 for
-            // undiagnosed reasons. 
+            // undiagnosed reasons.
             //
             // TODO(erights): Diagnose why testOk on FF 39 fails if we
             // do the following lines unconditionally, and report.
@@ -1663,44 +1663,33 @@ var ses;
   }
 
   /**
-   * As of ES6, for all the builtin constructors (except Function)
-   * that make a particular type of exotic object, that
-   * constructor.prototype must be a plain object rather than that
-   * kind of exotic object. As of this writing, at least Chrome, FF,
-   * Safari, Opera, and IE11 violate this.
+   * As of ES6, for all the builtin constructors that make a
+   * particular type of exotic object, except Function, Array, Number,
+   * Boolean, and String, that constructor.prototype must be a plain
+   * object rather than that kind of exotic object.
    */
-  function test_NUMBER_PROTO_IS_NUMBER() {
-    return isBuiltinNumberObject(Number.prototype);
+  function test_DATE_PROTO_IS_DATE() {
+    return isBuiltinDate(Date.prototype);
   }
 
   /**
-   * As of ES6, for all the builtin constructors (except Function)
+   * As of ES6, for all the builtin constructors except
+   * (except Function, Array, Number, Boolean, and String),
    * that make a particular type of exotic object, that
    * constructor.prototype must be a plain object rather than that
-   * kind of exotic object. As of this writing, at least Chrome, FF,
-   * Safari, Opera, and IE11 violate this.
+   * kind of exotic object.
    */
-  function test_BOOLEAN_PROTO_IS_BOOLEAN() {
-    return isBuiltinBooleanObject(Boolean.prototype);
+  function test_WEAKMAP_PROTO_IS_WEAKMAP() {
+    if (typeof WeakMap !== 'function') { return false; }
+    return isBuiltinWeakMap(WeakMap.prototype);
   }
 
   /**
-   * As of ES6, for all the builtin constructors (except Function)
+   * As of ES6, for all the builtin constructors except
+   * (except Function, Array, Number, Boolean, and String),
    * that make a particular type of exotic object, that
    * constructor.prototype must be a plain object rather than that
-   * kind of exotic object. As of this writing, at least Chrome, FF,
-   * Safari, Opera, and IE11 violate this.
-   */
-  function test_STRING_PROTO_IS_STRING() {
-    return isBuiltinStringObject(String.prototype);
-  }
-
-  /**
-   * As of ES6, for all the builtin constructors (except Function)
-   * that make a particular type of exotic object, that
-   * constructor.prototype must be a plain object rather than that
-   * kind of exotic object. As of this writing, at least Chrome, FF,
-   * Safari, Opera, and IE11 violate this.
+   * kind of exotic object.
    */
   function test_REGEXP_PROTO_IS_REGEXP() {
     return isBuiltinRegExp(RegExp.prototype);
@@ -3549,52 +3538,6 @@ var ses;
   }
 
 
-  /**
-   * _optForeignForIn, if non-undefined, is a function of one parameter
-   * in a foreign frame that does a do-nothing for/in on that
-   * parameter. Used for detecting
-   * https://code.google.com/p/google-caja/issues/detail?id=1962 ,
-   * i.e., whether cross-frame for/in relies on the
-   * non-standard %IteratorPrototype%.next method being present.
-   *
-   * <p>Exported so that startSES can test whether whitelisting
-   * %IteratorPrototype%.next "fixes" the problem.
-   *
-   * <p>When run in a non-browser environment, _optForeignForIn is
-   * undefined.
-   */
-  ses._optForeignForIn = inTestFrame(function(window) {
-    return window.Function('o', '"use strict"; for (var x in o) {}');
-  });
-
-  function test_CROSS_FRAME_FOR_IN_NEEDS_INHERITED_NEXT() {
-    var getProto = Object.getPrototypeOf;
-
-    if (!ses._optForeignForIn) { return false; }
-    var nextless = inTestFrame(function(window) {
-      var iterSym = window.Symbol && window.Symbol.iterator;
-      if (!iterSym) { return void 0; }
-      var arrayIter = (new window.Array())[iterSym]();
-      var iterProto = getProto(getProto(arrayIter));
-      if (!(iterProto.hasOwnProperty('next'))) { return void 0; }
-      delete iterProto.next;
-      return window.eval('"use strict"; ({});');
-    });
-    if (!nextless) { return false; }
-    try {
-      ses._optForeignForIn(nextless);
-    } catch (err) {
-      // Cannot easily instanceof Error, since it is a cross-frame
-      // error. No reliable brand test for Error anyway.
-      if (err.name === 'TypeError' && 'message' in err) {
-        return true;
-      }
-      return 'Unexpected error: ' + err;
-    }
-    return false;
-  }
-
-
   ////////////////////// Repairs /////////////////////
   //
   // Each repair_NAME function exists primarily to repair the problem
@@ -4855,9 +4798,9 @@ var ses;
       tests: []
     },
     {
-      id: 'NUMBER_PROTO_IS_NUMBER',
-      description: 'Number.prototype should be a plain object',
-      test: test_NUMBER_PROTO_IS_NUMBER,
+      id: 'DATE_PROTO_IS_DATE',
+      description: 'Date.prototype should be a plain object',
+      test: test_DATE_PROTO_IS_DATE,
       repair: void 0,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
       canRepair: false,
@@ -4869,23 +4812,9 @@ var ses;
       tests: []
     },
     {
-      id: 'BOOLEAN_PROTO_IS_BOOLEAN',
-      description: 'Boolean.prototype should be a plain object',
-      test: test_BOOLEAN_PROTO_IS_BOOLEAN,
-      repair: void 0,
-      preSeverity: severities.SAFE_SPEC_VIOLATION,
-      canRepair: false,
-      urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=797686',
-             'https://code.google.com/p/v8/issues/detail?id=3890',
-             'https://bugs.webkit.org/show_bug.cgi?id=141610',
-             'https://connect.microsoft.com/IE/feedbackdetail/view/1131123/for-many-x-x-prototype-is-an-x-when-it-must-be-a-plain-object'],
-      sections: [],
-      tests: []
-    },
-    {
-      id: 'STRING_PROTO_IS_STRING',
-      description: 'String.prototype should be a plain object',
-      test: test_STRING_PROTO_IS_STRING,
+      id: 'WEAKMAP_PROTO_IS_WEAKMAP',
+      description: 'WeakMap.prototype should be a plain object',
+      test: test_WEAKMAP_PROTO_IS_WEAKMAP,
       repair: void 0,
       preSeverity: severities.SAFE_SPEC_VIOLATION,
       canRepair: false,
@@ -5681,18 +5610,6 @@ var ses;
       canRepair: true,
       urls: ['https://bugzilla.mozilla.org/show_bug.cgi?id=1125389',
              'https://code.google.com/p/google-caja/issues/detail?id=1954'],
-      sections: [],
-      tests: []
-    },
-    {
-      id: 'CROSS_FRAME_FOR_IN_NEEDS_INHERITED_NEXT',
-      description: 'Cross-frame for/in needs non-standard inherited .next',
-      test: test_CROSS_FRAME_FOR_IN_NEEDS_INHERITED_NEXT,
-      repair: void 0,
-      preSeverity: severities.SAFE_SPEC_VIOLATION,
-      canRepair: false,
-      urls: ['https://code.google.com/p/google-caja/issues/detail?id=1962',
-             'https://bugzilla.mozilla.org/show_bug.cgi?id=1152550'],
       sections: [],
       tests: []
     }

@@ -52,9 +52,9 @@ public final class Abbreviator {
    */
   public Abbreviator(Set<String> items, String sep) {
     this.sep = sep;
-    Map<String, String> abbrevToUri = new HashMap<String, String>();
-    for (String item : items) { insert(abbrevToUri, item, ""); }
-    for (Map.Entry<String, String> e : abbrevToUri.entrySet()) {
+    Map<String, String> abbrevToItem = new HashMap<String, String>();
+    for (String item : items) { insert(abbrevToItem, item, ""); }
+    for (Map.Entry<String, String> e : abbrevToItem.entrySet()) {
       if (e.getValue() != null) {
         itemToAbbrev.put(e.getValue(), e.getKey());
       }
@@ -71,19 +71,45 @@ public final class Abbreviator {
     return abbrev != null ? abbrev : item;
   }
 
+  /**
+   * Insert an entry in a map of abbreviations to items.
+   *
+   * @param abbrevToItem The table. Null-valued entries mark ambiguous
+   *        abbreviations.
+   * @param item The unabbreviated item to insert.
+   * @param abbrev The shortest abbreviation so far known to be insufficiently
+   *        specific; the inserted abbreviation will always be longer than this
+   *        if possible.
+   */
   private void insert(
-      Map<String, String> abbrevToUri, String item, String abbrev) {
+      Map<String, String> abbrevToItem, String item, String abbrev) {
+    // Find the next longer abbreviation to attempt.
     abbrev = expand(item, abbrev);
-    if (!abbrevToUri.containsKey(abbrev)) {
-      abbrevToUri.put(abbrev, item);
+    if (!abbrevToItem.containsKey(abbrev)) {
+      // It is unambiguous; just insert it.
+      abbrevToItem.put(abbrev, item);
     } else {
-      String other = abbrevToUri.get(abbrev);
-      if (!item.equals(other)) {
+      // It conflicts with an existing (longer or equal) abbreviation.
+      String other = abbrevToItem.get(abbrev);
+      if (!item.equals(other)) {  // Skip if exact item already present.
         if (!abbrev.equals(other)) {
-          abbrevToUri.put(abbrev, null);
-          if (other != null) { insert(abbrevToUri, other, abbrev); }
+          // The other item can be expressed longer.
+          // (If this condition is false, then the other item is a suffix of
+          // this one, and so the other item is left as-is.)
+
+          // Mark this abbreviation as ambiguous.
+          abbrevToItem.put(abbrev, null);
+          // Re-insert the other item with its longer abbreviation.
+          if (other != null) { insert(abbrevToItem, other, abbrev); }
         }
-        insert(abbrevToUri, item, abbrev);
+        if (other == null && item.equals(abbrev)) {
+          // Item is a suffix of an existing item. Insert it and do not attempt
+          // to find a longer abbreviation (which would infinitely recurse).
+          abbrevToItem.put(abbrev, item);
+        } else {
+          // Try again to insert this item, with a longer abbreviation.
+          insert(abbrevToItem, item, abbrev);
+        }
       }
     }
   }
