@@ -32,6 +32,7 @@
  * //provides ses.startSES ses.resolveOptions, ses.securableWrapperSrc
  * //provides ses.makeCompiledExpr ses.prepareExpr
  * //provides ses._primordialsHaveBeenFrozen
+ * //provides ses.resampleGlobal
  *
  * @author Mark S. Miller,
  * @author Jasvir Nagra
@@ -535,6 +536,70 @@ ses.startSES = function(global,
   }
 
 
+  /**
+   * All scopeObjects inherit from the one returned scopeBackstop
+   * object, just in case the normal makeScopeObject protections fail,
+   * leaving open a possible vulnerability. For every global variable
+   * name found by inspecting the global object, the backstop has a
+   * poisoned property shadowing that global variable.
+   *
+   * The remaining imperfection is that new globals may be added after
+   * the global object has been sampled. We provide the
+   * ses.resampleGlobal() hook so that our client can advise us that
+   * we need to resample it. We update the one returned scopeBackstop
+   * object, rather than making a new one, to protect us against old
+   * code accessing new variables.
+   */
+  var getBackstop = (function() {
+
+    var scopeBackstop = createNullIfPossible();
+    // createNullIfPossible safety: We explicitly censor all the own
+    // properties of Object.prototype below.
+    var needSample = true;
+
+    /**
+     * Call this after adding new global variables to this realm,
+     * before giving any other untrusted code a chance to run.
+     */
+    function resampleGlobal() {
+      gopn(Object.prototype).forEach(censor);
+      for (var hidden = global; hidden; hidden = getProto(hidden)) {
+        gopn(hidden).forEach(censor);
+      }
+      needSample = false;
+    }
+    ses.resampleGlobal = resampleGlobal;
+
+    /**
+     * Because there are often a lot of global properties, for speed,
+     * we reuse this single function as the getters and setters for
+     * all of them. The price is that the diagnostic cannot identify
+     * the name of forbidden variable being accessed.
+     *
+     * Since this is only used as a backstop anyway, this
+     * uninformative diagnostic should only be seen if the normal
+     * makeScopeObject protections fail.
+     */
+    function badGlobalAccess() {
+      throw new ReferenceError('Access to forbidden global variable');
+    }
+
+    function censor(name) {
+      defProp(scopeBackstop, name, {
+        get: badGlobalAccess,
+        set: badGlobalAccess,
+        enumerable: false,
+        configurable: false
+      });
+    }
+
+    return function getBackstop() {
+      if (needSample) { resampleGlobal(); }
+      return scopeBackstop;
+    };
+  }());
+
+
   (function startSESPrelude() {
 
     /**
@@ -645,10 +710,7 @@ ses.startSES = function(global,
      * {@code imports}.
      */
     function makeScopeObject(imports, freeNames, options) {
-      var scopeObject = createNullIfPossible();
-      // createNullIfPossible safety: The inherited properties should
-      // always be shadowed by defined properties if they are relevant
-      // (that is, if they occur in freeNames).
+      var scopeObject = create(getBackstop());
 
       // Note: Although this loop is a bottleneck on some platforms,
       // it does not help to turn it into a for(;;) loop, since we
@@ -870,8 +932,11 @@ ses.startSES = function(global,
       if (exprSrc[exprSrc.length - 1] === ';') {
         exprSrc = exprSrc.substr(0, exprSrc.length - 1);
       }
-      var wrapperSrc = securableWrapperSrc(exprSrc);
+      // If both of these would throw an error, the error from
+      // atLeastFreeVarNames is likely to be more informative, so we
+      // call it first.
       var freeNames = atLeastFreeVarNames(exprSrc);
+      var wrapperSrc = securableWrapperSrc(exprSrc);
 
       var suffixSrc;
       var sourceUrl = options.sourceUrl;

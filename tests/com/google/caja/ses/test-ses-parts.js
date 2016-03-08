@@ -17,7 +17,10 @@
 var ses = ses || {};
 ses.maxAcceptableSeverityName = 'NEW_SYMPTOM';
 
+// Values we need to obtain or construct before SES is initialized.
 var preFrozen = Object.freeze({});
+var unsafeFunction = Function;  // See TAME_GLOBAL_EVAL in startSES.js.
+
 var loadSesScript = document.createElement('script');
 loadSesScript.src = '../ses/initSES.js';
 loadSesScript.onload = function() {
@@ -75,5 +78,123 @@ jsunitRegister('testWeakMap', function() {
   assertEquals(false, emptyMap.delete(postFrozen));
   assertEquals(false, emptyMap.delete(preFrozen));
 
+  jsunitPass();
+});
+
+jsunitRegister('testAtLeastFreeVarNamesOutput', function() {
+  // Verify that atLeastFreeVarNames comes up with the maybe-var-names we
+  // expect it to.
+  assertArrayEquals(
+      ['foo', 'bar', 'baz', 'window', '{foo}', '"', 'foo bar', 'u77indow', '$'],
+      ses.atLeastFreeVarNames(
+          'foo.bar("baz", \\u0077indow, \\u007bfoo\\u007d, \\u0022, ' +
+          'foo\\u0020bar, "\167indow", \\u77indow, $)'));
+  jsunitPass();
+});
+
+jsunitRegister('testAtLeastFreeVarNamesVersusEval', function() {
+  // Verify that atLeastFreeVarNames does not disagree with the browser's
+  // parser in dangerous ways.
+
+  var names = [
+    'window',
+    '\\u0077indow',
+    '$',
+    '\\167indow',
+    '\\u007bfoo\\u007d',
+    '\\u0022foo\\u0022',
+    'foo\\u0020bar',
+    '\\u77indow',
+  ];
+
+  var safes = [];
+  var syntaxErrors = [];
+  var nonIdentifiers = [];
+  names.forEach(function(name) {
+    var r = ses.atLeastFreeVarNames(name);
+    if (r.length === 0) {
+      // atLeastFreeVarNames recognizes that some non-identifiers
+      // ('\\167indow') are not identifiers and omits them from the
+      // returned list. Others are conversatively listed, which we
+      // test below.
+      nonIdentifiers.push(name);
+      return;
+    }
+    assertEquals(name + ' count', 1, r.length);
+
+    // atLeastFreeVarNames's purpose is to return a list of names which should
+    // be bound so as to shadow anything unsafe in the environment. Therefore,
+    // this test program creates that situation by shadowing the name-as-written
+    // with the name as returned by atLeastFreeVarNames.
+    var testFunctionBody =
+        "var " + name + " = 'unsafe';" +
+        "return (function() {" +
+          "var " + r[0] + " = 'safe';" +
+          "return " + name + ";" +
+        "}());";
+
+    // Test with both browser eval (in the form of Function()) and SES eval.
+    // Browser eval because we want a direct route to the browser's parser for
+    // comparison with atLeastFreeVarNames; SES eval because we want to test the
+    // correctness of SES eval.
+    [
+      {name: 'browser', f: function(body) { return unsafeFunction(body)(); }},
+      {name: 'caja', f: cajaVM.eval}
+    ].forEach(function (evaluator) {
+      var result;
+      try {
+        // Using SES eval (in the guise of Function) is arguably not quite right
+        // here, as we are primarily testing the browser's JS parser, not the
+        // lexical lookup behavior of eval, and SES eval has added complexity
+        // (rewriting) that _might_ mask a bug.
+        //
+        // On the other hand, SES eval is what we actually care about the
+        // security of, so perhaps it should be changed.
+        result = evaluator.f(testFunctionBody);
+      } catch (e) {
+        if (e instanceof SyntaxError) {
+          syntaxErrors.push(name);
+          return;
+        }
+      }
+      assertEquals(
+          name + ' ' + evaluator.name + ' eval ' + testFunctionBody,
+          'safe',
+          result);
+      safes.push(name);
+    });
+  });
+
+  // Each name occurs twice because of the two evals tested.
+  assertArrayEquals(
+      ['window', 'window', '\\u0077indow', '\\u0077indow', '$', '$'], safes);
+  assertArrayEquals([
+    '\\u007bfoo\\u007d', '\\u007bfoo\\u007d',
+    '\\u0022foo\\u0022', '\\u0022foo\\u0022',
+    'foo\\u0020bar', 'foo\\u0020bar',
+    '\\u77indow', '\\u77indow',
+  ], syntaxErrors);
+  assertArrayEquals(['\\167indow'], nonIdentifiers);
+
+
+  jsunitPass();
+});
+
+jsunitRegister('testAtLeastFreeVarNamesOnNewUnicodeEscapes', function() {
+  // We happen to reject these names now with a SyntaxError even
+  // though they are valid JavaScript, merely because we currently use
+  // JSON.parse as an temporary expedient. The purpose of this test,
+  // therefore, is not really to test that we get this error, but to
+  // ensure that these names are not ignored.
+  var names = ['\\u{77}indow', '\\u{0077}indow', '\\u{}indow'];
+  names.forEach(function(name) {
+    try {
+      ses.atLeastFreeVarNames(name);
+    } catch (e) {
+      assertTrue(e instanceof SyntaxError);
+      return;
+    }
+    fail('Unexpectedly succeeded to parse ' + name);
+  });
   jsunitPass();
 });

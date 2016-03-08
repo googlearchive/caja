@@ -23,7 +23,7 @@
  * // provides ses.atLeastFreeVarNames
  * // provides ses.limitSrcCharset
  * @author Mark S. Miller
- * @requires StringMap
+ * @requires StringMap, JSON
  * @overrides ses, atLeastFreeVarNamesModule
  */
 var ses;
@@ -94,8 +94,9 @@ var ses;
     + '\\u2028\\u2029\\u200f\\u205F\\u3000]');
 
   /**
-   * We use this to limit the input text to ascii only text.  All other
-   * characters are encoded using backslash-u escapes.
+   * We use this to limit the input text to ascii only text or \u00A0
+   * which is no-break-space. All other characters are encoded using
+   * backslash-u escapes.
    */
   ses.limitSrcCharset = function(programSrc) {
     if (OTHER_WHITESPACE.test(programSrc)) {
@@ -110,13 +111,29 @@ var ses;
 
   /**
    * Return a regexp that can be used repeatedly to scan for the next
-   * identifier. It works correctly in concert with ses.limitSrcCharset above.
+   * identifier. It works correctly in concert with
+   * ses.limitSrcCharset above.
    *
-   * If this regexp is changed, compileExprLater.js should be checked for
-   * correct escaping of freeNames.
+   * Note that ES6 section 11.8.4 extends the syntax of identifiers to
+   * include the unicode escape sequence
+   * backslash-u-opencurly-hexdigits-closecurly. By including it in
+   * this pattern, we ensure that we still recognize an identifier as
+   * a unit. However, this is not valid JSON syntax, so the JSON.parse
+   * will reject these with an exception rather than decode it into an
+   * identifier string.
    */
   function SHOULD_MATCH_IDENTIFIER() {
-    return /(\w|\\u\d{4}|\$)+/g;
+    return /(?:\w|\\u[0-9a-fA-F]{4}|\\u{[0-9a-fA-F]*}|\$)+/g;
+  }
+
+  /**
+   * Sequences beginning with a digit will pass the
+   * SHOULD_MATCH_IDENTIFIER() pattern but are trivially not
+   * identifiers. This returns true only if name does not begin with a
+   * digit.
+   */
+  function filterIdentifier(name) {
+    return /^\D/.test(name);
   }
 
   //////////////// END KLUDGE SWITCHES ///////////
@@ -151,9 +168,30 @@ var ses;
       // apparently unique identifiers.
       var name = a[0];
 
-      if (!found.has(name)) {
-        result.push(name);
-        found.set(name, true);
+      if (filterIdentifier(name)) {
+        // Parse \u escapes occurring inside the name. No other special
+        // characters can occur, because the input is known to match
+        // SHOULD_MATCH_IDENTIFIER(). SHOULD_MATCH_IDENTIFIER() will
+        // admit backslash-u-opencurly-hexdigits-closecurly which
+        // JSON.parse will reject with an error. We could and probably
+        // should eventually admit this standard non-JSON escape
+        // sequence, but for simplicity and lack of current demand, we
+        // do not yet do so.
+        try {
+          name = JSON.parse('"' + name + '"');
+        } catch (err) {
+          if (err instanceof SyntaxError) {
+            // Since we are rejecting a valid program, at least make
+            // the diagnostic more informative.
+            err.message += ' in ' + name;
+          }
+          throw err;
+        }
+
+        if (!found.has(name)) {
+          result.push(name);
+          found.set(name, true);
+        }
       }
     }
     return result;
