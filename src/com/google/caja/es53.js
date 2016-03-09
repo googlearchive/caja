@@ -4396,7 +4396,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
       return getter ? getter.i___() : void 0;
     });
 
-  var nativeProxies = Proxy && (function () {
+  var nativeProxies = Proxy && Proxy.create && (function () {
       var obj = {0: 'hi'};
       var p = Proxy.create({
           toString: function() { return '[ES5/3 feature test handler]'; },
