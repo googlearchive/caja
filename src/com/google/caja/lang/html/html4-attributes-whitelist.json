@@ -189,6 +189,7 @@
       "COL::SPAN",
       "COLGROUP::SPAN",
       "INPUT::SRC",
+      "IMG::SRC",
       "OL::START",
       "*::STYLE",
       "TABLE::SUMMARY",
