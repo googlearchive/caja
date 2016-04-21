@@ -15,7 +15,7 @@
 /**
  * @fileoverview Makes a "ses.compileExprLater" function which acts like
  * "cajaVM.compileExpr", except that it returns a promise for the
- * outcome of attempting to compile the argument expression. 
+ * outcome of attempting to compile the argument expression.
  * Likewise, makes a "ses.confineLater" as an eventual analog of
  * "cajaVM.confine".
  *
@@ -96,10 +96,13 @@ var ses;
      var result = Q.defer();
      var resolverTicket = getResolverTicket(result.resolve);
 
-     // Freenames consist solely of identifier characters (\w|\$)+
-     // which do not need to be escaped further
-     var freeNamesList = prep.freeNames.length == 0 ? '[]' :
-         '["' + prep.freeNames.join('", "') + '"]';
+     // Although freeNames probably consist solely of identifier
+     // characters (\w|\$)+ which do not need to be escaped further,
+     // nevertheless, in order to avoid relying on this delicate
+     // property, we use JSON.stringify to generate the source of an
+     // array of JavaScript string literals, where the value of each
+     // string literal is the corresponding identifier.
+     var freeNamesList = JSON.stringify(prep.freeNames);
 
      var scriptSrc =
        'ses.redeemResolver(' + resolverTicket + ')(' +

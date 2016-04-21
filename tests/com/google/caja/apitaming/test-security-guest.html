@@ -1,0 +1,154 @@
+<!--
+ - Copyright (C) 2016 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<script type="text/javascript">
+  function registerUnsafeHtmlTest(id, body, opt_options) {
+    var options = opt_options ? opt_options : {};
+    jsunitRegister(id, function() {
+      var testContainer = document.getElementById(id);
+
+      body(id);
+
+      setTimeout(jsunitCallback(function() {  // draw is async???
+        assertEquals("this test's unsafe element", 0,
+            directAccess.evalInHostFrame(
+                'document.getElementsByClassName(' +
+                JSON.stringify('unsafe-' + id) + ').length'));
+
+            console.log(id, JSON.stringify(options));
+        if ('expectInText' in options ? options.expectInText : true) {
+          // Confirm that the content was shown but not interpreted as HTML.
+          assertTrue('loaded not as HTML',
+              new RegExp('class=unsafe-' + id).test(testContainer.textContent));
+        }
+
+        assertEquals('generic unsafe element', 0,
+            directAccess.evalInHostFrame(
+                'document.getElementsByClassName("unsafe-global").length'));
+
+        pass();
+      }), 1000);
+    })
+  }
+</script>
+
+<div class="testcontainer" id="testEvilChartType"></div>
+<script type="text/javascript">
+  registerUnsafeHtmlTest('testEvilChartType', function(id) {
+    var chartWrapper = new google.visualization.ChartWrapper({
+      'chartType':'evilGlobalFunction',
+      'dataTable': [['foo']],
+      'containerId': id
+    });
+    chartWrapper.draw();
+  }, {expectInText: false});
+</script>
+
+<div class="testcontainer" id="testChartWrapperSpecAllowHtml"></div>
+<script type="text/javascript">
+  registerUnsafeHtmlTest('testChartWrapperSpecAllowHtml', function(id) {
+    var chartWrapper = new google.visualization.ChartWrapper({
+      'chartType':'OrgChart',
+      'dataTable': [
+          ['foo', 'bar'],
+          ['<img src=UNSAFE class=unsafe-testChartWrapperSpecAllowHtml>', 'baz']],
+      'containerId': id,
+      'options': {'allowHtml':true}
+      });
+    chartWrapper.draw();
+  });
+</script>
+
+<div class="testcontainer" id="testChartWrapperSetOptionsAllowHtml"></div>
+<script type="text/javascript">
+  registerUnsafeHtmlTest('testChartWrapperSetOptionsAllowHtml', function(id) {
+    var chartWrapper = new google.visualization.ChartWrapper({
+      'chartType':'OrgChart',
+      'dataTable': [
+          ['foo', 'bar'],
+          ['<img src=UNSAFE class=unsafe-testChartWrapperSetOptionsAllowHtml>', 'baz']],
+      'containerId': id,
+      });
+    chartWrapper.setOptions({'allowHtml': true});
+    chartWrapper.draw();
+  });
+</script>
+
+<div class="testcontainer" id="testChartWrapperSetOptionAllowHtml"></div>
+<script type="text/javascript">
+  registerUnsafeHtmlTest('testChartWrapperSetOptionAllowHtml', function(id) {
+    var chartWrapper = new google.visualization.ChartWrapper({
+      'chartType':'OrgChart',
+      'dataTable': [
+          ['foo', 'bar'],
+          ['<img src=UNSAFE class=unsafe-testChartWrapperSetOptionAllowHtml>', 'baz']],
+      'containerId': id,
+      });
+    chartWrapper.setOption('allowHtml', true);
+    chartWrapper.draw();
+  });
+</script>
+
+<div class="testcontainer" id="testColumnRoleStyle"></div>
+<script type="text/javascript">
+  registerUnsafeHtmlTest('testColumnRoleStyle', function(id) {
+    var chartWrapper = new google.visualization.ChartWrapper({
+      'chartType':'ColumnChart',
+      'dataTable':  google.visualization.arrayToDataTable([
+        ['X', 'Y', { role: 'style' }],
+        ['Foo', 100, 'class: unsafe-testColumnRoleStyle' ],
+      ]),
+      'containerId': id,
+      });
+    chartWrapper.draw();
+  }, {expectInText: false});
+</script>
+
+<!--
+  TODO(kpreid): We need to automate mouseover events to test this.
+<div class="testcontainer" id="testPieChartTooltip"></div>
+<script type="text/javascript">
+  registerUnsafeHtmlTest('testPieChartTooltip', function() {
+    var data = google.visualization.arrayToDataTable([
+      ['Columnone', 'Columntwo', { role: 'tooltip', p: {html: true} }],
+      ['One', 217, '<img src=UNSAFE class=unsafe-testPieChartTooltip>'],
+      ['Two', 203, '<img src=UNSAFE class=unsafe-testPieChartTooltip>']
+    ]);
+    var chartWrapper = new google.visualization.ChartWrapper({
+      'chartType':'PieChart',
+      'dataTable': data,
+      'containerId': 'testPieChartTooltip',
+      'options': {'allowHtml':true}
+      });
+    chartWrapper.draw();
+  });
+</script>
+-->
+
+<div class="testcontainer" id="testAddError"></div>
+<script type="text/javascript">
+  registerUnsafeHtmlTest('testAddError', function(id) {
+    google.visualization.errors.addError(
+        document.getElementById(id),
+        'foo',
+        'bar<img src=UNSAFE class=unsafe-testAddError>',
+        {showInTooltip: false});
+  });
+</script>
+
+<script>
+  google.load("visualization", "1", {packages:["corechart"], callback: jsunitRun});
+</script>

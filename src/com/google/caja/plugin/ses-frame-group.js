@@ -339,6 +339,10 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
 
     // TODO(felix8a): args.flash
 
+    // Advise SES that now is a good time to (re)check what are all
+    // the global variable names.
+    ses.resampleGlobal();
+
     var promise;
     if (args.uncajoledContent !== undefined) {
       promise = loadContent(gman, Q.ref({

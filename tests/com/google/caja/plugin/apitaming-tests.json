@@ -2,10 +2,14 @@
   {
     "label": "apitaming",
     "mode": "none",
-    "manual": true,
     "tests": [
       {
+        "label": "security",
+        "driver": "../apitaming/test-security.js"
+      },
+      {
         "label": "individual",
+        "manual": true,
         "bare-template": "../apitaming/tests-index.html?testsList=*-list.json&cajaServer=/caja",
         "tests": [
           { "bare": "maps" },
@@ -15,6 +19,7 @@
       },
       {
         "label": "all",
+        "manual": true,
         "comment": "large/slow page",
         "bare-template": "../apitaming/tests-side-by-side.html?testsList=*-list.json&cajaServer=/caja",
         "tests": [
