@@ -30,34 +30,42 @@ caja.tamingGoogleLoader.addLoaderFactory(function(utils) {
     }
 
     safeWindow.google.load =
-        utils.frame.markFunction(function(name, opt_ver, opt_info) {
+        utils.frame.markFunction(function(name, unused_version, opt_settings) {
+      name = '' + name;
+
+      // Pass on only whitelisted settings, and wrap callback.
+      var guestCallback = undefined;
+      var sanitizedSettings = {};
+      if (opt_settings) {
+        guestCallback = opt_settings.callback;
+        if ('language' in opt_settings) {
+          sanitizedSettings.language = '' + opt_settings.language;
+        }
+        if ('nocss' in opt_settings) {
+          sanitizedSettings.nocss = !!(opt_settings.nocss);
+        }
+        if ('packages' in opt_settings) {
+          sanitizedSettings.packages =
+              Array.prototype.map.call(opt_settings.packages, String);
+        }
+      }
+      sanitizedSettings.callback = function() {
+        utils.reapplyPolicies();
+        if (onloads) { onloads.fire(); }
+        onloads = undefined;
+        guestCallback && guestCallback.call({});
+      };
+
       utils.validateNameAndLoadPolicy(
           'google.' + name,
           function() {
             loadWasCalled = true;
           },
           function(policy) {
-            var guestCallback = undefined;
-
-            if (opt_info) {
-              guestCallback = opt_info.callback;
-              opt_info.callback = undefined;
-              opt_info = utils.tamingUtils.copyJson(opt_info);
-            } else {
-              opt_info = {};
-            }
-
-            opt_info.callback = function() {
-              utils.reapplyPolicies();
-              if (onloads) { onloads.fire(); }
-              onloads = undefined;
-              guestCallback && guestCallback.call({});
-            };
-
             if (policy.customGoogleLoad) {
-              policy.customGoogleLoad(name, opt_info);
+              policy.customGoogleLoad(name, sanitizedSettings);
             } else {
-              google.load(name, policy.version, opt_info);
+              google.load(name, policy.version, sanitizedSettings);
             }
           });
     });

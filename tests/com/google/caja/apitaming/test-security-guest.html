@@ -15,6 +15,52 @@
 -->
 
 <script type="text/javascript">
+  jsunitRegister('testLoadSpoofedName', function testLoadSpoofedName() {
+    // Warning: This test is very brittle (as are the characteristics of the
+    // vulnerability it's trying to check for).
+    
+    // These two API names must be used only in this test (i.e. not already
+    // loaded) and YES must have customGoogleLoad.
+    var YES = 'feeds';
+    var NO = 'picker';  // Must be used only in this test
+    
+    assertFalse(YES in window.google);
+    assertFalse(NO in window.google);
+    var call = 0;
+
+    google.load({
+      split: String.prototype.split,
+      toString: function spoofNameToString() {
+        if (call++ === 0) {
+          return YES;
+        } else {
+          return NO;
+        }
+      }
+    }, 1, {
+      callback: jsunitCallback(function() {
+        assertEquals(1, call);
+        assertTrue('loaded initial name', YES in window.google);
+        assertFalse('did not load second name', NO in window.google);
+        pass();
+      })
+    });
+  });
+</script>
+
+<script type="text/javascript">
+  jsunitRegister('testLoadUnsafeOptions', function() {
+    google.load('visualization', 1,
+        {other_params: 'callback=evilGlobalFunction'});
+    setTimeout(jsunitCallback(function() {
+      assertEquals(0, directAccess.evalInHostFrame(
+          'document.getElementsByClassName("unsafe-global").length'));
+      pass();
+    }), 1000);
+  });
+</script>
+
+<script type="text/javascript">
   function registerUnsafeHtmlTest(id, body, opt_options) {
     var options = opt_options ? opt_options : {};
     jsunitRegister(id, function() {
