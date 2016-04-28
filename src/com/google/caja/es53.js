@@ -1034,10 +1034,11 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
    * Checks if {@code n} is governed by the {@code NUM___} property descriptor.
    *
    * Preconditions:
-   *   {@code typeof n === 'number'} or {@code 'string'}
+   *   {@code typeof n === 'number'} or {@code 'string'} or {@code 'symbol'}
    */
   function isNumericName(n) {
-    return typeof n === 'number' || ('' + (+n)) === n;
+    var type = typeof n;
+    return type === 'number' || (type === 'string' && ('' + (+n)) === n);
   }
 
   ////////////////////////////////////////////////////////////////////////
@@ -4436,6 +4437,14 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         return obj;
       });
 
+    function coerceProp(P) {
+      if (typeof P === 'symbol') {
+        return P;
+      } else {
+        return '' + P;
+      }
+    }
+
     // These are the handler methods for the proxy.
     var propDesc = function (P) {
         var opd = ownPropDesc(P);
@@ -4448,7 +4457,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     var ownPropDesc = function (P) {
         // If P is 'length' or a number, handle the lookup; otherwise
         // pass it on to Object.prototype.
-        P = '' + P;
+        P = coerceProp(P);
         if (P === 'length') {
           return {
             get: lengthGetter,
@@ -4472,7 +4481,7 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         // Optional trap implemented for efficiency.
         // If P is 'length' or a number, handle the lookup; otherwise
         // pass it on to Object.prototype.
-        P = '' + P;
+        P = coerceProp(P);
         if (P === 'length') {
           return lengthGetter.f___(O, []);
         } else if (isNumericName(P)) {
@@ -4489,14 +4498,14 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
     var has = function (P) {
         // The proxy has a length, numeric indices, and behaves
         // as though it inherits from Object.prototype.
-        P = '' + P;
+        P = coerceProp(P);
         return (P === 'length') ||
             isNumericName(P) ||
             P in Object.prototype;
       };
     var hasOwn = function (P) {
         // The proxy has a length and numeric indices.
-        P = '' + P;
+        P = coerceProp(P);
         return (P === 'length') ||
             isNumericName(P);
       };
@@ -4512,8 +4521,8 @@ var ___, cajaVM, safeJSON, WeakMap, ArrayLike, Proxy;
         return ['length'];
       };
     var del = function (P) {
-        P = '' + P;
-        if ((P === 'length') || ('' + +P === P)) { return false; }
+        P = coerceProp(P);
+        if ((P === 'length') || isNumericName(P)) { return false; }
         return true;
       };
 
