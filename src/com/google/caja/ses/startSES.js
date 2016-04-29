@@ -1303,6 +1303,17 @@ ses.startSES = function(global,
       })();
       if (nativeProxies) {
         (function () {
+          function coerceProp(P) {
+            if (typeof P === 'symbol') {
+              return P;
+            } else {
+              return '' + P;
+            }
+          }
+          function isNumericString(P) {
+            return typeof P === 'string' && P == '' + (+P);
+          }
+
           function ArrayLike(proto, getItem, getLength) {
             if (typeof proto !== 'object') {
               throw new TypeError('Expected proto to be an object.');
@@ -1317,14 +1328,14 @@ ses.startSES = function(global,
           }
 
           function ownPropDesc(P) {
-            P = '' + P;
+            P = coerceProp(P);
             if (P === 'length') {
               return {
                 get: lengthGetter,
                 enumerable: false,
                 configurable: true  // required proxy invariant
               };
-            } else if (typeof P === 'number' || P === '' + (+P)) {
+            } else if (isNumericString(P)) {
               return {
                 get: constFunc(function() {
                   var getter = itemMap.get(this);
@@ -1337,6 +1348,7 @@ ses.startSES = function(global,
             return void 0;
           }
           function propDesc(P) {
+            P = coerceProp(P);
             var opd = ownPropDesc(P);
             if (opd) {
               return opd;
@@ -1345,10 +1357,10 @@ ses.startSES = function(global,
             }
           }
           function get(O, P) {
-            P = '' + P;
+            P = coerceProp(P);
             if (P === 'length') {
               return lengthGetter.call(O);
-            } else if (typeof P === 'number' || P === '' + (+P)) {
+            } else if (isNumericString(P)) {
               var getter = itemMap.get(O);
               return getter ? getter(+P) : void 0;
             } else {
@@ -1358,17 +1370,14 @@ ses.startSES = function(global,
             }
           }
           function has(P) {
-            P = '' + P;
+            P = coerceProp(P);
             return (P === 'length') ||
-                (typeof P === 'number') ||
-                (P === '' + +P) ||
+                isNumericString(P) ||
                 (P in Object.prototype);
           }
           function hasOwn(P) {
-            P = '' + P;
-            return (P === 'length') ||
-                (typeof P === 'number') ||
-                (P === '' + +P);
+            P = coerceProp(P);
+            return P === 'length' || isNumericString(P);
           }
           function getPN() {
             var result = getOwnPN ();
@@ -1383,8 +1392,12 @@ ses.startSES = function(global,
             return ['length'];
           };
           function del(P) {
-            P = '' + P;
-            if ((P === 'length') || ('' + +P === P)) { return false; }
+            P = coerceProp(P);
+            if (P === 'length' || isNumericString(P)) {
+              // Non-deletable property.
+              return false;
+            }
+            // Nonexistent property.
             return true;
           }
 

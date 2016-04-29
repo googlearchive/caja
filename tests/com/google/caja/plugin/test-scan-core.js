@@ -488,7 +488,9 @@ var scanning;  // exports
             // When invoking methods on a prototype, use an instance of this
             // ctor instead as 'this'.
             var protoctx = makeContext(pval, subpath, depth + 1,
-                function() {
+                function getSelfCOfPrototypeObject() {
+                  // We have SomeCtor.prototype, and want to invoke a method on
+                  // it, so obtain an instance of it.
                   var selfC = getSelfC();
                   return makeContext(
                       obtainInstance(selfC.get(), selfC),
@@ -496,7 +498,6 @@ var scanning;  // exports
                       depth + 1,
                       'self',
                       function() { return noThisContext; },
-                      protoctx,
                       function() {
                         return 'obtainInstance(' + selfC.getProgram() + ')';
                       });

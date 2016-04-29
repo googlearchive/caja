@@ -214,6 +214,30 @@
   });
 </script>
 
+<p id="testMakeArrayLikeWithSymbol" class="testcontainer">
+  testMakeArrayLikeWithSymbol
+</p>
+<script type="text/javascript">
+  jsunitRegister('testMakeArrayLikeWithSymbol',
+                 function testMakeArrayLikeWithSymbol() {
+    // Symbol not yet whitelisted.
+    var Symbol = directAccess.evalInGuestFrame('Symbol');
+
+    var ArrayLike = cajaVM.makeArrayLike(1);
+    var instance = ArrayLike(Object.create(ArrayLike.prototype),
+        function getLength() { return 0; },
+        function getItem(i) { return i; });
+
+    assertEquals(undefined, instance[Symbol.iterator]);
+    assertEquals(false, Symbol.iterator in instance);
+    delete instance[Symbol.iterator];
+    assertEquals(undefined,
+        Object.getOwnPropertyDescriptor(instance, Symbol.iterator));
+
+    pass();
+  });
+</script>
+
 <p id="testRegExec" class="testcontainer">
   Test regexp.exec return value
 </p>

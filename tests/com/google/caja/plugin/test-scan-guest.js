@@ -124,6 +124,10 @@
     "unescape",
     "URIError",
     "WeakMap",
+    
+    // our own specials
+    "ArrayIteratorPrototype_ScanPseudoCtor",
+    "StringIteratorPrototype_ScanPseudoCtor",
     "cajaVM",
 
     // Early DOM pieces
@@ -580,6 +584,9 @@
         // TODO test invocation on Function.prototype itself
         G.tuple(G.value(THIS), G.tuple()));
 
+    // Iterators. (There is no common superclass of iterators)
+    argsByProp('next', freshResult(genMethod()));  // common iterator method
+
     if (!inES5Mode) {
       [function guestFn(){}, window.setTimeout].forEach(function(f) {
         // Function.prototype() is necessarily broken in ES5/3
@@ -618,6 +625,7 @@
           aGeneratorFunction);
       obtainInstance.define(cajaVM.anonIntrinsics.GeneratorFunction.prototype,
           aGenerator);
+      obtainInstance.define(aGeneratorFunction, aGenerator);
       
       var generatorIteratorPrototype =
           cajaVM.anonIntrinsics.GeneratorFunction.prototype.prototype;
@@ -626,7 +634,6 @@
       // subtype of Iterator".
       functionArgs.set(
           Ref.all(
-              Ref.is(generatorIteratorPrototype.next),
               Ref.is(generatorIteratorPrototype['return']),
               Ref.is(generatorIteratorPrototype['throw'])),
           // fresh because it returns { value: ..., done: ... }
@@ -635,6 +642,35 @@
       expectedAlwaysThrow.set(
           Ref.is(generatorIteratorPrototype['throw']), true);
     }
+
+    // Non-generator iterators
+    var iteratorSymbol;
+    try {
+      // Symbols are not yet whitelisted
+      iteratorSymbol = directAccess.evalInGuestFrame('Symbol.iterator');
+    } catch (e) { console.warn('Symbol.iterator missing'); }
+    // Create mock ctors for the objects which are only exposed as anon
+    // prototypes. This is a workaround for Context not having an inherent
+    // understanding of constructorless prototypes.
+    [
+      {name: 'ArrayIteratorPrototype', o: cajaVM.def([1, 2])},
+      {name: 'StringIteratorPrototype', o: "ab"},
+    ].forEach(function(info, index) {
+      function scanPseudoCtor() {
+        var iterator = info.o[iteratorSymbol]();
+        expectedUnfrozen.mark(Ref.is(iterator));
+        return iterator;
+      }
+
+      if (cajaVM.anonIntrinsics && cajaVM.anonIntrinsics[info.name]) {
+        scanPseudoCtor.prototype = cajaVM.anonIntrinsics[info.name];
+        cajaVM.def(scanPseudoCtor);
+        // Override is-actually-an-instance check.
+        obtainInstance.define(scanPseudoCtor, new scanPseudoCtor());
+        argsByIdentity(scanPseudoCtor, genCall());
+        window[info.name + '_ScanPseudoCtor'] = scanPseudoCtor;
+      }
+    });
 
     if (inES5Mode) {
       argsByIdentity(cajaVM.anonIntrinsics.ThrowTypeError, genAllCall());
@@ -1174,12 +1210,13 @@
       expectedAlwaysThrow.setByIdentity(o, true);
     });
 
-    // NodeList and friends (currently have no exported type)
+    // NodeList, DOMTokenList and friends (currently have no exported type)
     argsByProp('item', genMethod(genSmallInteger));
     argsByProp('namedItem', genMethod(genString));
     argsByProp('add', genMethod(genString));
     argsByProp('remove', genMethod(genString));
     argsByProp('toggle', genMethod(genString));
+    argsByProp('set value', genMethod(genString));
 
     // Forms
     argsByProp('submit', G.none);
