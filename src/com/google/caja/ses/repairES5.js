@@ -1130,7 +1130,11 @@ var ses;
    * arity.
    */
   function makeStandinMaker(standinName, arity) {
-    if (!/[a-zA-Z][a-zA-Z0-9]*/.test(standinName)) {
+    // Allow approximations of function names like "bound f".
+    standinName = standinName.replace(/ /g, '_');
+
+    // Reject names that could be syntax errors.
+    if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(standinName)) {
       standinName = 'standin';
     }
     var cacheLine = standinMakerCache.get(standinName);
@@ -1138,6 +1142,7 @@ var ses;
       standinName = 'standin';
       cacheLine = standinMakerCache.get(standinName);
     }
+
     if (!cacheLine) {
       cacheLine = [];
       standinMakerCache.set(standinName, cacheLine);
