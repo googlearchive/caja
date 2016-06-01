@@ -79,7 +79,21 @@ loadScript([
         t.whitelistApi('google.visualization');
         t.whitelistApi('google.maps');
         t.whitelistApi('gapi.client.urlshortener');
-
+        
+        // Fake additional API taming for load test.
+        caja.tamingGoogleLoader.addPolicyFactory('google.feeds', 
+            function(frame, utils) {
+          return {
+            value: {
+              google: {
+                feeds: {}
+              }
+            },
+            version: 1
+          };
+        });
+        t.whitelistApi('google.feeds');
+        
         frame.code('../apitaming/test-security-guest.html')
              .api(extraImports)
              .run(function(result) {
