@@ -1524,6 +1524,8 @@ var Domado = (function() {
      * @param {number} y y-coord of a pixel in the element's frame of reference.
      */
     function tameScrollTo(element, x, y) {
+      x = x || 0;
+      y = y || 0;
       if (x !== +x || y !== +y || x < 0 || y < 0) {
         throw new Error('Cannot scroll to ' + x + ':' + typeof x + ','
                         + y + ' : ' + typeof y);
@@ -7448,7 +7450,7 @@ var Domado = (function() {
       getDomicileForWindow: windowToDomicile.get.bind(windowToDomicile)
     });
   }
-  
+
   /**
    * Invoke the possibly guest-supplied onerror handler due to an uncaught
    * exception. This wrapper exists to ensure consistent behavior among the
@@ -7503,7 +7505,7 @@ var Domado = (function() {
       }
     }
   });
-  
+
   return cajaVM.constFunc(Domado_);
 })();
 
