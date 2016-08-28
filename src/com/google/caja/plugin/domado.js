@@ -1373,7 +1373,7 @@ var Domado = (function() {
 
     var VALID_ID_CHAR =
         unicode.LETTER + unicode.DIGIT + '_'
-        + '$\\-.:;=()\\[\\]'
+        + '$\\-.,:;=()\\[\\]'
         + unicode.COMBINING_CHAR + unicode.EXTENDER;
 
     var VALID_ID_PATTERN = new RegExp(
@@ -7448,7 +7448,7 @@ var Domado = (function() {
       getDomicileForWindow: windowToDomicile.get.bind(windowToDomicile)
     });
   }
-  
+
   /**
    * Invoke the possibly guest-supplied onerror handler due to an uncaught
    * exception. This wrapper exists to ensure consistent behavior among the
@@ -7503,7 +7503,7 @@ var Domado = (function() {
       }
     }
   });
-  
+
   return cajaVM.constFunc(Domado_);
 })();
 
