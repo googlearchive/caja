@@ -365,7 +365,7 @@ For help on building and testing Caja, see:
 
   <target name="RuntestsTypoCheck">
     <depend closure="yes" destdir="${testlib}" srcdir="${tests}"/>
-    <javac destdir="${testlib}" debug="true" target="1.5" source="1.5">
+    <javac destdir="${testlib}" debug="true" target="1.7" source="1.7">
       <src path="${tests}"/>
       <classpath refid="classpath.tests"/>
       <include name="**/TestFlagTypoCheck.java"/>
@@ -514,7 +514,7 @@ For help on building and testing Caja, see:
   <target name="tools" depends="PluginCompiler">
     <!-- Now that we have the compiler, build ant task wrappers -->
     <depend closure="yes" destdir="${lib}" srcdir="${src}" />
-    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
+    <javac destdir="${lib}" debug="true" target="1.7" source="1.7">
       <src path="${src}"/>
       <classpath refid="classpath.main"/>
       <include name="**/ancillary/linter/Linter.java"/>
@@ -551,7 +551,7 @@ For help on building and testing Caja, see:
   <target name="pluginc" depends="tools"
    description="Build the plugin compiler and other main classes">
     <depend closure="yes" destdir="${lib}" srcdir="${src}" />
-    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
+    <javac destdir="${lib}" debug="true" target="1.7" source="1.7">
       <src path="${src}"/>
       <classpath refid="classpath.main"/>
       <include name="com/google/caja/plugin/*Main.java"/>
@@ -574,7 +574,7 @@ For help on building and testing Caja, see:
       </fileset>
     </copy>
     <depend closure="yes" destdir="${lib}" srcdir="${src}" />
-    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
+    <javac destdir="${lib}" debug="true" target="1.7" source="1.7">
       <src path="${src}"/>
       <classpath refid="classpath.main"/>
       <include name="**/caja/lang/css/CssPropertyPatterns.java"/>
@@ -644,7 +644,7 @@ For help on building and testing Caja, see:
     </copy>
     <mkdir dir="${reports}/benchmarks"/>
     <depend closure="yes" destdir="${lib}" srcdir="${tests}" />
-    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
+    <javac destdir="${lib}" debug="true" target="1.7" source="1.7">
       <src path="${tests}"/>
       <classpath refid="classpath.tests"/>
       <include name="**/caja/demos/benchmarks/*.java"/>
@@ -1046,7 +1046,7 @@ For help on building and testing Caja, see:
          javac to **/*.java. TODO(felix8a): combine our javac
          rules into to a single rule that compiles everything -->
     <depend closure="yes" destdir="${lib}" srcdir="${src}" />
-    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
+    <javac destdir="${lib}" debug="true" target="1.7" source="1.7">
       <src path="${src}"/>
       <classpath refid="classpath.main"/>
       <classpath refid="classpath.gwt"/>
@@ -1088,7 +1088,7 @@ For help on building and testing Caja, see:
   <!-- Builds the cajoling service. -->
   <target name="CajolingServlet" depends="HtmlParser">
     <depend closure="yes" destdir="${lib}" srcdir="${src}" />
-    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
+    <javac destdir="${lib}" debug="true" target="1.7" source="1.7">
       <src path="${src}"/>
       <classpath refid="classpath.main"/>
       <include name="**/caja/service/*.java"/>
@@ -1115,7 +1115,7 @@ For help on building and testing Caja, see:
       <istrue value="${gwt.devground}"/>
     </condition>
     <depend closure="yes" destdir="${gwtlib}" srcdir="${src}" />
-    <javac destdir="${gwtlib}" debug="true" target="1.5" source="1.5">
+    <javac destdir="${gwtlib}" debug="true" target="1.7" source="1.7">
       <src path="${src}"/>
       <classpath>
         <pathelement location="${lib}"/>
@@ -1427,7 +1427,7 @@ For help on building and testing Caja, see:
     <depend closure="yes" destdir="${third_party}/java/htmlparser/lib"
      srcdir="${third_party}/java/htmlparser/src" />
     <javac destdir="${third_party}/java/htmlparser/lib" debug="true"
-     target="1.5" source="1.5">
+     target="1.7" source="1.7">
       <src path="${third_party}/java/htmlparser/src"/>
       <classpath refid="classpath.main"/>
       <include name="**/*.java"/>

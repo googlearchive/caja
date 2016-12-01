@@ -147,7 +147,9 @@ public final class Sets {
     }
   }
 
-  public static <E> Set<E> immutableSet(Collection<? extends E> elements) {
+  public static <E> Set<E> immutableSet(Collection<? extends E> elementsExtended) {
+    Set<E> elements = new HashSet<>();
+    elements.addAll(elementsExtended);
     switch (elements.size()) {
       case 0: return Collections.emptySet();
       case 1: return Collections.<E>singleton(elements.iterator().next());
@@ -155,14 +157,19 @@ public final class Sets {
     }
   }
 
-  public static <E> Set<E> immutableSet(Iterable<? extends E> elements) {
+  public static <E> Set<E> immutableSet(Iterable<? extends E> elementsExtended) {
+    Set<E> elements = new HashSet<>();
+    for (E elem : elementsExtended) {
+      elements.add(elem);
+    }
     return Collections.unmodifiableSet(newLinkedHashSet(elements));
   }
 
   /** <tt>a U b</tt> */
   public static <T> Set<T> union(
       Collection<? extends T> a, Collection<? extends T> b) {
-    Set<T> u = newLinkedHashSet(a);
+    Set<T> u = new LinkedHashSet<>();
+    u.addAll(a);
     u.addAll(b);
     return u;
   }
@@ -175,7 +182,9 @@ public final class Sets {
       a = b;
       b = t;
     }
-    Set<T> i = newLinkedHashSet(b);
+    Set<T> pureB = new HashSet<>();
+    pureB.addAll(b);
+    Set<T> i = newLinkedHashSet(pureB);
     i.retainAll(a);
     return i;
   }
@@ -183,7 +192,9 @@ public final class Sets {
   /** <tt>(pos - neg)</tt>. */
   public static <T> Set<T> difference(
       Collection<? extends T> pos, Collection<? extends T> neg) {
-    Set<T> d = newLinkedHashSet(pos);
+    Set<T> purePos = new HashSet<>();
+    purePos.addAll(pos);
+    Set<T> d = newLinkedHashSet(purePos);
     d.removeAll(neg);
     return d;
   }
