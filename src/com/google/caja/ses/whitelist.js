@@ -346,7 +346,8 @@ var ses;
         filter: t,
         reduce: t,
         reduceRight: t,
-        length: t
+        length: t,
+        from: t
       },
       isArray: t,
       from: t
