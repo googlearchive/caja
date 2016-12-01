@@ -348,7 +348,8 @@ var ses;
         reduceRight: t,
         length: t
       },
-      isArray: t
+      isArray: t,
+      from: t
     },
     String: {
       prototype: {
