@@ -1900,17 +1900,6 @@ var Domado = (function() {
 
       var elementPolicies = {};
       elementPolicies.form = function (attribs) {
-        // Forms must have a gated onsubmit handler or they must have an
-        // external target.
-        var sawHandler = false;
-        for (var i = 0, n = attribs.length; i < n; i += 2) {
-          if (attribs[+i] === 'onsubmit') {
-            sawHandler = true;
-          }
-        }
-        if (!sawHandler) {
-          attribs.push('onsubmit', 'return false');
-        }
         return forceAutocompleteOff(attribs);
       };
       elementPolicies.input = function (attribs) {
@@ -2308,14 +2297,9 @@ var Domado = (function() {
             )(tameWindow);
             var fnNameExpr = domicile.handlers.push(handlerFn) - 1;
 
-            var trustedHandler = '___.plugin_dispatchEvent___(this, event, ' +
+            var trustedHandler =
+                'return ___.plugin_dispatchEvent___(this, event, ' +
                 pluginId + ', ' + fnNameExpr + ');';
-            if (attribName === 'onsubmit') {
-              trustedHandler =
-                'try { ' + trustedHandler + ' } finally { return false; }';
-            } else {
-              trustedHandler = 'return ' + trustedHandler;
-            }
             return trustedHandler;
           case html4.atype.URI:
             value = String(value);
