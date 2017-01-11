@@ -46,8 +46,11 @@ public class UriPolicyNanny {
   private static boolean isAllowedScheme(String scheme) {
     scheme = Strings.lower(scheme);
     return (
+        "geo".equals(scheme) ||
         "http".equals(scheme) ||
         "https".equals(scheme) ||
-        "mailto".equals(scheme));
+        "mailto".equals(scheme) ||
+        "sms".equals(scheme) ||
+        "tel".equals(scheme));
   }
 }

@@ -72,7 +72,7 @@ var Domado = (function() {
       ':)?'
   );
 
-  var ALLOWED_URI_SCHEMES = /^(?:https?|mailto)$/i;
+  var ALLOWED_URI_SCHEMES = /^(?:https?|geo|mailto|sms|tel)$/i;
 
   /**
    * Tests if the given uri has an allowed scheme.
