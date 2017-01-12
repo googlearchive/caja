@@ -72,7 +72,7 @@ var Domado = (function() {
       ':)?'
   );
 
-  var ALLOWED_URI_SCHEMES = /^(?:https?|mailto)$/i;
+  var ALLOWED_URI_SCHEMES = /^(?:https?|geo|mailto|sms|tel)$/i;
 
   /**
    * Tests if the given uri has an allowed scheme.
@@ -1567,6 +1567,8 @@ var Domado = (function() {
      * @param {number} y y-coord of a pixel in the element's frame of reference.
      */
     function tameScrollTo(element, x, y) {
+      x = x || 0;
+      y = y || 0;
       if (x !== +x || y !== +y || x < 0 || y < 0) {
         throw new Error('Cannot scroll to ' + x + ':' + typeof x + ','
                         + y + ' : ' + typeof y);
@@ -1956,17 +1958,6 @@ var Domado = (function() {
 
       var elementPolicies = {};
       elementPolicies.form = function (attribs) {
-        // Forms must have a gated onsubmit handler or they must have an
-        // external target.
-        var sawHandler = false;
-        for (var i = 0, n = attribs.length; i < n; i += 2) {
-          if (attribs[+i] === 'onsubmit') {
-            sawHandler = true;
-          }
-        }
-        if (!sawHandler) {
-          attribs.push('onsubmit', 'return false');
-        }
         return forceAutocompleteOff(attribs);
       };
       elementPolicies.input = function (attribs) {
@@ -2391,10 +2382,6 @@ var Domado = (function() {
                 + '___.plugin_dispatchEvent___('
                 + 'this, event, ' + pluginId + ', '
                 + fnNameExpr + ', ' + argCount + ');';
-            if (attribName === 'onsubmit') {
-              trustedHandler =
-                'try { ' + trustedHandler + ' } finally { return false; }';
-            }
             return trustedHandler;
           case html4.atype.URI:
             value = String(value);
@@ -7619,7 +7606,7 @@ var Domado = (function() {
       getDomicileForWindow: windowToDomicile.get.bind(windowToDomicile)
     });
   }
-  
+
   /**
    * Invoke the possibly guest-supplied onerror handler due to an uncaught
    * exception. This wrapper exists to ensure consistent behavior among the
@@ -7674,7 +7661,7 @@ var Domado = (function() {
       }
     }
   });
-  
+
   return cajaVM.constFunc(Domado_);
 })();
 

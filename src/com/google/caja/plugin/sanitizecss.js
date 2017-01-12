@@ -90,7 +90,7 @@ var sanitizeMediaQuery = undefined;
       ':)?'
   );
 
-  var ALLOWED_URI_SCHEMES = /^(?:https?|mailto)$/i;
+  var ALLOWED_URI_SCHEMES = /^(?:https?|geo|mailto|sms|tel)$/i;
 
   function resolveUri(baseUri, uri) {
     if (baseUri) {

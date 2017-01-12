@@ -171,7 +171,6 @@
   jsunitRegister('testForms',
                  function testForms() {
     var form = document.createElement('FORM');
-    assertEquals('return false', directAccess.getAttribute(form, 'onsubmit'));
 
     assertEquals('off', directAccess.getAttribute(form, 'autocomplete'));
     // TODO(felix8a): no such function in es5 in firefox?
@@ -188,11 +187,12 @@
         + '<input type="submit" value="Submit"></form>';
 
     // TODO(kpreid): This is matching implementation details. What do we
-    // actually want to test for here?
+    // actually want to test for here? At least:
+    // * autocomplete="off"
     assertEquals('<form autocomplete="off" onsubmit="'
-                 + 'try { ___.plugin_dispatchEvent___'
+                 + '___.plugin_dispatchEvent___'
                  + '(this, event, 0, &quot;foo&quot;, 0);'
-                 + ' } finally { return false; }" target="_blank">'
+                 + '" target="_blank">'
                  + '<input autocomplete="off" type="submit" value="Submit">'
                  + '</form>',
                  canonInnerHtml(directAccess.getInnerHTML(container)));

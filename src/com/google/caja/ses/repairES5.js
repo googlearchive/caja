@@ -771,7 +771,7 @@ var ses;
     // noFuncPoison-ing, this should be caught by
     // test_THROWTYPEERROR_NOT_UNIQUE below, so we assume here that
     // this is the only surviving ThrowTypeError intrinsic.
-    result.ThrowTypeError = gopd(arguments, 'caller').get;
+    result.ThrowTypeError = gopd(arguments, 'callee').get;
 
     // Get the ES6 %ArrayIteratorPrototype%, %StringIteratorPrototype%,
     // and %IteratorPrototype% intrinsics, if present.

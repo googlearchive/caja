@@ -22,6 +22,7 @@ import com.google.caja.parser.js.Directive;
 import com.google.caja.parser.js.DirectivePrologue;
 import com.google.common.collect.Lists;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -65,8 +66,8 @@ public class SimpleQuasiNode extends QuasiNode {
   private boolean matchChildren(
       ParseTreeNode specimen,
       Map<String, ParseTreeNode> bindings) {
-    List<ParseTreeNode> specimenChildren
-        = Lists.newArrayList(specimen.children());
+    List<ParseTreeNode> specimenChildren = new ArrayList<>();
+    specimenChildren.addAll(specimen.children());
 
     for (QuasiNode child : getChildren()) {
       if (!child.consumeSpecimens(specimenChildren, bindings)) { return false; }
@@ -95,7 +96,8 @@ public class SimpleQuasiNode extends QuasiNode {
             DirectivePrologue dp0 = (DirectivePrologue) children.get(0);
             DirectivePrologue dp1 = (DirectivePrologue) child;
             if (!dp1.children().isEmpty()) {
-              List<Directive> all = Lists.newArrayList(dp0.children());
+              List<Directive> all = new ArrayList<>();
+              all.addAll(dp0.children());
               all.addAll(dp1.children());
               children.set(
                   0,

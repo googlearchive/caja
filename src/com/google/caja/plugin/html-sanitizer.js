@@ -810,7 +810,7 @@ var html = (function(html4) {
     });
   }
 
-  var ALLOWED_URI_SCHEMES = /^(?:https?|mailto)$/i;
+  var ALLOWED_URI_SCHEMES = /^(?:https?|geo|mailto|sms|tel)$/i;
 
   function safeUri(uri, effect, ltype, hints, naiveUriRewriter) {
     if (!naiveUriRewriter) { return null; }

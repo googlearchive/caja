@@ -56,6 +56,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -157,11 +158,13 @@ public class StatementSimplifier {
   }
   private ParseTreeNode optimizeUnlabeled(ParseTreeNode n, boolean needsBlock) {
     if (n instanceof Block) {
-      List<? extends Statement> children = ((Block) n).children();
+      List<? extends Statement> childrenExtended = ((Block) n).children();
+      List<Statement> children = new ArrayList<>();
+      children.addAll(childrenExtended);
       int nChildren = children.size();
       List<Statement> flattened = flattenBlocksAndIgnoreNoops(children);
       List<Statement> joined = joinAdjacentExprs(
-          flattened == null ? Lists.newArrayList(children) : flattened);
+          flattened == null ? children : flattened);
       List<Statement> newChildren = joined != null ? joined : flattened;
       if (newChildren != null) { nChildren = newChildren.size(); }
       if (!needsBlock) {
@@ -195,7 +198,9 @@ public class StatementSimplifier {
       // for statements out.
       return optimizeEmbeddedExpressions((Expression) n, false);
     } else {
-      List<? extends ParseTreeNode> children = n.children();
+      List<? extends ParseTreeNode> childrenExtended = n.children();
+      List<ParseTreeNode> children = new ArrayList<>();
+      children.addAll(childrenExtended);
       int nChildren = children.size();
       List<ParseTreeNode> newChildren = null;
       boolean childNeedsBlock = (
@@ -334,8 +339,10 @@ public class StatementSimplifier {
     //     return x;
     //     break;
     {
-      List<? extends Statement> blockStmts = newStmts != null
+      List<? extends Statement> blockStmtsExtended = newStmts != null
           ? newStmts : stmts;
+      List<Statement> blockStmts = new ArrayList<>();
+      blockStmts.addAll(blockStmtsExtended);
       for (int i = 0, last = blockStmts.size() - 1; i < last; ++i) {
         if (exits(blockStmts.get(i))) {
           // We need to preserve declarations following since they are
@@ -806,7 +813,9 @@ public class StatementSimplifier {
 
   private static Conditional condAndImplicitElse(
       Conditional cond, Statement follower) {
-    List<? extends ParseTreeNode> children = cond.children();
+    List<? extends ParseTreeNode> childrenExtended = cond.children();
+    List<ParseTreeNode> children = new ArrayList<>();
+    children.addAll(childrenExtended);
     if ((children.size() & 1) != 0) { return null; }
     Class<? extends ParseTreeNode> commonType = children.get(1).getClass();
     if (commonType != ReturnStmt.class && commonType != ThrowStmt.class) {
@@ -852,7 +861,8 @@ public class StatementSimplifier {
   }
 
   private Statement optimizeSwitch(SwitchStmt ss) {
-    List<ParseTreeNode> newChildren = Lists.newArrayList(ss.children());
+    List<ParseTreeNode> newChildren = new ArrayList<>();
+    newChildren.addAll(ss.children());
     boolean changed = false;
     for (int i = 0, n = newChildren.size(); i < n; ++i) {
       ParseTreeNode child = newChildren.get(i);
