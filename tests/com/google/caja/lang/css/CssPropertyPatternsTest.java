@@ -91,7 +91,7 @@ public class CssPropertyPatternsTest extends CajaTestCase {
         "lits"  // Ignore all the many many color names.
         );
     assertMatches(
-        "'color'", "#fff", "#aabbcc", "red", "rgb(0,0,255)",
+        "'color'", "#fff", "#aabbcc", "#88888888", "red", "rgb(0,0,255)",
         "rgb(0, 0, 255)", "hotpink", "yellow", "black", "transparent");
     assertDoesNotMatch("'color'", "infrateal", "rgbv(0,0,255)",
                        "rgb(expression(alert(1337)))", "rgba(do,evil,now)");

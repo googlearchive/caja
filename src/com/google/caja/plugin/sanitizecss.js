@@ -275,7 +275,7 @@ var sanitizeMediaQuery = undefined;
           ? token
 
           // Preserve hash color literals if allowed.
-          : (cc === '#'.charCodeAt(0) && /^#(?:[0-9a-f]{3}){1,2}$/.test(token))
+          : (cc === '#'.charCodeAt(0) && /^#(?:[0-9a-f]{3,4}){1,2}$/.test(token))
           ? (propBits & CSS_PROP_BIT_HASH_VALUE ? token : '')
 
           : ('0'.charCodeAt(0) <= cc && cc <= '9'.charCodeAt(0))
