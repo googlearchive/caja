@@ -1373,7 +1373,7 @@ var Domado = (function() {
 
     var VALID_ID_CHAR =
         unicode.LETTER + unicode.DIGIT + '_'
-        + '$\\-.:;=()\\[\\]'
+        + '$\\-.,:;=()\\[\\]'
         + unicode.COMBINING_CHAR + unicode.EXTENDER;
 
     var VALID_ID_PATTERN = new RegExp(
