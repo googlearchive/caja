@@ -322,6 +322,9 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
       var contentType = opt_expectedContentType
         || xhrRecord.contentType;
 
+      // Remove extra charset parameter if present
+      contentType = contentType.split(";").shift();
+
       var theContent = xhrRecord.responseText;
 
       if (contentType === 'text/javascript'
