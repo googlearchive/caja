@@ -963,6 +963,12 @@ var html = (function(html4) {
               log(opt_logger, tagName, attribName, oldValue, value);
             }
             break;
+          case html4.atype['MEDIA_QUERY']:
+            value = 'undefined' === typeof lexCss ? null : sanitizeMediaQuery(lexCss(value));
+            if (opt_logger) {
+              log(opt_logger, tagName, attribName, oldValue, value);
+            }
+            break;
           case html4.atype['URI']:
             value = safeUri(value,
               getUriEffect(tagName, attribName),
