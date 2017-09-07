@@ -86,7 +86,7 @@ public class CssPropertyPatternsTest extends CajaTestCase {
         "'color'",
         "{\n"
         + "  'props': [ HASH_VALUE ],\n"
-        + "  'fns': [ 'rgb', 'rgba' ]\n"
+        + "  'fns': [ 'hsl', 'hsla', 'rgb', 'rgba' ]\n"
         + "}",
         "lits"  // Ignore all the many many color names.
         );
