@@ -2373,7 +2373,7 @@ After
       var note = record.note;
       var constructor = record.sample.constructor;
       if (!constructor ||
-          /^function (?:Object|Function|FakeFunction|Array)\b/
+          /^function\s+(?:Object|Function|FakeFunction|Array)\b/
               .test(constructor.toString()) ||
           record.constructorCallable) {
         // Not concerned with objects which don't expose their type,
@@ -2382,7 +2382,7 @@ After
       }
       expectFailure(function() {
         new constructor();
-      }, note, function(e) {
+      }, note + '(constructor=' + constructor + ')', function(e) {
         return /This constructor cannot be called directly\./.test(String(e));
       });
     });
@@ -3156,8 +3156,8 @@ Test row cell
       assertEquals('typeof ' + name, 'function', typeof window[name]);
 
       // Fail if this function turns into something non-noopish unexpectedly
-      assertTrue('name ' + name,
-          /^function domadoNoop/.test(String(window[name])));
+      assertTrue('name ' + name + ' -> ' + window[name],
+          /^function\s+domadoNoop/.test(String(window[name])));
 
       window[name]();  // should not fail
     });
