@@ -98,6 +98,7 @@
     "max-width",
     "min-height",
     "min-width",
+    "mix-blend-mode",
     "opacity",
     "outline",
     "outline-color",

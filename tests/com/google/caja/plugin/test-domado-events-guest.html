@@ -1091,7 +1091,9 @@ TODO(felix8a): fix javascript url handling
     assertEquals('initMouseEvent relatedTarget', document.body,
         event.relatedTarget);
 
-    // initKeyboardEvent/initKeyEvent (ack TODO)
+    // initKeyboardEvent/initKeyEvent
+    // Note that both of these methods are deprecated per MDN as of 2017-09-07
+    // and we should expect this test to break eventually.
     var keyboardOK = false;
     if (event.initKeyboardEvent) {
       event = document.createEvent('KeyboardEvent');
@@ -1107,9 +1109,6 @@ TODO(felix8a): fix javascript url handling
       assertEquals('initKeyboardEvent view', window, event.view);
       if (directAccess.feralFeatureTest(event, 'char')) {
         assertEquals('initKeyboardEvent char', 'q', event.char);
-      }
-      if (directAccess.feralFeatureTest(event, 'key')) {
-        assertEquals('initKeyboardEvent key', 'q', event.key);
       }
       assertEquals('initKeyboardEvent charCode', 0, event.charCode);
       assertEquals('initKeyboardEvent keyCode', 0, event.keyCode);

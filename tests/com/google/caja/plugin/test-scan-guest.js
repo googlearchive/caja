@@ -693,6 +693,7 @@
     argsByAnyFrame('Array', freshResult(G.any(
         genAllCall(),
         genAllCall(genSmallInteger))));
+    argsByAnyFrame('Array.from', freshResult(genArrayCall(G.tuple(genArray))));
     argsByAnyFrame('Array.isArray', genArrayCall(G.tuple(genArray)));
     argsByAnyFrame('Array.prototype.concat',
         freshResult(genArrayCall(G.tuple(genArray))));
