@@ -24,7 +24,7 @@
  * //requires ses.makeCallerHarmless, ses.makeArgumentsHarmless
  * //requires ses.inBrowser
  * //requires ses.noFuncPoison
- * //requires ses.verifyStrictFunctionBody, ses.makeDelayedTamperProof
+ * //requires ses.makeDelayedTamperProof
  * //requires ses.getUndeniables, ses.earlyUndeniables
  * //requires ses.getAnonIntrinsics
  * //requires ses.kludge_test_FREEZING_BREAKS_PROTOTYPES
@@ -284,8 +284,6 @@ ses.startSES = function(global,
 
   var NONCONFIGURABLE_OWN_PROTO =
       ses.es5ProblemReports.NONCONFIGURABLE_OWN_PROTO.afterFailure;
-  var INCREMENT_IGNORES_FROZEN =
-      ses.es5ProblemReports.INCREMENT_IGNORES_FROZEN.afterFailure;
 
   var dirty = true;
 
@@ -333,7 +331,6 @@ ses.startSES = function(global,
     var options = {};
 
     options.maskReferenceError = resolve('maskReferenceError', true);
-    options.parseFunctionBody = resolve('parseFunctionBody', false);
     options.sourceUrl = resolve('sourceUrl', void 0);
 
     options.rewriteTopLevelVars = resolve('rewriteTopLevelVars', true);
@@ -341,44 +338,38 @@ ses.startSES = function(global,
     options.rewriteFunctionCalls = resolve('rewriteFunctionCalls', true);
     options.rewriteTypeOf = resolve('rewriteTypeOf',
                                     !options.maskReferenceError);
-    options.forceParseAndRender = resolve('forceParseAndRender', false);
-
     return options;
   }
   ses.resolveOptions = resolveOptions;
 
   /**
-   * The function ses.mitigateSrcGotchas, if defined, is a function
-   * which, given the sourceText for a strict Program, returns a
-   * rewritten program with the same semantics as the original but
-   * with some of the ES5 gotchas mitigated -- those that can be
-   * mitigated by source analysis or source-to-source rewriting. The
-   * {@code options} are assumed to already be canonicalized by {@code
-   * resolveOptions} and says which mitigations to apply.
+   * The function ses.mitigateSrcGotchas is a function which, given
+   * the sourceText for a strict Program or expression, returns a
+   * rewritten program or expression with the same semantics as the
+   * original but with some of the ES5 gotchas mitigated -- those that
+   * can be mitigated by source analysis or source-to-source
+   * rewriting. The {@code options} are assumed to already be
+   * canonicalized by {@code resolveOptions} and says which
+   * mitigations to apply.
    */
-  function mitigateIfPossible(funcBodySrc, options) {
+  function mitigateIfPossible(asExpr, src, options) {
     var safeError;
-    if ('function' === typeof ses.mitigateSrcGotchas) {
-      if (INCREMENT_IGNORES_FROZEN) {
-        options.rewritePropertyUpdateExpr = true;
-        options.rewritePropertyCompoundAssignmentExpr = true;
-      }
+    if ('function' !== typeof ses.mitigateSrcGotchas) {
+      throw new Error('SES now requires a parser and rewriter');
+    }
+    try {
+      return ses.mitigateSrcGotchas(asExpr, src, options, ses.logger);
+    } catch (error) {
+      // Shouldn't throw, but if it does, the exception is potentially from a
+      // different context with an undefended prototype chain; don't allow it
+      // to leak out.
       try {
-        return ses.mitigateSrcGotchas(funcBodySrc, options, ses.logger);
-      } catch (error) {
-        // Shouldn't throw, but if it does, the exception is potentially from a
-        // different context with an undefended prototype chain; don't allow it
-        // to leak out.
-        try {
-          safeError = new Error(error.message);
-        } catch (metaerror) {
-          throw new Error(
-            'Could not safely obtain error from mitigateSrcGotchas');
-        }
-        throw safeError;
+        safeError = new Error(error.message);
+      } catch (metaerror) {
+        throw new Error(
+          'Could not safely obtain error from mitigateSrcGotchas');
       }
-    } else {
-      return '' + funcBodySrc;
+      throw safeError;
     }
   }
 
@@ -612,38 +603,6 @@ ses.startSES = function(global,
     var UnsafeFunction = Function;
 
     /**
-     * Fails if {@code exprSource} does not parse as a strict
-     * Expression production.
-     *
-     * <p>To verify that exprSrc parses as a strict Expression, we
-     * verify that, when surrounded by parens and followed by ";", it
-     * parses as a strict FunctionBody, and that when surrounded with
-     * double parens it still parses as a strict FunctionBody. We
-     * place a newline before the terminal token so that a "//"
-     * comment cannot suppress the close paren or parens.
-     *
-     * <p>We never check without parens because not all
-     * expressions, for example "function(){}", form valid expression
-     * statements. We check both single and double parens so there's
-     * no exprSrc text which can close the left paren(s), do
-     * something, and then provide open paren(s) to balance the final
-     * close paren(s). No one such attack will survive both tests.
-     *
-     * <p>Note that all verify*(allegedString) functions now always
-     * start by coercing the alleged string to a guaranteed primitive
-     * string, do their verification checks on that, and if it passes,
-     * returns that. Otherwise they throw. If you don't know whether
-     * something is a string before verifying, use only the output of
-     * the verifier, not the input. Or coerce it early yourself.
-     */
-    function verifyStrictExpression(exprSrc) {
-      exprSrc = ''+exprSrc;
-      ses.verifyStrictFunctionBody('( ' + exprSrc + '\n);');
-      ses.verifyStrictFunctionBody('(( ' + exprSrc + '\n));');
-      return exprSrc;
-    }
-
-    /**
      * Make a virtual global object whose initial own properties are
      * a copy of the own properties of {@code sharedImports}.
      *
@@ -805,7 +764,7 @@ ses.startSES = function(global,
      * </ul>
      */
     function securableWrapperSrc(exprSrc) {
-      exprSrc = verifyStrictExpression(exprSrc);
+      exprSrc = mitigateIfPossible(true, exprSrc, resolveOptions());
 
       return '(function() { ' +
         // non-strict code, where this === scopeObject
@@ -889,8 +848,6 @@ ses.startSES = function(global,
      *     cases. This is a less correct but faster alternative to
      *     rewriteTypeOf that also works when source mitigations are
      *     not available.
-     * <li>parseFunctionBody: check the src is syntactically
-     *     valid as a function body.
      * <li>rewriteTopLevelVars: transform vars to properties of global
      *     object. Defaults to true.
      * <li>rewriteTopLevelFuncs: transform funcs to properties of
@@ -920,18 +877,9 @@ ses.startSES = function(global,
      * variable access without parsing.
      */
     function prepareExpr(exprSrc, opt_mitigateOpts) {
-      // Force exprSrc to be a string that can only parse (if at all) as
-      // an expression.
-      exprSrc = '(' + exprSrc + '\n)';
-
       var options = resolveOptions(opt_mitigateOpts);
-      exprSrc = mitigateIfPossible(exprSrc, options);
+      exprSrc = mitigateIfPossible(true, exprSrc, options);
 
-      // This is a workaround for a bug in the escodegen renderer that
-      // renders expressions as expression statements
-      if (exprSrc[exprSrc.length - 1] === ';') {
-        exprSrc = exprSrc.substr(0, exprSrc.length - 1);
-      }
       // If both of these would throw an error, the error from
       // atLeastFreeVarNames is likely to be more informative, so we
       // call it first.
@@ -1076,14 +1024,11 @@ ses.startSES = function(global,
       modSrc = ''+modSrc;
 
       var options = resolveOptions(opt_mitigateOpts);
-      if (!('programSrc' in limitSrcCharset(modSrc))) {
-        options.forceParseAndRender = true;
-      }
       // Note the EOL after modSrc to prevent a trailing line comment in
       // modSrc from eliding the rest of the wrapper.
       var exprSrc =
           '(function() {' +
-          mitigateIfPossible(modSrc, options) +
+          mitigateIfPossible(false, modSrc, options) +
           '\n}).call(this)';
       // Follow the pattern in compileExpr
       var wrapperSrc = securableWrapperSrc(exprSrc);
@@ -1112,7 +1057,8 @@ ses.startSES = function(global,
        */
       function FakeFunction(var_args) {
         var params = [].slice.call(arguments, 0);
-        var body = ses.verifyStrictFunctionBody(params.pop() || '');
+        var body = ses.mitigateIfPossible(false, params.pop() || '',
+                                          resolveOptions());
 
         // Although the individual params may not be strings, the params
         // array is reliably a fresh array, so under the SES (not CES)
@@ -1132,7 +1078,8 @@ ses.startSES = function(global,
 
       function FakeGeneratorFunction(var_args) {
         var params = [].slice.call(arguments, 0);
-        var body = ses.verifyStrictFunctionBody(params.pop() || '');
+        var body = ses.mitigateIfPossible(false, params.pop() || '',
+                                          resolveOptions());
         params = params.join(',');
 
         var exprSrc = '(function*(' + params + '\n){' + body + '\n})';
@@ -1215,7 +1162,7 @@ ses.startSES = function(global,
      */
     function fakeEval(src) {
       try {
-        src = verifyStrictExpression(src);
+        src = mitigateIfPossible(true, src, resolveOptions());
       } catch (x) {
         src = '(function() {' + src + '\n}).call(this)';
       }

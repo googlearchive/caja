@@ -584,7 +584,6 @@ function HtmlEmitter(base, opt_mitigatingUrlRewriter, opt_domicile,
         // mitigation options documented in startSES.js.
         // See https://code.google.com/p/google-caja/issues/detail?id=1893
         mitigateOpts = {
-          parseFunctionBody: true,
           rewriteTopLevelVars: false,
           rewriteTopLevelFuncs: false,
           rewriteFunctionCalls: false,
