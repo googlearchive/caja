@@ -377,26 +377,43 @@ var ses;
   }
 
   /**
+   * if asExpr, then src should be the code for an expression.
+   * Otherwise, src should be the code for a function body.
+   * The only difference between a Program and a FunctionBody is that
+   * the latter admits return statements.
+   *
    * Assumes {@code options} have already been safely canonicalized by
    * startSES's {@code resolveOptions}.
    */
   ses.mitigateSrcGotchas = function(asExpr, src, options, logger) {
     if (asExpr) {
       src = '(' + src + '\n);';
+    } else {
+      src = '(function() { ' +
+        src +
+        '\n});\n';
     }
+    // src should now be code for an ExpressionStatement wrapping the
+    // original.
     try {
       var ast = ses.rewriter_.parse(src, {forbidReserved: true});
-      if (asExpr) {
-        if (ast.type !== 'Program') {
-          throw new SyntaxError('Internal malformed parse: ' + src);
+      if (ast.type !== 'Program') {
+        throw new SyntaxError('Internal malformed parse: ' + src);
+      }
+      if (ast.body.length !== 1) {
+        throw new SyntaxError('Expected an expression: ' + src);
+      }
+      if (ast.body[0].type !== 'ExpressionStatement') {
+        throw new SyntaxError('Expected expression: ' + src);
+      }
+      ast = ast.body[0].expression;
+      // ast is now the parsed expression within that expression
+      // statement.
+      if (!asExpr) {
+        if (ast.type !== 'FunctionExpression') {
+          throw new SyntaxError('Internal: expected function: ' + src);
         }
-        if (ast.body.length !== 1) {
-          throw new SyntaxError('Expected an expression: ' + src);
-        }
-        if (ast.body[0].type !== 'ExpressionStatement') {
-          throw new SyntaxError('Expected expression: ' + src);
-        }
-        ast = ast.body[0].expression;
+        ast = ast.body;
       }
       rewriteProgram(options, ast);
       return ses.rewriter_.generate(ast);
