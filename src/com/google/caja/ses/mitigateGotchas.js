@@ -27,7 +27,6 @@
  * //requires ses.rewriter_
  * //provides ses.mitigateSrcGotchas
  * @author Jasvir Nagra (jasvir@google.com)
- * @requires StringMap
  * @overrides ses
  */
 
@@ -130,10 +129,10 @@ var ses;
     // TODO(kpreid): Fragile; find a better way to do this that does not depend
     // on Acorn's data structures quite so much.
     var tokTypes = ses.rewriter_.tokTypes;
-    var table = new StringMap();
+    var table = new Set();
     for (var k in tokTypes) {
       if ('keyword' in tokTypes[k]) {
-        table.set(tokTypes[k].keyword, 0);
+        table.add(tokTypes[k].keyword, 0);
       }
     }
     return table.has.bind(table);

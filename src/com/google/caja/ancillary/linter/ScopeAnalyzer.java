@@ -75,7 +75,12 @@ class ScopeAnalyzer {
           "SyntaxError",
           "TypeError",
           "URIError",
-          "undefined"));
+          "undefined",
+          
+          // Incomplete post-ES5 entries
+          "Map",
+          "Set",
+          "WeakMap"));
 
   /**
    * May be overridden to make different decisions about when to introduce
