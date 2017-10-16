@@ -1057,8 +1057,8 @@ ses.startSES = function(global,
        */
       function FakeFunction(var_args) {
         var params = [].slice.call(arguments, 0);
-        var body = ses.mitigateIfPossible(false, params.pop() || '',
-                                          resolveOptions());
+        var body = mitigateIfPossible(false, params.pop() || '',
+                                      resolveOptions());
 
         // Although the individual params may not be strings, the params
         // array is reliably a fresh array, so under the SES (not CES)
@@ -1078,8 +1078,8 @@ ses.startSES = function(global,
 
       function FakeGeneratorFunction(var_args) {
         var params = [].slice.call(arguments, 0);
-        var body = ses.mitigateIfPossible(false, params.pop() || '',
-                                          resolveOptions());
+        var body = mitigateIfPossible(false, params.pop() || '',
+                                      resolveOptions());
         params = params.join(',');
 
         var exprSrc = '(function*(' + params + '\n){' + body + '\n})';
