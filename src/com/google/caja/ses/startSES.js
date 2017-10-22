@@ -364,7 +364,7 @@ ses.startSES = function(global,
       // different context with an undefended prototype chain; don't allow it
       // to leak out.
       try {
-        safeError = new Error(error.message);
+        safeError = new SyntaxError(error.message);
       } catch (metaerror) {
         throw new Error(
           'Could not safely obtain error from mitigateSrcGotchas');

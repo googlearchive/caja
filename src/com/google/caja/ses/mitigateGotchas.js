@@ -396,7 +396,8 @@ var ses;
     // src should now be code for an ExpressionStatement wrapping the
     // original.
     try {
-      var ast = ses.rewriter_.parse(src, {forbidReserved: true});
+      // TODO(erights): Is it safe not to set forbidReserved: true ?
+      var ast = ses.rewriter_.parse(src, {forbidReserved: false});
       if (ast.type !== 'Program') {
         throw new SyntaxError('Internal malformed parse: ' + src);
       }
@@ -414,6 +415,15 @@ var ses;
           throw new SyntaxError('Internal: expected function: ' + src);
         }
         ast = ast.body;
+        if (ast.type === 'BlockStatement') {
+          // There is no ast type for FunctionBody, which is really
+          // how the src got parsed. By changing to type Program, it
+          // gets rendered correctly, without the enclosing
+          // curlies. The difference is that FunctionBody can contain
+          // a return statement and Program cannot. However, this
+          // difference does not impede rendering.
+          ast.type = 'Program';
+        }
       }
       rewriteProgram(options, ast);
       return ses.rewriter_.generate(ast);
