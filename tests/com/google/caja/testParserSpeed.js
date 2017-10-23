@@ -49,7 +49,7 @@ var ses;
         rewriteTopLevelFuncs: true,
         rewriteTypeof: true
       });
-      mitigated = ses.mitigateSrcGotchas(src, options, ses.logger);
+      mitigated = ses.mitigateSrcGotchas(false, src, options, ses.logger);
     });
     var parsed;
     var tp = time(name + ' - parse', function() {

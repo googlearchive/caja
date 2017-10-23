@@ -23,7 +23,7 @@
  * // provides ses.atLeastFreeVarNames
  * // provides ses.limitSrcCharset
  * @author Mark S. Miller
- * @requires StringMap, JSON
+ * @requires JSON
  * @overrides ses, atLeastFreeVarNamesModule
  */
 var ses;
@@ -153,11 +153,11 @@ var ses;
     // Once we decide this file can depends on ES5, the following line
     // should say "... = Object.create(null);" rather than "... = {};"
     var result = [];
-    var found = StringMap();
+    var found = new Set();
     // webkit js debuggers rely on ambient global eval
     // http://code.google.com/p/chromium/issues/detail?id=145871
     if (ses.DISABLE_SECURITY_FOR_DEBUGGER) {
-      found.set('eval', true);
+      found.add('eval');
     }
     var a;
     while ((a = regexp.exec(programSrc))) {
@@ -190,7 +190,7 @@ var ses;
 
         if (!found.has(name)) {
           result.push(name);
-          found.set(name, true);
+          found.add(name);
         }
       }
     }

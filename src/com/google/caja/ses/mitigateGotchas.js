@@ -27,7 +27,6 @@
  * //requires ses.rewriter_
  * //provides ses.mitigateSrcGotchas
  * @author Jasvir Nagra (jasvir@google.com)
- * @requires JSON, StringMap
  * @overrides ses
  */
 
@@ -47,7 +46,7 @@ var ses;
   //   https://bugzilla.mozilla.org/show_bug.cgi?id=744784
   //   https://bugzilla.mozilla.org/show_bug.cgi?id=694360
   //   https://bugs.webkit.org/show_bug.cgi?id=90678
-  // 
+  //
   // This has two consequences for us:
   // 1. We cannot rely on the JS implementation to parse such a program in the
   //    same way we do (unless we were to vary our parser's behavior based on a
@@ -62,12 +61,7 @@ var ses;
   //
   // Due to the above issues, and since such programs are therefore unportable,
   // we currently take the simplest approach, namely to reject such programs.
-  // In order to do so, we must traverse all programs we parse; the constant
-  // defined here marks the locations where kludges to do so have been inserted.
-  // If implementations stop being inconsistent about this issue (or if acorn,
-  // escodegen, and the current JS implementation happen to agree), then we
-  // could change this to false.
-  var ESCAPED_KEYWORD_AMBIGUITY = true;
+  // In order to do so, we must traverse all programs we parse.
 
   function introducesVarScope(node) {
     return node.type === 'FunctionExpression' ||
@@ -135,10 +129,10 @@ var ses;
     // TODO(kpreid): Fragile; find a better way to do this that does not depend
     // on Acorn's data structures quite so much.
     var tokTypes = ses.rewriter_.tokTypes;
-    var table = new StringMap();
+    var table = new Set();
     for (var k in tokTypes) {
       if ('keyword' in tokTypes[k]) {
-        table.set(tokTypes[k].keyword, 0);
+        table.add(tokTypes[k].keyword, 0);
       }
     }
     return table.has.bind(table);
@@ -323,39 +317,11 @@ var ses;
     };
   }
 
-  function rewriteStaticKeyMemberExpression(scope, node) {
-    rewrite(scope, node.object);
-    switch (node.property.type) {
-     case 'Identifier':
-       node.property = makeTrivialSequenceExpression({
-          type: 'Literal',
-          value: node.property.name
-        });
-       break;
-     case 'Literal':
-       node.property = makeTrivialSequenceExpression(node.property);
-       break;
-     default:
-       // Inconsistent
-       throw new Error('Programming error');
-    }
-    node.computed = true;
-  }
-
-  function needsRewriting(options) {
-    return options.rewriteTopLevelVars ||
-      options.rewriteTopLevelFuncs ||
-      options.rewriteFunctionCalls ||
-      options.rewriteTypeOf ||
-      options.rewritePropertyUpdateExpr ||
-      options.rewritePropertyCompoundAssignmentExpr;
-  }
-
   function rewrite(scope, node) {
     ses.rewriter_.traverse(node, {
       enter: function enter(node, parentNode) {
 
-          if (ESCAPED_KEYWORD_AMBIGUITY && isId(node)) {
+          if (isId(node)) {
             if (nameIsReservedWord(node.name) &&
                 !isIdentifierNameContext(parentNode)) {
               throw new SyntaxError(
@@ -381,15 +347,6 @@ var ses;
                      isFunctionCall(node)) {
             rewriteFunctionCall(scope, node);
             scope.dirty = true;
-          } else if (scope.options.rewritePropertyUpdateExpr &&
-                     isStaticKeyPropertyUpdateExpr(node)) {
-            rewriteStaticKeyMemberExpression(scope, node.argument);
-            scope.dirty = true;
-          } else if (scope.options.rewritePropertyCompoundAssignmentExpr &&
-                     isStaticKeyPropertyCompoundAssignmentExpr(node)) {
-            rewriteStaticKeyMemberExpression(scope, node.left);
-            rewrite(scope, node.right);
-            scope.dirty = true;
           }
 
           if (introducesVarScope(node)) {
@@ -406,56 +363,75 @@ var ses;
   }
 
   function rewriteProgram(options, ast) {
-    if (ESCAPED_KEYWORD_AMBIGUITY || needsRewriting(options)) {
-      var scope = {
-        options: options,
-        dirty: false,
-        scopeLevel: 0
-      };
-      rewrite(scope, ast);
-      if (scope.scopeLevel !== 0) {
-        throw new Error('Internal error traversing the AST');
-      }
-      return scope.dirty;
-    } else {
-      return false;
+    var scope = {
+      options: options,
+      dirty: false,
+      scopeLevel: 0
+    };
+    rewrite(scope, ast);
+    if (scope.scopeLevel !== 0) {
+      throw new Error('Internal error traversing the AST');
     }
+    return scope.dirty;
   }
 
   /**
+   * if asExpr, then src should be the code for an expression.
+   * Otherwise, src should be the code for a function body.
+   * The only difference between a Program and a FunctionBody is that
+   * the latter admits return statements.
+   *
    * Assumes {@code options} have already been safely canonicalized by
    * startSES's {@code resolveOptions}.
    */
-  ses.mitigateSrcGotchas = function(funcBodySrc, options, logger) {
-    if (!needsRewriting(options) && !options.parseFunctionBody) {
-      return funcBodySrc;
+  ses.mitigateSrcGotchas = function(asExpr, src, options, logger) {
+    if (asExpr) {
+      src = '(' + src + '\n);';
+    } else {
+      src = '(function() { ' +
+        src +
+        '\n});\n';
     }
+    // src should now be code for an ExpressionStatement wrapping the
+    // original.
     try {
-      var ast = ses.rewriter_.parse(funcBodySrc);
-      var dirty = rewriteProgram(options, ast);
-      if (dirty || options.forceParseAndRender) {
-        return "\n"
-            + "/*\n"
-            + " * Program rewritten to mitigate differences between\n"
-            + " * Caja and strict-mode JavaScript.\n"
-            + " * For more see "
-            + " * https://code.google.com/p/google-caja/wiki/SES#"
-            + "Source-SES_vs_Target-SES\n"
-            + " */\n"
-            + ses.rewriter_.generate(ast);
-      } else {
-        return funcBodySrc;
+      // TODO(erights): Is it safe not to set forbidReserved: true ?
+      var ast = ses.rewriter_.parse(src, {forbidReserved: false});
+      if (ast.type !== 'Program') {
+        throw new SyntaxError('Internal malformed parse: ' + src);
       }
+      if (ast.body.length !== 1) {
+        throw new SyntaxError('Expected an expression: ' + src);
+      }
+      if (ast.body[0].type !== 'ExpressionStatement') {
+        throw new SyntaxError('Expected expression: ' + src);
+      }
+      ast = ast.body[0].expression;
+      // ast is now the parsed expression within that expression
+      // statement.
+      if (!asExpr) {
+        if (ast.type !== 'FunctionExpression') {
+          throw new SyntaxError('Internal: expected function: ' + src);
+        }
+        ast = ast.body;
+        if (ast.type === 'BlockStatement') {
+          // There is no ast type for FunctionBody, which is really
+          // how the src got parsed. By changing to type Program, it
+          // gets rendered correctly, without the enclosing
+          // curlies. The difference is that FunctionBody can contain
+          // a return statement and Program cannot. However, this
+          // difference does not impede rendering.
+          ast.type = 'Program';
+        }
+      }
+      rewriteProgram(options, ast);
+      return ses.rewriter_.generate(ast);
     } catch (e) {
       var message = '' + e;
       // Chrome console does not display an Error object usefully but as
-      // "Error {}" so we use the explicit stringification.
+      // "Error {}" so we also log it.
       logger.warn('Failed to parse program: ' + message);
-      var quotedMessage = JSON.stringify(message);
-      return '' +
-        '(function() { throw new SyntaxError("Failed to parse program: " + ' +
-        quotedMessage +
-        '); })()';
+      throw e;
     }
   };
 
