@@ -2,7 +2,7 @@
   { "label": "ses", "tests": [
     {
       "label": "explicit",
-      "bare": "../../../../../src/com/google/caja/ses/explicit.html",
+      "bare": "../ses/explicit.html",
       "comment": [
         "Detailed SES initialization report"
       ]
