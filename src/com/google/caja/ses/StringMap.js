@@ -28,6 +28,13 @@ var StringMap;
 
    var create = Object.create;
    var freeze = Object.freeze;
+   if (!freeze) {
+     // Don't break overall initSES error handling if we are on an archaic
+     // or broken browser. But since we expect to produce frozen objects,
+     // we can't work.
+     return;
+   }
+
    function constFunc(func) {
      func.prototype = null;
      return freeze(func);

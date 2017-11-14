@@ -49,7 +49,7 @@ jsunitRegister('testTraverse', function testTraverse() {
 
 function assertMitigate(expected, input, options) {
   function scrub(s) { return ses.rewriter_.generate(ses.rewriter_.parse(s)); }
-  var actual = ses.mitigateSrcGotchas(input, options, console);
+  var actual = ses.mitigateSrcGotchas(false, input, options, console);
   // We re-parse the mitigated code because the mitigator adds comments
   assertEquals(scrub(expected), scrub(actual));
 }
@@ -64,61 +64,14 @@ function assertMitigateFails(src, options, error) {
     out += Array.prototype.join.call(arguments, ' ');
   }};
 
-  ses.mitigateSrcGotchas(src, options, logger);
+  try {
+    ses.mitigateSrcGotchas(false, src, options, logger);
+  } catch (er) {
+    // Ignore the thrown error. The logger has already captured the
+    // error message.
+  }
   assertEquals(src, error, out);
 }
-
-jsunitRegister('testRewritePropertyUpdateExpr',
-    function testRewritePropertyUpdateExpr() {
-  var o = { rewritePropertyUpdateExpr: true };
-
-  assertNoMitigate('x++;', o);
-
-  assertMitigate('o[(1, "x")]++;', 'o.x++;', o);
-  assertMitigate('o[(1, "x")]--;', 'o.x--;', o);
-  assertMitigate('o[(1, "x")]++;', 'o["x"]++;', o);
-  assertMitigate('o[(1, "x")]--;', 'o["x"]--;', o);
-  assertMitigate('o[(1, 3)]++;', 'o[3]++;', o);
-  assertMitigate('o[(1, 3)]--;', 'o[3]--;', o);
-
-  assertNoMitigate('o[3 + 4]++;', o);
-  assertNoMitigate('o[p]++;', o);
-
-  assertMitigate('o[q[(1, "y")]++]--;', 'o[q.y++]--;', o);
-  assertMitigate('foo(q[(1, "y")]++)[(1, 3)]--;', 'foo(q.y++)[3]--;', o);
-
-  jsunitPass();
-});
-
-jsunitRegister('testRewritePropertyCompoundAssignmentExpr',
-    function testRewritePropertyCompoundAssignmentExpr() {
-  var o = { rewritePropertyCompoundAssignmentExpr: true };
-
-  assertNoMitigate('x += 1;', o);
-  assertNoMitigate('o.x = 1;', o);
-  assertNoMitigate('o.x = o.x + 1;', o);
-
-  assertMitigate('o[(1, "x")] += 1;', 'o.x += 1;', o);
-  assertMitigate('o[(1, "x")] += 1;', 'o["x"] += 1;', o);
-  assertMitigate('o[(1, 3)] += 1;', 'o[3] += 1;', o);
-  assertMitigate('o[(1, "x")] -= 1;', 'o.x -= 1;', o);
-  assertMitigate('o[(1, "x")] *= 1;', 'o.x *= 1;', o);
-  assertMitigate('o[(1, "x")] /= 1;', 'o.x /= 1;', o);
-  assertMitigate('o[(1, "x")] &= 1;', 'o.x &= 1;', o);
-  assertMitigate('o[(1, "x")] |= 1;', 'o.x |= 1;', o);
-  assertMitigate('o[(1, "x")] ^= 1;', 'o.x ^= 1;', o);
-  assertMitigate('o[(1, "x")] %= 1;', 'o.x %= 1;', o);
-  assertMitigate('o[(1, "x")] <<= 1;', 'o.x <<= 1;', o);
-  assertMitigate('o[(1, "x")] >>= 1;', 'o.x >>= 1;', o);
-  assertMitigate('o[(1, "x")] >>>= 1;', 'o.x >>>= 1;', o);
-
-  assertMitigate(
-      'foo(o[(1, "x")] += 1)[(1, "z")] += (q[(1, "y")] += 1)',
-      'foo(o.x += 1).z += (q.y += 1);',
-      o);
-
-  jsunitPass();
-});
 
 
 jsunitRegister('testEscapedKeyword', function testEscapedKeyword() {
