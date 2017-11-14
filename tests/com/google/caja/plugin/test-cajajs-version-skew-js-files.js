@@ -41,7 +41,7 @@ jsunitRegister('testVersionSkew', function testVersionSkew() {
   caja.initialize({
     server: '/caja',
     resources: '/caja/testing/skew-0000',
-    maxAcceptableSeverity: 'NEW_SYMPTOM',
+    forceES5Mode: inES5Mode,
     console: testConsole
   });
   caja.load(undefined, undefined, function (frame) {

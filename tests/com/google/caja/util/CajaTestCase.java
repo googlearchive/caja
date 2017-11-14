@@ -16,6 +16,7 @@ package com.google.caja.util;
 
 import com.google.caja.SomethingWidgyHappenedError;
 import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.CssTokenType;
 import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.GuessContentType;
@@ -30,6 +31,8 @@ import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.css.CssParser;
+import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
@@ -175,11 +178,6 @@ public abstract class CajaTestCase extends TestCase {
     return js(cp, true);
   }
 
-
-  // TODO(kpreid): This appears to be the only remaining user of our HTML
-  // parsing infrastructure, and it is used for JsHtmlSanitizerTest. Replace
-  // it with a less customized HTML parser.
-
   protected Element xml(CharProducer cp) throws ParseException {
     return (Element) parseMarkup(cp, true, true);
   }
@@ -225,6 +223,38 @@ public abstract class CajaTestCase extends TestCase {
       throws ParseException {
     return new DomParser(new HtmlLexer(cp), false, sourceOf(cp), mq)
         .parseFragment();
+  }
+
+  protected CssTree.StyleSheet css(CharProducer cp) throws ParseException {
+    return css(cp, false);
+  }
+
+  protected CssTree.StyleSheet css(CharProducer cp, boolean substs)
+      throws ParseException {
+    TokenQueue<CssTokenType> tq = cssTokenQueue(cp, substs);
+    CssTree.StyleSheet ss = new CssParser(tq, mq, MessageLevel.FATAL_ERROR)
+        .parseStyleSheet();
+    tq.expectEmpty();
+    return ss;
+  }
+
+  protected CssTree.DeclarationGroup cssDecls(CharProducer cp)
+      throws ParseException {
+    return cssDecls(cp, false);
+  }
+
+  protected CssTree.DeclarationGroup cssDecls(CharProducer cp, boolean substs)
+      throws ParseException {
+    TokenQueue<CssTokenType> tq = cssTokenQueue(cp, substs);
+    CssTree.DeclarationGroup dg = new CssParser(
+        tq, mq, MessageLevel.FATAL_ERROR).parseDeclarationGroup();
+    tq.expectEmpty();
+    return dg;
+  }
+
+  private TokenQueue<CssTokenType> cssTokenQueue(
+      CharProducer cp, boolean substs) {
+    return CssParser.makeTokenQueue(cp, mq, substs);
   }
 
   public static String render(MessageQueue mq) {

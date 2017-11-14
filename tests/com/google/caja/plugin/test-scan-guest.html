@@ -36,11 +36,13 @@
   }
 </style>
 <body>
-
 <script src="test-scan-core.js"></script>
-
-<!-- test-scan-guest will register its self-tests when loaded -->
 <script src="test-scan-guest.js"></script>
+
+<div class="testcontainer" id="testScanner"></div>
+<script>
+  jsunitRegister('testScanner', testScanner);
+</script>
 
 <form>
   <input type="text" id="scan-only" value="" size="100">

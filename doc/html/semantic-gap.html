@@ -1,0 +1,470 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html><head>
+<title>Closing the Semantic Gap</title>
+<style>
+.slide {
+  list-style: none;
+  display: block;
+  border: 1px solid black;
+  width: 32.34em;
+  height: 20em;
+  font-family: Arial;
+  font-size: 200%
+}
+.slide td { font-size: 200% }
+.slide h1 { margin-top: 0 }
+.slide h1, .slide p { text-align: center }
+.slide ol, .slide pre, .slide code.block, .slide div {
+  padding-left: 2em; padding-right: 2em
+}
+code { white-space: nowrap }
+code.block { white-space: pre; text-align: left; display: block }
+.expandsto { color: red }
+@media screen { .hidden { display:none } }
+@media print {
+  .noprint { display: none }
+  .slide { page-break-inside: avoid }
+}
+pre.prettyprint {
+  width: 40em; margin-left: auto; margin-right: auto
+}
+</style>
+<link rel="stylesheet" href="common/prettify.css">
+<script src="common/prettify.js"></script>
+<script src="common/lang-lisp.js"></script>
+
+<script>
+function dynamize() {
+  function innerText(n, buf) {
+    var returns = !buf;
+    if (returns) { buf = []; }
+    if (n.nodeType === 3) { buf.push(n.nodeValue); }
+    for (var c = n.firstChild; c; c = c.nextSibling) { innerText(c, buf); }
+    if (returns) { return buf.join(''); }
+  }
+
+  function title(el) {
+    var headers = el.getElementsByTagName('H1');
+    if (headers.length === 1) {
+      return innerText(headers[0])
+    }
+    return '';
+  }
+
+  function removeClass(el, cn) {
+    var classes = el.className.split(/[ \r\t\n]+/g);
+    for (var i = classes.length; --i >= 0;) {
+      if (classes[i] === cn) { classes[i] = ''; }
+    }
+    el.className = classes.join(' ');
+  }
+
+  function addClass(el, cn) {
+    var classes = el.className.split(/[ \r\t\n]+/g);
+    classes[classes.length] = cn;
+    el.className = classes.join(' ');
+  }
+
+  var slides = [];
+  var current = 0;
+  var counter = 0;
+  var target = location.hash ? location.hash.substring(1) : null;
+  for (var c = document.getElementById('slides').firstChild; c;
+       c = c.nextSibling) {
+    if (c.nodeType === 1) {
+      var id = title(c).replace(/\W+/g, '_').replace(/^_/, '')
+          .substring(0, 20).replace(/_$/, '').toLowerCase();
+      while (!id || document.getElementById(id)) {
+        id = 'slide' + (++counter);
+      }
+      c.id = id;
+      if (target === id) { current = slides.length; }
+      slides.push(c);
+    }
+  }
+  var n = slides.length;
+  var lastTitle = title(slides[0]);
+  for (var i = 1; i < n; ++i) {
+    var t = title(slides[i]);
+    if (t === lastTitle) { continue; }
+    lastTitle = t;
+    var toclink = document.createElement('A');
+    toclink.href = '#' + slides[i].id;
+    toclink.onclick = (function (i) {
+      return function () { show(i); return false; };
+    })(i);
+    toclink.appendChild(document.createTextNode(t));
+    var tocitem = document.createElement('DIV');
+    tocitem.appendChild(toclink);
+    slides[0].appendChild(tocitem);
+  }
+
+  var controls = document.getElementById('controls');
+  controls.style.display = '';
+
+  function show(i) {
+    if (i === current) { return; }
+    removeClass(slides[i], 'hidden');
+    addClass(slides[current], 'hidden');
+    document.location = i ? '#' + slides[i].id : '#';
+    current = i;
+  }
+
+  function showRel(delta) {
+    show((current + delta + n) % n);
+  }
+
+  this.show = show;
+  this.showRel = showRel;
+
+  for (var i = 0; i < n; ++i) {
+    if (i === current) { continue; }
+    slides[i].className += ' hidden';
+  }
+}
+
+var processKey = (function () {
+  var successfulDown = false;
+  return function processKey(kc, onDown) {
+    if (!onDown && successfulDown) { return; }
+    switch (kc) {
+      case 78: case 110: showRel(1); break;
+      case 80: case 112: showRel(-1); break;
+      case 67: case 99: show(0); break;
+      default: return;
+    }
+    if (onDown) { successfulDown = true; }
+  };
+})();
+</script>
+</head>
+
+<body onload="dynamize(); prettyPrint()"
+ onkeypress="processKey(event.keyCode, 0)"
+ onkeydown="processKey(event.keyCode, 1)">
+<div style="position:fixed; display:none; right: 0; border: 1px solid black; padding:.5em; margin: 2px" id=controls class=noprint>
+  <a href="#" onclick="show(0)" accesskey=c>Contents</a> | <a href="javascript:void showRel(-1)" accesskey=p>Prev</a> | <a href="javascript:void showRel(1)" accesskey=n>Next</a>
+</div>
+<ol id=slides>
+  <li class=slide>
+    <h1>Closing the Semantic Gap</h1>
+    <ol id=contents>
+   </ol>
+  </li>
+  <li class=slide>
+    <h1>Goal</h1>
+    <p>Programming Languages Matter</p>
+    <p>The "Semantic Gap" leads to vulnerability</p>
+    <p>Security measures must serve a dual-purpose</p>
+  </li>
+  <li class=slide>
+    <h1>Programming Languages Matter</h1>
+    <p>Programs written in different languages are subject to
+    different vulnerabilities.</p>
+    <center><table cellspacing=24>
+      <tr><td>C / C++</td>          <td>Buffer overflows</tr>
+      <tr><td>Perl / Bash</td>      <td>Shell Injection</tr>
+      <tr><td>PHP / JavaScript</td> <td>XSS / SQL Injection</tr>
+    </table></center>
+    <p>Correlates with domain.  Web sites are subject to XSS
+    regardless of which language is used.
+    <p>Not the whole story.</p>
+  </li>
+  <li class=slide>
+    <h1>A Vulnerability</h1>
+    <pre class="prettyprint lang-pl">#!/usr/bin/perl
+my ($a, $b, $c) = @ARGV;
+# Process each unique record from the logs for 3 dates in order.
+open(IN, "|cat logs/$a.log logs/$b.log logs/$c.log |sort |uniq")
+    or die $!;
+while (&lt;IN&gt;) {
+  ...
+}
+close(IN);</pre>
+  </li>
+  <li class=slide>
+    <h1>A Vulnerability</h1>
+    <pre class="prettyprint lang-pl">#!/usr/bin/perl
+my ($a, $b, $c) = @ARGV;
+# Process each unique record from the logs for 3 dates in order.
+open(IN, "|cat logs/<b>$a</b>.log logs/<b>$b</b>.log logs/<b>$c</b>.log |sort |uniq")
+    or die $!;
+while (&lt;IN&gt;) {
+  ...
+}
+close(IN);</pre>
+    <p>Shell Injection</p>
+    <p>A crafted input, e.g. <code><(rm -rf ~/*)</code>, can gain full user
+    authority</p>
+  </li>
+  <li class=slide>
+    <h1>A Vulnerability</h1>
+    <pre class="prettyprint lang-pl">#!/usr/bin/perl
+my ($a, $b, $c) = @ARGV;
+# Process each unique record from the logs for 3 dates in order.
+open(IN, "|cat logs/<b>$a</b>.log logs/<b>$b</b>.log logs/<b>$c</b>.log |sort |uniq")
+    or die $!;
+while (&lt;IN&gt;) {
+  ...
+}
+close(IN);</pre>
+    <p>Why did they write it this way?
+  </li>
+  <li class=slide>
+    <h1>A Vulnerability</h1>
+    <pre class="prettyprint lang-pl">#!/usr/bin/perl
+my ($a, $b, $c) = @ARGV;
+# Process each unique record from the logs for 3 dates in order.
+open(IN, "|cat logs/<b>$a</b>.log logs/<b>$b</b>.log logs/<b>$c</b>.log |sort |uniq")
+    or die $!;
+while (&lt;IN&gt;) {
+  ...
+}
+close(IN);</pre>
+    <p>Why did they write it this way?
+    <p>Ignorance?
+    <br>Convenience?
+    <br>Throwaway code?</p>
+  </li>
+  <li class=slide>
+    <h1>Alternative 1</h1>
+    <pre class="prettyprint lang-pl">#!/usr/bin/perl
+<b>use Sysadm::Install qw(qquote);</b>
+my ($a, $b, $c) = @ARGV;
+my @logfiles = map { <b>qquote</b>("logs/$_\E.log") } ($a, $b, $c);
+# Process each unique record from the logs for 3 dates in order.
+open(IN, "|cat @logfiles |sort |uniq")
+    or die $!;
+while (&lt;IN&gt;) {
+  ...
+}
+close(IN);</pre>
+    <p>Could depend on <code>Sysadm</code> if we know it's widely installed,
+    and don't mind loading it.
+    <p>Code gets bigger and error prone in a different way.
+  </li>
+  <li class=slide>
+    <h1>Alternative 2</h1>
+    <pre class="prettyprint lang-pl">#!/usr/bin/perl
+<b>sub qquote($) {
+  my $s = $_[0];
+  $s =~ s|[\\\x22]|\\$&|;
+  return qq('$s');
+}</b>
+my ($a, $b, $c) = @ARGV;
+my @logfiles = map { qquote("logs/$_\E.log") } ($a, $b, $c);
+# Process each unique record from the logs for 3 dates in order.
+open(IN, "|cat @logfiles |sort |uniq")
+    or die $!;
+while (&lt;IN&gt;) {
+  ...
+}
+close(IN);</pre>
+    <p>Or you can write more code that needs to be debugged.
+  </li>
+  <li class=slide>
+    <h1>The problem</h1>
+    <p>String interpolation does almost exactly what you want.
+    <p>Terser, more expressive than the alternatives.
+    <p>Works for many problem domains.
+      <br><code class=prettyprint>javac -o $outdir @javafiles</code>
+      <br><code class=prettyprint>&lt;b&gt;$important_message&lt;/b&gt;</code>
+      <br><code class=prettyprint>select * from tables where $condition</code>
+    <p>But when it fails it fails catastrophically.
+  </li>
+  <li class=slide>
+    <h1>Can we fix it?</h1>
+    <pre class="prettyprint lang-pl">#!/usr/bin/perl
+my ($a, $b, $c) = @ARGV;
+# Process each unique record from the logs for 3 dates in order.
+open(IN, "|cat logs/<b>$a</b>.log logs/<b>$b</b>.log logs/<b>$c</b>.log |sort |uniq")
+    or die $!;
+while (&lt;IN&gt;) {
+  ...
+}
+close(IN);</pre>
+    <p>It is clear to a human what the programmer meant.
+    <p><code>open</code> knows that it expects a shell string.
+    <p>The interpolation specifies which bits are literal,
+    and which are substitutions.
+  </li>
+  <li class=slide>
+    <h1>Alternative 3</h1>
+    <p>Fix the language</p>
+    <p><b>Current semantics</b></p>
+    <ol>
+      <li>Break interpolation into literal portions and substitutions.
+      <br><code class="prettyprint lang-lisp">"Hello, $world!"              &rarr; ("Hello, " 'world "!")</code>
+      <li>For each substitution, coerce it to a string.
+      <br><code class="prettyprint lang-lisp">("Hello, " 'world "!")        &rarr; ("Hello, " "Earth" "!")</code>
+      <li>Concatenate the literal portions and substitutions
+      to a string.
+      <br><code class="prettyprint lang-lisp">(cat ("Hello, " "Earth" "!")) &rarr; "Hello, Earth!"</code>
+    </ol>
+    <p><b>New semantics</b>, delay step 3 so <code>open</code> can sort it out.
+  </li>
+  <li class=slide>
+    <h1>New Semantics</h1>
+    <p><code class=prettyprint>open("|...")</code> gets a <b>string-like</b>
+    value like
+    <code class="prettyprint lang-lisp">("|cat logs/" "01-Jan-2010" "...")</code></p>
+    <p>They can elect to treat it as a string (same semantics as before),
+    or decompose it and apply context-sensitive escaping to substitutions.</p>
+
+    <p>Security property : literal portions should have the same
+    meaning regardless of the substitutions, substitutions only
+    convey authority to things they name.</p>
+  </li>
+  <li class=slide>
+    <h1>New Semantics</h1>
+    <p>First question you will get.  Will it run slower?
+    <br>Need not be both correct and complete.<br>On ambiguity, can fail-safe
+    or warn, or guess.
+
+    <p>Determining an escaping scheme &mdash; determined by a state machine
+    : <code>state*char &rarr; state</code>, and an escaper
+    : <code>state &rarr; state*(string &rarr; string)</code>.
+
+    <p>StateMachine(state, literal_portion) is highly memoizable.
+    <br>Glue languages have complex string types, e.g.
+    <pre class=prettyprint>
+type string = ascii_string of byte list
+            | utf16_string of byte list
+            | str_cons of string * string
+            | <b>interp of string * string * string</b></pre>
+  </li>
+  <li class=slide>
+    <h1>What is the Semantic Gap?</h1>
+  </li>
+  <li class=slide>
+    <h1>What is the Semantic Gap?</h1>
+    <blockquote>
+    A safe language is one that protects its own abstractions.
+    <br>
+    &hellip;
+    <br>
+    A programmer using this language then expects that an array can be
+    changed only by using the update operation on it explicity &mdash;
+    and not, for example, by writing past the end of some other data
+    structure.
+    <br>
+    &hellip;
+    <br>
+    In a safe language, such abstraction can be used abstractly.
+    <br>
+    In an unsafe language, they cannot: in order to completely understand
+    how a program may (mis)behave, it is necessary to keep in mind all sorts
+    of low level details.
+    </blockquote>
+    <p>
+    "Types and Programming Languages" Benjamin C. Pierce
+  </li>
+  <li class=slide>
+    <h1>What is the Semantic Gap?</h1>
+    <blockquote>
+    A safe language is one that protects its own abstractions.
+    <br>
+    &hellip;
+    <br>
+    A programmer using this language then <b>expects</b> that an array can be
+    changed only by using the update operation on it explicity &mdash;
+    and not, for example, by writing past the end of some other data
+    structure.
+    <br>
+    &hellip;
+    <br>
+    In a safe language, such abstraction can be used abstractly.
+    <br>
+    In an unsafe language, they cannot: in order to completely understand
+    how a program may (mis)behave, it <b>is necessary to keep in mind all sorts
+    of low level details</b>.
+    </blockquote>
+    <p>
+    "Types and Programming Languages" Benjamin C. Pierce
+  </li>
+  <li class=slide>
+    <h1>What is the Semantic Gap?</h1>
+    <p>Well-meaning programmers introduce vulnerabilities when
+    language features violate <b>expectations</b>.
+    <p>Even when they understand the semantics, they will
+    <b>trade-off correctness</b> for ease of development, performance,
+    ease of maintenance.
+    <p>You don't solve programmers' problems by requiring them to
+    understand details of every system.  Programmers must specialize.</p>
+  </li>
+  <li class=slide>
+    <h1>What is the Semantic Gap?</h1>
+    <p>The difference between the desired/expected semantics of a
+    programming language abstraction, and its actual semantics.
+
+    <p>What a programmer writes:</p>
+    <pre class=prettyprint>query("SELECT * FROM MyTable WHERE id=$value")</pre>
+
+    <p>What a programmer means:</p>
+    <pre class=prettyprint>query("SELECT * FROM MyTable WHERE id=" + quoteSql(value))</pre>
+  </li>
+  <li class=slide>
+    <h1>What is the Semantic Gap?</h1>
+    <p>The difference between the desired/expected semantics of a
+    programming language abstraction, and its actual semantics.
+
+    <p>Most of the time, the difference is innocuous.  Does it matter in a
+    voting machine that a 64b <code>long</code> can overflow silently?
+
+    <p>Goal: Redefine programming language abstractions that are unsafe.
+  </li>
+  <li class=slide>
+    <h1>What is the Semantic Gap?</h1>
+    <p>The difference between the desired/expected semantics of a
+    programming language abstraction, and its actual semantics.
+
+    <p><b>Strategies</b>
+    <ul>
+      <li>Make the language richer.  Static type info to find problems
+      &amp; implicit contract violations.
+      <li>Delay actions that lose programmer intent so libraries can
+      take advantage of runtime info.
+      <li>Safe defaults.  Opt-in for legacy.  Warn vs fail-safe.
+    </ul>
+
+    <p><b>Never</b> remove features.  Forcing programmers to work around a
+    system to do what they need to do does not solve problems.  Easily
+    <b>auditable exceptions</b> work.
+  </li>
+  <li class=slide>
+    <h1>Selling Security</h1>
+    <p>Dual purpose.
+    <p>Always bundle security with something else.
+    <p>Bettern string interpolation &mdash; a poor man's DSL.
+    <p>Hygienic macros &mdash; memoizable inline templates.
+    <p>Sandboxing &mdash; better efficiency and availability for good actors.
+    <p>Membraning and proxies &mdash; you can backport language features onto
+    older systems, and smooth over platform idiosyncracies.
+  </li>
+  <li class=slide>
+    <h1>Sandboxing not just for security</h1>
+    <p>Sandboxing : allowing one program to run another with restrictions.
+  </li>
+  <li class=slide>
+    <h1>Sandboxing not just for security</h1>
+    <p>Sandboxing : allowing one program to run another with restrictions.
+    <p>Observation: many successful systems have a procedural core that
+    kicks off bounded computations that are often declarative or functional.
+    <ul><li>Excel &mdash; computation driven by dependency graph
+    <li>Make &mdash; build actions driven by dependency graph
+    <li>RDMS &mdash; transactional queries
+    <li>Calendar Systems &mdash; infinite series
+    <li>Windowing Systems &mdash; kick off redraws and channel events
+    <li>XPath / CSS selectors &mdash; kick off redraws</ul>
+  </li>
+  <li class=slide>
+    <h1>Sandboxing not just for security</h1>
+    <p>Sandboxing: allowing one program to run another with restrictions.
+    <p>Highly optimizable.  A sandboxed computation that does not access
+    sources of non-determinism or have side effects &mdash; memoizable.
+    Easy rules of thumb &mdash; don't do this and your code will be fast.
+    <p>Developers can reason about the effect their changes will have.
+    <br>Fewer legacy client problems.
+  </li>
+</ol>
+</body></html>

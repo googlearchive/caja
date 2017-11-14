@@ -1,6 +1,7 @@
 [
   {
     "label": "apitaming",
+    "mode": "none",
     "tests": [
       {
         "label": "security",

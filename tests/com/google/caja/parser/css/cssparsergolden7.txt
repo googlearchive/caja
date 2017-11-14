@@ -1,0 +1,3 @@
+StyleSheet
+  Import
+    UriLiteral : foo.css

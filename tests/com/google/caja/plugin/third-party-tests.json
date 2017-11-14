@@ -2,6 +2,7 @@
   {
     "label": "jquery",
     "driver": "qunit-test-driver.js",
+    "mode": "es5",
     "guest-template": "/third_party/js/jqueryjs/test/index.html?module=*",
     "tests": [
       {
@@ -175,6 +176,7 @@
   {
     "label": "jqueryui",
     "driver": "qunit-test-driver.js",
+    "mode": "es5",
     "guest-template": "/third_party/js/jquery-ui/tests/unit/*/*.html",
     "tests": [
       {

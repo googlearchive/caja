@@ -1383,7 +1383,7 @@ var PACMAN = (function () {
 
     caja.initialize({
       cajaServer: "http://caja.appspot.com/",
-      maxAcceptableSeverity: 'NEW_SYMPTOM',  // note: potentially no security
+      forceES5Mode: true,
       debug: true
     });
 

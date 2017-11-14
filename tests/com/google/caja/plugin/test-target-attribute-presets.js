@@ -38,7 +38,7 @@
   caja.initialize({
     cajaServer: '/caja',
     debug: true,
-    maxAcceptableSeverity: 'NEW_SYMPTOM',
+    forceES5Mode: inES5Mode,
     targetAttributePresets: {
       default: 'foo',
       whitelist: [ 'foo', 'bar', '_blank' ]

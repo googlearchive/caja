@@ -1,0 +1,120 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+ 
+<html xmlns="http://www.w3.org/1999/xhtml" >
+    <head><title>
+	Test File Conventions
+</title>
+</head>	
+<body>	
+		<h3>Test File Directory Hierarchy</h3>
+
+With in the <b>TestCases</b> directory individual tests are organized into subdirectories corresponding to chapters (top level section numbers) of the ECMAScript 5 Specification.<br />For Example:<br />
+<pre>
+TestCases
+      chapter11
+      chapter12
+      chapter13
+</pre>
+<h3>Test File Naming Conventions</h3>
+<hr />
+Individual test file names have the following format:<br /><br /><i>sectionNumber</i>[<b>@</b><i>nnn</i>][<b>-</b><i>algorithmStepNumber|</i><b>-g</b><i>grammarProductionNumber</i>]<b>-</b><i>testNumber</i>[<b>-s</b>][<b>-x</b>].js<br /><br />Where:<br /><i>sectionNumber</i>: is the section number of the ECMAScript 5 Specification that this test is primarily concerned with.<br />
+            <b>@</b><i>n</i>:  is optional and used if a section contains more than one algorithm.  <i>n</i> is 
+            the ordinal number of the algorithm within the section.<br /><i>algorithmStepNumber</i>: is the step number within the algorithm that the rest relates to.  
+            0 is used for tests that relate to non-algorithmic portions of the specification.<br />
+            <b>g</b><i>grammarProduction</i>:<i>&nbsp;&nbsp; </i>is a ordinal number 
+            (starting from 1) of a grammar production defined in the section. If is used for 
+            parsing tests.<br /><i>testNumber</i>: is present if there is more than one testcase for a particular algorithm step or non-algorithm specification section.<br />
+            <i>-</i><b>s</b>: is an optional suffix that identifies that the test is only applies to strict mode<br />
+            <b>-x</b>: is an optional suffix that identifies that the test intentionally 
+            contains something that should case a syntax error. Such tests are expected to 
+            not load correctly and if they do it load it is a test failure. The test 
+            function should not return true.<br />
+<h3>Test File Structure</h3>
+Each testcase must be a single .js file. A template of a testcase file can be found at: <a href="./SimpleTestHarness/testTemplate.js" type="text">TestCases/testTemplate.js</a><br />A testcase is made up of the following parts (1) License header, (2) test registration call (3) test case object literal and looks like:<br />
+<hr />
+<pre>
+/// Copyright (c) <i><b>&lt&lt;year&gt&gt &lt&lt;copyright owner&gt&gt</b></i>. 
+/// 
+/// Redistribution and use in source and binary forms, with or without modification, are permitted provided
+/// that the following conditions are met: 
+///    * Redistributions of source code must retain the above copyright notice, this list of conditions and
+///      the following disclaimer. 
+///    * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and 
+///      the following disclaimer in the documentation and/or other materials provided with the distribution.  
+///    * Neither the name of <i><b>&lt&lt;copyright owner&gt&gt</b></i> nor the names of its contributors may be used to
+///      endorse or promote products derived from this software without specific prior written permission.
+/// 
+/// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR
+/// IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+/// FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+/// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+/// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+/// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+/// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+/// ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+ 
+
+/* be sure to put the current &lt&lt;year&gt&gt and &lt&lt;copyright owner&gt&gt information into the above header */
+ 
+
+ES5Harness.registerTest( {
+id: "sectionNumber[@nnn][-algorithmStepNumber]-testNumber[-s][x]",  //put a unique test id here
+
+path: "TestCases/testTemplate.js",    //the directory path of this test starting at TestCases
+
+description: 'Insert text descripting the test here',
+
+test: function testcase() {
+  //Add test code here, return true if test passes
+ }
+
+precondition: function precond() {
+ //Add code to test any preconditions that must be establish in order to run this test.
+ //Return true if it is ok to run the test.
+ //This property may be completely omitted in which case the test will always be run.
+ return true;
+ }
+
+});
+</pre>
+<hr />
+<br />The license header is the copyright notice and New BSD license text. 
+Be sure to fill in the actual year and name of the copyright holder.<br/>
+The test registration is a JavaScript function call of the form:
+<pre>
+   ES5Harness.registerTest( testObject);
+</pre>
+<B>ES5Harness</B> is the global name of the test harness and <b>registerTest</b> is the method that is used to register tests. 
+The argument is an object that defines an individual test. Normally the argument <i>testObject</i> is an object literal. 
+<P>A test case object has the following properties:
+        <ul>
+            <li><b>id</b>:&nbsp; A string containing the name of this test file using the 
+                above naming conventions.&nbsp; The file extension is not included in the id.</li>
+            <li><b>path</b>:&nbsp; A string containing the relative directory path of this 
+                test starting at TestCases.</li>
+            <li><b>description</b>: A string describing the purpose of this test.&nbsp; It is 
+                used to generate test reports.</li>
+            <li><b>test</b>: A function that performs the actual test. The test harness will 
+                call this function to execute the test.&nbsp; It must return true if the test 
+                passes. Any other return value indicates a failed test. The test function is 
+                called as a method with its this value set to its defining test case object.</li>
+            <li><b>precondition</b>: (Optional) A function that is called before the test 
+                function to see if it is ok to run the test.&nbsp; If all preconditions 
+                necessary to run the test are established it should return true. If it returns 
+                false, the test will not be run.&nbsp; The precondition function is called as a 
+                method with its this value set to its defining test case object. This property is 
+                optional. If it is not present, the test function will always be executed.</li>
+        </ul>
+        <P>A text case object may also define other properties.&nbsp; 
+        <P>The test case file may also contain additional global code and declarations.&nbsp; 
+            However, this is not recommended unless necessary for creating a test relating 
+            to such globals. 
+        <P><br /><br /><br /></div></td>
+	</tr><tr>
+		<td valign="top"><span class="SubText"></span></td>
+	</tr>
+
+            </div>
+        </form>
+    </body>
+</html>

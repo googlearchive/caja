@@ -13,7 +13,7 @@
 // limitations under the License.
 
 function fetch(url, callback) {
-  var xhr = bridalMaker(document).makeXhr();
+  var xhr = bridalMaker(function (x){return x;}, document).makeXhr();
   xhr.open('GET', url, true);
   xhr.onreadystatechange = function() {
     if (xhr.readyState === 4 && xhr.status === 200) {
@@ -112,6 +112,11 @@ fetch('test-domado-special-initial-state.html', function(initialHtml) {
 
     extraImports.checkGlobalSideEffect =
       frame.tame(frame.markFunction(checkGlobalSideEffect));
+
+    if (frameGroup.testing_makeDomadoRuleBreaker) {
+      var rulebreaker = frameGroup.testing_makeDomadoRuleBreaker();
+      extraImports.rulebreakerBreachSimulation = rulebreaker;
+    }
 
     frame.code('test-domado-special-guest.html')
          .api(extraImports)

@@ -93,10 +93,11 @@
 
   jsunitRegister('testServerJsonp', function() {
     tfetch(
-      server + '/proxy?url=' + docURLForURL('test-fetch-proxy-fixture.css')
+      server + '/cajole?url=' + docURLForURL('test-fetch-proxy-fixture.css')
           + '&input-mime-type=text/css'
           + '&alt=json-in-script'
           + '&callback=foo'
+          + '&transform=PROXY'
           + '&build-version=' + cajaBuildVersion,
       'text/javascript',
       function(response) {
@@ -112,10 +113,11 @@
   // for it and then remove this test
   jsunitRegister('testServerJson', function() {
     tfetch(
-      server + '/proxy?url=' + docURLForURL('test-fetch-proxy-fixture.css')
+      server + '/cajole?url=' + docURLForURL('test-fetch-proxy-fixture.css')
           + '&input-mime-type=text/css'
           + '&alt=json'
           + '&callback=foo'
+          + '&transform=PROXY'
           + '&build-version=' + cajaBuildVersion,
       'application/json',
       function(response) {
@@ -126,10 +128,11 @@
 
   jsunitRegister('testServerJsonpAbsent', function() {
     tfetch(
-      server + '/proxy?url=' + docURLForURL('test-fetch-proxy-nonexistent.css')
+      server + '/cajole?url=' + docURLForURL('test-fetch-proxy-nonexistent.css')
           + '&input-mime-type=text/css'
           + '&alt=json-in-script'
           + '&callback=foo'
+          + '&transform=PROXY'
           + '&build-version=' + cajaBuildVersion,
       'text/javascript',
       function(response) {
@@ -143,10 +146,11 @@
 
   jsunitRegister('testServerJsonAbsent', function() {
     tfetch(
-      server + '/proxy?url=' + docURLForURL('test-fetch-proxy-nonexistent.css')
+      server + '/cajole?url=' + docURLForURL('test-fetch-proxy-nonexistent.css')
           + '&input-mime-type=text/css'
           + '&alt=json'
           + '&callback=foo'
+          + '&transform=PROXY'
           + '&build-version=' + cajaBuildVersion,
       'application/json',
       function(response) {

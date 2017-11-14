@@ -22,7 +22,7 @@
  *
  * @author kpreid@switchb.org
  *
- * @requires cajaVM
+ * @requires inES5Mode, directAccess, cajaVM
  * @requires window
  * @requires WeakMap, JSON, setTimeout
  * @provides scanning
@@ -45,8 +45,17 @@ var scanning;  // exports
   }
 
   function isNativeFunction(f) {
-    return (/^[^{}]*\{\s*\[native code\]\s*}\s*$/
-        .test(Function.prototype.toString.call(f)));
+    try {
+      return (/^[^{}]*\{\s*\[native code\]\s*}\s*$/
+          .test(Function.prototype.toString.call(f)));
+    } catch (e) {
+      // ES5/3 Function.prototype is semi-toxic and throws in this case.
+      //
+      // Also, Function.prototype is not a native function in the sense we care
+      // about (it is exercised separately), and also does not throw, so we
+      // don't care about the return value.
+      return false;
+    }
   }
   // self-test
   isNativeFunction(Function.prototype);  // don't care, must not throw
@@ -64,7 +73,12 @@ var scanning;  // exports
         var name = 'as[' + i + ']';
         args += args !== '' ? ',' + name : name;
       }
-      return Function('f,as', 'return f(' + args + ');');
+      if (inES5Mode) {
+        return Function('f,as', 'return f(' + args + ');');
+      } else {
+        return directAccess.evalInTamingFrame(
+            '___.f(function (f,as){return f.i___(' + args + ');})');
+      }
     }
     var appliers = [];
     /** Apply fn to args without using Function.prototype.apply. */
@@ -151,6 +165,18 @@ var scanning;  // exports
     }
   });
 
+  var isToxicFunction;
+  if (inES5Mode) {
+    isToxicFunction = function isToxicFunctionSES(object) { return false; };
+  } else {
+    var tamingFrameFunctionPrototype =
+        directAccess.evalInTamingFrame('Function.prototype');
+    isToxicFunction = function isToxicFunctionES53(object) {
+      return object === Function.prototype ||
+          object === tamingFrameFunctionPrototype;
+    };
+  }
+
   function shouldTreatAccessorAsValue(object, name, desc) {
     return (
         // work around SES patching frozen value properties into accessors
@@ -162,7 +188,7 @@ var scanning;  // exports
 
   function getFunctionName(fun) {
     var m;
-    if (typeof fun !== 'function') {
+    if (typeof fun !== 'function' || isToxicFunction(fun)) {
       return '';
     } else if (typeof fun.name === 'string') {
       return fun.name;
@@ -174,33 +200,12 @@ var scanning;  // exports
     }
   }
 
-  function printNamedly(value) {
-    if (typeof value === 'function') {
-      var name = getFunctionName(value);
-      return name === '' ? value.toString().replace(/\s+/, ' ') : name;
+  function printNamedly(object) {
+    if (typeof object === 'function') {
+      var name = getFunctionName(object);
+      return name === '' ? object.toString().replace(/\s+/, ' ') : name;
     } else {
-      return String(value);
-    }
-  }
-
-  function printEvaluatably(value) {
-    switch (typeof value) {
-      case 'number':
-        if (isNaN(value)) {
-          return 'NaN';
-        } else if (!isFinite(value) && value > 0) {
-          return 'Infinity';
-        } else if (!isFinite(value) && value < 0) {
-          return '-Infinity';
-        } else {
-          return value.toString();
-        }
-      case 'object':
-      case 'function':
-        // TODO(kpreid): implement this where feasible
-        return '.../* ' + printNamedly(value) + ' */';
-      default:
-        return JSON.stringify(value);
+      return String(object);
     }
   }
 
@@ -261,7 +266,7 @@ var scanning;  // exports
     // Note: identityTable and prototypeTable are object-keyed maps; they don't
     // especially need to be weak (but that doesn't hurt either).
     var identityTable = new WeakMap();
-    var lastPathElementTable = Object.create(null);
+    var lastPathElementTable = {};
     var suffixTable = [];
     var prototypeTable = new WeakMap();
     var specialCases = [];
@@ -284,7 +289,8 @@ var scanning;  // exports
     }
 
     function setByPropertyName(name, value) {
-      lastPathElementTable[name] = value;
+      // name mangled to protect against ES5/3 magic for 'toString' at least
+      lastPathElementTable[' ' + name] = value;
     }
 
     function setByPathSuffix(name, value) {
@@ -322,8 +328,9 @@ var scanning;  // exports
       }
 
       if ((m = /\.([^.]+)$/.exec(path)) &&
-          Object.prototype.hasOwnProperty.call(lastPathElementTable, m[1])) {
-        return lastPathElementTable[m[1]];
+          Object.prototype.hasOwnProperty.call(lastPathElementTable,
+              ' ' + m[1])) {
+        return lastPathElementTable[' ' + m[1]];
       }
 
       if ((m = suffixTable.filter(function(record) {
@@ -362,7 +369,7 @@ var scanning;  // exports
     this.mark = mark;
     this.addSpecialCase = addSpecialCase;
   }
-
+  
   /**
    * Designate one or more objects, in the ways MatchingMap supports.
    */
@@ -407,7 +414,7 @@ var scanning;  // exports
       };
     }
   });
-
+  
   var Context = (function() {
     /**
      * Holds an object, information about where it came from, and information
@@ -420,17 +427,13 @@ var scanning;  // exports
      *     object on methods (i.e. an instance if the object is a prototype).
      * @param getThisArgC Ditto but for the thisArg for invoking the object
      *     itself as a function/method.
-     * @param getProgramInfo Returns { src:, thisArg: } where 'src' is an
-     *     expression to return the object and 'thisArg' is the object which
-     *     would be the 'this' value in a function call expression of the form
-     *     (src + '(' + ... + ')').
      *
      *     getSelfC and getThisArgC are thunks (lazy) so that we can avoid
      *     attempting to obtain an instance of a not-actually-a-constructor.
      * @param getProgram A thunk for program source which returns the object.
      */
     function makeContext(object, path, depth, getSelfC, getThisArgC,
-        getProgramInfo) {
+        getProgram) {
       var context;
       var prefix = path === '' ? '' : path + '.';
       if (getSelfC === 'self') {
@@ -444,24 +447,20 @@ var scanning;  // exports
         toDetailsString: function() {
           return (
               '| Path:     ' + path + '\n' +
-              '| Program:  ' + context.getProgram() + '\n' +
+              '| Program:  ' + getProgram() + '\n' +
               '| toString: ' + safeToString(object));
         },
         get: function() { return object; },
         getPath: function() { return path; },
         getDepth: function() { return depth; },
-        getter: function(name, desc, getter) {
+        getter: function(name, getter) {
           function getterProgram() {
-            return {
-              thisArg: desc,
-              src: 'Object.getOwnPropertyDescriptor(' +
-                  context.getProgram() + ', "' + name + '").get'
-            };
+            return 'Object.getOwnPropertyDescriptor(' +
+                context.getProgram() + ', "' + name + '").get';
           }
           getterProgram.invocationShortcut = function() {
             return context.getProgram() + '.' + name;
           };
-          getterProgram.invocationShortcut.implicitThis = context.get();
           return makeContext(
               getter,
               prefix + 'get ' + name,
@@ -470,7 +469,7 @@ var scanning;  // exports
               getSelfC,
               getterProgram);
         },
-        setter: function(name, desc, setter) {
+        setter: function(name, setter) {
           return makeContext(
               setter,
               prefix + 'set ' + name,
@@ -478,11 +477,8 @@ var scanning;  // exports
               'self',
               getSelfC,
               function() {
-                return {
-                  thisArg: desc,
-                  src: 'Object.getOwnPropertyDescriptor(' +
-                      context.getProgram() + ', "' + name + '").set'
-                };
+                return 'Object.getOwnPropertyDescriptor(' +
+                    context.getProgram() + ', "' + name + '").set';
               });
         },
         property: function(p, pval, obtainInstance) {
@@ -507,11 +503,8 @@ var scanning;  // exports
                       });
                 },
                 getSelfC,
-                function getProgramInfoOfPrototypeObject() {
-                  return {
-                    thisArg: pval,
-                    src: context.getProgram() + '.prototype'
-                  };
+                function() {
+                  return context.getProgram() + '.prototype';
                 });
             return protoctx;
           } else if (p === '[[Prototype]]') {
@@ -522,10 +515,7 @@ var scanning;  // exports
                 getSelfC,
                 function() { return noThisContext; },
                 function() {
-                  return {
-                    thisArg: pval,
-                    src: 'Object.getPrototypeOf(' + context.getProgram() + ')'
-                  };
+                  return 'Object.getPrototypeOf(' + context.getProgram() + ')';
                 });
           } else {
             return makeContext(
@@ -535,71 +525,37 @@ var scanning;  // exports
                 'self',
                 getSelfC,
                 function() {
-                  var src;
                   if (/^[a-z_]\w*$/i.test(p)) {
-                    src = context.getProgram() + '.' + p;
-                  } else {
-                    if (/^-?[0-9]+$/.test(p)) {
-                      p = parseInt(p);
-                    }
-                    src = context.getProgram() + '[' + JSON.stringify(p) + ']';
+                    return context.getProgram() + '.' + p;
+                  } else if (/^-?[0-9]+$/.test(p)) {
+                    p = parseInt(p);
                   }
-                  return {
-                    thisArg: pval,
-                    src: src
-                  };
+                  return context.getProgram() + '[' + JSON.stringify(p) + ']';
                 });
           }
         },
-        invocation: function(ival, thisArgSpec, args, thrown) {
-          var thisArgStr;
-          switch (thisArgSpec) {
-            case CONSTRUCT: thisArgStr = 'CONSTRUCT'; break;
-            case THIS: thisArgStr = 'THIS'; break;
-            case PLAIN_CALL: thisArgStr = 'PLAIN'; break;
-            default: thisArgStr = String(thisArgSpec); break;
-          }
-          var callStr = '<' + thisArgStr + '>(' + args.map(printNamedly) + ')';
+        invocation: function(ival, argstr, thrown) {
           return makeContext(
               ival,
-              path + callStr + (thrown ? ' thrown ' : ''),
+              path + argstr + (thrown ? ' thrown ' : ''),
               depth + 1,
               'self',
               getSelfC,
               function() {
-                var argsStr = args.map(printEvaluatably);
-                var functionInfo = getProgramInfo();
-                var program;
-                if ('invocationShortcut' in getProgramInfo &&
-                    thisArgSpec === THIS &&
-                    context.getThisArg() ===
-                        getProgramInfo.invocationShortcut.implicitThis &&
-                    args.length === 0) {
-                  program = getProgramInfo.invocationShortcut();
-                } else if (thisArgSpec === CONSTRUCT) {
-                  program = 'new (' + functionInfo.src + ')(' + argsStr + ')';
-                } else if (thisArgSpec === THIS &&
-                      context.getThisArg() === functionInfo.thisArg) {
-                  program = functionInfo.src + '(' + argsStr + ')';
-                } else if (thisArgSpec === PLAIN_CALL) {
-                  program = '(0,' + functionInfo.src + ')(' + argsStr + ')';
-                } else {
-                  program = functionInfo.src + '.call(' +
-                      printEvaluatably(thisArgSpec) + ', ' + argsStr + ')';
-                }
                 if (thrown) {
-                  program = '(function(){try{ ' + program +
-                      ' }catch(e){return e}}())';
+                  return 'thrown(' + context.getProgram() +
+                      ', ...)';
+                } else if ('invocationShortcut' in context.getProgram) {
+                  // TODO(kpreid): check args once that is formalized
+                  return context.getProgram.invocationShortcut();
+                } else {
+                  return context.getProgram() + '.call(...)';
                 }
-                return {
-                  thisArg: undefined,
-                  src: program
-                };
               });
         },
         getThisArg: function() { return getThisArgC().get(); },
         /** Return a program which evaluates to the object. */
-        getProgram: function() { return getProgramInfo().src; }
+        getProgram: getProgram
       };
       return context;
     }
@@ -609,7 +565,7 @@ var scanning;  // exports
         'self',
         0,
         function() { return noThisContext; },
-        function() { return { thisArg: undefined, src: 'undefined' }; });
+        function() { return 'undefined'; });
 
     return {
       root: function(o, path, code) {
@@ -619,7 +575,7 @@ var scanning;  // exports
             0,
             'self',
             function() { return noThisContext; },
-            function() { return { thisArg: undefined, src: code }; });
+            function() { return code; });
       }
     };
   })();
@@ -777,8 +733,7 @@ var scanning;  // exports
           var didPlainCall = false;
 
           var doInvocation = function(tuple) {
-            var thisArgSpec = tuple[0];
-            var thisArg = thisArgSpec;
+            var thisArg = tuple[0];
             var args = tuple[1];
             var hook = tuple[2];
             if (tuple.length < 2 || tuple.length > 3 ||
@@ -788,8 +743,10 @@ var scanning;  // exports
                   '\n' + context.toDetailsString());
             }
             var result;
+            var thisArgStr = '<' + thisArg + '>';
             var thrown;
             if (thisArg === CONSTRUCT) {
+              thisArgStr = '<CONSTRUCT>';
               try {
                 switch (args.length) {
                   case 0: result = new object(); break;
@@ -810,6 +767,7 @@ var scanning;  // exports
                 thrown = true;
               }
             } else if (thisArg === PLAIN_CALL) {
+              thisArgStr = '<PLAIN>';
               didPlainCall = true;
               // Do a plain function call, literally, with no call/apply
               try {
@@ -822,6 +780,7 @@ var scanning;  // exports
             } else {
               if (thisArg === THIS) {
                 thisArg = context.getThisArg();
+                thisArgStr = '<THIS>';
               }
               try {
                 result = Function.prototype.apply.call(object, thisArg, args);
@@ -833,9 +792,10 @@ var scanning;  // exports
             }
             didSomeCall = true;
             didNonThrowingCall = didNonThrowingCall || !thrown;
-            // TODO(kpreid): Should pass in real thisArg, maybe in a context
-            var subcontext = context.invocation(
-                  result, thisArgSpec, args, thrown);
+            // TODO(kpreid): Make these live objects instead of strings, so that
+            // we can print clearer paths and more complete programs.
+            var subcontext = context.invocation(result, thisArgStr + '(' +
+                args.map(printNamedly) + ')', thrown);
             if (hook) {
               // TODO(kpreid): Context should include thrown flag
               hook(subcontext, thrown);
@@ -914,10 +874,10 @@ var scanning;  // exports
             queue(context.property(name, v, obtainInstance), last);
           }
           if ((v = desc.get)) {
-            queue(context.getter(name, desc, v), last);
+            queue(context.getter(name, v), last);
           }
           if ((v = desc.set)) {
-            queue(context.setter(name, desc, v), last);
+            queue(context.setter(name, v), last);
           }
         }
         var ownPropertyNames;
@@ -939,7 +899,9 @@ var scanning;  // exports
           if (desc) { recurse(name, desc); }
         });
         var prototype = Object.getPrototypeOf(object);
-        recurse('[[Prototype]]', {value: prototype});
+        if (!isToxicFunction(prototype)) {
+          recurse('[[Prototype]]', {value: prototype});
+        }
         if (problematicProps.length) {
           problematicProps.sort();
           noteProblem('Properties are ' +
@@ -998,7 +960,7 @@ var scanning;  // exports
       finished(problemCount, gapCount, totalDone);
     }
   }
-
+  
   scanning = Object.freeze({
     // Scanner and needed supporting components
     Scanner: Scanner,

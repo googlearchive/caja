@@ -19,6 +19,7 @@ import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.scope.ScopeType;
+import com.google.caja.parser.quasiliteral.Rewriter;
 import com.google.caja.parser.quasiliteral.Scope;
 import com.google.caja.reporting.MessageQueue;
 import com.google.common.collect.Lists;
@@ -63,7 +64,7 @@ final class ScopeInfo {
 
   ScopeInfo(Block program, MessageQueue mq) {
     this(new ScopeInfo(),
-        Scope.fromProgram(program, mq));
+        Scope.fromProgram(program, new Rewriter(mq, false, false)));
     // The global scope is infected since top level declarations
     // are aliased by members of the local scope.
     this.dynamicUsePossible = true;

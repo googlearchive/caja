@@ -68,17 +68,18 @@
     'var a = {}; a.wit\\u0068 = 44; ipc.result = a.wit\\u0068;', 44);
   });
 
-  // TODO(jasvir): Re-enable this test when unicode parsing upstream is
-  // supported.  Just this test is disabled rather than marking the entire
+  // TODO(jasvir): Re-enable this test in ES5 mode when unicode parsing upstream
+  // is supported.  Just this test is commented out rather than marking the entire
   // test with FailureIsAnOption to avoid spurious test failures being masked.
-  jsunitRegisterIf(false, 'testUnicode4', function() {
-      basicPassingTest('testUnicode4',
-    // Regex containing encoded characters (from jquery)
-    ''
-    + 'var ID = /#((?:[\\w\\u00c0-\\uFFFF\\-]|\\\\.)+)/;'
-    + 'ipc.result = "#\\u00610b\\u0200{}".match(ID)[1];'
-    , "a0b\u0200");
-  });
+  if (!inES5Mode) {
+    jsunitRegister('testUnicode4', function () { basicPassingTest('testUnicode4',
+      // Regex containing encoded characters (from jquery)
+      ''
+      + 'var ID = /#((?:[\\w\\u00c0-\\uFFFF\\-]|\\\\.)+)/;'
+      + 'ipc.result = "#\\u00610b\\u0200{}".match(ID)[1];'
+      , "a0b\u0200");
+    });
+  }
   jsunitRegister('testUnicode5', function () { basicPassingTest('testUnicode5',
     // Identifier with unencoded unicode character
     'var \u0100 = 46; ipc.result = \u0100;', 46);
@@ -89,7 +90,9 @@
   });
 
   // Encoded spaces are not allowed in identifiers
-  jsunitRegister('testUnicode7',
+  // Disabled in es53 because of
+  // https://code.google.com/p/google-caja/issues/detail?id=1621
+  jsunitRegisterIf(inES5Mode, 'testUnicode7',
     function testUnicode7() {
       basicFailingTest('testUnicode7',
         'var a\\u2009z = 48; ipc.result = a\\u2009z;');
@@ -97,7 +100,9 @@
   });
 
   // Unencoded spaces are not allowed in identifiers
-  jsunitRegister('testUnicode8',
+  // Disabled in es53 because of
+  // https://code.google.com/p/google-caja/issues/detail?id=1621
+  jsunitRegisterIf(inES5Mode, 'testUnicode8',
     function testUnicode8() {
       basicFailingTest('testUnicode8',
         'var a\u2009z = 49; ipc.result = a\u2009z;');

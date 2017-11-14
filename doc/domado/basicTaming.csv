@@ -1,0 +1,733 @@
+,,,,,,,
+,"Object/Property/Function","DirectUse?","ShutOff?","Wrapper Behavior?","New?","Only Powerbox?","Discussion"
+,,,,,,,
+,"Anchor.focus()",,"y",,,"y","The power to scroll the whole document is an important authority, we still need a mechanism for deciding when to grant this authority, but for now we shut it off and leave it to the powerbox to decide when to grant it."
+,"Anchor.name",,"y",,,"y","multiple anchors with the same name can yield spoofing. Problem is made harder by the fact that anchors are referenced from outside the document, so they act as coordination points for which name mangling is inappropriate. For the moment only allow the powerbox to deal with this. For the shutting off of anchor.name to work, the setInnerHTML filter must also remove anchors."
+,,,,,,,
+,"Attr.name",,"y",,,,"The Attr object is tamed out of existence. Use Element.get/setAttribute() instead."
+,"Attr.ownerElement",,"y",,,,
+,"Attr.specified",,"y",,,,
+,"Attr.value",,"y",,,,
+,,,,,,,
+,"Canvas.height","y",,,,,
+,"Canvas.width","y",,,,,
+,"Canvas.getContext()",,,"only ""2d"" valid",,,"someday ""3d"" is supposed to be valid. But we must reject that value until the 3d library it opens up is tamed."
+,"CanvasGradient.addColorStop()","y",,,,,
+,"CanvasPattern",,,,,,"No functions or properties"
+,"CanvasRenderingContext2D.canvas",,"y",,,,"The canvas embodies read authority on the drawing -- you can send a canvas to drawImage(). This is excess authority for someone granted only the renderingcontext. If you need the canvas, odds are it is easy for you to acquire."
+,"CanvasRenderingContext2D.fillStyle",,,"css string color value or a valid object (such as a pattern)",,,
+,"CanvasRenderingContext2D.globalAlpha","y",,,,,
+,"CanvasRenderingContext2D.globalCompositeOperation","y",,"validate for copy, darker, destination-atop, destination-in, destination-out, destination-over, lighter, source-atop, source-in, source-out, source-over, xor",,,
+,"CanvasRenderingContext2D.lineCap",,,"validate for ""butt"", ""round, ""square""",,,
+,"CanvasRenderingContext2D.lineJoin",,,"validate for ""round"", ""bevel"", ""miter""",,,
+,"CanvasRenderingContext2D.lineWidth","y",,,,,
+,"CanvasRenderingContext2D.miterLimit","y",,,,,
+,"CanvasRenderingContext2D.shadowBlur","y",,,,,
+,"CanvasRenderingContext2D.shadowColor","y",,,,,
+,"CanvasRenderingContext2D.shadowOffsetX","y",,,,,
+,"CanvasRenderingContext2D.shadowOffsetY","y",,,,,
+,"CanvasRenderingContext2D.strokeStyle",,,"validate as css string or one of the types of valid objects",,,
+,"CanvasRenderingContext2D.arc()","y",,,,,
+,"CanvasRenderingContext2DarcTo()","y",,,,,
+,"CanvasRenderingContext2D.beginPath()","y",,,,,
+,"CanvasRenderingContext2D.bezierCurveTo()","y",,,,,
+,"CanvasRenderingContext2D.clearRect()","y",,,,,
+,"CanvasRenderingContext2D.clip()","y",,,,,
+,"CanvasRenderingContext2D.closePath()","y",,,,,
+,"CanvasRenderingContext2D.createLinearGradient()","y",,,,,
+,"CanvasRenderingContext2D.createPattern()",,,"repetition style validate to repeat, repeat-x, repeat-y, no-repeat",,,
+,"CanvasRenderingContext2D.createRadialGradient()","y",,,,,
+,"CanvasRenderingContext2D.drawImage()","y",,,,,
+,"CanvasRenderingContext2D.fill()","y",,,,,
+,"CanvasRenderingContext2D.fillRect()","y",,,,,
+,"CanvasRenderingContext2D.lineTo()","y",,,,,
+,"CanvasRenderingContext2D.moveTo()","y",,,,,
+,"CanvasRenderingContext2D.quadraticCurveTo()","y",,,,,
+,"CanvasRenderingContext2D.rect()","y",,,,,
+,"CanvasRenderingContext2D.restore()","y",,,,,"restore and save are in a local stack for this one canvas. It has no outside effects or sharing issues"
+,"CanvasRenderingContext2D.rotate()","y",,,,,
+,"CanvasRenderingContext2D.save()","y",,,,,
+,"CanvasRenderingContext2D.scale()","y",,,,,
+,"CanvasRenderingContext2D.stroke()","y",,,,,
+,"CanvasRenderingContext2D.strokeRect()","y",,,,,
+,"CanvasRenderingContext2D.translate()","y",,,,,
+,,,,,,,
+,,,,,,,
+,"Object/Property/Function","DirectUse?","ShutOff?","Wrapper Behavior?","New?","Only Powerbox?","Discussion"
+,,,,,,,
+,,,,,,,
+,"CDataSection",,,,,,"Has no functions or properties. Do not allow construction of Cdata Sections; they have different behavior embedding angle brackets and other HTML than does the CharacterData superclass. "
+,"CharacterData.data",,,"sanitize data to pure text",,,
+,"CharacterData.length","y",,,,,
+,"CharacterData.appendData()",,,"sanitize to pure text",,,
+,"CharacterData.deleteData()","y",,,,,
+,"CharacterData.insertData()",,,"sanitize to pure text",,,
+,"CharacterData.replaceData()",,,"sanitize to pure text",,,
+,"CharacterData.substringData()","y",,,,,
+,"CSS2Properties.cssText",,,"Will this properly throw an illegal css string? If not, must analyze syntax to ensure it is proper css",,,
+,"CSS2Properties.*","y",,,,,"assumes this will follow the documentation description and throw and exception if ill-formed css strings are input"
+,,,,,,,
+,"CSSRule.selectorText","y",,,,,
+,"CSSRule.style","y",,,,,
+,"CSSStyleSheet.cssRules","y",,,,,"see security issues and algorithm for css style rules in the Appendix."
+,"CSSStyleSheet.disabled","y",,,,,
+,"CSSStyleSheet.href","y",,,,,
+,"CSSStyleSheet.parentStyleSheet",,"y",,,,
+,"CSSStyleSheet.rules","y",,,,,
+,"CSSStyleSheet.title","y",,,,,
+,"CSSStyleSheet.type","y",,,,,
+,"CSSStyleSheet.addRule()",,,"the selector must be sanitized to pure text. The style must be valid css text",,,
+,"CSSStyleSheet.deleteRule()","y",,,,,
+,"CSSStyleSheet.insertRule()",,,"Will this properly throw an illegal css string?",,,
+,"CSSStyleSheet.removeRule()","y",,,,,
+,,,,,,,
+,"Document.defaultView",,"y",,,,"It is tempting to just leave the Document object untamed, since the main document should be protected by never being handed to a caja object. It is also tempting to observe that there are a number of convenience functions, so perhaps we should tame away everything except the convenience functions, so those conveniences can be easily given out. But the important question is, might a caja object ever have access to a document that is not the primary document being protected, i.e., might a caja object ever have a private document? if the answer is Yes, then the correct taming is to enable the document to retain all the methods pertaining to the document, while taming away powers in excess of that. The authority to reach a window is just such an authority that is excess."
+,"Document.doctype",,"y",,,,"for HTML, this is null. We are only doing HTML, don't need this, remove it."
+,"Document.documentElement","y",,,,,
+,"Document.implementation",,"y",,,,"gives the authority to create another document, which is excess"
+,"Document.stylesheets","y",,,,,
+,"Document.addEventListener()","y",,,,,
+,"Document.attachEvent()","y",,,,,
+,"Document.createAttribute()",,"y",,,,"use Element.set/getElement"
+,"Document.createAttributeNS()",,"y",,,,
+,"Document.createCDATASection()",,"y",,,,
+,"Document.createComment()",,"y",,,,
+,"Document.createDocumentFragment()","y",,,,,
+,"Document.createElement()","y",,,,,
+,"Document.createElementNS()",,"y",,,,"no XML"
+,"Document.createEvent()",,"y",,,,"We need to understand this better. Is it reasonable for the person who owns a document to create synthetic events? Is it important? Could be used to pretend to be user. Recommendations: let us shut it off unless it proves important."
+,"Document.createExpression()",,"y",,,,"no XML"
+,"Document.createProcessingInstruction()",,"y",,,,"no XML"
+,"Document.createRange()",,"y",,,,"The standard createRange is useless because the ability to set the range after being constructed had to be rendered harmless. Instead, see the new createRange(start, end) function listed next"
+,"Document.createRange(start, end)",,,,"y",,"When the holder of a document object creates a range, one feeds in the start and end nodes as part of the initialization.You can then hand this range out. CreateRange(start, stop) has also been added to Node, for the majority of modules that do not have document access."
+,"Document.createTextNode()","y",,,,,
+,"Document.detachEvent()","y",,,,,
+,"Document.dispatchEvent()",,"y",,,,"This is a tremendous power for pretending to be the user, generating synthetic events. For a document holder, this is ok, but shut off the Element version of this, and give the powerbox holder a mechanism for manufacturing safer event dispatchers that can be conveyed to modules"
+,"Document.evaluate()",,"y",,,,"no XML"
+,"Document.getElementById()",,"y",,,,"Use document.documentElement.getElementById. There is no identified attack if document.getElementById is used directly, but the analysis is complicated enough, do not turn on unless needed."
+,"Document.getElementsByTagName()","y",,,,,
+,"Document.getElementsByTagNameNS()",,"y",,,,"no XML"
+,"Document.importNode()","y",,,,,
+,"Document.loadXML()",,"y",,,,
+,"Document.removeEventListener()","y",,,,,
+,,,,,,,
+,,,,,,,
+,"Object/Property/Function","DirectUse?","ShutOff?","Wrapper Behavior?","New?","Only Powerbox?","Discussion"
+,,,,,,,
+,"DocumentFragment",,,,,,"no functions or properties"
+,"DocumentType.internalSubset",,"y",,,,"no XML"
+,"DocumentType.name",,"y",,,,
+,"DocumentType.publicId",,"y",,,,
+,"DocumentType.systemId",,"y",,,,
+,,,,,,,
+,"DOMException.code",,,"can read but cannot write, i.e., cannot modify the code of an existing exception",,,
+,"DOMImplementation.createDocument()",,,"set namespaceURI=null, qualifiedName must be sanitized to pure text, doctype=null",,,
+,"DOMImplementation.createDocumentType()",,"y",,,,"no XML"
+,"DOMImplementation.hasFeature()",,,"validate feature name to Core, HTML, StyleSheets, CSS, CSS2, Events, UIEvents, MouseEvents, HTMLEvents, MutationEvents, Range, Traversal, Views. Validate version to 1.0, 2.0, null, """".",,,
+,"DOMParser.parseFromString()",,"y",,,,"no XML. Do people use this to receive data? Having tamed the Document object to allow functional private docs, turning this back on should be safe if people use it"
+,"Element.tagname","y",,,,,
+,"Element.addEventListener()",,,"the event type must be validated. Coerce to pure text. ",,,"The API allows creation of new event types, which is irrelevant in this taming analysis because synthetic events have been abolished. "
+,"Element.attachEvent()",,,"event type must be validated. Coerce to pure text.",,,
+,"Element.detachEvent()",,,"event type must be validated. Coerce to pure text.",,,
+,"Element.dispatchEvent()",,"y",,,,"replace with caja.makeEventDispatcher"
+,"Element.getAttribute()","y",,,,,
+,"Element.getAttributeNS()",,"y",,,,
+,"Element.getAttributeNode()",,"y",,,,
+,"Element.getAttributeNodeNS()",,"y",,,,
+,"Element.getElementsByTagName()","y",,,,,
+,"Element.getElementsByTagNameNS()",,"y",,,,
+,"Element.hasAttribute()","y",,,,,
+,"Element.hasAttributeNS()",,"y",,,,
+,"Element.removeAttribute()","y",,,,,
+,"Element.removeAttributeNode()",,"y",,,,
+,"Element.removeAttributeNS()",,"y",,,,
+,"Element.removeEventListener()",,,"event type must be validated.Coerce to pure text.",,,
+,"Element.setAttribute()",,,"sanitize value to pure text",,,
+,"Element.setAttributeNode()",,"y",,,,
+,"Element.setAttributeNodeNS()",,"y",,,,
+,"Element.setAttributeNS()",,"y",,,,
+,,,,,,,
+,"Event",,,,,,"Notification of each event listener is placed separately on the event queue. Stopping propagation causes the object managing the placement of listeners on the event queue to stop queuing."
+,"Event.bubbles","y",,,,,
+,"Event.cancelable","y",,,,,
+,"Event.currentTarget",,"y",,,,
+,"Event.eventPhase","y",,,,,
+,"Event.target",,"y",,,,
+,"Event.timeStamp","y",,,,,
+,"Event.type","y",,,,,
+,"Event.altKey",,,"readonly",,,
+,"Event.button",,,"readonly",,,
+,"Event.cancelBubble","y",,,,,
+,"Event.clientX",,,"readonly",,,
+,"Event.clientY",,,"readonly",,,
+,"Event.ctrlKey",,,"readonly",,,
+,"Event.fromElement",,"y",,,,
+,"Event.keyCode",,,"readonly",,,
+,"Event.offsetX",,,"readonly",,,
+,"Event.offsetY",,,"readonly",,,
+,"Event.returnValue","y",,,,,
+,"Event.screenX",,,"readonly",,,
+,"Event.screenY",,,"readonly",,,
+,"Event.shiftKey",,,"readonly",,,
+,"Event.srcElement",,"y",,,,
+,"Event.toElement",,"y",,,,
+,"Event.type",,,"readonly",,,
+,"Event.x",,,"readonly",,,
+,"Event.y",,,"readonly",,,
+,"Event.initEvent",,"y","event type must be validated against a list of built-in event types. Always set can Bubble to false.",,,"Events with names of your own choosing? If this is to be supported, the validations for the other event functions need to be re-assessed. Such custom events cannot be triggered without synthetic event dispatching, which would strongly reduce the utility anyway in a caja context. Here, we recommend shutting off the ability to do custom event handlers. What does bubbling do? Sounds like a possibly surprising avenue of communication. Shut off until further examination shows it to be safe. Since synthetic events are shut off in this version of the taming, initEvent cannot be properly used anyway."
+,"Event.preventDefault()","y",,,,,
+,"Event.stopPropagation()","y",,,,,"will it cause programmer surprise to have things propagate or to not propagate? Given that in JavaScript, stopping propagation is possible, it seems a little less surprising that propagation can be stopped. So leave this turned on."
+,"Event.sealedTarget()",,,,"y",,"returns a sealed version of Event.target, which can be unsealed using node.unseal(sealedChildNode)"
+,"Event.sealedSrcElement()",,,,"y",,"returns a sealed version of Event.srcElement, which can be unsealed using node.unseal(sealedChildNode)"
+,"Event.sealedToElement()",,,,"y",,"returns a sealed version of Event.toElement, which can be unsealed using node.unseal(sealedChildNode)"
+,"Event.sealedFromElement()",,,,"y",,"returns a sealed version of Event.fromElement, which can be unsealed using node.unseal(sealedChildNode)"
+,"Event.sealedCurrentTarget()",,,,"y",,"returns a sealed version of Event.currentTarget, which can be unsealed using node.unseal(sealedChildNode)"
+,"Event.focusOnce(node)",,,,"y",,"Supplies a one-time-only authority, revoked at the end of the event, to move focus to a node, using the algorithm described in powerbox.makeFocusManager"
+,,,,,,,
+,,,,,,,
+,"Object/Property/Function","DirectUse?","ShutOff?","Wrapper Behavior?","New?","Only Powerbox?","Discussion"
+,,,,,,,
+,"ExternalInterface.addCallBack()",,"y",,,,"if you interface to actionscript, security results are non-determinable."
+,"ExternalInterface.call()",,"y",,,,
+,,,,,,,
+,"FlashPlayer.*",,"y",,,,"interface to flash yields non-determinable security consequences"
+,,,,,,,
+,"Form.acceptCharset",,,"readonly",,,"Form is the original powerful mechanism for stealing data and authority. It would seem we have to deny by default the creation of Forms. The sanitizer for innerHTML must scrub any attempt to write a form tag. See powerbox.makeTransmitterMaker()"
+,"Form.elements","y",,,,,
+,"Form.length","y",,,,,
+,"Form.action",,,"readonly",,,
+,"Form.enctype",,,"readonly",,,
+,"Form.method",,,"readonly",,,
+,"Form.name",,,"readonly",,,
+,"Form.target",,,"readonly",,,
+,"Form.reset()","y",,,,,
+,"Form.submit()","y",,,,,
+,"Form.onreset","y",,,,,
+,"Form.onsubmit","y",,,,,
+,"Form.setTabIndex(element, index)",,,,"y",,"If the specified element is a part of the form, this method sets the tabIndex of the element. Replaces the editable selectedIndex property on the element"
+,,,,,,,
+,,,,,,,
+,"Frame.*",,,,,,"Disallow creation and interaction with frames. Use Iframes if necessary. See powerbox.makeIFrameMaker"
+,,,,,,,
+,"History.back()","y",,,,,
+,"History.forward()","y",,,,,
+,"History.go()",,,"accept only integers, not strings",,,
+,,,,,,,
+,"HTMLCollection.length","y",,,,,
+,"HTMLCollection.item()","y",,,,,
+,"HTMLCollection.namedItem()","y",,,,,"Do we need to supply a variant of namedItem that will search for names with module suffixes (from getElementbyId)? I think not, but it is worth watching for counterexamples."
+,,,,,,,
+,"HTMLDocument.all",,"y",,,,"According to O'Reilly javascript Definitive Guide Edition 5, this is superceded. Turning it on if required should not be an issue."
+,"HTMLDocument.anchors","y",,,,,
+,"HTMLDocument.applets",,"y",,,,"If there are applets, the security consequences are undetermined."
+,"HTMLDocument.body","y",,,,,
+,"HTMLDocument.cookie","y",,,,,
+,"HTMLDocument.domain",,,"readonly",,,"Before allowing this to be edited to do the traditional relaxing of the domain policy, incessantly investigate explicit authorization strategies. In principle, setting this should be useless to the module anyway, because the module can't reach out and touch any domain at all without an explicit authorization. "
+,"HTMLDocument.forms","y",,,,,
+,"HTMLDocument.images","y",,,,,
+,"HTMLDocument.lastModified","y",,,,,
+,"HTMLDocument.links","y",,,,,
+,"HTMLDocument.referrer",,"y",,,,"Just because you have the document, you do not necessarily deserve the authority to know where the user came from."
+,"HTMLDocument.title","y",,,,,
+,"HTMLDocument.URL","y",,,,,
+,"HTMLDocument.close()",,"y",,,,
+,"HTMLDocument.getElementsByName()","y",,,,,
+,"HTMLDocument.open()",,"y",,,,
+,"HTMLDocument.write()",,"y",,,,"Ensuring that only sanitized html is written with write(), in all the corner cases, is so complex that it represents a security risk just because of the complexity."
+,"HTMLDocument.writeln()",,"y",,,,
+,,,,,,,
+,,,,,,,
+,"Object/Property/Function","DirectUse?","ShutOff?","Wrapper Behavior?","New?","Only Powerbox?","Discussion"
+,,,,,,,
+,"HTMLElement.className",,,"the class must be rewritten according to the algorithm described in the Appendix",,,
+,"HTMLElement.currentStyle",,,"readonly. If the element is an anchor, the CSS2Properties object returned by this shall not include the color specification ",,,"The color informatin must be stripped to prevent leak of the information on where the user has browsed)."
+,"HTMLElement.dir","y",,,,,
+,"HTMLElement.id",,,"the id must be written and stripped with module namespace information concatenated, as described in the Appendix.",,,
+,"HTMLElement.innerHTML",,,"The HTML must be stripped to be safe. This includes correcting ids and classes and anchors according to the rules described in the Appendix.",,,
+,"HTMLElement.lang","y",,,,,
+,"HTMLElement.offsetHeight","y",,,,,
+,"HTMLElement.offsetWidth","y",,,,,
+,"HTMLElement.offsetLeft","y",,,,,
+,"HTMLElement.offsetTop","y",,,,,
+,"HTMLElement.offsetParent",,"y",,,,"any access to a parent, especially when the parent may be the document, as is common with this, must be forbidden."
+,"HTMLElement.scrollHeight","y",,,,,
+,"HTMLElement.scrollWidth","y",,,,,
+,"HTMLElement.scrollLeft","y",,,,,
+,"HTMLElement.scrollTop","y",,,,,
+,"HTMLElement.style","y",,,,,
+,"HTMLElement.title","y",,,,,
+,"HTMLElement.scrollIntoView",,"y",,,,"needs a solution just as anchor.focus() needs a solution. See powerbox.makeFocusManager"
+,"HTMLElement.onclick","y",,,,,
+,"HTMLElement.ondblclick","y",,,,,
+,"HTMLElement.onkeydown","y",,,,,
+,"HTMLElement.onkeypress","y",,,,,
+,"HTMLElement.onkeyup","y",,,,,
+,"HTMLElement.onmousedown","y",,,,,
+,"HTMLElement.onmousemove","y",,,,,
+,"HTMLElement.onmouseout","y",,,,,
+,"HTMLElement.onmouseover","y",,,,,
+,"HTMLElement.onmouseup","y",,,,,
+,,,,,,,
+,"IFrame",,,,,,"If a module can set src on an iframe, he can communicate with a site of his choosing. Furthermore, if the module holds an Iframe reference, he can get the contentDocument, making it a 2-way comm system. See powerbox.makeIFrameMaker."
+,"IFrame.contentDocument","y",,,,,
+,"IFrame.src",,"y",,,,"see powerbox.makeIFrameMaker"
+,"IFrame.align",,"y",,,,"deprecated"
+,"IFrame.frameBorder",,,"valid values only",,,
+,"IFrame.height",,,"valid values: numbers, percents",,,
+,"IFrame.longDesc",,"y",,,,"could be used for communication"
+,"IFrame.marginHeight",,,"valid values: numbers, percents",,,
+,"IFrame.marginWidth",,,"valid values: numbers, percents",,,
+,"IFrame.name",,"y",,,,"enables complex namespace problems"
+,"IFrame.scrolling",,,"valid values: auto, yes, no",,,
+,"IFrame.width",,,"valid values: numbers, percents",,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,"Object/Property/Function","DirectUse?","ShutOff?","Wrapper Behavior?","New?","Only Powerbox?","Discussion"
+,,,,,,,
+,,,,,,,
+,"Image.newImage()","y",,,,,
+,"Image.name",,"y",,,,"Use the id for identifying these objects; the ids are already well-handled in caja"
+,"Image.src",,"y",,,,"I believe that images allow 2-way communication. Construction of image objects is now in the powerbox.DomainSendReceiver "
+,"Image.align",,"y",,,,"deprecated"
+,"Image.alt","y",,,,,
+,"Image.border",,"y",,,,"deprecated"
+,"Image.height","y",,,,,
+,"Image.hspace",,"y",,,,"deprecated"
+,"Image.isMap",,"y",,,,"what are the security implications of this?"
+,"Image.longDesc",,"y",,,,"Looks like this is another uri field that will communicate with the outside to fetch a value"
+,"Image.useMap",,"y",,,,"what are the security implications of this?"
+,"Image.vspace",,"y",,,,"deprecated"
+,"Image.width","y",,,,,
+,"Image.onabort","y",,,,,
+,"Image.onerror","y",,,,,
+,"Image.onload","y",,,,,
+,,,,,,,
+,"Input.accept","y",,,,,
+,"Input.accessKey",,"y",,,,"can be used to highjack user behavior from another module"
+,"Input.align",,"y",,,,"deprecated"
+,"Input.alt","y",,,,,
+,"Input.checked","y",,,,,
+,"Input.defaultChecked","y",,,,,
+,"Input.defaultValue","y",,,,,
+,"Input.disabled","y",,,,,
+,"Input.form","y",,,,,
+,"Input.maxLength","y",,,,,
+,"Input.name","y",,,,,
+,"Input.readOnly","y",,,,,
+,"Input.size","y",,,,,
+,"Input.src",,"y",,,,"can be used for external comm."
+,"Input.tabIndex",,"y",,,,"can be used for hijacking"
+,"Input.type",,,"validate for good value: button, checkbox, file, hidden, password, radio, reset, submit, text. Note that ""image"" is not considered valid value here.",,,"Image can comm. If we need to allow image types of input fields, they can be added to the powerbox.DomainSendReceiver's list of objects. There is an interesting question with submit types: should they be allowed? The submit type is not dangerous unless it is part of a form and we disallow manufacture of form nodes except via the powerbox. Current answer: allow ambient construction of submit type inputs, depend on controlling form objects for security. "
+,"Input.useMap",,"y",,,,"can this comm?"
+,"Input.value","y",,,,,
+,"Input.blur()","y",,,,,
+,"Input.click()",,"y",,,,"you can always call the onclick handler explicitly if you have a reference to it, but you cannot synthesize human action without special authorization."
+,"Input.focus()",,"y",,,,
+,"Input.select()","y",,,,,
+,"Input.onblur","y",,,,,
+,"Input.onchange","y",,,,,
+,"Input.onclick","y",,,,,
+,"Input.onfocus","y",,,,,
+,,,,,,,
+,"JSObject.call()",,"y",,,,"Shut off the whole JSObject"
+,"JSObject.eval()",,"y",,,,
+,"JSObject.getMember()",,"y",,,,
+,"JSObject.getSlot()",,"y",,,,
+,"JSObject.getWindow()",,"y",,,,
+,"JSObject.removeMember()",,"y",,,,
+,"JSObject.setMember()",,"y",,,,
+,"JSObject.setSlot()",,"y",,,,
+,"JSObject.toString",,"y",,,,
+,,,,,,,
+,"KeyEvent.altKey","y",,,,,
+,"KeyEvent.charCode","y",,,,,
+,"KeyEvent.ctrlKey","y",,,,,
+,"KeyEvent.keyCode","y",,,,,
+,"KeyEvent.shiftKey","y",,,,,
+,,,,,,,
+,"Object/Property/Function","DirectUse?","ShutOff?","Wrapper Behavior?","New?","Only Powerbox?","Discussion"
+,,,,,,,
+,"Link.hash",,,"readonly",,,"Caja objects cannot directly make links with innerhtml or createelement calls. Can only create via a DomainTransmitter"
+,"Link.host",,,"readonly",,,
+,"Link.hostname",,,"readonly",,,
+,"Link.href",,,"readonly",,,
+,"Link.pathname",,,"readonly",,,
+,"Link.port",,,"readonly",,,
+,"Link.protocol",,,"readonly",,,
+,"Link.accessKey",,"y",,,,
+,"Link.charset",,,"readonly",,,
+,"Link.coords",,"y",,,,"???"
+,"Link.hreflang",,,"readonly",,,
+,"Link.name",,,"readonly",,,
+,"Link.rel",,,"readonly",,,
+,"Link.rev",,,"readonly",,,
+,"Link.shape",,,"readonly",,,
+,"Link.tabIndex",,,"readonly",,,
+,"Link.target",,,"readonly",,,
+,"Link.type",,,"readonly",,,
+,"Link.blur()","y",,,,,
+,"Link.focus()",,"y",,,,
+,"Link.onclick","y",,,,,
+,"Link.onmouseout","y",,,,,
+,"Link.onmouseover","y",,,,,
+,,,,,,,
+,"Location.hash",,,"readonly",,,"If a powerbox wants to give a caja object the power to change pages, it simply needs to create the trivial function changeLocation() and hand it over"
+,"Location.host",,,"readonly",,,
+,"Location.hostname",,,"readonly",,,
+,"Location.href",,,"readonly",,,
+,"Location.pathname",,,"readonly",,,
+,"Location.port",,,"readonly",,,
+,"Location.protocol",,,"readonly",,,
+,"Location.search",,,"readonly",,,
+,"Location.reload()","y",,,,,"if one has the location obj, it is a reasonable power to be able to reload. A caja object should only be able to get even this weakened location object from the powerbox"
+,"Location.replace()",,"y",,,,
+,,,,,,,
+,"MimeType.description","y",,,,,"These are all readonly according to the documentation"
+,"MimeType.enabledPlugin","y",,,,,
+,"MimeType.suffixes","y",,,,,
+,"MimeType.type","y",,,,,
+,,,,,,,
+,"MouseEvent.altKey","y",,,,,
+,"MouseEvent.button","y",,,,,
+,"MouseEvent.clientX","y",,,,,
+,"MouseEvent.clientY","y",,,,,
+,"MouseEvent.ctrlKey","y",,,,,
+,"MouseEvent.metaKey","y",,,,,
+,"MouseEvent.relatedTarget",,"y",,,,"see sealedRelatedTarget"
+,"MouseEvent.screenX","y",,,,,
+,"MouseEvent.screenY","y",,,,,
+,"MouseEvent.shiftKey","y",,,,,
+,"MouseEvent.initMouseEvent()",,,"typeArg must be a valid type, the relatedtargetArg must be null",,,"Creating mouse events should be done rarely; it appears useless unless one can dispatchEvent, which is a power one can only get from the powerbox"
+,"MouseEvent.sealedRelatedTarget()",,,,"y",,"returns the related target in a box that can be opened using Node.unseal(node)"
+,,,,,,,
+,,,,,,,
+,"Object/Property/Function","DirectUse?","ShutOff?","Wrapper Behavior?","New?","Only Powerbox?","Discussion"
+,,,,,,,
+,"Navigator.appCodeName","y",,,,,
+,"Navigator.appName","y",,,,,
+,"Navigator.appVersion","y",,,,,
+,"Navigator.cookieEnabled","y",,,,,
+,"Navigator.mimeTypes[]",,,"readonly",,,
+,"Navigator.platform","y",,,,,
+,"Navigator.plugins[]",,,"readonly",,,
+,"Navigator.userAgent","y",,,,,
+,"Navigator.javaEnabled()","y",,,,,
+,,,,,,,
+,"Node.attributes[]","y",,,,,
+,"Node.childNodes[]","y",,,,,
+,"Node.firstChild","y",,,,,
+,"Node.lastChild","y",,,,,
+,"Node.localName",,"y",,,,"no namespaces"
+,"Node.namespaceURI",,"y",,,,
+,"Node.nextSibling",,"y",,,,"gives reference to node outside the subtree"
+,"Node.nodeName","y",,,,,"says it is readonly"
+,"Node.nodeType","y",,,,,
+,"Node.nodeValue",,,"sanitize when writing to safe text",,,
+,"Node.ownerDocument",,"y",,,,"replaced with nodeCreator for node creation functions"
+,"Node.parentNode",,"y",,,,
+,"Node.prefix",,"y",,,,"no xml"
+,"Node.previousSibling",,"y",,,,
+,"Node.xml",,"y",,,,
+,"Node.appendChild()","y",,,,,
+,"Node.cloneNode()","y",,,,,"If opaque children are ever implemented, this will probably need to be modified with a wrapper that does not clone the opaque child."
+,"Node.hasAttributes()","y",,,,,
+,"Node.hasChildNodes()","y",,,,,
+,"Node.insertBefore()","y",,,,,
+,"Node.isSupported()",,,"validate feature name to Core, HTML, StyleSheets, CSS, CSS2, Events, UIEvents, MouseEvents, HTMLEvents, MutationEvents, Range, Traversal, Views. Validate version to 1.0, 2.0, null, """".",,,
+,"Node.normalize()","y",,,,,
+,"Node.removeChild()","y",,,,,
+,"Node.replaceChild()","y",,,,,
+,"Node.selectNodes()",,"y",,,,"no xpath"
+,"Node.selectSingleNode()",,"y",,,,"no xpath"
+,"Node.transformNode()",,"y",,,,"cannot allow xslt to manufacture things that do not conform to taming requirements"
+,"Node.transformNodeToObject()",,"y",,,,
+,"Node.nodeCreator",,,,"y",,"returns an object of type CajaNodeCreator as described below"
+,"Node.seal()",,,,"y",,"returns a sealed version of this node, which can be unsealed using node.unseal(sealedNode)"
+,"Node.unseal(sealedNode)",,,,"y",,"If the node receiving the unseal message is either the sealedNode or an ancestor of the sealed node (indicating that the recipient already has authority over the sealedNode), this returns the node that was sealed. Otherwise it returns null."
+,"Node.createRange(startChild, endChild)",,,,"y",,"creates a Range from the start node to the end node. The start and end nodes must both be children of the node upon which this function was invoked."
+,"Node.getElementById(id)",,,,"y",,"Searches the subtree for which this node is the root, looking for the id. If there is a single match, return it. If there are multiple matches, throw an exception."
+,"Node.getElementsById(id)",,,,"y",,"Searches the subtree for which this node is the root, looking for the id. Returns an array of all the nodes with this id"
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,"NodeList.length","y",,,,,
+,"NodeList.item()","y",,,,,
+,"NodeList.unseal(sealedNode)",,,,"y",,"If the node sealed in the sealedNode is in the subtree of any of the nodes of the nodeList, return the node."
+,,,,,,,
+,,,,,,,
+,"Option.text",,,"sanitize to pure text",,,
+,"Option.value",,,"sanitize to pure text",,,
+,"Option.defaultSelected","y",,,,,
+,"Option.selected","y",,,,,
+,"Option.disabled","y",,,,,
+,"Option.HTMLFormElement",,"y",,,,"gives access to form parent"
+,"Option.index","y",,,,,
+,"Option.label",,,"sanitize to pure text",,,
+,,,,,,,
+,"Plugin.description","y",,,,,
+,"Plugin.filename","y",,,,,
+,"Plugin.length","y",,,,,
+,"Plugin.name","y",,,,,
+,,,,,,,
+,"ProcessingInstruction.*",,"y",,,,"no xml"
+,,,,,,,
+,"Object/Property/Function","DirectUse?","ShutOff?","Wrapper Behavior?","New?","Only Powerbox?","Discussion"
+,,,,,,,
+,"Range.collapsed","y",,,,,
+,"Range.commonAncestorContainer",,"y",,,,"Could be used to acquire a parent that has not been explicitly authorized."
+,"Range.endContainer","y",,,,,
+,"Range.endOffset","y",,,,,
+,"Range.startContainer","y",,,,,
+,"Range.startOffset","y",,,,,
+,"Range.cloneContents()","y",,,,,
+,"Range.cloneRange()","y",,,,,
+,"Range.collapse()","y",,,,,
+,"Range.compareBoundaryPoints()","y",,,,,
+,"Range.deleteContents()","y",,,,,
+,"Range.detach()","y",,,,,
+,"Range.extractContents()","y",,,,,
+,"Range.insertNode()","y",,,,,
+,"Range.selectNode()",,"y",,,,"Using selectNode sets the range to a node subtree. In caja, just pass the node instead"
+,"Range.selectNodeContents()",,"y",,,,"Just pass the list of nodes instead"
+,"Range.setEnd()",,"y",,,,"All the setEnd/setStart functions could be used to capture non-explicitly-authorized nodes that lie between two explicitly-granted nodes. This could be a shocking surprise to the grantors."
+,"Range.setEndAfter()",,"y",,,,
+,"Range.setEndBefore()",,"y",,,,
+,"Range.setStart()",,"y",,,,
+,"Range.setStartAfter()",,"y",,,,
+,"Range.setStartBefore()",,"y",,,,
+,"Range.surroundContents()",,"y",,,,"This modifies the parent of the range, because the parent no longer points directly at the previous children. Is this a breachable surprise? I have not yet identified a threat risk. I have shut it off, but am inclined to believe it could be turned on if needed."
+,"Range.toString()","y",,,,,
+,,,,,,,
+,"RangeException.code","y",,,,,
+,,,,,,,
+,"Screen.availHeight",,,"readonly",,,
+,"Screen.availWidth",,,"readonly",,,
+,"Screen.colorDepth",,,"readonly",,,
+,"Screen.height",,,"readonly",,,
+,"Screen.width",,,"readonly",,,
+,,,,,,,
+,"Object/Property/Function","DirectUse?","ShutOff?","Wrapper Behavior?","New?","Only Powerbox?","Discussion"
+,,,,,,,
+,"Select.form",,"y",,,,"gives authority over the parent"
+,"Select.length","y",,,,,
+,"Select.options","y",,,,,
+,"Select.selectedIndex","y",,,,,
+,"Select.type","y",,,,,
+,"Select.disabled","y",,,,,
+,"Select.multiple","y",,,,,
+,"Select.name","y",,,,,
+,"Select.size","y",,,,,
+,"Select.tabIndex",,,"readonly",,,"Can be used to surprise the user with form fillout sequencing. Truthfully, this is probably ok, but we have shut it off, see the setTabIndex method on the form for the proposed alternative. "
+,"Select.add()","y",,,,,
+,"Select.blur()","y",,,,,
+,"Select.focus()",,"y",,,,
+,"Select.remove()","y",,,,,
+,"Select.onchange","y",,,,,
+,,,,,,,
+,"Table.caption","y",,,,,
+,"Table.rows","y",,,,,
+,"Table.tBodies","y",,,,,
+,"Table.tFoot","y",,,,,
+,"Table.tHead","y",,,,,
+,"Table.align",,"y",,,,"deprecated in javascript"
+,"Table.bgColor",,"y",,,,"deprecated in javascript"
+,"Table.border","y",,,,,
+,"Table.cellPadding","y",,,,,
+,"Table.cellSpacing","y",,,,,
+,"Table.frame","y",,,,,
+,"Table.rules","y",,,,,
+,"Table.summary","y",,,,,
+,"Table.width","y",,,,,
+,"Table.createCaption()","y",,,,,
+,"Table.createTFoot()","y",,,,,
+,"Table.createTHead()","y",,,,,
+,"Table.deleteCaption()","y",,,,,
+,"Table.deleteRow()","y",,,,,
+,"Table.deleteTFoot()","y",,,,,
+,"Table.deleteTHead()","y",,,,,
+,"Table.insertRow()","y",,,,,
+,,,,,,,
+,,,,,,,
+,"TableCell.abbr","y",,,,,
+,"TableCell.align",,,"wrap for valid values, left, center, right, justify, single char",,,
+,"TableCell.axis","y",,,,,
+,"TableCell.bgColor",,"y",,,,"deprecated"
+,"TableCell.ch","y",,,,,
+,"TableCell.chOff","y",,,,,
+,"TableCell.colSpan","y",,,,,
+,"TableCell.headers",,"y",,,,"The interaction of the headers property with ids makes this a complicated property to analyze, with probably little benefit. Setting innerHTML should disallow writing a headers attribute."
+,"TableCell.height",,"y",,,,"deprecated"
+,"TableCell.noWrap",,"y",,,,"deprecated"
+,"TableCell.rowSpan","y",,,,,
+,"TableCell.scope","y",,"wrap for valid values: row, group, rowgroup, colgroup",,,
+,"TableCell.vAlign",,,"wrap for valid values: top, middle, bottom, baseline",,,
+,"TableCell.width",,"y",,,,"deprecated"
+,,,,,,,
+,"Object/Property/Function","DirectUse?","ShutOff?","Wrapper Behavior?","New?","Only Powerbox?","Discussion"
+,,,,,,,
+,"TableRow.cells","y",,,,,
+,"TableRow.rowIndex","y",,,,,
+,"TableRow.sectionRowIndex","y",,,,,
+,"TableRow.align",,"y",,,,"deprecated"
+,"TableRow.bgColor",,"y",,,,"deprecated"
+,"TableRow.ch","y",,,,,
+,"TableRow.chOff","y",,,,,
+,"TableRow.vAlign",,,"valid values: top, middle, bottom, baseline",,,
+,"TableRow.deleteCell()","y",,,,,
+,"TableRow.insertCell()","y",,,,,
+,,,,,,,
+,"TableSection.rows","y",,,,,
+,"TableSection.align",,"y",,,,"deprecated"
+,"TableSection.ch","y",,,,,
+,"TableSection.chOff","y",,,,,
+,"TableSection.vAlign",,,"valid values: top, middle, bottom, baseline",,,
+,"TableSection.deleteRow()","y",,,,,
+,"TableSection.insertRow()","y",,,,,
+,,,,,,,
+,"Text.splitText()",,"y",,,,"by splitting the node, it implicitly adds another child node to the parent of the original node, i.e., modifying the parent to which the module may not have explicit authorization. This is a surprise, but is it a breachable surprise? No threat yet identified, but shut off until a need for this function has been identified and a deeper threat analysis has been performed."
+,,,,,,,
+,"Textarea.defaultValue","y",,,,,
+,"Textarea.form",,"y",,,,
+,"Textarea.type",,"y",,,,"unneeded, always defaults to only valid value ""textarea"""
+,"Textarea.value","y",,,,,
+,"Textarea.accessKey",,"y",,,,
+,"Textarea.cols","y",,,,,
+,"Textarea.disabled","y",,,,,
+,"Textarea.name","y",,,,,
+,"Textarea.readOnly","y",,,,,
+,"Textarea.rows","y",,,,,
+,"Textarea.tabIndex",,"y",,,,"see form.setTabIndex for replacement"
+,"Textarea.blur()","y",,,,,
+,"Textarea.focus()",,"y",,,,
+,"Textarea.select()","y",,,,,
+,"Textarea.onchange","y",,,,,
+,,,,,,,
+,"UIEvent.detail","y",,,,,
+,"UIEvent.view",,"y",,,,
+,"UIEvent.initUIEvent()",,"y",,,,"Synthetic event manufacture, if allowed, will have initialization as part of the construction process to prevent undeterminable behavior with uninitialized events."
+,,,,,,,
+,"Object/Property/Function","DirectUse?","ShutOff?","Wrapper Behavior?","New?","Only Powerbox?","Discussion"
+,,,,,,,
+,"Window",,,,,,"The Window is the kitchen sink of the client api. It has been divided into 3 components: The window object itself has been tamed so that the holder of a window object has powers appropriate to manipulating the window. This is very powerful even though tamed, so in general caja modules should not be given references to windows. Then there is a WindowPowers object, that embodies the powers above and beyond what a window holder should have as authority. Then there is SafeWindow, which contains the functions and properties that are not authority bearing and can be made ambiently available."
+,"Window.closed","y",,,,,
+,"Window.defaultStatus",,"y",,,,
+,"Window.document","y",,,,,
+,"Window.event",,"y",,,,"would be problematic if one were to attempt to implement opaque children; seems unneeded"
+,"Window.frames[]","y",,,,,
+,"Window.history","y",,,,,
+,"Window.innerHeight","y",,,,,
+,"Window.innerWidth","y",,,,,
+,"Window.location",,"y",,,,
+,"Window.name",,"y",,,,"This name is used as a target, which enables spoofing. Problems similar to the problem with id. Can we just not use it?"
+,"Window.navigator","y",,,,,"also in SafeWindow."
+,"Window.opener",,"y",,,,
+,"Window.outerHeight","y",,,,,
+,"Window.outerWidth","y",,,,,
+,"Window.pageXOffset","y",,,,,
+,"Window.pageYOffset","y",,,,,
+,"Window.parent",,"y",,,,
+,"Window.screen",,"y",,,,"moved to SafeWindow"
+,"Window.screenLeft","y",,,,,
+,"Window.screenTop","y",,,,,
+,"Window.screenX","y",,,,,
+,"Window.screenY","y",,,,,
+,"Window.self",,"y",,,,
+,"Window.status",,"y",,,,"a wrapped version maker is made available for powerbox authors to confer status setting powers to none-window-folk."
+,"Window.top",,"y",,,,"a parent reference"
+,"Window.window",,"y",,,,
+,"Window.addEventListener()","y",,,,,
+,"Window.alert()",,"y",,,,"see powerbox.makeAlerter. Simply having a reference to a window, powerful as that is, is not a reason to enable arbitrary alertbox manufacture that could spoof representation from other windows."
+,"Window.attachEvent()","y",,,,,
+,"Window.blur()","y",,,,,
+,"Window.clearInterval()",,"y","must accept opaque object, not number",,,"also in SafeWindow"
+,"Window.clearTimeout()",,"y","must accept opaque object, not number",,,"also in SafeWindow"
+,"Window.close()",,"y",,,,"can blow away entire doc if someone subsequently does a writeln"
+,"Window.confirm()",,"y",,,,"see powerbox.makeConfirmer()"
+,"Window.detachEvent()","y",,,,,
+,"Window.focus()",,"y",,,,
+,"Window.getComputedStyle()","y",,,,,
+,"Window.moveBy()",,"y",,,,"see WindowPowers"
+,"Window.moveTo()",,"y",,,,"see WindowPowers"
+,"Window.open()",,"y",,,,"see WindowPowers"
+,"Window.print()",,"y",,,,
+,"Window.prompt()",,"y",,,,"see powerbox.makePrompt()"
+,"Window.removeEventListener()","y",,,,,
+,"Window.resizeBy()",,"y",,,,"see WindowPowers"
+,"Window.resizeTo()",,"y",,,,"see WindowPowers"
+,"Window.scrollBy()","y",,,,,
+,"Window.scrollTo()","y",,,,,
+,"Window.setInterval()","y",,"disallow submitting strings as arguments. Must return an opaque object, not a number, for clearing",,,"also in SafeWindow"
+,"Window.setTimeout()","y",,"disallow submitting strings as arguments. Must return an opaque object, not a number, for clearing",,,"also in SafeWindow"
+,"Window.onblur","y",,,,,
+,"Window.onerror","y",,,,,
+,"Window.onfocus","y",,,,,
+,"Window.onload","y",,,,,
+,"Window.onresize","y",,,,,
+,"Window.onunload","y",,,,,
+,,,,,,,
+,,,,,,,
+,"Object/Property/Function","DirectUse?","ShutOff?","Wrapper Behavior?","New?","Only Powerbox?","Discussion"
+,,,,,,,
+,"WindowPowers.location(window)",,,,"y","y","Given a window, allows one to read and set the url for that window"
+,"WindowPowers.moveTo(window, x, y)",,,,"y","y",
+,"WindowPowers.moveBy(window, x, y)",,,,"y","y",
+,"WindowPowers.open(url, replace)",,,,"y","y","The power to open a new window. Note that the argument list for this is different from the arg list for the untamed window.open. Both the untamed name and features arguments can be used to engage in spoofing and are not included in this safer version."
+,"WindowPowers.resizeBy(window, x, y)",,,,"y","y",
+,"WindowPowers.resizeTo(window, x, y)",,,,"y","y",
+,"WindowPowers.print(window)",,,,"y","y",
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,"SafeWindow",,,,,,"These are the functions found in Window that can be allowed to be ambiently available"
+,"SafeWindow.navigator",,,,"y",,"gives access to the navigator information"
+,"SafeWindow.screen",,,,"y",,"gives access to the screen information"
+,"SafeWindow.clearInterval()",,,"must receive an opaque interval object, not a number","y",,
+,"SafeWindow.clearTimeout()",,,"must receive an opaque timeout object, not a number","y",,
+,"SafeWindow.setInterval()",,,"disallow submitting strings as arguments. Must return an opaque object for clearInterval.","y",,
+,"SafeWindow.setTimeout()",,,"disallow submitting strings as arguments. Must return an opaque object for clearTimeout.","y",,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,"XMLHttpRequest.readyState","y",,,,,
+,"XMLHttpRequest.responseText","y",,,,,
+,"XMLHttpRequest.responseXML","y",,,,,
+,"XMLHttpRequest.status","y",,,,,
+,"XMLHttpRequest.statusText","y",,,,,
+,"XMLHttpRequest.abort()","y",,,,,
+,"XMLHttpRequest.getAllResponseHeaders()","y",,,,,
+,"XMLHttpRequest.getResponseHeader()","y",,,,,
+,"XMLHttpRequest.open()",,"y",,,,"see powerbox.makeSendReceiverMaker"
+,"XMLHttpRequest.send()","y",,,,,
+,"XMLHttpRequest.setRequestHeader()","y",,,,,
+,"XMLHttpRequest.onreadystatechange","y",,,,,
+,,,,,,,
+,"XMLSerializer.serializeToString()","y",,,,,
+,,,,,,,
+,"XPathExpression.evaluate()",,"y",,,,"hard to analyze, unneeded for html"
+,,,,,,,
+,"XPathResult.*",,"y",,,,"unneeded for html"
+,,,,,,,
+,,,,,,,
+,"XSLTProcesser.*",,"y",,,,"cannot allow xslt to start making transformations, will break the taming rules"
+,,,,,,,
+,"*.for",,,"transform into an onclick handler that does a getelementsById on the root node of the document and, if there is only one node with the id specified in the ""for"" attribute, will issue a click to that node",,,"This behavior for the ""for"" attribute is for all objects that implement ""for"" attribute behavior."
+,,,,,,,
+,"powerbox.makeEventDispatcher",,,,"y","y","To be used by the powerbox to create limited authorities to issue synthetic events. Needs algorithmic detail if this is needed; do we really need to support synthetic events?. Recommendation: no synthetic events in caja v1; do not implement makeEventDispatcher"
+,"powerbox.makeFocusManager",,,,"y","y","to be used by the powerbox to create limited authorities to move the focus. Until we figure out something reasonable, here is what a focusManager does: with the method focus(node), if the node is an anchor or an input field or a textarea or a link or a select or a window, the focus manager calls the node's focus() method. If the node is not one of these, the focusManager calls the HTMLElement.scrollIntoView. The inability for a powerbox to determine when it might be reasonable to grant this authority is a serious problem. One example of a circumstance is, consider granting focus power to a module that has been granted the authority ot make a form, because validating/correcting a form is a behavior for which focus is powerful for building more user-friendly applications. The downside of this is, if there are 2 forms owned by 2 modules, this will enable stealing. An alternative strategy is for caja to attach onfocus() and onblur() handlers to everything, keep track of what if anything has such a focus, and use that to indicate that one already has the focus and should be allowed to transfer. Can there be multiple onfocus handlers? The attack would be to suppress the onblur handler so it appears that he never lost focus. Current answer: hand off the problem to the powerbox author using the makeFocusManager"
+,"powerbox.makeAnchorMaker(labelPrefix)",,,,"y","y","given a label prefix, this produces an object that will make anchors using the prefix as a namespace. This output object, when given an anchor node, will set the name attribute. In typical usage, the labelprefix would be the powerbox's best effort to name, in a user-understandable way the module to which the anchor maker is being conveyed. In an ideal world, this name would be the user's petname for the object, but that will not always be possible in the caja context. Using randomly generated names is of limited utility, because a major use of anchors is to allow people to put persistent bookmarks in their browsers, so one wants to create anchor names to be the same each time the page is built."
+,"powerbox.makeTransmitterMaker(domain or url)",,,,"y","y","Given a domain, the makeDomainTransmitterMaker makes a DomainTransmitterMaker that can manufacture nodes capable of transmitting to that domain, specifically links and forms. Given a domain transmitter, the caja object can set all the properties for a new node; the src field must lie within the domain specified during construction of the accessor. The method replace(node) will replace the specified node with the constructed node. For manufacturing nodes that can both send and receive, see powerbox.makeSendReceiverMaker. Use trademarking to allow writing allowed links and forms out via setInnerHTML. Domain names are strictly not enlargeable, i.e., if a TransmitterMaker is made for abc.xyz.com, it cannot be modified to send to xyz.com or def.xyz.com"
+,"powerbox.makeAlerter(labelPrefix)",,,,"y","y","used by the powerbox author to manufacture objects to be conferred to modules that allow the module to pop an alert. The labelPrefix is always put at the beginning of the prompt; the powerbox should assign a label as capable as the powerbox can ascertain, for informing the user which module created this prompt (in an ideal world, the label would be a petname, but that will not always be possible in the caja context). This should not just be a simple wrapper around alert(), to avoid the possibly breachable confusion that alert() creates with blocking some, but not all, events"
+,"powerbox.makeConfirmer(labelPrefix)",,,,"y","y","used by the powerbox author to manufacture objects to be conferred to modules that allow the module to pop a confirmation. The labelPrefix is always put at the beginning of the confirmation; the powerbox should assign a label as capable as the powerbox can ascertain, for informing the user which module created this confirmation (in an ideal world, the label would be a petname, but that will not always be possible in the caja context).  This should not just be a simple wrapper around confirm(), to avoid the possibly breachable confusion that confirm() creates with blocking some, but not all, events"
+,"powerbox.makePrompter(labelPrefix)",,,,"y","y","used by the powerbox author to manufacture objects to be conferred to modules that allow the module to pop a prompt. The labelPrefix is always put at the beginning of the prompt; the powerbox should assign a label as capable as the powerbox can ascertain, for informing the user which module created this prompt (in an ideal world, the label would be a petname, but that will not always be possible in the caja context).  This should not just be a simple wrapper around prompt(), to avoid the possibly breachable confusion that prompt() creates with blocking some, but not all, events"
+,"powerbox.makeSendReceiverMaker(domain name or url)",,,,"y","y","the SendReceiverMaker will manufacture, for the specified domain, those nodes that have full send/receive authority. Objects that can do such 2-way communication, and are therefore constructed using the SendReceiverMaker, include xmlHttpRequest and images.  The SendReceiverMaker function , when making an XMLHttpRequest, receives as arguments String method, String url-validated-to-domain, boolean async, String username, String password, and returns an XMLHttpRequest object for which the open() method has been called using the arguments sent to the creator. A makeSendReceiver also has a get a getDomainTransmitter function that will return a domain transmitter for the same domain, so one can directly make links and forms for the domain if one already has full send/receive authority on that domain. This also allows the receiving module to trivially delegate the attenuated DomainTransmitter authority to other modules. Use trademarking to enable use with setInnerHTML. Domain names are strictly not enlargeable, i.e., if a SendReceiveMaker is made for abc.xyz.com, it cannot be modified to send to xyz.com or def.xyz.com"
+,"powerbox.makeIFrameMaker(domain name or url)",,,,,,"Iframes, lke Send ReceiverMakers, have the authority to both send and receive information. Iframes are sufficiently different in the authorities they represent,  the manufacture of iframes has been made distinct from the more general sendReceiverMaker. Domain names are strictly not enlargeable, i.e., if a IFrameMaker is made for abc.xyz.com, it cannot be modified to send to xyz.com or def.xyz.com"
+,,,,,,,
+,"CajaNodeCreator",,,"when creating a node, creates classes and ids as described in the appendix. By using this node creator, one gets classes that are rooted in the node's ownerDocument, while if one creates a node with innerHTML, one gets a node rooted in one's own css namespace",,,"This is the type of the object that is returned by the new method on Node that replaces the ownerdocument property. Supports methods   createElement, createTextNode"
+,,,,,,,
+,"util.makeDoubleDiv(layoutConstraint)",,,,"y",,"A problem with sharing a window is preventing real estate wars, i.e., multiple modules all attempting to claim 100% of the window area. makeDoubleDiv is an ambient power to manufacture an inner/outer div node pair, for which the outer div controls the size of the area into which the holder of the inner div may draw. The outer div has clipping turned on; the layoutConstraint is a specification of the shape/size of the area. This function returns a pair of nodes, the outer control node held by the owner of a section of window real estate, and the inner node to be delegated to a  module so it has authority over a smaller portion of that real estate. We expect the algorithm for this to become more complex to deal with edge cases in different browsers: for example, some widgets in IE can escape from div-based containment when using a fast but erroneous layout algorithm. Modifications may be needed to the makeDoubleDiv algorithm to force the widgets to use a slower, but more correct algorithm."
+,"util.attenuateTransmitter(sendReceiverMaker, subdomain or url)",,,,"y",,"Given a TransmitterMaker and a subdomain or url within the bounds of the authority of that TransmitterMaker, this returns an attenuated TransmitterMaker"
+,"util.attenuateSendReceiver(sendReceiverMaker, subdomain or url)",,,,"y",,"Given a sendReceiverMaker and a subdomain or url within the bounds of the authority of that sedReceiverMaker, this returns an attenuated sendReceiverMaker"
+,"util.attenuateIFrameMaker(IFrameMaker, subdomain or url)",,,,"y",,"Given a IFrameMaker and a subdomain or url within the bounds of the authority of that IFrameMaker this returns an attenuated IFrameMaker."
+,"util.readOnly(node)",,,,"y",,"Makes a readOnly authority on the node and its subtree. This function not only supplies useful functionality, it supplies a demonstration of how to write arbitrary intermediaries, such as logging forwarders."
+,"util.revocable(node)",,,,"y",,"Returns a revoker/node pair that represents a revocable node: if the returned node is granted to another module, the authority it conveys is revoked when the revoke() function is called."

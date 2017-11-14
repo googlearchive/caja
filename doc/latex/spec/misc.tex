@@ -1,0 +1,30 @@
+% definitions.tex -- 
+% Author          : Jasvir Nagra <jas@cs.auckland.ac.nz>
+% Created On      : Tue Jun  3 12:58:52 2008
+% Last Modified   : <08/06/03 14:06:12 jasvir>
+% Description     : Additional helpful macros for formatting caja paper
+% Keywords        : caja format latex
+% Purpose         : Caja
+
+% --------------------------------------------------------------------
+%                              TODO list
+% --------------------------------------------------------------------
+
+\makeatletter
+
+% Usage: \TODO{username}{Make this section clearer}
+\newcommand{\TODO}[2]{
+    \addcontentsline{todolist}{todo}{\protect{{\bf #1}:~#2}}
+    \textcolor{red}{{\bf #1}: {\sf #2}}
+}
+\newcommand\l@todo[2]{\par \noindent Page~#2~\protect{\mbox{#1}}} 
+\newcommand \listoftodos{\section*{TODO List} \@starttoc{todolist}}\makeatother
+
+\endinput
+
+% Emacs bunkum
+% Local Variables:
+% mode: latex
+% time-stamp-start: "Last Modified[ \t]*:[ 	]+\\\\?[\"<]+"
+% time-stamp-end:   "\\\\?[\">]"
+% End:

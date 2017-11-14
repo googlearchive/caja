@@ -35,30 +35,25 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
 
   tamingWin.ses.mitigateSrcGotchas = additionalParams.mitigateSrcGotchas;
 
-  // CAUTION: It is ESSENTIAL that we pass USELESS, not (void 0), when
-  // calling down to a feral function. That function may not be declared
-  // in "strict" mode, and so would receive [window] as its "this" arg if
-  // we called it with (void 0). This could lead to a vulnerability if the
-  // function called happened to modify its "this" arg in some way that an
-  // attacker could redirect into an attack on the global [window].
-  var USELESS = Object.freeze({
-    USELESS: 'USELESS',
-    toString: function() { return '[Caja USELESS object]'; }
-  });
+  var USELESS = Object.freeze({ USELESS: 'USELESS' });
+  var BASE_OBJECT_CONSTRUCTOR = Object.freeze({});
 
   var tamingHelper = Object.freeze({
+      applyFunction: applyFunction,
+      getProperty: getProperty,
+      setProperty: setProperty,
+      getOwnPropertyNames: getOwnPropertyNames,
+      directConstructor: directConstructor,
+      getObjectCtorFor: getObjectCtorFor,
       isDefinedInCajaFrame: cajaFrameTracker.isDefinedInCajaFrame,
+      isES5Browser: true,
+      eviscerate: undefined,
+      banNumerics: function() {},
       USELESS: USELESS,
-      weakMapPermitHostObjects: ses.weakMapPermitHostObjects,
-      funcLike: ses.funcLike,
-      allFrames: allFrames
+      BASE_OBJECT_CONSTRUCTOR: BASE_OBJECT_CONSTRUCTOR,
+      getValueOf: function(o) { return o.valueOf(); },
+      weakMapPermitHostObjects: ses.weakMapPermitHostObjects
   });
-
-  function allFrames() {
-    var a = Array.prototype.slice.call(feralWin.frames);
-    a.push(feralWin);
-    return a;
-  }
 
   var frameGroupTamingSchema = TamingSchema(tamingHelper);
   var frameGroupTamingMembrane =
@@ -67,11 +62,11 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
   var lazyDomado;
   function getDomado() {
     // don't construct Domado until we know we need it
-    return lazyDomado || (lazyDomado = Domado());
+    return lazyDomado || (lazyDomado = Domado(null));
   }
 
   // TODO(kpreid): Only used for XHR; dependency on feralWin is bogus
-  var bridal = bridalMaker(feralWin.document);
+  var bridal = bridalMaker(identity, feralWin.document);
 
   var unsafe = false;
 
@@ -130,7 +125,6 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
   }
 
   function makeDefensibleFunction(f) {
-    // See notes on USELESS above
     return Object.freeze(function() {
       return f.apply(USELESS, Array.prototype.slice.call(arguments, 0));
     });
@@ -146,6 +140,77 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
 
   function setProperty(o, p, v) {
     return o[p] = v;
+  }
+
+  function directConstructor(obj) {
+    if (obj === null) { return void 0; }
+    if (obj === void 0) { return void 0; }
+    if ((typeof obj) !== 'object') {
+      // Regarding functions, since functions return undefined,
+      // directConstructor() doesn't provide access to the
+      // forbidden Function constructor.
+      // Otherwise, we don't support finding the direct constructor
+      // of a primitive.
+      return void 0;
+    }
+    var directProto = Object.getPrototypeOf(obj);
+    if (!directProto) { return void 0; }
+    var directCtor = directProto.constructor;
+    if (!directCtor) { return void 0; }
+    if (directCtor === feralWin.Object) {
+      if (!Object.prototype.hasOwnProperty.call(directProto, 'constructor')) {
+        // detect prototypes which just didn't bother to set .constructor and
+        // inherited it from Object (Safari's DOMException is the motivating
+        // case).
+        // Ditto for loop below.
+        return void 0;
+      } else {
+        return BASE_OBJECT_CONSTRUCTOR;
+      }
+    }
+    Array.prototype.slice.call(feralWin.frames).forEach(function(w) {
+      var O;
+      try {
+        O = w.Object;
+      } catch (e) {
+        // met a different-origin frame, probably
+        return;
+      }
+      if (directCtor === O) {
+        if (!Object.prototype.hasOwnProperty.call(directProto, 'constructor')) {
+          directCtor = void 0;
+        } else {
+          directCtor = BASE_OBJECT_CONSTRUCTOR;
+        }
+      }
+    });
+    return directCtor;
+  }
+
+  function getObjectCtorFor(o) {
+    if (o === undefined || o === null) {
+      return void 0;
+    }
+    var ot = typeof o;
+    if (ot !== 'object' && ot !== 'function') {
+      throw new TypeError('Cannot obtain ctor for non-object');
+    }
+    var proto = undefined;
+    while (o) {
+      proto = o;
+      o = Object.getPrototypeOf(o);
+    }
+    return proto.constructor;
+  }
+
+  function getOwnPropertyNames(o) {
+    var r = [];
+    Object.getOwnPropertyNames(o).forEach(function(p) {
+      if (Object.getOwnPropertyDescriptor(o, p).enumerable) {
+        r.push(p);
+      }
+    });
+    return r;
   }
 
   //----------------
@@ -233,8 +298,9 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
         cajaVM.copyToImports(imports, cajaVM.sharedImports);
       }));
 
-    var htmlEmitter = new tamingWin.HtmlEmitter(domicile.htmlEmitterTarget,
-      uriPolicy.mitigate, domicile, window);
+    var htmlEmitter = new tamingWin.HtmlEmitter(
+      identity, domicile.htmlEmitterTarget, uriPolicy.mitigate, domicile,
+      window);
 
     // Invoked by textual event handlers emitted by Domado.
     // TODO(kpreid): Use a name other than ___ for this purpose; perhaps some
@@ -283,6 +349,10 @@ function SESFrameGroup(cajaInt, config, tamingWin, feralWin,
         contentType: args.mimeType || 'text/html',
         responseText: args.uncajoledContent
       }));
+
+    } else if (args.cajoledJs !== undefined) {
+      throw new Error(
+        'Operating in SES mode; pre-cajoled content cannot be loaded');
 
     } else {
       promise = loadContent(gman, fetch(args.url), args.mimeType);

@@ -1,0 +1,3 @@
+p {
+  content: '--\3E foo\3C!--'
+}

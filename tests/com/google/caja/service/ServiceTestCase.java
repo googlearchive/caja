@@ -22,6 +22,7 @@ import com.google.caja.lexer.FetchedData;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.plugin.UriFetcher;
 import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.TestBuildInfo;
 import com.google.common.collect.Maps;
 
 import java.io.ByteArrayOutputStream;
@@ -42,14 +43,15 @@ import org.json.simple.JSONValue;
  * @author jasvir@google.com (Jasvir Nagra)
  */
 public abstract class ServiceTestCase extends CajaTestCase {
-  private ProxyServlet servlet;
+  private CajolingServlet servlet;
   private Map<URI, FetchedData> uriContent;
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
 
-    servlet = new ProxyServlet(
+    servlet = new CajolingServlet(new CajolingService(
+        TestBuildInfo.getInstance(), null,
         new UriFetcher() {
           public FetchedData fetch(ExternalReference ref, String mimeType)
               throws UriFetchException {
@@ -59,7 +61,7 @@ public abstract class ServiceTestCase extends CajaTestCase {
             }
             return data;
           }
-        });
+        }));
     uriContent = Maps.newHashMap();
   }
 
@@ -107,6 +109,21 @@ public abstract class ServiceTestCase extends CajaTestCase {
     TestHttpServletRequest req = new TestHttpServletRequest(queryString);
     TestHttpServletResponse resp = new TestHttpServletResponse();
     servlet.doGet(req, resp);
+    assertResponseContentType(expectedResponseType, resp);
+    return resp.getOutputObject();
+  }
+
+  protected Object requestPost(
+      String queryString,
+      byte[] content,
+      String contentType,
+      String contentEncoding,
+      String expectedResponseType) throws Exception {
+    TestHttpServletRequest req =
+        new TestHttpServletRequest(queryString, content, contentType,
+            contentEncoding);
+    TestHttpServletResponse resp = new TestHttpServletResponse();
+    servlet.doPost(req, resp);
     assertResponseContentType(expectedResponseType, resp);
     return resp.getOutputObject();
   }

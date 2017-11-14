@@ -1,5 +1,5 @@
 [
-  { "label": "ses", "tests": [
+  { "label": "ses", "mode": "none", "tests": [
     {
       "label": "explicit",
       "bare": "../ses/explicit.html",

@@ -22,9 +22,8 @@
  * @requires scanning, JSON, WeakMap, Proxy, document, console, location,
  *     setTimeout, clearTimeout, setInterval, clearInterval,
  *     requestAnimationFrame, cancelAnimationFrame,
- *     cajaVM, directAccess, getUrlParam,
- *     assertTrue, assertEquals, jsunitRegister, jsunitCallback, pass,
- *     jsunitFail,
+ *     cajaVM, directAccess, inES5Mode, getUrlParam,
+ *     assertTrue, assertEquals, pass, jsunitFail,
  *     Event, HTMLInputElement, HTMLMediaElement, HTMLTableRowElement,
  *     HTMLTableSectionElement, HTMLTableElement, HTMLImageElement,
  *     HTMLTextAreaElement, HTMLVideoElement, HTMLButtonElement,
@@ -45,8 +44,16 @@
   var PLAIN_CALL = scanning.PLAIN_CALL;
   var getFunctionName = scanning.getFunctionName;
 
-  function evalInEnv(env, expr) {
-    return cajaVM.compileExpr(expr)(env);
+  /** Fake evaluator for ES5/3 compatibility */
+  function simpleEval(env, expr) {
+    var match;
+    if ((match = /^(.*)\.([\w$]+)$/.exec(expr))) {
+      return simpleEval(env, match[1])[match[2]];
+    } else if ((match = /^([\w$]+)$/.exec(expr))) {
+      return env[match[1]];
+    } else {
+      throw new EvalError('simpleEval does not implement: ' + expr);
+    }
   }
 
   function getPropertyDescriptor(object, prop) {
@@ -199,6 +206,7 @@
     scanner.skip('scanning');
     scanner.skip('toggleNonErrors');
     scanner.skip('testUniverse');
+    scanner.skip('testScanner');
 
     // returns its parameters to help catch leaks
     function dummyFunction() {
@@ -395,20 +403,22 @@
     function forEachFrame(code, callback) {
       // actually, any _should-be-visible_ frame, i.e. guest and taming.
 
-      // TODO(kpreid): There are no longer ever distinct frames.
-      // Remove this logic unless we think we might want to reintroduce them
-      // (e.g. in the event of guest iframes?) or adapt the scanner to other
-      // applications.
-
+      // Note: Can't use evalInTamingFrame to get from the taming frame, because
+      // we want the ES5/3-virtualized view.
       try {
         if (tamingEnv.Object !== window.Object) {
-          callback(evalInEnv(tamingEnv, code));
-          callback(evalInEnv(window, code));
+          callback(simpleEval(tamingEnv, code));
+          callback(simpleEval(window, code));
         } else {
-          callback(evalInEnv(window, code));
+          callback(simpleEval(window, code));
         }
       } catch (e) {
-        return Ref.all();
+        // ignore ES5/3 restriction
+        if (e.message !== 'Property name may not end in double underscore.') {
+          throw e;
+        } else {
+          return Ref.all();
+        }
       }
     }
     function RefAnyFrame(code) {
@@ -523,8 +533,10 @@
     argsByAnyFrame('Object.prototype.__lookupSetter__', G.none);  // TODO abuse
 
     // Chrome has a "non-generic" setter here
-    expectedAlwaysThrow.setByIdentity(
-        getSetter(Object.prototype, '__proto__'), true);
+    if (inES5Mode) {
+      expectedAlwaysThrow.setByIdentity(
+          getSetter(Object.prototype, '__proto__'), true);
+    }
 
     argsByProp('toString', annotate(genNoArgMethod, function(context, thrown) {
       if (thrown) {
@@ -539,9 +551,23 @@
     argsByProp('propertyIsEnumerable', genMethod(genString));  // TODO abuse
 
     argsByProp('toLocaleString', genNoArgMethod);
+    // Workaround for
+    // <https://code.google.com/p/google-caja/issues/detail?id=1840>.
+    if (!inES5Mode) {
+      ['String.prototype.localeCompare',
+          'Number.prototype.toLocaleString',
+          'Date.prototype.toLocaleString',
+          'Date.prototype.toLocaleDateString',
+          'Date.prototype.toLocaleTimeString'].forEach(function(expr) {
+        expectedAlwaysThrow.mark(RefAnyFrame(expr));
+      });
+    }
 
     functionArgs.set(RefAnyFrame('Function'), G.none);
         // TODO deal with function return val
+    if (!inES5Mode) {
+      expectedAlwaysThrow.mark(RefAnyFrame('Function'));  // no eval
+    }
 
     argsByAnyFrame('Function.prototype', genAllCall());
     argsByIdentity(dummyFunction, genCall());
@@ -561,8 +587,20 @@
     // Iterators. (There is no common superclass of iterators)
     argsByProp('next', freshResult(genMethod()));  // common iterator method
 
+    if (!inES5Mode) {
+      [function guestFn(){}, window.setTimeout].forEach(function(f) {
+        // Function.prototype() is necessarily broken in ES5/3
+        var proto = Object.getPrototypeOf(f);
+        expectedAlwaysThrow.setByIdentity(proto, true);
+
+        // [[ThrowTypeError]] has multiple variants in ES5/3
+        expectedAlwaysThrow.setByIdentity(getGetter(f, 'arguments'), true);
+        expectedAlwaysThrow.setByIdentity(getGetter(f, 'caller'), true);
+      });
+    }
+
     // ES6 Generators
-    if (cajaVM.anonIntrinsics.GeneratorFunction) {
+    if (cajaVM.anonIntrinsics && cajaVM.anonIntrinsics.GeneratorFunction) {
       functionArgs.set(RefAnyFrame('cajaVM.anonIntrinsics.GeneratorFunction'),
           genAllCall);
       expectedAlwaysThrow.set(
@@ -624,7 +662,7 @@
         return iterator;
       }
 
-      if (cajaVM.anonIntrinsics[info.name]) {
+      if (cajaVM.anonIntrinsics && cajaVM.anonIntrinsics[info.name]) {
         scanPseudoCtor.prototype = cajaVM.anonIntrinsics[info.name];
         cajaVM.def(scanPseudoCtor);
         // Override is-actually-an-instance check.
@@ -634,10 +672,12 @@
       }
     });
 
-    argsByIdentity(cajaVM.anonIntrinsics.ThrowTypeError, genAllCall());
-    expectedAlwaysThrow.setByIdentity(
-        cajaVM.anonIntrinsics.ThrowTypeError, true);
-    // TODO test other intrinsics like %TypedArray%
+    if (inES5Mode) {
+      argsByIdentity(cajaVM.anonIntrinsics.ThrowTypeError, genAllCall());
+      expectedAlwaysThrow.setByIdentity(
+          cajaVM.anonIntrinsics.ThrowTypeError, true);
+      // TODO test other intrinsics like %TypedArray%
+    }
 
     argsByIdentity(Number, genAllCall(genSmallInteger));
     argsByAnyFrame('Number.prototype.toExponential',
@@ -687,6 +727,16 @@
         genArrayCall(genNumbers(2))));
     argsByAnyFrame('Array.prototype.unshift',
         genArrayCall(G.tuple(genJSONValue)));
+    if (!inES5Mode) {
+      // without this, call would be applied to frozen array
+      // in ES5 mode Array.prototype.length is a data property
+      // Note: Used to use genSmallInteger but that triggered a crash bug in
+      // Chrome. TODO(kpreid): Isolate and report bug.
+      forEachFrame('Array.prototype', function (proto) {
+        argsByIdentity(getSetter(proto, 'length'),
+            genArrayCall(G.tuple(G.value(0))));
+      });
+    }
 
     argsByAnyFrame('Boolean', genAllCall(genBoolean));
 
@@ -776,12 +826,21 @@
         G.value(undefined, 10, ejectFn1)));
     expectedAlwaysThrow.setByIdentity(cajaVM.eject, true);
 
-    argsByIdentity(cajaVM.Nat, genMethod(genNumber));
+    argsByIdentity(cajaVM.enforce, genMethod( // ES5/3 only
+        G.value(function(){return false;},
+                function(){return true;}),
+        genString));
+    argsByIdentity(cajaVM.enforceNat, genMethod(genSmallInteger));  //ES5/3 only
+    argsByIdentity(cajaVM.Nat, genMethod(genNumber));  //SES only
+    argsByIdentity(cajaVM.enforceType, genMethod(genString, genTypeName));
+        //ES5/3 only
     argsByIdentity(cajaVM['ev'+'al'], genMethod(genJS));
     argsByIdentity(cajaVM.confine, genMethod(genJS));
         // TODO(kpreid): provide opt_endowments arg and code which abuses it
     argsByIdentity(cajaVM.guard, G.none);
+    argsByIdentity(cajaVM.identity, genMethod(genString));  // ES5/3 only
     argsByIdentity(cajaVM.is, G.none);
+    argsByIdentity(cajaVM.isFunction, genMethod(genJSONValue));  // ES5/3 only
     argsByIdentity(cajaVM.log, genMethod(genString));
     argsByIdentity(cajaVM.manifest, genMethod());
     argsByIdentity(cajaVM.makeArrayLike, genMethod(genSmallInteger));
@@ -794,6 +853,7 @@
           return cajaVM.Trademark('foo').stamp;
         })), genFreshObject));
     argsByIdentity(cajaVM.tamperProof, G.none);
+    argsByIdentity(cajaVM.Token, genMethod(genString));  // ES5/3 only
     argsByIdentity(window.cajaHandleEmbed, G.none);  // TODO abuse
 
     // sealers
@@ -961,7 +1021,7 @@
     argsByIdentity(parseFloat, genCall(genString));
     argsByIdentity(isFinite, genCall(genSmallInteger));
 
-    argsByIdentity(window.StringMap, annotate(
+    argsByIdentity(window.StringMap /* SES only */, annotate(
         freshResult(genAllCall()), function(context, thrown) {
       if (!thrown) {
         argsByIdentity(context.get().get, genMethod(genString));
@@ -978,12 +1038,14 @@
     function annotateWeakMapInstance(obj) {
       // known harmless implementation details leak.
       expectedUnfrozen.setByIdentity(obj, true);
-      argsByIdentity(obj['permitHostObjects___'], genMethod(G.value('x')));
-      expectedAlwaysThrow.setByIdentity(obj['permitHostObjects___'], true);
-      argsByIdentity(obj['delete___'], genMethod(genWeakMapKey));
-      argsByIdentity(obj['get___'], genMethod(genWeakMapKey));
-      argsByIdentity(obj['set___'], genMethod(genWeakMapKey, genObject));
-      argsByIdentity(obj['has___'], genMethod(genWeakMapKey));
+      if (inES5Mode) {  // would fail on es53
+        argsByIdentity(obj['permitHostObjects___'], genMethod(G.value('x')));
+        expectedAlwaysThrow.setByIdentity(obj['permitHostObjects___'], true);
+        argsByIdentity(obj['delete___'], genMethod(genWeakMapKey));
+        argsByIdentity(obj['get___'], genMethod(genWeakMapKey));
+        argsByIdentity(obj['set___'], genMethod(genWeakMapKey, genObject));
+        argsByIdentity(obj['has___'], genMethod(genWeakMapKey));
+      }
 
       argsByIdentity(obj['delete'], genMethod(genWeakMapKey));
       argsByIdentity(obj.get, genMethod(genWeakMapKey));
@@ -1261,9 +1323,13 @@
       }
       if (object === currentArrayLike.prototype &&
           cajaVM.makeArrayLike.canBeFullyLive) {
-        // The proxy-based ArrayLike implementation's prototype appears
-        // extensible because it is a proxy (with an unbounded set of
+        // The SES or ES5/3 proxy-based ArrayLike implementation's prototype
+        // appears extensible because it is a proxy (with an unbounded set of
         // numeric properties).
+        return true;
+      }
+      if (!inES5Mode && whichFrame(object) === 'guest') {
+        // ES5/3 guest not frozen
         return true;
       }
     });
@@ -1314,11 +1380,16 @@
       for (var obj = el;
            obj && getFunctionName(obj.constructor) !== 'Object';
            obj = Object.getPrototypeOf(obj)) {
-        obtainInstance.define(obj.constructor, el);
-        argsByIdentity(obj.constructor, G.none);
+        if (obj.constructor) { // conditional to workaround Firefox+ES5/3 oddity
+          obtainInstance.define(obj.constructor, el);
+          argsByIdentity(obj.constructor, G.none);
+        }
       }
     });
     obtainInstance.define(Function, dummyFunction);
+    if (!inES5Mode) {
+      obtainInstance.define(tamingEnv.Function, tamingEnv.cajaVM.identity);
+    }
     obtainInstance.define(Text, document.createTextNode('foo'));
     obtainInstance.define(Document, document); // TODO(kpreid): createDocument
     obtainInstance.define(Window, window);
@@ -1356,7 +1427,7 @@
     // Combined Typed Array processing
     // TODO(kpreid): Reorder everything so that args, obtainInstance, and
     // expectedUnfrozen are done together for all types.
-    (function() { // hide specialized locals
+    if (inES5Mode) (function() {
 
       argsByAnyFrame('ArrayBuffer', genNew(genSmallInteger));
       argsByAnyFrame('ArrayBuffer.isView', genMethod(G.any(
@@ -1366,7 +1437,7 @@
       obtainInstance.define(ArrayBuffer, new ArrayBuffer(3));
       expectedUnfrozen.setByConstructor(ArrayBuffer, true);
       expectedUnfrozen.setByConstructor(
-          evalInEnv(tamingEnv, 'ArrayBuffer'), true);
+          simpleEval(tamingEnv, 'ArrayBuffer'), true);
 
       forEachFrame('Int8Array', function(arrayCtor) {
         // inert ctor we need to note
@@ -1388,7 +1459,7 @@
             genNumbers(2))));
       function setupTypedArray(name, doAllCalls) {
         var ref = RefAnyFrame(name);
-        var ctor = evalInEnv(window, name);
+        var ctor = simpleEval(window, name);
 
         functionArgs.set(ref, freshResult(doAllCalls
             ? typedArrayCall
@@ -1435,7 +1506,9 @@
       // TODO(kpreid): Once all implementations are conformant with ES 2015,
       // we only need to look at the intrinsic for most things, not each
       // subtype.
-      setupTypedArray('cajaVM.anonIntrinsics.TypedArray', true);
+      if (cajaVM.anonIntrinsics && cajaVM.anonIntrinsics.TypedArray) {
+        setupTypedArray('cajaVM.anonIntrinsics.TypedArray', true);
+      }
       setupTypedArray('Int8Array', true);
       setupTypedArray('Uint8Array', false);
       setupTypedArray('Uint8ClampedArray', true);
@@ -1547,13 +1620,16 @@
       directAccess.scrollToEnd();
     }
 
-    // TODO(kpreid): ES5/3 legacy; see comments on forEachFrame.
+    // ES5/3 has a separate taming frame and guest frames; ES5 currently does
+    // not.
     if (tamingEnv.Object !== Object) {
       // This ensures that taming-frame prototypes get meaningful names. It also
       // makes sure that its Object.prototype isn't found indirectly via the
       // .prototype.[[Prototype]] of some unfortunate function which doesn't
       // work very well as a ctor.
-      ['Object', 'Function', 'Array'].forEach(function(type) {
+      // String (wrapper) is included because it can be found in ES5/3 as
+      // Array.prototype.concat.call('foo', ...).
+      ['Object', 'Function', 'Array', 'String'].forEach(function(type) {
         var ctorC = Context.root(tamingEnv[type],
             '<taming env>.' + type,
             '<taming env>.' + type);
@@ -1592,80 +1668,25 @@
     }
   };
 
-  // --- Tests of the scanner's own functionality. ---
-
-  // used by meta tests only
-  /** Make a simple isolated object graph. */
-  function detach(object, seen) {
-    if (object !== Object(object)) { return object; }
-    if (!seen) { seen = new WeakMap(); }
-    if (seen.has(object)) { return seen.get(object); }
-    if (Object.getPrototypeOf(object) !== Object.prototype) {
-      throw new Error('non-Object not supported');
-    }
-    var copy = Object.create(null);
-    Object.getOwnPropertyNames(object).forEach(function(prop) {
-      var desc = Object.getOwnPropertyDescriptor(object, prop);
-      ['value', 'get', 'set'].forEach(function (descProp) {
-        if (descProp in desc) { desc[descProp] = detach(desc[descProp], seen); }
-      });
-      Object.defineProperty(copy, prop, desc);
-    });
-    if (!Object.isExtensible(object)) { Object.preventExtensions(copy); }
-    seen.set(object, copy);
-    return copy;
-  }
-
-  jsunitRegister('testMetaScannerAndProgramIdentifiers', function() {
-    // Testing the scanner operation, and incidentally that property names
-    // are correctly handled.
+  /** Test the scanner's own functionality. */
+  window.testScanner = function testScanner() {
+    // non-identifier props in programs
     var problemPrograms = ['bar["!"]', 'bar[1]', 'bar.a'];
     var scanner = new Scanner({
       logProblem: function(description, context) {
         assertEquals(problemPrograms.shift(), context.getProgram());
       },
-      finished: jsunitCallback(function() {
+      finished: function() {
         assertEquals(0, problemPrograms.length);
-        pass();
-      })
+        pass('testScanner');
+      }
     });
-
+    scanner.skip('Object');
     // each property here is an 'object is extensible' problem
-    var specimen = detach(Object.freeze({a: {}, 1: {}, '!': {}}));
-
-    scanner.queue(Context.root(specimen, 'foo', 'bar'));
+    scanner.queue(Context.root(Object.freeze({a: {}, 1: {}, '!': {}}),
+        'foo', 'bar'));
     scanner.scan();
-  });
 
-  jsunitRegister('testMetaPrograms', function() {
-    // TODO(kpreid): Would be better if there was an abstraction over performing
-    // the operations (that is, something which e.g. both invokes a method and
-    // constructs the Context for its return value), so we don't have to use the
-    // Context operations which are kinda internal.
-    var c = Context.root(function f() {}, 'foo', 'bar');
-    assertEquals('root program', 'bar', c.getProgram());
-    assertEquals('proto', 'Object.getPrototypeOf(bar)',
-        c.property('[[Prototype]]', 'junk', null).getProgram());
-
-    assertEquals('invocation not thrown', 'bar.call("thiss", "arg1")',
-        c.invocation(2, 'thiss', ['arg1'], false).getProgram());
-    assertEquals('invocation thrown',
-        '(function(){try{ bar.call("thiss", "arg1") }catch(e){return e}}())',
-        c.invocation(2, 'thiss', ['arg1'], true).getProgram());
-    assertEquals('constructor', 'new (bar)()',
-        c.invocation(2, CONSTRUCT, [], false).getProgram());
-    // TODO(kpreid): unrealistic values
-    assertEquals('method call', 'bar("arg1")',
-        c.invocation(2, THIS, ['arg1'], false).getProgram());
-    assertEquals('plain call', '(0,bar)("arg1")',
-        c.invocation(2, PLAIN_CALL, ['arg1'], false).getProgram());
-
-    // TODO(kpreid): test (and implement) argument lists with object values
-
-    pass();
-  });
-
-  jsunitRegister('testMetaTrueApply', function() {
     // test trueApply which has proven to be tricky.
     var trueApply = scanning.trueApply;
     function argsIdentity() {
@@ -1675,12 +1696,9 @@
     assertEquals('1 a', trueApply(argsIdentity, ['a']));
     assertEquals('2 a,b', trueApply(argsIdentity, ['a', 'b']));
     assertEquals('3 a,b,c', trueApply(argsIdentity, ['a', 'b', 'c']));
-    pass();
-  });
 
-  // TODO(kpreid): more meta-tests
-
-  // --- UI glue ---
+    // TODO(kpreid): more meta-tests
+  };
 
   // wire up checkbox
   var hideCheckbox;

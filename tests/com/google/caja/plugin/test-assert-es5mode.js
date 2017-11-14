@@ -1,0 +1,1 @@
+assertTrue("Expected ES5 mode", inES5Mode);

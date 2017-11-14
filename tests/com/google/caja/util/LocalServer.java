@@ -30,7 +30,10 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.resource.Resource;
 
 import com.google.caja.SomethingWidgyHappenedError;
-import com.google.caja.service.ProxyServlet;
+import com.google.caja.service.CajolingService;
+import com.google.caja.service.CajolingServlet;
+
+import com.google.caja.reporting.BuildInfo;
 
 /**
  * Encapsulates the management of a localhost Web server running on an
@@ -94,14 +97,20 @@ public class LocalServer {
     final String subdir = "/caja";
     final ContextHandler caja = new ContextHandler(subdir);
     {
-      final String service = "/proxy";
+      // TODO(kpreid): deploy the already-configured war instead of manually
+      // plumbing
+      final String service = "/cajole";
 
-      // fetching proxy service -- Servlet setup code gotten from
+      // cajoling service -- Servlet setup code gotten from
       // <http://docs.codehaus.org/display/JETTY/Embedding+Jetty> @ 2010-06-30 &
       // <http://wiki.eclipse.org/Jetty/Tutorial/Embedding_Jetty> @ 2015-07-27
       ServletContextHandler servlets = new ServletContextHandler(
         server, "/", ServletContextHandler.NO_SESSIONS);
-      servlets.addServlet(new ServletHolder(new ProxyServlet()), service);
+      servlets.addServlet(
+          new ServletHolder(
+              new CajolingServlet(
+                  new CajolingService(BuildInfo.getInstance()))),
+          service);
 
       // Hook for subclass to add more servlets
       if (contextCallback != null) {

@@ -15,8 +15,12 @@
     <servlet-class>com.google.caja.demos.playground.server.GWTCajolingServiceImpl</servlet-class>
   </servlet>
   <servlet>
-    <servlet-name>ProxyServlet</servlet-name>
-    <servlet-class>com.google.caja.service.ProxyServlet</servlet-class>
+    <servlet-name>CajolingServlet</servlet-name>
+    <servlet-class>com.google.caja.service.CajolingServlet</servlet-class>
+  </servlet>
+  <servlet>
+    <servlet-name>PrecajoleInfoServlet</servlet-name>
+    <servlet-class>com.google.caja.service.PrecajoleInfoServlet</servlet-class>
   </servlet>
   
   <servlet-mapping>
@@ -24,7 +28,11 @@
     <url-pattern>/playground/cajole</url-pattern>
   </servlet-mapping>
   <servlet-mapping>
-    <servlet-name>ProxyServlet</servlet-name>
-    <url-pattern>/proxy</url-pattern>
+    <servlet-name>CajolingServlet</servlet-name>
+    <url-pattern>/cajole</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>PrecajoleInfoServlet</servlet-name>
+    <url-pattern>/precajole/info</url-pattern>
   </servlet-mapping>
 </web-app>

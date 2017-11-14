@@ -27,6 +27,8 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
 import com.google.caja.lexer.escaping.Escaping;
+import com.google.caja.reporting.BuildInfo;
+import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.LocalServer;
 import com.google.caja.util.TestFlag;
 import com.google.caja.util.ThisHostName;
@@ -50,6 +52,26 @@ public abstract class BrowserTestCase {
   private static String serverHost;
 
   protected String testBuildVersion = null;
+
+  protected final BuildInfo buildInfo = new BuildInfo() {
+    @Override public void addBuildInfo(MessageQueue mq) {
+      BuildInfo.getInstance().addBuildInfo(mq);
+    }
+    @Override public String getBuildInfo() {
+      return BuildInfo.getInstance().getBuildInfo();
+    }
+    @Override public String getBuildVersion() {
+      return (testBuildVersion != null)
+          ? testBuildVersion
+          : BuildInfo.getInstance().getBuildVersion();
+    }
+    @Override public String getBuildTimestamp() {
+      return BuildInfo.getInstance().getBuildTimestamp();
+    }
+    @Override public long getCurrentTime() {
+      return BuildInfo.getInstance().getCurrentTime();
+    }
+  };
 
   private final LocalServer localServer = new LocalServer(
       new LocalServer.ConfigureContextCallback() {
@@ -173,10 +195,11 @@ public abstract class BrowserTestCase {
    * Do what should be done with the browser.
    */
   protected String driveBrowser(final WebDriver driver) {
-    // long timeout: something we're doing is leading to huge unpredictable
-    // slowdowns in random test startup; perhaps we're holding onto a lot of ram
-    // and  we're losing on swapping/gc time.  unclear.
-    countdown(10000, 200, new Countdown() {
+    // 20s because test-domado-dom startup is very very very slow in es53 mode,
+    // and something we're doing is leading to huge unpredictable slowdowns
+    // in random test startup; perhaps we're holding onto a lot of ram and
+    // we're losing on swapping/gc time.  unclear.
+    countdown(20000, 200, new Countdown() {
       @Override public String toString() { return "startup"; }
       public int run() {
         List<WebElement> readyElements = driver.findElements(
@@ -240,7 +263,8 @@ public abstract class BrowserTestCase {
   /** Override point */
   @SuppressWarnings("static-method")
   protected int waitForCompletionTimeout() {
-    return 10000;  // ms
+    // 20s because the es53 cajoler is slow the first time it runs.
+    return 20000;
   }
 
   /**

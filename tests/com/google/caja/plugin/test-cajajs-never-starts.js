@@ -28,7 +28,7 @@ jsunitRegister('testNeverStarts', function testNeverStarts() {
   caja.initialize({
     server: '/caja',
     resources: resources,
-    maxAcceptableSeverity: 'NEW_SYMPTOM'
+    forceES5Mode: inES5Mode,
   });
   testFailed = false;
   caja.whenReady(function() {

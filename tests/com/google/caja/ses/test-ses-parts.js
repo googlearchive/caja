@@ -198,21 +198,3 @@ jsunitRegister('testAtLeastFreeVarNamesOnNewUnicodeEscapes', function() {
   });
   jsunitPass();
 });
-
-jsunitRegister('testFuncLikeBind', function() {
-  // <function>.name is not necessarily an identifier; funcLike must not fail
-  // in that case.
-  // Example: In EcmaScript 2015, function f() {}.bind().name === 'bound f'
-  
-  function f(a, b, c) { return "f ret"; }
-  function g(a, b) { return "g ret"; }
-  
-  // This we expect not to throw.
-  var boundLike = ses.funcLike(g, f.bind());
-  
-  // Just checking that the func is as expected.
-  assertEquals(3, boundLike.length);
-  assertEquals('g ret', boundLike());
-  
-  jsunitPass();
-});

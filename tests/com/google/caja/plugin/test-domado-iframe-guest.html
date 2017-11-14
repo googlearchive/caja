@@ -83,7 +83,7 @@
 
 <div id="testGlobals" class="testcontainer">testGlobals</div>
 <script type="text/javascript">
-  jsunitRegister('testGlobals', function() {
+  jsunitRegisterIf(inES5Mode, 'testGlobals', function() {
     var i = document.getElementById('testGlobals').appendChild(
         document.createElement('iframe')).contentWindow;
 

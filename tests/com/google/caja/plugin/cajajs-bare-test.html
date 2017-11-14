@@ -42,7 +42,7 @@
   caja.initialize({
     cajaServer: '/caja',
     debug: /minified=false/.test(location.search),
-    maxAcceptableSeverity: 'NEW_SYMPTOM'
+    forceES5Mode: /es5=true/.test(location.search)
   });
 
   jsunitRegister('testNoBody', function () {

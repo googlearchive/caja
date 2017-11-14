@@ -1,0 +1,10 @@
+StyleSheet
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : p
+    PropertyDeclaration
+      Property : content
+      Expr
+        Term
+          StringLiteral : -->foo<!--

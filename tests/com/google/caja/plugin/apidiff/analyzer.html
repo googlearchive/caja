@@ -77,7 +77,7 @@
       caja.disableSecurityForDebugger(true);
       caja.initialize({
         cajaServer: 'http://localhost:8000/caja',
-        maxAcceptableSeverity: 'NEW_SYMPTOM',
+        forceES5Mode: true,
         debug: true
       });
       caja.load(document.getElementById('guest'), caja.policy.net.ALL,

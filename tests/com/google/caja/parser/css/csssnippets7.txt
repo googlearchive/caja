@@ -1,0 +1,9 @@
+WARNING : cssparserinput7.css:1+1 - 22: Skipping malformed content
+cssparserinput7.css:1: @charset "non-utf-8";
+                       ^^^^^^^^^^^^^^^^^^^^^
+WARNING : cssparserinput7.css:1+10 - 21: Expected utf-8 not non-utf-8
+cssparserinput7.css:1: @charset "non-utf-8";
+                                ^^^^^^^^^^^
+WARNING : cssparserinput7.css:4+1 - 16: Skipping malformed content
+cssparserinput7.css:4: @unknown('hi');
+                       ^^^^^^^^^^^^^^^
