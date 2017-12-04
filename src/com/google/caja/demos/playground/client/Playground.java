@@ -46,7 +46,7 @@ public class Playground implements EntryPoint, ValueChangeHandler<String> {
     cajolingService.fetch(base, url, new AsyncCallback<String>() {
       public void onFailure(Throwable caught) {
         gui.setLoading(false);
-        gui.addCompileMessage(caught.getMessage());
+        gui.addCompileMessagePlainText(caught.getMessage());
         gui.selectTab(PlaygroundView.Tabs.COMPILE_WARNINGS);
       }
 
@@ -70,7 +70,7 @@ public class Playground implements EntryPoint, ValueChangeHandler<String> {
         new AsyncCallback<String>() {
           public void onFailure(Throwable caught) {
             gui.setLoading(false);
-            gui.addCompileMessage(caught.getMessage());
+            gui.addCompileMessagePlainText(caught.getMessage());
             gui.selectTab(PlaygroundView.Tabs.COMPILE_WARNINGS);
           }
 
@@ -113,18 +113,18 @@ public class Playground implements EntryPoint, ValueChangeHandler<String> {
         new AsyncCallback<CajolingServiceResult>() {
       public void onFailure(Throwable caught) {
         gui.setLoading(false);
-        gui.addCompileMessage(caught.getMessage());
+        gui.addCompileMessagePlainText(caught.getMessage());
       }
 
       public void onSuccess(CajolingServiceResult result) {
         gui.setLoading(false);
         if (result == null) {
-          gui.addCompileMessage("An unknown error occurred");
+          gui.addCompileMessagePlainText("An unknown error occurred");
           gui.selectTab(PlaygroundView.Tabs.COMPILE_WARNINGS);
           return;
         }
         for (String message: result.getMessages()) {
-          gui.addCompileMessage(message);
+          gui.addCompileMessageHtml(message);
         }
         if (result.getHtml() != null) {
           gui.setCajoledSource(result.getHtml(), result.getJavascript());
@@ -160,7 +160,7 @@ public class Playground implements EntryPoint, ValueChangeHandler<String> {
     cajolingService.getBuildInfo(new AsyncCallback<String>() {
       public void onFailure(Throwable caught) {
         gui.setLoading(false);
-        gui.addCompileMessage(caught.getMessage());
+        gui.addCompileMessagePlainText(caught.getMessage());
         gui.setVersion("Unknown");
       }
 
