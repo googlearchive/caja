@@ -24,6 +24,7 @@ import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenConsumer;
+import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNode.ReflectiveCtor;
@@ -182,24 +183,28 @@ public class GWTCajolingServiceImpl extends RemoteServiceServlet
     }
   }
 
+  /** Formats messages as HTML text. */
   private static String[] formatMessages(
       Map<InputSource, ? extends CharSequence> inputMap,
       MessageContext mc, MessageQueue mq) {
-    List<Message> messages = mq.getMessages();
     SnippetProducer sp = new HtmlSnippetProducer(inputMap, mc);
     List<String> result = Lists.newArrayList();
 
-    for (Message msg : messages) {
-      String snippet = sp.getSnippet(msg);
+    for (Message msg : mq.getMessages()) {
       StringBuilder messageText = new StringBuilder();
-      messageText.append(msg.getMessageLevel().name())
-                 .append(" ")
-                 .append(msg.format(mc));
+
+      Escaping.escapeXml(msg.getMessageLevel().name(), false, messageText);
+      messageText.append(" ");
+      Escaping.escapeXml(msg.format(mc), false, messageText);
+
+      String snippet = sp.getSnippet(msg);
       if (!"".equals(snippet)) {
         messageText.append(":").append(snippet);
       }
+
       result.add(messageText.toString());
     }
+
     return result.toArray(new String[0]);
   }
 

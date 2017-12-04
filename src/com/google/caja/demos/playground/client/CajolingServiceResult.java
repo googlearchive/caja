@@ -30,6 +30,9 @@ public class CajolingServiceResult implements IsSerializable {
     // Provided for deserialization.
   }
 
+  /**
+   * @param messages Error/warning messages as HTML.
+   */
   public CajolingServiceResult(String html, String javascript,
       String[] messages) {
     this.html = html;
@@ -43,6 +46,8 @@ public class CajolingServiceResult implements IsSerializable {
   public String getJavascript() {
     return javascript;
   }
+  
+  /** Error or warning messages, in HTML. */
   public String[] getMessages() {
     return messages;
   }
