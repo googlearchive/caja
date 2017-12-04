@@ -68,4 +68,17 @@ public class GWTCajolingServiceImplTest extends CajaTestCase {
     assertFailsWithError("http://foo/bar.html", "<script>var a=b[];</script>",
         MessageLevel.ERROR);
   }
+
+  public final void testErrorReportingEscaping() {
+    CajolingServiceResult result = service.cajole(
+        null, "http://foo/bar.html", "<%tag style=>error<input>error​​",
+        false, null);
+    assertNull(result.getHtml());
+    assertNull(result.getJavascript());
+    for (String message : result.getMessages()) {
+      assertNotContains(message, "<%");
+      assertNotContains(message, "<input");
+      assertNotContains(message, "<INPUT");
+    }
+  }
 }
