@@ -408,14 +408,15 @@ var ses;
             }
             if (!!gopd(this, name)) {
               this[name] = newValue;
+            } else {
+              // TODO(erights): Do all the inherited property checks
+              defProp(this, name, {
+                value: newValue,
+                writable: true,
+                enumerable: true,
+                configurable: true
+              });
             }
-            // TODO(erights): Do all the inherited property checks
-            defProp(this, name, {
-              value: newValue,
-              writable: true,
-              enumerable: true,
-              configurable: true
-            });
           }
           var desc = gopd(obj, name);
           if ('value' in desc) {
