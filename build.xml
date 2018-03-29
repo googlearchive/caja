@@ -580,11 +580,6 @@ For help on building and testing Caja, see:
       <include name="com/google/caja/util/Maps.java"/>
       <include name="com/google/caja/util/Sets.java"/>
     </javac>
-    <copy todir="${lib}">
-      <fileset dir="${src}">
-        <include name="**/caja/flash/flashbridge.swf"/>
-      </fileset>
-    </copy>
     <!-- Generate a schema of CSS properties for client side CSS validation. -->
     <copy todir="${lib}">
       <fileset dir="${src}">
@@ -1230,7 +1225,6 @@ For help on building and testing Caja, see:
         <include name="**/caja/es53.js"/>
         <include name="**/caja/tracing.js"/>
         <include name="**/caja/console.js"/>
-        <include name="**/caja/flash/caja-flash.js"/>
         <include name="**/caja/log-to-console.js"/>
         <include name="**/caja/plugin/bridal.js"/>
         <include name="**/caja/plugin/csslexer.js"/>
@@ -1386,17 +1380,6 @@ For help on building and testing Caja, see:
         <include name="js/*.js" />
         <include name="css/*.css" />
       </fileset>
-      <fileset dir="${src.caja}/demos/flash">
-        <include name="Boxed.swf" />
-      </fileset>
-      <fileset dir="${src.caja}/flash">
-        <include name="caja-flash.js" />
-        <include name="flashbridge.swf" />
-      </fileset>
-      <fileset dir="${src.caja}/flash/tests">
-        <include name="BridgeAware.swf" />
-        <include name="BridgeOblivious.swf" />
-      </fileset>
       <fileset dir="${src.caja}/demos/playground">
         <include name="examples/*.gif" />
         <include name="examples/*.html" />
@@ -1438,15 +1421,6 @@ For help on building and testing Caja, see:
         <include name="utility-frame.opt.js"/>
       </fileset>
     </copy>
-
-    <copy file="${third_party}/js/swfobject/src/swfobject.js"
-          tofile="${war}/swfobject.js"/>
-    <transform>
-      <input file="${third_party}/js/swfobject/src/swfobject.js"/>
-      <output file="${war}/swfobject.opt.js"
-              language="javascript" renderer="minify"
-              ignore="AMBIGUOUS_ESCAPE_SEQUENCE"/>
-    </transform>
 
     <copy todir="${war}/sunspider">
       <fileset dir="${third_party}/js/sunspider-benchmark">
@@ -1696,9 +1670,6 @@ For help on building and testing Caja, see:
       <fileset dir="${src.caja}">
         <include name="log-to-console.js"/>
       </fileset>
-      <fileset dir="${src.caja}/flash">
-        <include name="caja-flash.js"/>
-      </fileset>
       <fileset dir="${src.caja}/plugin">
         <include name="caja.js"/>
       </fileset>
@@ -1774,36 +1745,6 @@ For help on building and testing Caja, see:
       description="Builds playground with only one GWT permutation">
     <property name="gwt.devground" value="true"/>
     <antcall target="playground"/>
-  </target>
-
-  <macrodef name="buildSwf">
-    <attribute name="in"/>
-    <attribute name="out"/>
-    <sequential>
-      <exec executable="mxmlc" failonerror="true">
-        <arg value="--source-path=${src}"/>
-        <arg value="--debug=true"/>
-        <arg value="--static-link-runtime-shared-libraries"/>
-        <arg value="--show-actionscript-warnings=true"/>
-        <arg value="-o"/>
-        <arg value="@{out}"/>
-        <arg value="@{in}"/>
-      </exec>
-    </sequential>
-  </macrodef>
-
-  <property name="src.flash" value="${src.caja}/flash"/>
-
-  <!-- This is not automatic, because it requires Flex, and the
-       Flex license doesn't allow adding it to third_party -->
-  <target name="flash"
-          description="Rebuild Flash swf files">
-    <buildSwf in="${src.flash}/FlashBridge.as"
-              out="${src.flash}/flashbridge.swf"/>
-    <buildSwf in="${src.flash}/tests/BridgeAware.mxml"
-              out="${src.flash}/tests/BridgeAware.swf"/>
-    <buildSwf in="${src.flash}/tests/BridgeOblivious.mxml"
-              out="${src.flash}/tests/BridgeOblivious.swf"/>
   </target>
 
   <target name="precajole-light" depends="tools">

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /**
- * @requires setTimeout URI
+ * @requires setTimeout URI console
  * @provides GuestManager
  * @overrides window
  */
@@ -57,9 +57,6 @@ function GuestManager(frameTamingSchema, frameTamingMembrane, divInfo,
     cajoledHtml: undefined,
 
     moreImports: undefined,
-
-    // Enable Flash support
-    flash: true
   };
 
   function copyStringMap(o) {
@@ -155,7 +152,9 @@ function GuestManager(frameTamingSchema, frameTamingMembrane, divInfo,
     },
 
     flash: function(flag) {
-      args.flash = !!flag;
+      if (flag) {
+        console.warn('Caja no longer supports embedding Flash.');
+      }
       return self;
     },
 
