@@ -1,3 +1,0 @@
-modified src/swfobject.js to ignore /__$/ names in for-in loops.
-
-deleted swfobject.js (minified)

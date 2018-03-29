@@ -6669,18 +6669,6 @@ var Domado = (function() {
         if (!uriRewriterForCss) { return null; }
         return uriRewriterForCss(uri, prop);
       });
-      // TODO(kpreid): Consider moving domicile.suffix into the
-      // domicile.virtualization object. Used by caja-flash.js only.
-      domicile.suffix = cajaVM.constFunc(function(nmtokens) {
-        var p = String(nmtokens).replace(/^\s+|\s+$/g, '').split(/\s+/g);
-        var out = [];
-        for (var i = 0; i < p.length; ++i) {
-          var nmtoken = rewriteAttribute(null, null, html4.atype.ID, p[+i]);
-          if (!nmtoken) { throw new Error(nmtokens); }
-          out.push(nmtoken);
-        }
-        return out.join(' ');
-      });
       domicile.rewriteUriInCss = cajaVM.constFunc(function(value, propName) {
         return value
           ? uriRewrite(naiveUriPolicy, value, html4.ueffects.SAME_DOCUMENT,
