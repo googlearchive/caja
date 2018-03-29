@@ -56,7 +56,7 @@ function GuestManager(frameTamingSchema, frameTamingMembrane, divInfo,
     cajoledJs: undefined,
     cajoledHtml: undefined,
 
-    moreImports: undefined,
+    moreImports: undefined
   };
 
   function copyStringMap(o) {

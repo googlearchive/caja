@@ -387,12 +387,6 @@ function ES53FrameGroup(cajaInt, config, tamingWin, feralWin, guestMaker,
     var guestWin = gman.iframe.contentWindow;
     ___.copyToImports(gman.imports, moreImports);
 
-    // TODO(felix8a): not right for multiple guests
-    if (args.flash && gman.domicile && tamingWin.cajaFlash) {
-      tamingWin.cajaFlash.init(
-        feralWin, tamingWin, gman.domicile, config.flashbridge);
-    }
-
     if (args.cajoledJs !== undefined) {
       if (gman.domicile && args.cajoledHtml !== undefined) {
         gman.innerContainer.innerHTML = args.cajoledHtml;

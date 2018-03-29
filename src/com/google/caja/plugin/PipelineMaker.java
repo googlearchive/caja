@@ -31,7 +31,6 @@ import com.google.caja.plugin.stages.PipelineStoreStage;
 import com.google.caja.plugin.stages.PrecajoleRewriteStage;
 import com.google.caja.plugin.stages.ResolveUriStage;
 import com.google.caja.plugin.stages.RewriteCssStage;
-import com.google.caja.plugin.stages.RewriteFlashStage;
 import com.google.caja.plugin.stages.RewriteHtmlStage;
 import com.google.caja.plugin.stages.SanitizeHtmlStage;
 import com.google.caja.plugin.stages.ValidateCssStage;
@@ -192,7 +191,6 @@ public final class PipelineMaker {
             out.add(new PrecajoleRewriteStage(
                 meta.getPrecajoleMap(), meta.getPrecajoleMinify()));
             out.add(new RewriteHtmlStage(in.htmlSchema, in.cache));
-            out.add(new RewriteFlashStage());
           }
         }.given(HTML_XMLNS)
          .produces(HTML_STATIC).produces(CSS).produces(JS),
