@@ -92,6 +92,10 @@ var sanitizeMediaQuery = undefined;
 
   var ALLOWED_URI_SCHEMES = /^(?:https?|geo|mailto|sms|tel)$/i;
 
+  function getAllowedUriSchemes() {
+	  return html4.allowedUriSchemes || ALLOWED_URI_SCHEMES;
+  }
+  
   function resolveUri(baseUri, uri) {
     if (baseUri) {
       return URI.utils.resolve(baseUri, uri);
@@ -102,7 +106,7 @@ var sanitizeMediaQuery = undefined;
   function safeUri(uri, prop, naiveUriRewriter) {
     if (!naiveUriRewriter) { return null; }
     var parsed = ('' + uri).match(URI_SCHEME_RE);
-    if (parsed && (!parsed[1] || ALLOWED_URI_SCHEMES.test(parsed[1]))) {
+    if (parsed && (!parsed[1] || getAllowedUriSchemes().test(parsed[1]))) {
       return naiveUriRewriter(uri, prop);
     } else {
       return null;

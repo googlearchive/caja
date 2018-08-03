@@ -812,13 +812,17 @@ var html = (function(html4) {
 
   var ALLOWED_URI_SCHEMES = /^(?:https?|geo|mailto|sms|tel)$/i;
 
+  function getAllowedUriSchemes() {
+	  return html4.allowedUriSchemes || ALLOWED_URI_SCHEMES;
+  }
+  
   function safeUri(uri, effect, ltype, hints, naiveUriRewriter) {
     if (!naiveUriRewriter) { return null; }
     try {
       var parsed = URI.parse('' + uri);
       if (parsed) {
         if (!parsed.hasScheme() ||
-            ALLOWED_URI_SCHEMES.test(parsed.getScheme())) {
+            getAllowedUriSchemes().test(parsed.getScheme())) {
           var safe = naiveUriRewriter(parsed, effect, ltype, hints);
           return safe ? safe.toString() : null;
         }
