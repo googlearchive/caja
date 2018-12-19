@@ -1,0 +1,1460 @@
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link href="prettify/prettify.css" type="text/css" rel="stylesheet">
+<script type="text/javascript" src="prettify/prettify.js"></script>
+<link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css" type="text/css" rel="stylesheet">
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script><script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js"></script>
+<link href="apidoc.css" type="text/css" rel="stylesheet">
+<script type="text/javascript" src="apidoc.js"></script>
+<title>Caja host page API documentation</title>
+</head>
+<body onload="initialize();">
+<div class="container">
+<div class="page-name">Caja host page API documentation</div>
+<div class="doc">
+<p>This is the main API for host pages to use Caja for
+  embedding untrusted guest code. A host page includes the
+  <code>caja.js</code> script, for example:</p>
+
+<pre class="prettyprint lang-html">
+&lt;script src="http://caja.appspot.com/caja.js"&gt;&lt;/script&gt;
+</pre>
+  
+<p>This places a singleton object, <code>caja</code>, in the host
+  page's global namespace. The API of the <code>caja</code> object and
+  the objects reachable from it is described here.</p>
+</div>
+<div class="container">
+<div class="object-name" hidecontrol="caja">
+<code>caja</code>
+</div>
+<div class="content" id="caja">
+<div class="doc">
+<p>The entry point for access to the Caja host page
+    API.</p>
+</div>
+<div class="container">
+<div class="section-header" hidecontrol="caja_properties">
+          Properties
+        </div>
+<div class="content" id="caja_properties">
+<div class="container">
+<div class="item-header" hidecontrol="caja_properties_policy">
+<code>policy</code>
+</div>
+<div class="content" id="caja_properties_policy">
+<div class="doc">
+<p>A pre-configured set of policies (see
+      <code>policy</code>) for use by host code, as an alternative to
+      constructing a <code>uriPolicy</code> from scratch.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="section-header" hidecontrol="caja_methods">
+          Methods
+        </div>
+<div class="content" id="caja_methods">
+<div class="container">
+<div class="item-header" hidecontrol="caja_methods_initialize">
+<code>initialize
+    (
+    params
+    )
+  </code>
+</div>
+<div class="content" id="caja_methods_initialize">
+<div class="doc">
+<p>Sets the default parameters for Caja.</p>
+<p>This method
+      must be called before any calls to <code>whenReady</code> or
+      <code>load</code>. If either of these is called first, a built-in
+      set of parameters will be used and any subsequent calls to
+      <code>initialize</code> will throw. The resulting exceptions leave
+      Caja in a consistent state.</p>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="caja_methods_initialize_params">
+<code>params</code>
+</div>
+<div class="content" id="caja_methods_initialize_params">
+<div class="doc">
+<p>a map of configuration parameters. These include:</p>
+<ul>
+          
+<li>
+<code>server</code>: a string giving the URL of the Caja
+          server. This must match the location from which the
+          <code>caja.js</code> script was sourced. For example, if the script
+          was from <code>http://caja.appspot.com/caja.js</code>, then
+          <code>cajaServer</code> must, correspondingly, be
+          <code>http://caja.appspot.com/</code>.</li>
+          
+<li>
+<code>resources</code>: a string giving the URL of the location
+          at which the Caja JavaScript runtime resources are found. If unspecified,
+          this location is deduced from the <code>server</code> parameter.</li>
+          
+<li>
+<code>debug</code>: a boolean indicating whether to configure Caja
+          for debugging. At this time, debugging support means that the code
+          loaded into the browser will be pretty-printed for readability, rather
+          than minified for speed.</li>
+          
+<li>
+<code>console</code>: an object that the Caja runtime is to use in
+          place of the native browser's <code>console</code> global object. If
+          unspecified, Caja will fall back to the native <code>console</code>,
+          and silently suppress console logging if that is unavailable.</li>
+          
+<li>
+<code>log</code>: a function that the Caja runtime is to use in
+          place of the native browser's <code>console.log</code> function. If
+          unspecified, Caja will fall back to the <code>log</code> function in
+          the supplied <code>console</code> object (see above). If unspecified,
+          Caja will fall back to the browser's native <code>console.log</code>
+          function. If that is unavailable, Caja will silently suppress console
+          logging.</li>
+        
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="item-header" hidecontrol="caja_methods_whenReady">
+<code>whenReady
+    (
+    callback
+    )
+  </code>
+</div>
+<div class="content" id="caja_methods_whenReady">
+<div class="doc">
+<p>Registers a function to be called back when Caja is
+      ready to provide services.</p>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="caja_methods_whenReady_callback">
+<code>callback</code>
+</div>
+<div class="content" id="caja_methods_whenReady_callback">
+<div class="doc">
+<p>a callback function.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="item-header" hidecontrol="caja_methods_load">
+<code>load
+    (
+    div, uriPolicy, callback
+    )
+  </code>
+</div>
+<div class="content" id="caja_methods_load">
+<div class="doc">
+<p>Load a new virtual Caja frame in which to run guest
+      code.</p>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="caja_methods_load_div">
+<code>div</code>
+</div>
+<div class="content" id="caja_methods_load_div">
+<div class="doc">
+<p>an HTML <code>&lt;div&gt;</code> which will contain
+        the guest code's virtual HTML <code>document</code>
+</p> 
+<p>The
+        caller may pass <code>undefined</code>, which causes the guest
+        code to run with no virtual document (e.g., for running plain
+        JavaScript without a UI).</p>
+
+        
+<p>
+<em>Experimental:</em> It is also possible to provide a
+        HTML document node, such as an <code>&lt;iframe&gt;</code>'s
+        <code>contentDocument</code>, instead of an element. This mode of
+        operation has not been fully tested and may have missing
+        functionality. Note that the provided document <em>cannot</em> be
+        the same as the one in which <code>caja.js</code> was loaded, as
+        this would overwrite Caja's internal iframes.</p>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="caja_methods_load_uriPolicy">
+<code>uriPolicy</code>
+</div>
+<div class="content" id="caja_methods_load_uriPolicy">
+<div class="doc">
+<p>a <code>uriPolicy</code> object that is called
+        whenever guest code attempts to gain access to an external
+        URI.</p> 
+<p>The caller may pass <code>undefined</code>, which
+        disables all guest code's access to URIs, including via HTML
+        such as <code>&lt;img src="..."&gt;</code> markup.</p>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="caja_methods_load_callback">
+<code>callback</code>
+</div>
+<div class="content" id="caja_methods_load_callback">
+<div class="doc">
+<p>a <code>function(frame)</code> which will be called back 
+        with a <code>frame</code> object when ready.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="item-header" hidecontrol="caja_methods_tame">
+<code>tame
+    (
+    aDefensiveObject
+    )
+  </code>
+</div>
+<div class="content" id="caja_methods_tame">
+<div class="doc">
+        
+<p>Tames a graph of defensive objects rooted at the supplied
+        object. The result of taming is provided to guest code via the
+        <code>apis</code> method of the <code>frame</code> object.</p>
+        
+<p>For the most part, Caja automatically tames objects in a
+        safe manner respecting the most common API choices.</p>
+        
+<p>
+<strong>Records and arrays.</strong> Records and arrays are
+        tamed as read-only objects. Therefore, if you tame the
+        record:</p>
+
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+var f = {
+  x: 3,
+  y: 4
+};
+
+/* then provide to guest code: */
+aFrame.api({ tamedF: caja.tame(f) })
+</pre>
+          
+<p>guest code using the tamed form <code>tamedF</code> will
+          be able to read the values of <code>x</code> and
+          <code>y</code>, but will not be able to modify them:</p>
+
+<pre class="prettyprint lang-javascript">
+/* <strong>guest code</strong> */
+print(tamedF.x);
+print(tamedF.y);
+tamedF.x = 42;   // Error
+tamedF.foo = 19; // Error
+</pre>
+          
+<p>
+<strong>Functions:</strong> Functions are tamed as pure
+          functions that are not supplied with a <code>this</code>
+          variable. This means that, if you tame the function:</p>
+
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+function f(x) { alert(this); alert(x); }
+var t = caja.tame(f);
+</pre>
+          
+<p>guest code using the tamed form <code>t</code> will be
+          able to call your function, pass it arguments, and receive
+          its returned value. However, the <code>this</code> value
+          seen by your code will be a useless, empty record provided
+          by Caja. The reason is that a function which modifies its
+          <code>this</code> could be used by malicious guest code as a
+          tool to manipulate objects that the guest code would not
+          otherwise have had the authority to manipulate, and it is
+          not common for JavaScript functions to check the progeny of
+          their <code>this</code> variable on each invocation.</p>
+          
+<p>
+<strong>Recursion:</strong> Caja recursively traverses
+          records and arrays and tames the values found inside them.
+          Arguments passed from guest code to host functions are
+          un-tamed, then the return value of the host function is
+          tamed.</p>
+        
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="caja_methods_tame_aDefensiveObject">
+<code>aDefensiveObject</code>
+</div>
+<div class="content" id="caja_methods_tame_aDefensiveObject">
+<div class="doc">
+          
+<p>a defensive object to be tamed. This object may have
+          taming annotations on some of its components.</p>
+        
+</div>
+</div>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="caja_methods_tame__returnvalue__">
+        Returns
+      </div>
+<div class="content" id="caja_methods_tame__returnvalue__">
+<div class="doc">
+<p>a tamed object suitable for presenting to guest
+      code, representing the supplied defensive
+      object.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="item-header" hidecontrol="caja_methods_untame">
+<code>untame
+    (
+    aTamedObject
+    )
+  </code>
+</div>
+<div class="content" id="caja_methods_untame">
+<div class="doc">
+<p>Obtain the original defensive object corresponding to a
+      tamed object.</p>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="caja_methods_untame_aTamedObject">
+<code>aTamedObject</code>
+</div>
+<div class="content" id="caja_methods_untame_aTamedObject">
+<div class="doc">
+<p>a tamed object obtained via calling <code>tame</code>.</p>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="caja_methods_untame__returnvalue__">
+        Returns
+      </div>
+<div class="content" id="caja_methods_untame__returnvalue__">
+<div class="doc">
+<p>the original defensive object underlying
+      <code>aTamedObject</code>.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="item-header" hidecontrol="caja_methods_markReadOnlyRecord">
+<code>markReadOnlyRecord
+    (
+    f
+    )
+  </code>
+</div>
+<div class="content" id="caja_methods_markReadOnlyRecord">
+<div class="doc">
+<p>Marks a record such that guest code cannot make 
+      modifications to the properties of the tamed form
+      of the record. Only the supplied record is affected -- not any other object
+      that may be connected to it. For example, in the following:</p>
+
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+var rw = { x: 3 };
+var ro = { x : 4 }
+caja.markReadOnlyRecord(ro);
+var rot = caja.tame(ro);
+var rwt = caja.tame(rw);
+</pre>
+        
+<p>guest code using the tamed value <code>rwt</code> would be
+        allowed to modify the value of <code>x</code> or delete the
+        property, or add a new property <code>y</code>. However, guest
+        code using the tamed value <code>rot</code> would encounter an
+        exception.</p>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="caja_methods_markReadOnlyRecord_f">
+<code>f</code>
+</div>
+<div class="content" id="caja_methods_markReadOnlyRecord_f">
+<div class="doc">
+<p>a record in the host page.</p>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="caja_methods_markReadOnlyRecord__returnvalue__">
+        Returns
+      </div>
+<div class="content" id="caja_methods_markReadOnlyRecord__returnvalue__">
+<div class="doc">
+<p>the supplied <code>f</code>.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="item-header" hidecontrol="caja_methods_markFunction">
+<code>markFunction
+    (
+    f
+    )
+  </code>
+</div>
+<div class="content" id="caja_methods_markFunction">
+<div class="doc">
+<p>Marks a host function to be made callable from guest code when
+      tamed. For example, in the following:</p>
+
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+function ping(x) { alert('pinged ' + x); }
+caja.markFunction(ping);
+
+/* then provide to guest code: */
+aFrame.api({ ping: caja.tame(ping) })
+</pre>
+      
+<p>guest code would be able to use the value <code>ping</code> as a
+      function, for example:</p>
+
+<pre class="prettyprint lang-javascript">
+/* <strong>guest code</strong> */
+ping('hello world');
+</pre>
+      
+<p>By default, functions from the host page are tamed as inert
+      objects that have no useful behavior. This is a safety feature,
+      because functions in the host page generally represent authority to
+      affect the world. By calling <code>markFunction</code>, a host page
+      author affirms that they have audited the behavior of the target
+      function and have determined (a) that the authority it has is indeed
+      okay to provide to the guest code; and (b) that the invariants upon which
+      the correctness of the function depends cannot be violated by passing
+      the function corrupted arguments. That last point requires, for example,
+      that numeric indices are checked for bounds, and that strings passed
+      from guest code are not used in a manner that could grant access to internal
+      data structures.</p>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="caja_methods_markFunction_f">
+<code>f</code>
+</div>
+<div class="content" id="caja_methods_markFunction_f">
+<div class="doc">
+<p>a function in the host page.</p>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="caja_methods_markFunction__returnvalue__">
+        Returns
+      </div>
+<div class="content" id="caja_methods_markFunction__returnvalue__">
+<div class="doc">
+<p>the supplied <code>f</code>.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="item-header" hidecontrol="caja_methods_markXo4a">
+<code>markXo4a
+    (
+    f
+    )
+  </code>
+</div>
+<div class="content" id="caja_methods_markXo4a">
+<div class="doc">
+<p>Mark a host function as suitable for taming as an
+      <a href="http://en.wikipedia.org/wiki/Exophora">exophora</a>,
+      meaning, a function that receives any <code>this</code> value it
+      is called on. Use only with care.</p>
+      
+<p>Consider the following host code:</p>
+
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+function f(x) { this.dangerous = x; }
+caja.markXo4a(f);
+
+/* then provide to guest code: */
+aFrame.api({ tamedF: caja.tame(f) })
+</pre>
+      
+<p>Guest code using the function <code>tamedF</code> would be able to
+      set the property <code>dangerous</code> on <em>any</em> object of its
+      choosing, regardless of any policies to the contrary. So, if <code>victim</code>
+      were an object that relied on its <code>dangerous</code> property and did
+      not make that available to external clients, the following guest code:</p>
+
+<pre class="prettyprint lang-javascript">
+/* <strong>guest code</strong> */
+victim.method = tamedF;
+victim.method(42);
+</pre>
+      
+<p>or even:</p>
+
+<pre class="prettyprint lang-javascript">
+/* <strong>guest code</strong> */
+tamedF.apply(victim, [42]);
+</pre>
+      
+<p>would set the <code>dangerous</code> property of <code>victim</code>
+      to the value <code>42</code>, regardless of policies to the contrary.</p>
+      
+<p>The rule for when an exophora is safe is that it
+      <em>only</em> gets or sets whitelisted properties of the
+      <code>this</code> value on which it is called, in other words,
+      properties that do not interfere with any object's internals. It
+      may do so because the property (such as <code>dangerous</code> above)
+      is known to always be safe, or because the function itself (like
+      <code>f</code> above) contains enough internal checks to make sure it
+      never does the wrong thing.</p>
+      
+<p>In general, true reasons for using exophora are rare. We
+      advise the use of other, safer mechanisms, with exophora as a
+      last resort.</p>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="caja_methods_markXo4a_f">
+<code>f</code>
+</div>
+<div class="content" id="caja_methods_markXo4a_f">
+<div class="doc">
+<p>a function in the host page.</p>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="caja_methods_markXo4a__returnvalue__">
+        Returns
+      </div>
+<div class="content" id="caja_methods_markXo4a__returnvalue__">
+<div class="doc">
+<p>the supplied <code>f</code>.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="item-header" hidecontrol="caja_methods_markCtor">
+<code>markCtor
+    (
+    c
+    )
+  </code>
+</div>
+<div class="content" id="caja_methods_markCtor">
+<div class="doc">
+<p>Marks a host function as a constructor that, when tamed,
+      can be used by guest code using the <code>new</code> operator,
+      with correct behavior of <code>instanceof</code>. Consider the
+      following host code:</p>
+
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+function Ctor(x) { this.x = x; }
+Ctor.prototype.getX = function() { return this.x; };
+Ctor.prototype.setX = function(x) { this.x = x; };
+
+function SubCtor(x, y) { Ctor.call(this, x); this.y = y; }
+SubCtor.prototype = new Ctor(0);
+SubCtor.prototype.getY = function() { return this.y; };
+SubCtor.prototype.setY = function(y) { this.y = y; };
+</pre>
+      
+<p>In a case where <code>Ctor</code> and <code>SubCtor</code>
+      are to be made available to guest code, it is necessary to
+      annotate them so that Caja can tame them correctly. Each
+      constructor must be marked with <code>markCtor</code> and, if a
+      constructor has a superclass, that must be provided as the
+      second argument to <code>markCtor</code>. For example:</p>
+
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+caja.markCtor(Ctor);
+caja.markCtor(SubCtor, Ctor);
+
+/* then provide to guest code: */
+aFrame.api({
+  TamedCtor: caja.tame(Ctor),
+  TamedSubCtor: caja.tame(SubCtor)
+})
+</pre>
+      
+<p>When guest code creates instances of these constructors,
+      e.g., by calling:</p>
+
+<pre class="prettyprint lang-javascript">
+/* <strong>guest code</strong> */
+var o = new TamedCtor(19);
+</pre>
+      
+<p>Caja will ensure that the instances, like <code>o</code> in
+      the example, are tamed correctly.</p>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="caja_methods_markCtor_c">
+<code>c</code>
+</div>
+<div class="content" id="caja_methods_markCtor_c">
+<div class="doc">
+<p>a constructor in the host page.</p>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="caja_methods_markCtor__returnvalue__">
+        Returns
+      </div>
+<div class="content" id="caja_methods_markCtor__returnvalue__">
+<div class="doc">
+<p>the supplied <code>c</code>.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="item-header" hidecontrol="caja_methods_grantMethod">
+<code>grantMethod
+    (
+    o, name
+    )
+  </code>
+</div>
+<div class="content" id="caja_methods_grantMethod">
+<div class="doc">
+<p>Marks a function property on an object and its prototype chain
+      descendants such that tamed code can
+      call it as a method on its parent object. A method (as opposed to a pure
+      function) is called with a properly bound <code>this</code> value.</p>
+      
+<p>By default, to prevent confusion and enhance defensibility, if guest
+      code has access to a tamed object <code>o</code>, and there exists a property
+      <code>p</code> on <code>o</code> such that the value of <code>o.p</code> is
+      a function, then if guest code invokes the function by writing <code>o.p()</code>,
+      the implementation of the function pointed to by <code>o.p</code> does <em>not</em>
+      receive <code>o</code> as its value of <code>this</code> (it receives some useless
+      value instead).</p>
+      
+<p>Host code can use <code>grantMethod</code> to override this default. A common
+      use case is when taming idiomatic JavaScript classes. Consider the host code:</p>
+
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+function Ctor(x) { this.x = x; }
+Ctor.prototype.getX = function() { return this.x; };
+Ctor.prototype.setX = function(x) { this.x = x; };
+</pre>
+      
+<p>Assume the host page wishes to allow guest code to call
+      <code>getX</code> and <code>setX</code> on
+      instances of <code>Ctor</code> and for <code>this</code> in these functions to
+      be bound correctly. The host page should do:</p>
+
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+caja.markCtor(Ctor);
+caja.grantMethod(Ctor.prototype, "getX");
+caja.grantMethod(Ctor.prototype, "setX");
+
+/* then provide to guest code: */
+aFrame.api({
+  TamedCtor: tame(Ctor),
+})
+</pre>
+      
+<p>Guest code can then make the following calls to <code>getX</code> and
+      <code>setX</code> and expect them to work:</p>
+
+<pre class="prettyprint lang-javascript">
+/* <strong>guest code</strong> */
+var o = new TamedCtor(19);
+o.getX();
+o.setX(22);
+</pre>
+      
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="caja_methods_grantMethod_o">
+<code>o</code>
+</div>
+<div class="content" id="caja_methods_grantMethod_o">
+<div class="doc">
+<p>an object (often but not always the prototype of a constructor).</p>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="caja_methods_grantMethod_name">
+<code>name</code>
+</div>
+<div class="content" id="caja_methods_grantMethod_name">
+<div class="doc">
+<p>the name of a property on object <code>o</code> (or anticipated objects
+	having <code>o</code> as their prototype).</p>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="caja_methods_grantMethod__returnvalue__">
+        Returns
+      </div>
+<div class="content" id="caja_methods_grantMethod__returnvalue__">
+<div class="doc">
+<p>the supplied <code>o</code>.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="item-header" hidecontrol="caja_methods_grantRead">
+<code>grantRead
+    (
+    o, name
+    )
+  </code>
+</div>
+<div class="content" id="caja_methods_grantRead">
+<div class="doc">
+<p>Marks a property on an object and its prototype chain decendants such that
+      tamed code can read the property on its parent object. A common
+      use case is when taming idiomatic JavaScript classes. Consider the host code:</p>
+
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+function Ctor(x) { this.x = x; }
+</pre>
+      
+<p>Assume the host page wishes to allow guest code to read the <code>x</code>
+      property on instances of <code>Ctor</code>. The host page should do:</p>
+
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+caja.markCtor(Ctor);
+caja.grantRead(Ctor.prototype, "x");
+
+/* then provide to guest code: */
+aFrame.api({
+  TamedCtor: tame(Ctor),
+})
+</pre>
+      
+<p>Guest code can then read <code>x</code> as follows and expect the
+      read operation to work:</p>
+
+<pre class="prettyprint lang-javascript">
+/* <strong>guest code</strong> */
+var o = new TamedCtor(19);
+o.x;
+</pre>
+      
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="caja_methods_grantRead_o">
+<code>o</code>
+</div>
+<div class="content" id="caja_methods_grantRead_o">
+<div class="doc">
+<p>an object (often but not always the prototype of a constructor).</p>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="caja_methods_grantRead_name">
+<code>name</code>
+</div>
+<div class="content" id="caja_methods_grantRead_name">
+<div class="doc">
+<p>the name of a property on object <code>o</code> (or anticipated objects
+	having <code>o</code> as their prototype).</p>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="caja_methods_grantRead__returnvalue__">
+        Returns
+      </div>
+<div class="content" id="caja_methods_grantRead__returnvalue__">
+<div class="doc">
+<p>the supplied <code>o</code>.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="item-header" hidecontrol="caja_methods_grantReadWrite">
+<code>grantReadWrite
+    (
+    o, name
+    )
+  </code>
+</div>
+<div class="content" id="caja_methods_grantReadWrite">
+<div class="doc">
+<p>Marks a property on an object and its prototype chain decendants such that
+      tamed code can read and write the property on its parent object. A common
+      use case is when taming idiomatic JavaScript classes. Consider the host code:</p>
+
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+function Ctor(x) { this.x = x; }
+</pre>
+      
+<p>Assume the host page wishes to allow guest code to read and write the <code>x</code>
+      property on instances of <code>Ctor</code>. The host page should do:</p>
+
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+caja.markCtor(Ctor);
+caja.grantReadWrite(Ctor.prototype, "x");
+
+/* then provide to guest code: */
+aFrame.api({
+  TamedCtor: tame(Ctor),
+})
+</pre>
+      
+<p>Guest code can then read and write <code>x</code> as follows and expect the
+      read and write operations to work:</p>
+
+<pre class="prettyprint lang-javascript">
+/* <strong>guest code</strong> */
+var o = new TamedCtor(19);
+o.x = 23;
+o.x;
+</pre>
+      
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="caja_methods_grantReadWrite_o">
+<code>o</code>
+</div>
+<div class="content" id="caja_methods_grantReadWrite_o">
+<div class="doc">
+<p>an object (often but not always the prototype of a constructor).</p>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="caja_methods_grantReadWrite_name">
+<code>name</code>
+</div>
+<div class="content" id="caja_methods_grantReadWrite_name">
+<div class="doc">
+<p>the name of a property on object <code>o</code> (or anticipated objects
+	having <code>o</code> as their prototype).</p>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="caja_methods_grantReadWrite__returnvalue__">
+        Returns
+      </div>
+<div class="content" id="caja_methods_grantReadWrite__returnvalue__">
+<div class="doc">
+<p>the supplied <code>o</code>.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="section-header" hidecontrol="caja_examples">
+          Examples
+        </div>
+<div class="content" id="caja_examples">
+<div class="container">
+<div class="item-header" hidecontrol="caja_examples_1">Setting defaults</div>
+<div class="content" id="caja_examples_1">
+<div class="doc">
+
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+caja.initialize({
+  cajaServer: 'http://caja.appspot.com/',
+  debug: false
+});
+</pre>
+        
+<p>Sets the defaults to point to <code>caja.appspot.com</code>
+        without debug support.</p>
+      
+</div>
+</div>
+</div>
+<div class="container">
+<div class="item-header" hidecontrol="caja_examples_2">Erroneous <code>initialize</code>
+</div>
+<div class="content" id="caja_examples_2">
+<div class="doc">
+
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+caja.whenReady(function() { /* ... */ });
+caja.initialize({ /* ... */ });
+</pre>
+        
+<p>The call to <code>initialize</code> throws since
+        <code>whenReady</code> has already been called.</p>
+      
+</div>
+</div>
+</div>
+<div class="container">
+<div class="item-header" hidecontrol="caja_examples_3">Erroneous <code>initialize</code>
+</div>
+<div class="content" id="caja_examples_3">
+<div class="doc">
+
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+caja.load( /* ... */ );
+caja.initialize({ /* ... */ });
+</pre>
+        
+<p>The call to <code>initialize</code> throws since
+        <code>load</code> has already been called.</p>
+      
+</div>
+</div>
+</div>
+<div class="container">
+<div class="item-header" hidecontrol="caja_examples_4">Incorrect taming</div>
+<div class="content" id="caja_examples_4">
+<div class="doc">
+
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+/* in a top-level script */
+caja.markFunction( /* ... */ );
+caja.tame( /* ... */ );
+</pre>
+        
+<p>Both calls to the <code>caja</code> object throw since,
+        when the main scripts in the page are being evaluated, the
+        <code>caja</code> object is not yet ready.</p>
+      
+</div>
+</div>
+</div>
+<div class="container">
+<div class="item-header" hidecontrol="caja_examples_5">Successful taming</div>
+<div class="content" id="caja_examples_5">
+<div class="doc">
+
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+/* in a top-level script */
+caja.whenReady(function() {
+  caja.markFunction( /* ... */ );
+  caja.tame( /* ... */ );
+});
+</pre>
+        
+<p>The calls to <code>markFunction</code>
+	and <code>tame</code> succeed.</p>
+      
+</div>
+</div>
+</div>
+<div class="container">
+<div class="item-header" hidecontrol="caja_examples_6">Running guest HTML from a URL</div>
+<div class="content" id="caja_examples_6">
+<div class="doc">
+        
+<p>Assume the host page has some HTML like the following:</p>
+
+<pre class="prettyprint lang-html">
+&lt;!-- <strong>host page markup</strong> --&gt;
+&lt;div id="guestDiv"&gt;&lt;/div&gt;
+</pre>
+        
+<p>Then the following code in the page:</p>
+
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+caja.initialize({ cajaServer: 'http://caja.appspot.com' });
+caja.load(
+    document.getElementById('guestDiv'),
+    undefined,  // no network access
+    function(frame) {
+      frame.code('http://foo.com/guest.html')
+           .run(function() {
+             alert('Guest code is running!');
+           });
+    });
+</pre>
+
+<p>loads <code>http://foo.com/guest.html</code> as a guest page into
+the pre-arranged <code>&lt;div&gt;</code> and <code>alert</code>s when
+the guest page is loaded.</p>
+      
+</div>
+</div>
+</div>
+<div class="container">
+<div class="item-header" hidecontrol="caja_examples_7">Running guest JavaScript from content</div>
+<div class="content" id="caja_examples_7">
+<div class="doc">
+        
+<p>The following code in a host page:</p>
+
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+caja.initialize({ cajaServer: 'http://caja.appspot.com' });
+caja.load(
+    undefined,  // no DOM access
+    undefined,  // no network access
+    function(frame) {
+      frame.code(
+               'http://example.com/default.js',  // dummy URL
+               'application/javascript',
+               '(x + y);')  // input source code
+           .api({ x: 3, y: 4 })
+           .run(function(result) {
+             alert(result);
+           });
+    });
+</pre>
+        
+<p>will run the provided source, pass it the supplied values
+        of <code>x</code> and <code>y</code>, and <code>alert</code>
+        the result of the computation, which would be the number
+        <code>7</code>.</p>
+      
+</div>
+</div>
+</div>
+<div class="container">
+<div class="item-header" hidecontrol="caja_examples_8">Providing a restricted user alert function</div>
+<div class="content" id="caja_examples_8">
+<div class="doc">
+        
+<p>Imagine a host page wishes to give guest code the ability
+        to call <code>alert</code>, but not to abuse it by calling it
+        too many times. Assume the host page has HTML like the
+        following:</p>
+
+<pre class="prettyprint lang-html">
+&lt;!-- <strong>host page markup</strong> --&gt;
+&lt;div id="guestDiv"&gt;&lt;/div&gt;
+</pre>
+        
+<p>Then the following code:</p>
+
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+var alertCount = 0;
+var restrictedAlert = function(s) {
+  if (alertCount === 2) { return; }
+  alertCount++;
+  alert(String(s));
+};
+
+caja.initialize({ cajaServer: 'http://caja.appspot.com' });
+caja.whenReady(function() {
+  caja.markFunction(restrictedAlert);
+});
+
+caja.load(
+    document.getElementById('guestDiv'),
+    undefined,  // no network access
+    function(frame) {
+      frame.code('http://foo.com/guest.html')
+           .api({ alert: caja.tame(restrictedAlert) })
+           .run(function() {
+             alert('Guest code is running!');
+           });
+    });
+</pre>
+        
+<p>will run the provided source, allowing it to call an
+        <code>alert</code> function that will seem like the
+        browser-provided version, but all but the first three attempts
+        to call it will be silent no-ops.</p>
+      
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="object-name" hidecontrol="frame">
+<code>frame</code>
+</div>
+<div class="content" id="frame">
+<div class="doc">
+<p>Object representing a virtual frame in which Caja runs
+    guest code. Contains a confined ECMAScript 5 JavaScript context,
+    with an optional confined DOM <code>document</code>.</p>
+</div>
+<div class="container">
+<div class="section-header" hidecontrol="frame_methods">
+          Methods
+        </div>
+<div class="content" id="frame_methods">
+<div class="container">
+<div class="item-header" hidecontrol="frame_methods_code">
+<code>code
+    (
+    uri, mimeType, content
+    )
+  </code>
+</div>
+<div class="content" id="frame_methods_code">
+<div class="doc">
+<p>Specifies that this <code>frame</code> is to run code
+      supplied by the host. The Caja system in the page will use its
+      connection to the server to compile ("cajole") the supplied
+      code.</p>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="frame_methods_code_uri">
+<code>uri</code>
+</div>
+<div class="content" id="frame_methods_code_uri">
+<div class="doc">
+<p>The URI of the original (un-cajoled) content.</p>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="frame_methods_code_mimeType">
+<code>mimeType</code>
+</div>
+<div class="content" id="frame_methods_code_mimeType">
+<div class="doc">
+<p>
+<strong>Optional.</strong> The MIME type of the
+        original (un-cajoled) content. Accepted values are
+        <code>text/html</code> and
+        <code>application/javascript</code>.</p>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="frame_methods_code_content">
+<code>content</code>
+</div>
+<div class="content" id="frame_methods_code_content">
+<div class="doc">
+<p>
+<strong>Optional.</strong> The literal content to be
+        run. If not supplied, Caja will retrieve the content using the
+        <code>uri</code> parameter.</p>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="frame_methods_code__returnvalue__">
+        Returns
+      </div>
+<div class="content" id="frame_methods_code__returnvalue__">
+<div class="doc">
+<p>this <code>frame</code> object.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="item-header" hidecontrol="frame_methods_api">
+<code>api
+    (
+    o
+    )
+  </code>
+</div>
+<div class="content" id="frame_methods_api">
+<div class="doc">
+<p>Specifies the APIs that will be provided to the guest
+      code.</p>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="frame_methods_api_o">
+<code>o</code>
+</div>
+<div class="content" id="frame_methods_api_o">
+<div class="doc">
+<p>an object containing named fields, each of which
+        becomes a top-level API that guest code can use. Each such
+        object should be tamed using the <code>tame</code>
+        method.</p>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="frame_methods_api__returnvalue__">
+        Returns
+      </div>
+<div class="content" id="frame_methods_api__returnvalue__">
+<div class="doc">
+<p>this <code>frame</code> object.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="item-header" hidecontrol="frame_methods_run">
+<code>run
+    (
+    callback
+    )
+  </code>
+</div>
+<div class="content" id="frame_methods_run">
+<div class="doc">
+<p>Runs code in the frame according to the information
+      provided by previous calls to some combination of
+      <code>code</code>, <code>cajoled</code> and
+      <code>api</code>.</p>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="frame_methods_run_callback">
+<code>callback</code>
+</div>
+<div class="content" id="frame_methods_run_callback">
+<div class="doc">
+<p>a <code>function(result)</code> wich will be called
+        back with the <em>completion value</em> of the code executed
+        in this frame. HTML has no completion value, while the
+        completion value of JavaScript is the same as the result of
+        evaluating it using the standard <code>eval</code>
+        operator.</p>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="frame_methods_run__returnvalue__">
+        Returns
+      </div>
+<div class="content" id="frame_methods_run__returnvalue__">
+<div class="doc">
+<p>this <code>frame</code> object.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="object-name" hidecontrol="policy">
+<code>policy</code>
+</div>
+<div class="content" id="policy">
+<div class="doc">
+<p>A pre-configured set of policies for use by host
+    code.</p>
+</div>
+<div class="container">
+<div class="section-header" hidecontrol="policy_properties">
+          Properties
+        </div>
+<div class="content" id="policy_properties">
+<div class="container">
+<div class="item-header" hidecontrol="policy_properties_net.NO_NETWORK">
+<code>net.NO_NETWORK</code>
+</div>
+<div class="content" id="policy_properties_net.NO_NETWORK">
+<div class="doc">
+<p>A <code>uriPolicy</code> that disallows all network access.</p>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="item-header" hidecontrol="policy_properties_net.ALL">
+<code>net.ALL</code>
+</div>
+<div class="content" id="policy_properties_net.ALL">
+<div class="doc">
+<p>A <code>uriPolicy</code> that allows all network access.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="section-header" hidecontrol="policy_methods">
+          Methods
+        </div>
+<div class="content" id="policy_methods">
+<div class="container">
+<div class="item-header" hidecontrol="policy_methods_net.only">
+<code>net.only
+    (
+    uri
+    )
+  </code>
+</div>
+<div class="content" id="policy_methods_net.only">
+<div class="doc">
+<p>Constructs a <code>uriPolicy</code> that allows only access to a
+      specified URI.</p>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="policy_methods_net.only_uri">
+<code>uri</code>
+</div>
+<div class="content" id="policy_methods_net.only_uri">
+<div class="doc">
+<p>the sole URI to be allowed.</p>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="policy_methods_net.only__returnvalue__">
+        Returns
+      </div>
+<div class="content" id="policy_methods_net.only__returnvalue__">
+<div class="doc">
+<p>a <code>uriPolicy</code> allowing access only to the specified
+      URI.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="object-name" hidecontrol="uriPolicy">
+<code>uriPolicy</code>
+</div>
+<div class="content" id="uriPolicy">
+<div class="doc">
+<p>An object that is called to determine whether, and how,
+    guest code should be allowed to gain access to external
+    URIs.</p>
+</div>
+<div class="container">
+<div class="section-header" hidecontrol="uriPolicy_methods">
+          Methods
+        </div>
+<div class="content" id="uriPolicy_methods">
+<div class="container">
+<div class="item-header" hidecontrol="uriPolicy_methods_rewrite">
+<code>rewrite
+    (
+    uri
+    )
+  </code>
+</div>
+<div class="content" id="uriPolicy_methods_rewrite">
+<div class="doc">
+<p>Determines whether the given URI should be
+      permitted.</p>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="uriPolicy_methods_rewrite_uri">
+<code>uri</code>
+</div>
+<div class="content" id="uriPolicy_methods_rewrite_uri">
+<div class="doc">
+<p>a fully qualified candidate URI, represented as a
+        <code>string</code>.</p>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="sub-item-header" hidecontrol="uriPolicy_methods_rewrite__returnvalue__">
+        Returns
+      </div>
+<div class="content" id="uriPolicy_methods_rewrite__returnvalue__">
+<div class="doc">
+<p>a truthy value iff the candidate URI is one which
+      should be accessible to the guest code.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="section-header" hidecontrol="uriPolicy_examples">
+          Examples
+        </div>
+<div class="content" id="uriPolicy_examples">
+<div class="container">
+<div class="item-header" hidecontrol="uriPolicy_examples_1">Restricted domain</div>
+<div class="content" id="uriPolicy_examples_1">
+<div class="doc">
+
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+var aPolicy = {
+  rewrite: function(uri) {
+    return /http:\/\/example\.com/\.*/.test(uri);
+  }
+};
+</pre>
+        
+<p>Constructs a <code>uriPolicy</code> which only allows
+        access to HTTP URL paths under the <code>example.com</code>
+        domain.</p>
+      
+</div>
+</div>
+</div>
+<div class="container">
+<div class="item-header" hidecontrol="uriPolicy_examples_2">Unrestricted</div>
+<div class="content" id="uriPolicy_examples_2">
+<div class="doc">
+
+<pre class="prettyprint lang-javascript">
+/* <strong>host page code</strong> */
+var aPolicy = {
+  rewrite: function(uri) { return true; }
+};
+</pre>
+        
+<p>Constructs a <code>uriPolicy</code> which allows
+        unrestricted access.</p>
+      
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="footer">
+      Copyright &copy; 2011, Google Inc. All Rights Reserved.
+    </div>
+</body>
+</html>
