@@ -162,6 +162,13 @@ jsunitRegister('testEmptyEndTags',
         '<input>');
 });
 
+jsunitRegister('testNoscript',
+               function testNoscript() {
+  // TODO(kpreid): Shouldn't we emit the noscript content? This is safe but not ideal.
+  check('before <noscript>content<img src="http://foo.com/bar" onerror="foo"></noscript> after',
+        'before  after');
+});
+
 jsunitRegister('testOnLoadStripped',
                function testOnLoadStripped() {
   check('<img src=http://foo.com/bar ONLOAD=alert(1)>',
@@ -365,6 +372,100 @@ jsunitRegister('testTagPolicy',
       conditionalRewritePolicy);
   jsunit.pass();
 });
+
+(function() {
+  function registerReplacementTest(name, from, to, input, expectedOutput) {
+    var testId = 'testTagPolicyReplacement_' + name;
+    jsunitRegister(testId, function() {
+      function tagPolicy(name, attribs) {
+        if (name === from) {
+          // Perform tag replacement.
+          return {
+            attribs: attribs,
+            tagName: to
+          };
+        } else {
+          // Add an attribute to mark that this non-replaced tag was processed.
+          var newAttribs = attribs.slice();
+          newAttribs.push('seen', '');
+          return {
+            attribs: newAttribs,
+            tagName: name
+          };
+        }
+      }
+      assertEquals(expectedOutput, html.sanitizeWithPolicy(input, tagPolicy));
+      jsunit.pass();
+    });
+  }
+
+  // TODO(kpreid): add testing of sanitizing of contents for unambiguity
+
+  registerReplacementTest('CDATA to PCDATA',
+      'script', 'xscriptx',
+      '<script>&lt; & <img src="s"></script>',
+      '<xscriptx>&amp;lt; &amp; &lt;img src="s"&gt;</xscriptx>');
+
+  registerReplacementTest('CDATA to RCDATA',
+      'script', 'title',
+      '<script>&lt; & <img src="s"></script>',
+      '<title>&amp;lt; &amp; &lt;img src="s"&gt;</title>');
+
+  registerReplacementTest('CDATA to CDATA',
+      'script', 'style',
+      '<script>entity & <img src="s"></script>',
+      '<style>entity & <img src="s"></style>');
+  // Note that "</>" is an arbitrary choice of innocuous replacement string.
+  registerReplacementTest('CDATA to CDATA with conflict',
+      'script', 'style',
+      '<script>content</sTyLe>content</script>',
+      '<style>content</>content</style>');
+
+  registerReplacementTest('RCDATA to PCDATA',
+      'title', 'div',
+      '<title>&lt; &amp; <img src="s"></title>',
+      '<div>&lt; &amp; &lt;img src="s"&gt;</div>');
+
+  registerReplacementTest('RCDATA to RCDATA',
+      'title', 'textarea',
+      '<title>&lt; &amp; <img src="s"></title>',
+      '<textarea>&lt; &amp; &lt;img src="s"&gt;</textarea>');
+
+  // We do not support converting PCDATA to CDATA accurately, because it is not
+  // needed for any known use case and could be a security risk.
+  registerReplacementTest('RCDATA to CDATA',
+      'title', 'style',
+      '<title>&lt; &amp; <img src="s"></title>',
+      '<style>&lt; &amp; &lt;img src="s"&gt;</style>');
+  // Testing specifically the case where the end tag name matches.
+  // In the current inaccurate implementation, this is not a risk because it is
+  // escaped, but if we choose to implement the more accurate version it must
+  // still mangle the end-tag-like text if it matches the new tag name.
+  registerReplacementTest('RCDATA to CDATA with conflict',
+      'title', 'style',
+      '<title>content</sTyLe>content</title>',
+      '<style>content&lt;/sTyLe&gt;content</style>');
+
+  // We do not support converting PCDATA to CDATA accurately, because it is not
+  // needed for any known use case and could be a security risk.
+  registerReplacementTest('PCDATA to CDATA',
+      'div', 'script',
+      '<div>&lt; &amp; <img src="s"></div>',
+      '<script>&lt; &amp; <img src="s" seen=""></script>');
+
+  // Tag will be processed unnecessarily but the result will be safe.
+  registerReplacementTest('PCDATA to RCDATA',
+      'div', 'title',
+      '<div>&lt; &amp; <img src="s"></div>',
+      '<title>&lt; &amp; <img src="s" seen=""></title>');
+
+  registerReplacementTest('PCDATA to PCDATA',
+      'div', 'span',
+      '<div>&lt; &amp; <img src="s"></div>',
+      '<span>&lt; &amp; <img src="s" seen=""></span>');
+
+  // TODO(kpreid): tests of PCDATA with nested replacement tags
+}());
 
 function assertSanitizerMessages(input, expected, messages) {
   logMessages = [];
