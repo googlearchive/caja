@@ -1479,6 +1479,42 @@ document.write(
   });
 </script>
 
+<!--
+  Regression tests. <noscript> is primarily an example of a CDATA-content
+  element, which needs to be specially handled since <caja-v-noscript> isn't.
+-->
+<p id="testCdataVirtualizationStatic" class="testcontainer">
+  <noscript>content<img src="dummy"
+    onerror="alert('Oh dear (testCdataVirtualizationStatic)')"></noscript>
+</p>
+<script type="text/javascript">
+  jsunitRegister('testCdataVirtualizationStatic',
+                 function testCdataVirtualizationStatic() {
+    var cont = document.getElementById('testCdataVirtualizationStatic');
+    assertEquals('<caja-v-noscript>content&lt;img src="dummy" ' +
+        'onerror="alert(\'Oh dear (testCdataVirtualizationStatic)\')"&gt;' +
+        '</caja-v-noscript>',
+        canonInnerHtml(directAccess.getInnerHTML(cont)));
+    pass('testCdataVirtualizationStatic');
+  });
+</script>
+
+<p id="testCdataVirtualizationInnerHTML" class="testcontainer"></p>
+<script type="text/javascript">
+  jsunitRegister('testCdataVirtualizationInnerHTML',
+                 function testCdataVirtualizationInnerHTML() {
+    var cont = document.getElementById('testCdataVirtualizationInnerHTML');
+    cont.innerHTML = '<noscript>content<img src="dummy" onerror=' +
+        '"alert(\'Oh dear (testCdataVirtualizationInnerHTML)\')"></noscript>';
+
+    assertEquals('<caja-v-noscript>content&lt;img src="dummy" onerror="' +
+        'alert(\'Oh dear (testCdataVirtualizationInnerHTML)\')"&gt;' +
+        '</caja-v-noscript>',
+        canonInnerHtml(directAccess.getInnerHTML(cont)));
+    pass('testCdataVirtualizationInnerHTML');
+  });
+</script>
+
 <p id="testOffsetParent" class="testcontainer" style="position:relative">
 <span id="testOffsetParent-inner">inner</span>
 </p>

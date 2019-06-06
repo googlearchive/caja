@@ -217,6 +217,14 @@ var html = (function(html4) {
   }
 
   /**
+   * Escapes HTML special characters in PCDATA element content.
+   */
+  function escapePcdata(s) {
+    return ('' + s).replace(ampRe, '&amp;').replace(ltRe, '&lt;')
+        .replace(gtRe, '&gt;');
+  }
+
+  /**
    * Escape entities in RCDATA that can be escaped without changing the meaning.
    * {\@updoc
    * $ normalizeRCData('1 < 2 &&amp; 3 > 4 &amp;& 5 &lt; 7&8')
@@ -689,9 +697,34 @@ var html = (function(html4) {
   function makeHtmlSanitizer(tagPolicy) {
     var stack;
     var ignoring;
-    var emit = function (text, out) {
-      if (!ignoring) { out.push(text); }
-    };
+
+    // Returns the eflags of the enclosing element being written, or zero if
+    // there is no parent or it is unknown. (Zero is safe for this purpose
+    // because it implies the content is PCDATA.)
+    function getReplacementParentFlags() {
+      var onStack = stack[stack.length - 1];
+      return onStack ? html4.ELEMENTS[onStack.rep] : 0;
+    }
+
+    // Modify text so that it does not contain an end tag for the currently
+    // open CDATA or RCDATA element.
+    function filterCdataEndTag(text) {
+      var onStack = stack[stack.length - 1];
+      if (!onStack) {
+        throw new Error(
+            'shouldn\'t happen: CDATA/RCDATA context without any start tag');
+      }
+      var tagName = onStack.rep;
+      // This match derived from the algorithm stated on
+      // https://html.spec.whatwg.org/multipage/parsing.html#rawtext-end-tag-name-state
+      // https://html.spec.whatwg.org/multipage/parsing.html#script-data-end-tag-name-state
+      // retrieved 2019-04-19.
+      // It is intended to match either "</tagname>" or, to be conservative,
+      // "</tagname" not followed by further ASCII characters.
+      var filterRe = new RegExp('</' + tagName + '(?=[^A-Za-z])>?', 'i');
+      return text.replace(filterRe, '</>');
+    }
+
     return makeSaxParser({
       'startDoc': function(_) {
         stack = [];
@@ -799,9 +832,45 @@ var html = (function(html4) {
           out.push('<\/', tagName, '>');
         }
       },
-      'pcdata': emit,
-      'rcdata': emit,
-      'cdata': emit,
+      'pcdata': function (text, out) {
+        if (ignoring) return;
+        var eflags = getReplacementParentFlags();
+        if (eflags & (html4.eflags['RCDATA'] | html4.eflags['CDATA'])) {
+          // TODO[kpreid]: This is theoretically incorrect. If the replacement
+          // tag is CDATA or RCDATA then it will be over-escaped. But we do not
+          // expect that case to be used and it could be a hazard.
+          out.push(filterCdataEndTag(text));
+        } else {
+          // Original and replacement are both PCDATA; we're good.
+          out.push(text);
+        }
+      },
+      'rcdata': function (text, out) {
+        if (ignoring) return;
+        var eflags = getReplacementParentFlags();
+        if (eflags & (html4.eflags['RCDATA'] | html4.eflags['CDATA'])) {
+          // Original and replacement are both RCDATA; we're good.
+          // Or, they're CDATA, which will be parsed wrong but safely.
+          // TODO(kpreid): Should unescape for CDATA, but very carefully.
+          out.push(filterCdataEndTag(text));
+        } else {
+          // The text supplied by the parser is already processed by 
+          // normalizeRCData, so it is safe to use as PCDATA.
+          out.push(text);
+        }
+      },
+      'cdata': function (text, out) {
+        if (ignoring) return;
+        var eflags = getReplacementParentFlags();
+        if (eflags & html4.eflags['CDATA']) {
+          // Original and replacement are both CDATA; we're good.
+          out.push(filterCdataEndTag(text));
+        } else {
+          // We need to escape the text because the context is PCDATA
+          // or RCDATA.
+          out.push(escapePcdata(text));
+        }
+      },
       'endDoc': function(out) {
         for (; stack.length; stack.length--) {
           out.push('<\/', stack[stack.length - 1].rep, '>');
@@ -1069,6 +1138,7 @@ var html = (function(html4) {
   // Export both quoted and unquoted names for Closure linkage.
   var html = {};
   html.escapeAttrib = html['escapeAttrib'] = escapeAttrib;
+  html.escapePcdata = html['escapePcdata'] = escapePcdata;
   html.makeHtmlSanitizer = html['makeHtmlSanitizer'] = makeHtmlSanitizer;
   html.makeSaxParser = html['makeSaxParser'] = makeSaxParser;
   html.makeTagPolicy = html['makeTagPolicy'] = makeTagPolicy;
