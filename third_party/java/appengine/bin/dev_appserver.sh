@@ -3,17 +3,26 @@
 #
 # Launches the Development AppServer.  This utility allows developers
 # to test a Google App Engine application on their local workstation.
-#
-[ -z "${DEBUG}" ] || set -x  # trace if $DEBUG env. var. is non-zero
-SDK_BIN="`dirname "$0" | sed -e "s#^\\([^/]\\)#${PWD}/\\1#"`" # sed makes absolute
-SDK_LIB="$SDK_BIN/../lib"
-JAR_FILE="$SDK_LIB/appengine-tools-api.jar"
 
-if [ ! -e "$JAR_FILE" ]; then
-    echo "$JAR_FILE not found"
+[[ -z "${DEBUG}" ]] || set -x  # trace if $DEBUG env. var. is non-zero
+
+# Construct the absolute name of the SDK bin directory.
+# Use -P so pwd will see the real name, independent of symbolic links.
+readonly SDK_BIN="$(cd -P "$(dirname "$0")" && pwd)"
+readonly SDK_ROOT="$(dirname "${SDK_BIN}")"
+readonly SDK_LIB="${SDK_ROOT}/lib"
+readonly JAR_FILE="${SDK_LIB}/appengine-tools-api.jar"
+
+if [[ ! -e "${JAR_FILE}" ]]; then
+    echo "${JAR_FILE} not found" >&2
     exit 1
 fi
 
-java -ea -cp "$JAR_FILE" \
-  com.google.appengine.tools.KickStart \
-  com.google.appengine.tools.development.DevAppServerMain "$@"
+readonly SCRIPT_NAME=$(basename "$0")
+readonly RUN_JAVA=$(dirname "$0")/run_java.sh
+exec "${RUN_JAVA}" "${SCRIPT_NAME}" \
+    -ea -cp "${JAR_FILE}" \
+    com.google.appengine.tools.KickStart \
+    com.google.appengine.tools.development.DevAppServerMain \
+    --sdk_root="${SDK_ROOT}" \
+    "$@"

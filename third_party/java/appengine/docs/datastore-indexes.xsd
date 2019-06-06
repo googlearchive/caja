@@ -1,11 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
+<!-- CAUTION: the following files implement the parsing and validation of -->
+<!-- the index definition schema, and so they all must be kept in sync: -->
+
+<!--     apphosting/datastore/datastore_index.py -->
+<!--     apphosting/datastore/datastore_index_xml.py -->
+<!--     java/com/google/apphosting/utils/config/IndexesXmlReader.java -->
+<!--     java/com/google/apphosting/utils/config/IndexYamlReader.java -->
+<!--     java/com/google/appengine/tools/development/datastore-indexes.xsd -->
+<!--     java/com/google/appengine/tools/development/datastore-indexes.dtd -->
+<!--     java/com/google/appengine/api/datastore/dev/LocalCompositeIndexManager.java -->
+<!--     java/com/google/appengine/api/datastore/CompositeIndexManager.java -->
+
+<!-- TODO(flyboy): add to this list when we discover even more places -->
+<!-- that are sensitive to schema changes -->
+
 <xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:element name="datastore-indexes" type="datastore-indexesType"/>
+  <xs:element name="datastore-indexes" type="datastore-indexesType" />
   <xs:complexType name="propertyType">
     <xs:simpleContent>
       <xs:extension base="xs:string">
         <xs:attribute type="xs:string" name="name" use="required"/>
-        <xs:attribute type="directionType" name="direction" use="required"/>
+        <xs:attribute type="directionType" name="direction" use="optional"/>
+        <xs:attribute type="modeType" name="mode" use="optional"/>
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
@@ -26,7 +43,7 @@
       <xs:element type="propertyType" name="property" maxOccurs="unbounded" minOccurs="0"/>
     </xs:sequence>
     <xs:attribute type="xs:string" name="kind" use="required"/>
-    <xs:attribute type="xs:boolean" name="ancestor" use="required"/>
+    <xs:attribute type="xs:boolean" name="ancestor" use="optional"/>
     <xs:attribute type="xs:string" name="source" use="optional"/>
   </xs:complexType>
 
@@ -34,6 +51,12 @@
     <xs:restriction base="xs:string">
       <xs:enumeration value="asc"/>
       <xs:enumeration value="desc"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="modeType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="geospatial"/>
     </xs:restriction>
   </xs:simpleType>
 

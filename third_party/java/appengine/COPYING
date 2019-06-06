@@ -31,8 +31,8 @@ licenses and/or has source available from other locations.
   License: Apache License v. 2.0
   Source code availability: http://ant.apache.org/
   Bundled in lib/impl/appengine-local-runtime.jar under org/apache/tools/ant
-  lib/shared/jsp/repackaged-appengine-ant-1.7.1.jar
-  lib/shared/jsp/repackaged-appengine-ant-launcher-1.7.1.jar
+  lib/shared/jsp/repackaged-appengine-ant-1.9.4.jar
+  lib/shared/jsp/repackaged-appengine-ant-launcher-1.9.4.jar
 
 * Apache HttpComponents
   License: Apache License v. 2.0
@@ -116,21 +116,15 @@ licenses and/or has source available from other locations.
     lib/user/orm/datanucleus-jpa-1.1.5.jar
 
 * YamlBeans
-    License: MIT
-    Source code availability: http://code.google.com/p/yamlbeans/
-    Bundled in lib/appengine-api-tools.jar under com/google/appengine/repackaged/net/sourceforge/yamlbeans
+    License: MIT  
+    Source code availability: https://github.com/EsotericSoftware/yamlbeans
+    Bundled in lib/appengine-api-tools.jar under com/google/appengine/repackaged/com/esotericsoftware/yamlbeans
 
 * MediaUtil
     License: BSD
     Copyright (C) 1999-2005 Dmitriy Rogatkin, Suresh Mahalingam.  All rights reserved.
     Source code availability: http://mediachest.sourceforge.net/mediautil/
     Bundled in lib/impl/appengine-api-stubs.jar under mediautil
-
-* JLine
-    License: BSD
-    Copyright (c) 2002-2006, Marc Prud'hommeaux <mwp1@cornell.edu> All rights reserved.
-    Source code availability: http://jline.sourceforge.net
-    Bundled in lib/impl/google_sql.sh under jline
 
 * Jackson
     License: Apache License v. 2.0

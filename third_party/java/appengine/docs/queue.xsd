@@ -35,10 +35,10 @@
   </xs:simpleType>
 
   <xs:complexType name="acl-Type">
-    <xs:sequence>
+    <xs:choice maxOccurs="unbounded">
       <xs:element type="xs:string" name="user-email" maxOccurs="unbounded" minOccurs="0"/>
       <xs:element type="xs:string" name="writer-email" maxOccurs="unbounded" minOccurs="0"/>
-    </xs:sequence>
+    </xs:choice>
   </xs:complexType>
 
   <xs:simpleType name="name-Type">
@@ -78,7 +78,7 @@
 
   <xs:simpleType name="target-Type">
     <xs:restriction base="xs:string">
-      <xs:pattern value="[a-z\d\-]{1,100}"/>
+      <xs:pattern value="[a-z\d\-\.]{1,100}"/>
     </xs:restriction>
   </xs:simpleType>
 
