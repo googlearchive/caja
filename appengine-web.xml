@@ -9,4 +9,7 @@
     <property name="java.util.logging.config.file"
       value="WEB-INF/logging.properties"/>
   </system-properties>
+  <env-variables>
+    <env-var name="DISABLE_LEGACY_METADATA_SERVER_ENDPOINTS" value="true" />
+  </env-variables>
 </appengine-web-app>
