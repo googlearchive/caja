@@ -43,7 +43,7 @@ var caja = (function () {
     'Closure templates (https://github.com/google/closure-templates) provide ', 
     'a strictly contextual auto-escaping system, which can drastically reduce ', 
     'the risk of XSS in your application.'
-  ]
+  ];
   console.warn(deprecation_message.join(''));
   
   var cajaBuildVersion = '%VERSION%';
