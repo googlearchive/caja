@@ -23,6 +23,29 @@
  */
 
 var caja = (function () {
+  // As of January 31st, 2021, the Caja project is going to be deprecated 
+  // Print a note about it in the browser's console
+  var deprecation_message = [
+    'On January 31st, 2021, we will be archiving the Caja project. ',
+    'After January 31, no new features will be added, pull requests and other ',
+    'issues will no longer be addressed, including patches for security issues, ',
+    'and the repository will be marked as archived. Caja has not been actively ',
+    'maintained or developed to keep up with the latest research on web security. ',
+    'As a result, several security vulnerabilities have been reported to Caja, ',
+    'both by Google’s security engineers and by external researchers.\n\n',
+    'We encourage users of Caja\'s HTML and CSS sanitizers to migrate to Closure ', 
+    'toolkit (https://developers.google.com/closure/), an open source toolkit for ',
+    'Javascript. Closure is used by applications, including Search, Gmail, Docs ',
+    'and Maps. \n\n', 
+    'The Closure library (https://github.com/google/closure-library) has built-in ',
+    'HTML and CSS sanitizers and provides native support for key security ',
+    'mitigations like Content Security Policy and Trusted Types. Additionally, ',
+    'Closure templates (https://github.com/google/closure-templates) provide ', 
+    'a strictly contextual auto-escaping system, which can drastically reduce ', 
+    'the risk of XSS in your application.'
+  ];
+  console.warn(deprecation_message.join(''));
+  
   var cajaBuildVersion = '%VERSION%';
   var defaultServer = 'https://caja.appspot.com/';
   var defaultFrameGroup;
