@@ -4,6 +4,13 @@ Caja is a tool for making third party HTML, CSS and JavaScript safe to embed in 
 
 Caja supports most HTML and CSS and the recently standardized "strict mode" JavaScript version of JavaScript -- even on older browsers that do not support strict mode. It allows third party code to use new JavaScript features on older browsers that do not support them.
 
+## Deprecation
+**On January 31st, 2021, we will be archiving the Caja project. After January 31, no new features will be added, pull requests and other issues will no longer be addressed, including patches for security issues, and the repository will be marked as archived. Caja has not been actively maintained or developed to keep up with the latest research on web security. As a result, several security vulnerabilities have been reported to Caja, both by Google’s security engineers and by external researchers.**
+
+We encourage users of Caja's HTML and CSS sanitizers to migrate to [Closure toolkit](https://developers.google.com/closure/), an open source toolkit for Javascript. Closure is used by applications, including Search, Gmail, Docs and Maps. 
+
+The [Closure library](https://github.com/google/closure-library) has built-in HTML and CSS sanitizers and provides native support for key security mitigations like Content Security Policy and Trusted Types. Additionally, [Closure templates](https://github.com/google/closure-templates) provide a strictly contextual auto-escaping system, which can drastically reduce the risk of XSS in your application.
+
 ## Benefits of using Caja
 
 * *New JavaScript Features.* Caja emulates all the new features of ECMAScript 5, including getters and setters, non-enumerable properties, and read-only properties. New browsers support these features natively, but older browsers still have a significant user base. Caja emulates these new features on browsers that don't support them natively.
