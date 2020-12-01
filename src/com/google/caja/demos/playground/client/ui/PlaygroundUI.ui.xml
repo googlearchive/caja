@@ -54,6 +54,27 @@
     <g:center>
       <g:TabLayoutPanel ui:field="editorPanel" barUnit='PX' barHeight='30'>
         <g:tab>
+          <g:header size='7'>DEPRECATION NOTICE</g:header>
+          <g:DockLayoutPanel>
+          <g:center>
+            <g:ScrollPanel>
+              <g:HTML>
+                <p>On December 31st, 2020, Google will be shutting down Caja
+                Playground as part of the Caja deprecation. Caja has not been
+                actively maintained or developed to keep up with the latest
+                research on web security. As a result, several security
+                vulnerabilities have been reported to Caja, both by Google’s
+                security engineers and by external researchers.</p>
+
+                <p>For more information on the ongoing Caja deprecation process,
+                please visit <a href="https://developers.google.com/caja">
+                https://developers.google.com/caja</a>.</p>
+              </g:HTML>
+            </g:ScrollPanel>
+          </g:center>
+          </g:DockLayoutPanel>
+        </g:tab>
+        <g:tab>
           <g:header size='7'>Source</g:header>
           <g:DockLayoutPanel unit='PX'>
             <g:center>
