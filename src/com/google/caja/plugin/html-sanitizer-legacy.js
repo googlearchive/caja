@@ -57,7 +57,9 @@ var html = (function(html4) {
     'a strictly contextual auto-escaping system, which can drastically reduce ', 
     'the risk of XSS in your application.'
   ];
-  console.warn(deprecation_message.join(''));
+  if ('undefined' !== typeof window && window.console) {
+    window.console.warn(deprecation_message.join(''));
+  }
 
   var lcase;
   // The below may not be true on browsers in the Turkish locale.

@@ -69,7 +69,9 @@ var sanitizeMediaQuery = undefined;
     'a strictly contextual auto-escaping system, which can drastically reduce ', 
     'the risk of XSS in your application.'
   ];
-  console.warn(deprecation_message.join(''));
+  if ('undefined' !== typeof window && window.console) {
+    window.console.warn(deprecation_message.join(''));
+  }
   
   var NOEFFECT_URL = 'url("about:blank")';
   /**

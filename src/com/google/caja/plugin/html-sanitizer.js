@@ -86,7 +86,9 @@ var html = (function(html4) {
     'a strictly contextual auto-escaping system, which can drastically reduce ', 
     'the risk of XSS in your application.'
   ];
-  console.warn(deprecation_message.join(''));
+  if ('undefined' !== typeof window && window.console) {
+    window.console.warn(deprecation_message.join(''));
+  }
 	
   // For closure compiler
   var parseCssDeclarations, sanitizeCssProperty, cssSchema;

@@ -600,7 +600,7 @@ public class Linter implements BuildCommand {
       ImmutableSet.of(
           "window", "document", "setTimeout", "setInterval", "location",
           "XMLHttpRequest", "clearInterval", "clearTimeout", "navigator",
-          "event", "alert", "confirm", "prompt", "this", "JSON"));
+          "event", "alert", "confirm", "prompt", "this", "JSON", "console"));
 
   /**
    * Find identifier lists in documentation comments.

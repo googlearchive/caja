@@ -257,7 +257,7 @@ public class PlaygroundView {
 
   private void initEditor() {
     setupNativeSelectLineBridge();
-    selectTab(Tabs.SOURCE);
+    selectTab(Tabs.DEPRECATION);
   }
 
   private native void initPlusOne() /*-{
@@ -609,6 +609,7 @@ public class PlaygroundView {
   }
 
   public enum Tabs {
+    DEPRECATION,
     SOURCE,
     POLICY,
     CAJOLED_SOURCE,
