@@ -93,7 +93,10 @@
       "PROGRESS::VALUE",
       "CANVAS::WIDTH",
       "VIDEO::WIDTH",
-      "TEXTAREA::WRAP"
+      "TEXTAREA::WRAP",
+      "A::MEDIA",
+      "AREA::MEDIA",
+      "SOURCE::MEDIA"
       ],
 
   "denied": [
@@ -226,12 +229,6 @@
         "comment": "TODO(kpreid): need to be non-rewritten URIs" },
       { "key": "HTML::MANIFEST",
         "comment": "TODO(kpreid): further review" },
-      { "key": "A::MEDIA",
-        "comment":
-            "TODO(kpreid): Implement MEDIA_QUERY atype sanitization FOR THESE 3"
-        },
-      "AREA::MEDIA",
-      "SOURCE::MEDIA",
       { "key": "FIELDSET::NAME",
         "comment": "TODO(kpreid): further review" },
       { "key": "DIALOG::OPEN",
