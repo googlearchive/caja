@@ -80,6 +80,7 @@
       "LINK::SIZES",
       "AUDIO::SRC",
       "VIDEO::SRC",
+      "SOURCE::SRC",
       "TRACK::SRCLANG",
       "INPUT::STEP",
       "*::TRANSLATE",
