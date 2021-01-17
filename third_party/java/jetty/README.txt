@@ -25,7 +25,7 @@ BUILDING JETTY
 ==============
 
 Jetty uses maven 2 as its build system.  Maven will fetch
-the dependancies, build the server and assemble a runnable
+the dependencies, build the server and assemble a runnable
 version:
 
   mvn install

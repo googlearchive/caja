@@ -117,7 +117,7 @@ Simple Java toolkit for JSON (JSON.simple)
   a java.io.Reader or java.lang.String. Return type of JSONValue.parse() 
   is according to the mapping above. If the input is incorrect in syntax or
   there's exceptions during the parsing, I choose to return null, ignoring 
-  the exception: I have no idea if it's a serious implementaion, but I think
+  the exception: I have no idea if it's a serious implementation, but I think
   it's convenient to the user.
   
   Here's the example:
