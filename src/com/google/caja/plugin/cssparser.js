@@ -190,11 +190,7 @@ var parseCssDeclarations;
         ++i;
         break;
       }
-      if (tok === ' ') {
-        i = i+1;
-      } else {
-        i = declaration(toks, i, n, handler);
-      }
+      i = declaration(toks, i, n, handler);
     }
     if (handler['endRuleset']) {
       handler['endRuleset']();
@@ -255,6 +251,7 @@ var parseCssDeclarations;
   function declaration(toks, i, n, handler) {
     var property = toks[i++];
     if (!ident.test(property)) {
+      if (property === ' ' || property === ';') return i;
       return skipDeclaration(toks, i, n);
     }
     var tok;
@@ -309,7 +306,7 @@ var parseCssDeclarations;
   parseCssDeclarations = function(cssText, handler) {
     var toks = lexCss(cssText);
     for (var i = 0, n = toks.length; i < n;) {
-      i = toks[i] !== ' ' ? declaration(toks, i, n, handler) : i+1;
+      i = declaration(toks, i, n, handler);
     }
   };
 })();
